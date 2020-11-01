@@ -15,7 +15,7 @@ type UtilityMod struct {
 
 func New() meidov2.Mod {
 	return &UtilityMod{
-		cl: make(chan *meidov2.DiscordMessage, 256),
+		//cl: make(chan *meidov2.DiscordMessage),
 	}
 }
 

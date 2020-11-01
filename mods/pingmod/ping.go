@@ -15,7 +15,7 @@ type PingMod struct {
 
 func New() meidov2.Mod {
 	return &PingMod{
-		cl: make(chan *meidov2.DiscordMessage, 256),
+		//cl: make(chan *meidov2.DiscordMessage),
 	}
 }
 

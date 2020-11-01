@@ -15,7 +15,7 @@ type LoggerMod struct {
 
 func New() meidov2.Mod {
 	return &LoggerMod{
-		cl:            make(chan *meidov2.DiscordMessage, 256),
+		//cl:            make(chan *meidov2.DiscordMessage),
 		dmLogChannels: []int{497106582144942101, 502918431926910986},
 	}
 }
@@ -38,6 +38,10 @@ func (m *LoggerMod) Help(msg *meidov2.DiscordMessage) {
 
 func (m *LoggerMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) error {
 	m.cl = cl
+
+	b.Discord.Client.On(disgord.EvtGuildCreate, func(s disgord.Session, g *disgord.GuildCreate) {
+		fmt.Println("loaded: ", g.Guild.Name)
+	})
 
 	m.commands = append(m.commands, m.ForwardDms)
 	return nil

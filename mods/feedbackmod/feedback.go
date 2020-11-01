@@ -19,7 +19,7 @@ type FeedbackMod struct {
 
 func New() meidov2.Mod {
 	return &FeedbackMod{
-		cl:              make(chan *meidov2.DiscordMessage, 256),
+		//cl:              make(chan *meidov2.DiscordMessage),
 		bannedUsers:     make(map[disgord.Snowflake]bool),
 		feedbackChannel: disgord.Snowflake(497106582144942101),
 	}

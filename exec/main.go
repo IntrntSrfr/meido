@@ -8,6 +8,9 @@ import (
 	"github.com/intrntsrfr/meidov2/mods/pingmod"
 	"github.com/intrntsrfr/meidov2/mods/utilitymod"
 	"io/ioutil"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 func main() {
@@ -35,7 +38,8 @@ func main() {
 	bot.Run()
 	defer bot.Close()
 
-	lol := make(chan interface{})
-	<-lol
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
+	<-sc
 
 }

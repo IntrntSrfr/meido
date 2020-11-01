@@ -66,10 +66,8 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 				continue
 			}
 			for _, mod := range b.Mods {
-				mod.Message(m)
+				go mod.Message(m)
 			}
-		default:
-			continue
 		}
 	}
 }

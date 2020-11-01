@@ -16,7 +16,7 @@ type ModerationMod struct {
 
 func New() meidov2.Mod {
 	return &ModerationMod{
-		cl: make(chan *meidov2.DiscordMessage, 256),
+		//cl: make(chan *meidov2.DiscordMessage),
 	}
 }
 
@@ -52,7 +52,7 @@ func (m *ModerationMod) Message(msg *meidov2.DiscordMessage) {
 
 func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 
-	if msg.LenArgs() < 2 || !strings.HasPrefix(msg.Message.Content, ".b") {
+	if msg.LenArgs() < 2 || msg.Args()[0] != ".b" {
 		return
 	}
 
@@ -73,7 +73,6 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		fmt.Println(err)
 		return
 	}
-
 	if botPerms&disgord.PermissionBanMembers == 0 && botPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
@@ -83,7 +82,6 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		fmt.Println(err)
 		return
 	}
-
 	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
@@ -109,7 +107,7 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 	if len(msg.Message.Mentions) > 0 {
 		targetUser = msg.Message.Mentions[0]
 	} else {
-		sn, err := strconv.ParseUint(msg.Args()[0], 10, 64)
+		sn, err := strconv.ParseUint(msg.Args()[1], 10, 64)
 		if err != nil {
 			return
 		}
@@ -160,6 +158,7 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 			}
 		}
 	}
+
 	err = msg.Discord.Client.BanMember(context.Background(), msg.Message.GuildID, targetUser.ID, &disgord.BanMemberParams{
 		DeleteMessageDays: pruneDays,
 		Reason:            fmt.Sprintf("%v: %v", msg.Message.Author.Tag(), reason),

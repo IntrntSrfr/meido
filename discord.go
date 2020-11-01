@@ -2,7 +2,6 @@ package meidov2
 
 import (
 	"context"
-	"fmt"
 	"github.com/andersfylling/disgord"
 	"time"
 )
@@ -17,7 +16,6 @@ type Discord struct {
 }
 
 func NewDiscord(token string) *Discord {
-	fmt.Println(token)
 	return &Discord{
 		token:       token,
 		messageChan: make(chan *DiscordMessage, 256),
