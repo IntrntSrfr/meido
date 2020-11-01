@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
-	"sort"
 	"strconv"
 )
 
@@ -39,6 +38,15 @@ func (m *UtilityMod) Help(msg *meidov2.DiscordMessage) {
 func (m *UtilityMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) error {
 	m.cl = cl
 
+	b.Discord.Client.On(disgord.EvtReady, func(s disgord.Session, r *disgord.Ready) {
+		s.UpdateStatus(&disgord.UpdateStatusPayload{
+			Game: &disgord.Activity{
+				Type: disgord.ActivityTypeGame,
+				Name: "BEING REWORKED, WILL WORK AGAIN SOON",
+			},
+		})
+	})
+
 	m.commands = append(m.commands, m.Avatar)
 
 	return nil
@@ -61,8 +69,8 @@ func (m *UtilityMod) Avatar(msg *meidov2.DiscordMessage) {
 	var err error
 
 	if msg.LenArgs() > 1 {
-		if len(msg.DiscordMessage.Mentions) >= 1 {
-			targetUser = msg.DiscordMessage.Mentions[0]
+		if len(msg.Message.Mentions) >= 1 {
+			targetUser = msg.Message.Mentions[0]
 		} else {
 			id, err := strconv.Atoi(msg.Args()[1])
 			if err != nil {
@@ -74,7 +82,7 @@ func (m *UtilityMod) Avatar(msg *meidov2.DiscordMessage) {
 			}
 		}
 	} else {
-		targetUser, err = msg.Discord.Client.GetUser(context.Background(), msg.DiscordMessage.Author.ID)
+		targetUser, err = msg.Discord.Client.GetUser(context.Background(), msg.Message.Author.ID)
 		if err != nil {
 			return
 		}
@@ -85,13 +93,13 @@ func (m *UtilityMod) Avatar(msg *meidov2.DiscordMessage) {
 	}
 
 	if targetUser.Avatar == "" {
-		msg.Discord.Client.SendMsg(context.Background(), msg.DiscordMessage.ChannelID, &disgord.Embed{
+		msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, &disgord.Embed{
 			Color:       0xC80000,
 			Description: fmt.Sprintf("%v has no avatar set.", targetUser.Tag()),
 		})
 	} else {
-		msg.Discord.Client.SendMsg(context.Background(), msg.DiscordMessage.ChannelID, &disgord.Embed{
-			Color: HighestColor(msg.Discord.Client, msg.DiscordMessage.GuildID, targetUser.ID),
+		msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, &disgord.Embed{
+			Color: msg.HighestColor(msg.Message.GuildID, targetUser.ID),
 			Title: targetUser.Tag(),
 			Image: &disgord.EmbedImage{URL: AvatarURL(targetUser, 1024)},
 		})
@@ -102,36 +110,3 @@ func AvatarURL(u *disgord.User, size int) string {
 	a, _ := u.AvatarURL(size, true)
 	return a
 }
-
-func HighestColor(s disgord.Session, gid, uid disgord.Snowflake) int {
-
-	mem, err := s.GetMember(context.Background(), gid, uid)
-	if err != nil {
-		return 0
-	}
-
-	gRoles, err := s.GetGuildRoles(context.Background(), gid)
-	if err != nil {
-		return 0
-	}
-
-	sort.Sort(RoleByPos(gRoles))
-
-	for _, gr := range gRoles {
-		for _, r := range mem.Roles {
-			if r == gr.ID {
-				if gr.Color != 0 {
-					return int(gr.Color)
-				}
-			}
-		}
-	}
-
-	return 0
-}
-
-type RoleByPos []*disgord.Role
-
-func (a RoleByPos) Len() int           { return len(a) }
-func (a RoleByPos) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a RoleByPos) Less(i, j int) bool { return a[i].Position > a[j].Position }

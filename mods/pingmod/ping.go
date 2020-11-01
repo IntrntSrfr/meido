@@ -2,7 +2,6 @@ package pingmod
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
@@ -55,23 +54,8 @@ func (m *PingMod) Message(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func (m *PingMod) check(msg *meidov2.DiscordMessage) {
-	if msg.DiscordMessage.Content != "pee" {
-		return
-	}
-
-	d, err := json.MarshalIndent(msg, "", "\t")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	fmt.Println(string(d))
-
-}
-
 func (m *PingMod) PingCommand(msg *meidov2.DiscordMessage) {
-	if msg.DiscordMessage.Content != "m?ping" {
+	if msg.Message.Content != "m?ping" {
 		return
 	}
 
@@ -79,7 +63,7 @@ func (m *PingMod) PingCommand(msg *meidov2.DiscordMessage) {
 
 	startTime := time.Now()
 
-	first, err := msg.DiscordMessage.Reply(context.Background(), msg.Discord.Client, "Ping")
+	first, err := msg.Message.Reply(context.Background(), msg.Discord.Client, "Ping")
 	if err != nil {
 		return
 	}

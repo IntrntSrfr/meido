@@ -29,6 +29,6 @@ type ModCommand struct {
 	RequiredPerms int
 	OwnerOnly bool
 	Enabled bool
-	Run func(*DiscordMessage)
+	Run func(*Message)
 }
 */

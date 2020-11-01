@@ -62,7 +62,7 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 	for {
 		select {
 		case m := <-msg:
-			if m.Type != MessageTypeCreate || m.DiscordMessage.Author.Bot {
+			if m.Type != MessageTypeCreate || m.Message.Author.Bot {
 				continue
 			}
 			for _, mod := range b.Mods {
@@ -78,7 +78,7 @@ func (b *Bot) logCommands() {
 	for {
 		select {
 		case e := <-b.commandLog:
-			fmt.Println(e.DiscordMessage.Author.String(), e.DiscordMessage.Content, e.TimeReceived.String())
+			fmt.Println(e.Message.Author.String(), e.Message.Content, e.TimeReceived.String())
 		}
 	}
 }

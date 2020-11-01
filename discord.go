@@ -30,6 +30,9 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 		BotToken: d.token,
 		CacheConfig: &disgord.CacheConfig{
 			DisableVoiceStateCaching: true,
+			DisableUserCaching:       false,
+			DisableChannelCaching:    false,
+			DisableGuildCaching:      false,
 		},
 		Intents: disgord.AllIntents(disgord.IntentGuildPresences, disgord.IntentGuildMembers),
 	})
@@ -58,26 +61,26 @@ func (d *Discord) Run() error {
 func (d *Discord) onMessageCreate(s disgord.Session, m *disgord.MessageCreate) {
 
 	d.messageChan <- &DiscordMessage{
-		Discord:        d,
-		DiscordMessage: m.Message,
-		Type:           MessageTypeCreate,
-		TimeReceived:   time.Now(),
+		Discord:      d,
+		Message:      m.Message,
+		Type:         MessageTypeCreate,
+		TimeReceived: time.Now(),
 	}
 }
 func (d *Discord) onMessageUpdate(s disgord.Session, m *disgord.MessageUpdate) {
 	d.messageChan <- &DiscordMessage{
-		Discord:        d,
-		DiscordMessage: m.Message,
-		Type:           MessageTypeUpdate,
-		TimeReceived:   time.Now(),
+		Discord:      d,
+		Message:      m.Message,
+		Type:         MessageTypeUpdate,
+		TimeReceived: time.Now(),
 	}
 }
 
 func (d *Discord) onMessageDelete(s disgord.Session, m *disgord.MessageDelete) {
 	d.messageChan <- &DiscordMessage{
-		Discord:        d,
-		DiscordMessage: nil,
-		Type:           MessageTypeDelete,
-		TimeReceived:   time.Now(),
+		Discord:      d,
+		Message:      nil,
+		Type:         MessageTypeDelete,
+		TimeReceived: time.Now(),
 	}
 }

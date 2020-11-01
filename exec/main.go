@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/intrntsrfr/meidov2"
 	"github.com/intrntsrfr/meidov2/mods/loggermod"
+	"github.com/intrntsrfr/meidov2/mods/moderationmod"
 	"github.com/intrntsrfr/meidov2/mods/pingmod"
 	"github.com/intrntsrfr/meidov2/mods/utilitymod"
 	"io/ioutil"
@@ -29,6 +30,7 @@ func main() {
 	bot.RegisterMod(pingmod.New(), "ping")
 	bot.RegisterMod(loggermod.New(), "logs")
 	bot.RegisterMod(utilitymod.New(), "utility")
+	bot.RegisterMod(moderationmod.New(), "moderation")
 
 	bot.Run()
 	defer bot.Close()

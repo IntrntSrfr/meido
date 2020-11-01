@@ -62,7 +62,7 @@ func (m *FeedbackMod) Message(msg *meidov2.DiscordMessage) {
 }
 
 func (m *FeedbackMod) ToggleBan(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?togglefeedback" || msg.DiscordMessage.Author.ID != disgord.Snowflake(163454407999094786) {
+	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?togglefeedback" || msg.Message.Author.ID != disgord.Snowflake(163454407999094786) {
 		return
 	}
 	memId, err := strconv.Atoi(msg.Args()[1])
@@ -96,14 +96,14 @@ func (m *FeedbackMod) LeaveFeedback(msg *meidov2.DiscordMessage) {
 
 	m.Lock()
 	defer m.Unlock()
-	banned, ok := m.bannedUsers[msg.DiscordMessage.Author.ID]
+	banned, ok := m.bannedUsers[msg.Message.Author.ID]
 	if ok {
 		if banned {
-			msg.Discord.Client.SendMsg(context.Background(), msg.DiscordMessage.ChannelID, "You're banned from using the feedback feature.")
+			msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, "You're banned from using the feedback feature.")
 			return
 		}
 	}
 
 	msg.Discord.Client.SendMsg(context.Background(), m.feedbackChannel, fmt.Sprintf(`%v`, msg.Args()[1:]))
-	msg.Discord.Client.SendMsg(context.Background(), msg.DiscordMessage.ChannelID, "Feedback left")
+	msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, "Feedback left")
 }
