@@ -7,9 +7,9 @@ type Config struct {
 }
 
 type Bot struct {
-	Discord *Discord
-	Config  *Config
-	Mods    map[string]Mod
+	Discord    *Discord
+	Config     *Config
+	Mods       map[string]Mod
 	commandLog chan *DiscordMessage
 }
 
@@ -19,10 +19,10 @@ func NewBot(config *Config) *Bot {
 	fmt.Println("new bot")
 
 	return &Bot{
-		Discord: d,
-		Config:  config,
-		Mods:    make(map[string]Mod),
-		commandLog:make(chan *DiscordMessage, 256),
+		Discord:    d,
+		Config:     config,
+		Mods:       make(map[string]Mod),
+		commandLog: make(chan *DiscordMessage, 256),
 	}
 }
 
@@ -40,11 +40,11 @@ func (b *Bot) Open() error {
 	return nil
 }
 
-func(b*Bot)Run()error{
+func (b *Bot) Run() error {
 	return b.Discord.Run()
 }
 
-func(b*Bot)Close(){
+func (b *Bot) Close() {
 	b.Discord.Client.Disconnect()
 }
 
@@ -74,10 +74,10 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 	}
 }
 
-func (b *Bot) logCommands(){
-	for{
-		select{
-		case e := <- b.commandLog:
+func (b *Bot) logCommands() {
+	for {
+		select {
+		case e := <-b.commandLog:
 			fmt.Println(e.DiscordMessage.Author.String(), e.DiscordMessage.Content, e.TimeReceived.String())
 		}
 	}
