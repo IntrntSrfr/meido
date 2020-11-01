@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meidov2/mods/loggermod"
 	"github.com/intrntsrfr/meidov2/mods/pingmod"
+	"github.com/intrntsrfr/meidov2/mods/utilitymod"
 	"io/ioutil"
 )
 
@@ -23,7 +25,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	bot.RegisterMod(pingmod.New(), "ping")
+	bot.RegisterMod(loggermod.New(), "logs")
+	bot.RegisterMod(utilitymod.New(), "utility")
 
 	bot.Run()
 	defer bot.Close()

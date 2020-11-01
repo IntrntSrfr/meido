@@ -39,24 +39,23 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 	s.On(disgord.EvtMessageCreate, d.onMessageCreate)
 	s.On(disgord.EvtMessageUpdate, d.onMessageUpdate)
 	s.On(disgord.EvtMessageDelete, d.onMessageDelete)
-/*
-	err := s.Connect(context.Background())
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-*/
+	/*
+		err := s.Connect(context.Background())
+		if err != nil {
+			fmt.Println(err)
+			return nil, err
+		}
+	*/
 	//go d.listen()
 
 	return d.messageChan, nil
 }
 
-func(d*Discord)Run()error{
+func (d *Discord) Run() error {
 	return d.Client.Connect(context.Background())
 }
 
 func (d *Discord) onMessageCreate(s disgord.Session, m *disgord.MessageCreate) {
-	fmt.Println("msg received")
 
 	d.messageChan <- &DiscordMessage{
 		Discord:        d,
