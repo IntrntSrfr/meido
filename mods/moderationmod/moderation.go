@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
+	"github.com/jmoiron/sqlx"
 	"strconv"
 	"strings"
 )
@@ -12,6 +13,7 @@ import (
 type ModerationMod struct {
 	cl       chan *meidov2.DiscordMessage
 	commands []func(msg *meidov2.DiscordMessage)
+	db       *sqlx.DB
 }
 
 func New() meidov2.Mod {
