@@ -164,6 +164,7 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 		m.db.Exec("INSERT INTO userroles(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetUser.User.ID, selectedRole.ID)
 		msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetUser.User.Tag()))
 	default:
+		fmt.Println(err)
 		msg.Reply("there was an error, please try again")
 	}
 }
@@ -201,6 +202,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 		ur := &Userrole{}
 		err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", msg.Message.GuildID, msg.Message.Author.ID)
 		if err != nil && err != sql.ErrNoRows {
+			fmt.Println(err)
 			msg.Reply("there was an error, please try again")
 			return
 		} else if err == sql.ErrNoRows {
@@ -317,6 +319,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 	err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", msg.Message.GuildID, target.User.ID)
 	if err != nil && err != sql.ErrNoRows {
 		msg.Reply("there was an error, please try again")
+		fmt.Println(err)
 		return
 	} else if err == sql.ErrNoRows {
 		msg.Reply("No custom role set.")
