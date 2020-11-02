@@ -23,6 +23,10 @@ type DiscordMessage struct {
 	TimeReceived time.Time
 }
 
+func (m *DiscordMessage) Reply(data interface{}) (*disgord.Message, error) {
+	return m.Discord.Client.SendMsg(context.Background(), m.Message.ChannelID, data)
+}
+
 func (m *DiscordMessage) Args() []string {
 	return strings.Fields(m.Message.Content)
 }

@@ -3,7 +3,11 @@ package meidov2
 import "fmt"
 
 type Config struct {
-	Token string `json:"token"`
+	Token            string `json:"token"`
+	OwoToken         string `json:"owo_token"`
+	ConnectionString string `json:"connection_string"`
+	DmLogChannels    []int  `json:"dm_log_channels"`
+	OwnerIds         []int  `json:"owner_ids"`
 }
 
 type Bot struct {

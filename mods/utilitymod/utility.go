@@ -93,12 +93,12 @@ func (m *UtilityMod) Avatar(msg *meidov2.DiscordMessage) {
 	}
 
 	if targetUser.Avatar == "" {
-		msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, &disgord.Embed{
+		msg.Reply(&disgord.Embed{
 			Color:       0xC80000,
 			Description: fmt.Sprintf("%v has no avatar set.", targetUser.Tag()),
 		})
 	} else {
-		msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, &disgord.Embed{
+		msg.Reply(&disgord.Embed{
 			Color: msg.HighestColor(msg.Message.GuildID, targetUser.ID),
 			Title: targetUser.Tag(),
 			Image: &disgord.EmbedImage{URL: AvatarURL(targetUser, 1024)},

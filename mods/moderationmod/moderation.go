@@ -90,13 +90,15 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		pruneDays = 0
 		reason = ""
 	} else if msg.LenArgs() >= 3 {
-		pruneDays, err = strconv.Atoi(msg.Args()[1])
+		pruneDays, err = strconv.Atoi(msg.Args()[2])
 		if err != nil {
 			pruneDays = 0
-			reason = strings.Join(msg.Args()[1:], " ")
-		} else {
 			reason = strings.Join(msg.Args()[2:], " ")
+		} else {
+			reason = strings.Join(msg.Args()[3:], " ")
 		}
+
+		//pruneDays = int(math.Max(float64(0), float64(pruneDays)))
 		if pruneDays > 7 {
 			pruneDays = 7
 		} else if pruneDays < 0 {
@@ -118,11 +120,11 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 	}
 
 	if targetUser.ID == cu.ID {
-		msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, "no")
+		msg.Reply("no")
 		return
 	}
 	if targetUser.ID == msg.Message.Author.ID {
-		msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, "no")
+		msg.Reply("no")
 		return
 	}
 
@@ -131,7 +133,7 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 	topBotRole := msg.HighestRole(msg.Message.GuildID, cu.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
-		msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, "no")
+		msg.Reply("no")
 		return
 	}
 
@@ -184,7 +186,7 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		},
 	}
 
-	msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, embed)
+	msg.Reply(embed)
 }
 
 func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
@@ -239,7 +241,7 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 		Color:       0x00C800,
 	}
 
-	msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, embed)
+	msg.Reply(embed)
 }
 
 func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
@@ -305,7 +307,6 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 
 	}
 
-	msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID,
-		fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
+	msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
 
 }

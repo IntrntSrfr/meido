@@ -15,6 +15,7 @@ type FeedbackMod struct {
 	bannedUsers map[disgord.Snowflake]bool
 	sync.Mutex
 	feedbackChannel disgord.Snowflake
+	owners          []int
 }
 
 func New() meidov2.Mod {
@@ -22,6 +23,7 @@ func New() meidov2.Mod {
 		//cl:              make(chan *meidov2.DiscordMessage),
 		bannedUsers:     make(map[disgord.Snowflake]bool),
 		feedbackChannel: disgord.Snowflake(497106582144942101),
+		owners:          []int{},
 	}
 }
 
@@ -43,6 +45,8 @@ func (m *FeedbackMod) Help(msg *meidov2.DiscordMessage) {
 func (m *FeedbackMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) error {
 	m.cl = cl
 
+	m.owners = b.Config.OwnerIds
+
 	b.Discord.Client.On(disgord.EvtReady, func(s disgord.Session, r *disgord.Ready) {
 		fmt.Println(r.User.String())
 	})
@@ -62,9 +66,22 @@ func (m *FeedbackMod) Message(msg *meidov2.DiscordMessage) {
 }
 
 func (m *FeedbackMod) ToggleBan(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?togglefeedback" || msg.Message.Author.ID != disgord.Snowflake(163454407999094786) {
+	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?togglefeedback" {
 		return
 	}
+
+	owner := false
+	for _, id := range m.owners {
+		if msg.Message.Author.ID == disgord.Snowflake(id) {
+			owner = true
+		}
+	}
+	if !owner {
+		return
+	}
+
+	m.cl <- msg
+
 	memId, err := strconv.Atoi(msg.Args()[1])
 	if err != nil {
 		return
@@ -99,11 +116,11 @@ func (m *FeedbackMod) LeaveFeedback(msg *meidov2.DiscordMessage) {
 	banned, ok := m.bannedUsers[msg.Message.Author.ID]
 	if ok {
 		if banned {
-			msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, "You're banned from using the feedback feature.")
+			msg.Reply("You're banned from using the feedback feature.")
 			return
 		}
 	}
 
 	msg.Discord.Client.SendMsg(context.Background(), m.feedbackChannel, fmt.Sprintf(`%v`, msg.Args()[1:]))
-	msg.Discord.Client.SendMsg(context.Background(), msg.Message.ChannelID, "Feedback left")
+	msg.Reply("Feedback left")
 }
