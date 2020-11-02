@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
 	"strconv"
 	"strings"
@@ -17,6 +18,7 @@ type UserRoleMod struct {
 	cl       chan *meidov2.DiscordMessage
 	commands []func(msg *meidov2.DiscordMessage)
 	db       *sqlx.DB
+	owo      *owo.Client
 }
 
 func New() meidov2.Mod {
@@ -50,7 +52,9 @@ func (m *UserRoleMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) erro
 	m.db = psql
 	fmt.Println("psql connection for userroles established")
 
-	m.commands = append(m.commands, m.ToggleUserRole, m.MyRole)
+	m.owo = owo.NewClient(b.Config.OwoToken)
+
+	m.commands = append(m.commands, m.ToggleUserRole, m.MyRole, m.ListUserRoles)
 	//m.commands = append(m.commands, m.check)
 
 	return nil
@@ -363,4 +367,49 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 		},
 	}
 	msg.Reply(embed)
+}
+
+func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() != 1 || msg.Args()[0] != "m?listuserroles" {
+		return
+	}
+
+	userroles := []*Userrole{}
+
+	err := m.db.Select(&userroles, "SELECT role_id, user_id FROM userroles WHERE guild_id=$1;", msg.Message.GuildID)
+	if err != nil {
+		msg.Reply("there was an error, please try again")
+		return
+	}
+
+	g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+	if err != nil {
+		msg.Reply("some error occurred, please try again")
+		return
+	}
+
+	text := fmt.Sprintf("Userroles in %v\n\n", g.Name)
+	count := 0
+	for _, ur := range userroles {
+
+		role, err := g.Role(disgord.Snowflake(ur.RoleID))
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		mem, err := msg.Discord.Client.GetMember(context.Background(), g.ID, disgord.Snowflake(ur.UserID))
+		if err != nil {
+			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v - User no longer in guild.\n", count, role.Name, role.ID, ur.UserID)
+		} else {
+			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v (%v)\n", count, role.Name, role.ID, mem.User.String(), mem.User.ID)
+		}
+		count++
+	}
+
+	link, err := m.owo.Upload(text)
+	if err != nil {
+		msg.Reply("Error getting user roles.")
+		return
+	}
+	msg.Reply(fmt.Sprintf("User roles in %v\n%v", g.Name, link))
 }
