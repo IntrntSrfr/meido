@@ -45,6 +45,9 @@ func (m *ModerationMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) er
 }
 
 func (m *ModerationMod) Message(msg *meidov2.DiscordMessage) {
+	if msg.Message.IsDirectMessage() {
+		return
+	}
 	for _, c := range m.commands {
 		go c(msg)
 	}

@@ -70,6 +70,8 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 		return
 	}
 
+	m.cl <- msg
+
 	var (
 		err          error
 		targetUser   *disgord.Member
@@ -171,6 +173,8 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 || msg.Args()[0] != "m?myrole" {
 		return
 	}
+
+	m.cl <- msg
 
 	var (
 		err     error
