@@ -397,7 +397,8 @@ func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
 			fmt.Println(err)
 			continue
 		}
-		mem, err := msg.Discord.Client.GetMember(context.Background(), g.ID, disgord.Snowflake(ur.UserID))
+
+		mem, err := g.Member(disgord.Snowflake(ur.UserID))
 		if err != nil {
 			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v - User no longer in guild.\n", count, role.Name, role.ID, ur.UserID)
 		} else {
