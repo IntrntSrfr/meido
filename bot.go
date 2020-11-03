@@ -79,7 +79,7 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 	for {
 		select {
 		case m := <-msg:
-			if m.Message.Author.Bot {
+			if m.Message.Author == nil || m.Message.Author.Bot {
 				continue
 			}
 			for _, mod := range b.Mods {
@@ -93,7 +93,7 @@ func (b *Bot) logCommands() {
 	for {
 		select {
 		case m := <-b.commandLog:
-			b.db.Exec("INSERT INTO commandlog VALUES(DEFAULT, $1, $2, $3, $4, $5, $6,$7);",
+			b.db.Exec("INSERT INTO commandlog VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
 				m.Args()[0], strings.Join(m.Args(), " "), m.Message.Author.ID, m.Message.GuildID,
 				m.Message.ChannelID, m.Message.ID, time.Now())
 			fmt.Println(m.Message.Author.String(), m.Message.Content, m.TimeReceived.String())

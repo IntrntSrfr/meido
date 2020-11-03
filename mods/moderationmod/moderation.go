@@ -48,18 +48,19 @@ func (m *ModerationMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.Disco
 
 	b.Discord.Client.On(disgord.EvtGuildCreate, func(s disgord.Session, g *disgord.GuildCreate) {
 		dbg := &DiscordGuild{}
-		err := db.Get(dbg, "SELECT guild_id FROM discordguilds WHERE guild_id = $1;", g.Guild.ID)
+		err := db.Get(dbg, "SELECT guild_id FROM guilds WHERE guild_id = $1;", g.Guild.ID)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
 		} else if err == sql.ErrNoRows {
-			db.Exec("INSERT INTO discordguilds(guild_id, use_strikes, max_strikes) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
+			db.Exec("INSERT INTO guilds(guild_id, use_strikes, max_strikes) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
 			fmt.Println(fmt.Sprintf("Inserted new guild: %v [%v]", g.Guild.Name, g.Guild.ID))
 		}
 	})
 
 	m.commands = append(m.commands, m.Ban, m.Unban, m.Hackban)
-	m.commands = append(m.commands, m.WarnLog)
-	m.commands = append(m.commands, m.CheckFilter, m.FilterWord, m.ClearFilter, m.ListFilterWords)
+	m.commands = append(m.commands, m.Warn, m.WarnLog, m.RemoveWarn, m.ClearWarns)
+	m.commands = append(m.commands, m.CheckFilter, m.FilterWord, m.ClearFilter, m.FilterWordsList)
+	m.commands = append(m.commands, m.SetMaxStrikes, m.ToggleStrikes)
 
 	return nil
 }
@@ -79,20 +80,12 @@ func (m *ModerationMod) Message(msg *meidov2.DiscordMessage) {
 
 func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 
-	if msg.LenArgs() < 2 || msg.Args()[0] != ".b" {
+	if msg.LenArgs() < 2 || (msg.Args()[0] != ".ban" && msg.Args()[0] != ".b" && msg.Args()[0] != "m?ban" && msg.Args()[0] != "m?b") {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
 		return
 	}
-
-	m.cl <- msg
-
-	var (
-		targetUser *disgord.User
-		reason     string
-		pruneDays  int
-	)
 
 	cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
 	if err != nil {
@@ -115,6 +108,14 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
+
+	m.cl <- msg
+
+	var (
+		targetUser *disgord.User
+		reason     string
+		pruneDays  int
+	)
 
 	if msg.LenArgs() == 2 {
 		pruneDays = 0
@@ -169,14 +170,9 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 
 	if topTargetRole > 0 {
 
-		okCh := true
+		userChannel, userChErr := msg.Discord.Client.CreateDM(context.Background(), targetUser.ID)
 
-		userChannel, err := msg.Discord.Client.CreateDM(context.Background(), targetUser.ID)
-		if err != nil {
-			okCh = false
-		}
-
-		if okCh {
+		if userChErr == nil {
 			g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
 			if err != nil {
 				return
@@ -220,26 +216,22 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 }
 
 func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 2 || msg.Args()[0] != ".ub" {
+	if msg.LenArgs() < 2 || (msg.Args()[0] != ".unban" && msg.Args()[0] != ".ub" && msg.Args()[0] != "m?unban" && msg.Args()[0] != "m?ub") {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
 		return
 	}
 
-	m.cl <- msg
-
 	cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
 	if err != nil {
 		return
 	}
-
 	botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-
 	if botPerms&disgord.PermissionBanMembers == 0 && botPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
@@ -249,10 +241,11 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 		fmt.Println(err)
 		return
 	}
-
 	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
+
+	m.cl <- msg
 
 	userID, err := strconv.ParseUint(msg.Args()[1], 10, 64)
 	if err != nil {
@@ -278,27 +271,22 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 }
 
 func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
-
-	if msg.LenArgs() < 2 || msg.Args()[0] != "m?hb" {
+	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?hackban" && msg.Args()[0] != "m?hb") {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
 		return
 	}
 
-	m.cl <- msg
-
 	cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
 	if err != nil {
 		return
 	}
-
 	botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-
 	if botPerms&disgord.PermissionBanMembers == 0 && botPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
@@ -308,10 +296,11 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 		fmt.Println(err)
 		return
 	}
-
 	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
+
+	m.cl <- msg
 
 	var userList []string
 

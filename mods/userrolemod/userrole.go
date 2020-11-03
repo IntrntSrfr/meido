@@ -77,14 +77,6 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
-
-	var (
-		err          error
-		targetUser   *disgord.Member
-		selectedRole *disgord.Role
-	)
-
 	cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
 	if err != nil {
 		return
@@ -106,6 +98,13 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 	if uPerms&disgord.PermissionManageRoles == 0 && uPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
+
+	m.cl <- msg
+
+	var (
+		targetUser   *disgord.Member
+		selectedRole *disgord.Role
+	)
 
 	if len(msg.Message.Mentions) >= 1 {
 		targetUser, err = msg.Discord.Client.GetMember(context.Background(), msg.Message.GuildID, msg.Message.Mentions[0].ID)
@@ -177,7 +176,6 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 }
 
 func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
-
 	if msg.LenArgs() < 1 || msg.Args()[0] != "m?myrole" {
 		return
 	}
@@ -190,21 +188,24 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 		target  *disgord.Member
 	)
 
-	cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
-	if err != nil {
-		return
-	}
-	botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if botPerms&disgord.PermissionManageRoles == 0 && botPerms&disgord.PermissionAdministrator == 0 {
-		return
-	}
-
 	switch la := msg.LenArgs(); {
 	case la > 2:
+		if msg.Args()[1] != "name" && msg.Args()[1] != "color" {
+			return
+		}
+
+		cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
+		if err != nil {
+			return
+		}
+		botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		if botPerms&disgord.PermissionManageRoles == 0 && botPerms&disgord.PermissionAdministrator == 0 {
+			return
+		}
 
 		ur := &Userrole{}
 		err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", msg.Message.GuildID, msg.Message.Author.ID)
@@ -378,9 +379,9 @@ func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
 	}
 	m.cl <- msg
 
-	userroles := []*Userrole{}
+	var userRoles []*Userrole
 
-	err := m.db.Select(&userroles, "SELECT role_id, user_id FROM userroles WHERE guild_id=$1;", msg.Message.GuildID)
+	err := m.db.Select(&userRoles, "SELECT role_id, user_id FROM userroles WHERE guild_id=$1;", msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
@@ -394,7 +395,7 @@ func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
 
 	text := fmt.Sprintf("Userroles in %v\n\n", g.Name)
 	count := 0
-	for _, ur := range userroles {
+	for _, ur := range userRoles {
 
 		role, err := g.Role(disgord.Snowflake(ur.RoleID))
 		if err != nil {

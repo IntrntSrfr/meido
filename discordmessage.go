@@ -28,7 +28,7 @@ func (m *DiscordMessage) Reply(data interface{}) (*disgord.Message, error) {
 }
 
 func (m *DiscordMessage) Args() []string {
-	return strings.Fields(m.Message.Content)
+	return strings.Fields(strings.ToLower(m.Message.Content))
 }
 
 func (m *DiscordMessage) LenArgs() int {

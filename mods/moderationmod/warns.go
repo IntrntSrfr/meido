@@ -13,8 +13,7 @@ import (
 )
 
 func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
-
-	if msg.LenArgs() < 3 || msg.Args()[0] != "m?warn" {
+	if msg.LenArgs() < 3 || (msg.Args()[0] != ".warn" && msg.Args()[0] != "m?warn") {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
@@ -27,7 +26,6 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 	}
 	botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 	if botPerms&disgord.PermissionBanMembers == 0 && botPerms&disgord.PermissionAdministrator == 0 {
@@ -36,15 +34,16 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 
 	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
 
+	m.cl <- msg
+
 	dge := &DiscordGuild{}
-	err = m.db.Get(dge, "SELECT use_strikes, max_strikes FROM discordguilds WHERE guild_id = $1;", msg.Message.GuildID)
+	err = m.db.Get(dge, "SELECT use_strikes, max_strikes FROM guilds WHERE guild_id = $1;", msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
@@ -156,7 +155,6 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 }
 
 func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
-
 	if msg.LenArgs() < 2 || msg.Args()[0] != "m?warnlog" {
 		return
 	}
@@ -172,6 +170,8 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
+
+	m.cl <- msg
 
 	page := 0
 
@@ -259,7 +259,6 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 			embed.Fields = append(embed.Fields, field)
 		}
 	}
-
 	msg.Reply(embed)
 }
 
@@ -271,12 +270,23 @@ func min(a, b int) int {
 }
 
 func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 2 || msg.Args()[0] != "m?rmwarn" {
+	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?removewarn" && msg.Args()[0] != "m?rmwarn") {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
 		return
 	}
+
+	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	if err != nil {
+		msg.Reply("An error occurred: " + err.Error())
+		return
+	}
+	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+		return
+	}
+
+	m.cl <- msg
 
 	uid, err := strconv.Atoi(msg.Args()[1])
 	if err != nil {
@@ -309,7 +319,7 @@ func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
 }
 
 func (m *ModerationMod) ClearWarns(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 2 || msg.Args()[0] != "m?clearwarns" {
+	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?clearwarns" && msg.Args()[0] != "m?cw") {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
@@ -324,6 +334,8 @@ func (m *ModerationMod) ClearWarns(msg *meidov2.DiscordMessage) {
 	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
+
+	m.cl <- msg
 
 	var targetUser *disgord.User
 

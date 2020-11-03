@@ -75,7 +75,7 @@ func (m *UtilityMod) Message(msg *meidov2.DiscordMessage) {
 }
 
 func (m *UtilityMod) Avatar(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() == 0 || msg.Args()[0] != ">av" {
+	if msg.LenArgs() < 1 || (msg.Args()[0] != "m?av" && msg.Args()[0] != ">av") {
 		return
 	}
 
@@ -128,7 +128,10 @@ func AvatarURL(u *disgord.User, size int) string {
 }
 
 func (m *UtilityMod) Server(msg *meidov2.DiscordMessage) {
-	if msg.Message.IsDirectMessage() || msg.LenArgs() < 1 || msg.Args()[0] != "m?server" {
+	if msg.LenArgs() < 1 || msg.Args()[0] != "m?server" {
+		return
+	}
+	if msg.Message.IsDirectMessage() {
 		return
 	}
 	m.cl <- msg
@@ -262,6 +265,9 @@ func (m *UtilityMod) ServerSplash(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() == 0 || msg.Args()[0] != "m?serversplash" {
 		return
 	}
+	if msg.Message.IsDirectMessage() {
+		return
+	}
 
 	m.cl <- msg
 
@@ -287,6 +293,9 @@ func (m *UtilityMod) ServerSplash(msg *meidov2.DiscordMessage) {
 
 func (m *UtilityMod) ServerBanner(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() == 0 || msg.Args()[0] != "m?serverbanner" {
+		return
+	}
+	if msg.Message.IsDirectMessage() {
 		return
 	}
 
