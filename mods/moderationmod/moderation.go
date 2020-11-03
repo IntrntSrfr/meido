@@ -46,7 +46,7 @@ func (m *ModerationMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.Disco
 	m.cl = cl
 	m.db = db
 
-	b.Discord.Client.On(disgord.EvtGuildCreate, func(s disgord.Session, g disgord.GuildCreate) {
+	b.Discord.Client.On(disgord.EvtGuildCreate, func(s disgord.Session, g *disgord.GuildCreate) {
 		dbg := &DiscordGuild{}
 		err := db.Get(dbg, "SELECT guild_id FROM discordguilds WHERE guild_id = $1;", g.Guild.ID)
 		if err != nil && err != sql.ErrNoRows {
@@ -59,7 +59,7 @@ func (m *ModerationMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.Disco
 
 	m.commands = append(m.commands, m.Ban, m.Unban, m.Hackban)
 	m.commands = append(m.commands, m.WarnLog)
-	m.commands = append(m.commands, m.FilterWord, m.ClearFilter, m.ListFilterWords)
+	m.commands = append(m.commands, m.CheckFilter, m.FilterWord, m.ClearFilter, m.ListFilterWords)
 
 	return nil
 }

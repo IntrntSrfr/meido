@@ -24,7 +24,7 @@ func (m *ModerationMod) FilterWord(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	phrase := msg.Args()[1:]
+	phrase := strings.Join(msg.Args()[1:], " ")
 
 	fe := &FilterEntry{}
 
@@ -50,8 +50,13 @@ func (m *ModerationMod) ListFilterWords(msg *meidov2.DiscordMessage) {
 	}
 	m.cl <- msg
 
+	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	if err != nil || (uPerms&disgord.PermissionManageMessages == 0 && uPerms&disgord.PermissionAdministrator == 0) {
+		return
+	}
+
 	var fel []*FilterEntry
-	err := m.db.Select(fel, "SELECT * FROM filters WHERE guild_id=$1;", msg.Message.GuildID)
+	err = m.db.Select(&fel, "SELECT * FROM filters WHERE guild_id=$1;", msg.Message.GuildID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -61,7 +66,7 @@ func (m *ModerationMod) ListFilterWords(msg *meidov2.DiscordMessage) {
 		return
 	}
 	filterListBuilder := strings.Builder{}
-	filterListBuilder.WriteString("```\nList of currently filtered phrases")
+	filterListBuilder.WriteString("```\nList of currently filtered phrases\n")
 	for _, fe := range fel {
 		filterListBuilder.WriteString(fmt.Sprintf("- %s\n", fe.Phrase))
 	}
@@ -101,7 +106,7 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 	if err != nil {
 		return
 	}
-	if uPerms&disgord.PermissionManageMessages != 0 && uPerms&disgord.PermissionAdministrator != 0 {
+	if uPerms&disgord.PermissionManageMessages != 0 || uPerms&disgord.PermissionAdministrator != 0 {
 		return
 	}
 

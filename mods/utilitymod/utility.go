@@ -259,6 +259,12 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 	})
 }
 func (m *UtilityMod) ServerSplash(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() == 0 || msg.Args()[0] != "m?serversplash" {
+		return
+	}
+
+	m.cl <- msg
+
 	g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
 	if err != nil {
 		return
@@ -280,6 +286,12 @@ func (m *UtilityMod) ServerSplash(msg *meidov2.DiscordMessage) {
 }
 
 func (m *UtilityMod) ServerBanner(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() == 0 || msg.Args()[0] != "m?serverbanner" {
+		return
+	}
+
+	m.cl <- msg
+
 	g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
 	if err != nil {
 		return
