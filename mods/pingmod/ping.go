@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
+	"github.com/jmoiron/sqlx"
 	"time"
 )
 
@@ -33,8 +34,11 @@ func (m *PingMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *PingMod) Help(msg *meidov2.DiscordMessage) {
 
 }
+func (m *PingMod) Commands() []meidov2.ModCommand {
+	return nil
+}
 
-func (m *PingMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) error {
+func (m *PingMod) Hook(b *meidov2.Bot, _ *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
 	m.cl = cl
 
 	b.Discord.Client.On(disgord.EvtReady, func(s disgord.Session, r *disgord.Ready) {
@@ -49,6 +53,9 @@ func (m *PingMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) error {
 }
 
 func (m *PingMod) Message(msg *meidov2.DiscordMessage) {
+	if msg.Type != meidov2.MessageTypeCreate {
+		return
+	}
 	for _, c := range m.commands {
 		go c(msg)
 	}

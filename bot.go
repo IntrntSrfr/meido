@@ -1,6 +1,12 @@
 package meidov2
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
+	"strings"
+	"time"
+)
 
 type Config struct {
 	Token            string `json:"token"`
@@ -15,6 +21,7 @@ type Bot struct {
 	Config     *Config
 	Mods       map[string]Mod
 	commandLog chan *DiscordMessage
+	db         *sqlx.DB
 }
 
 func NewBot(config *Config) *Bot {
@@ -33,11 +40,17 @@ func NewBot(config *Config) *Bot {
 func (b *Bot) Open() error {
 	msgChan, err := b.Discord.Open()
 	if err != nil {
-		fmt.Println(err)
-		return err
+		panic(err)
 	}
 
 	fmt.Println("open and run")
+
+	psql, err := sqlx.Connect("postgres", b.Config.ConnectionString)
+	if err != nil {
+		panic(err)
+	}
+	b.db = psql
+	fmt.Println("psql connection established")
 
 	go b.listen(msgChan)
 	go b.logCommands()
@@ -54,7 +67,7 @@ func (b *Bot) Close() {
 
 func (b *Bot) RegisterMod(mod Mod, name string) {
 	fmt.Println(fmt.Sprintf("registering mod '%s'", name))
-	err := mod.Hook(b, b.commandLog)
+	err := mod.Hook(b, b.db, b.commandLog)
 	if err != nil {
 		fmt.Println("could not attach mod:", name)
 		return
@@ -66,7 +79,7 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 	for {
 		select {
 		case m := <-msg:
-			if m.Type != MessageTypeCreate || m.Message.Author.Bot {
+			if m.Message.Author.Bot {
 				continue
 			}
 			for _, mod := range b.Mods {
@@ -79,8 +92,11 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 func (b *Bot) logCommands() {
 	for {
 		select {
-		case e := <-b.commandLog:
-			fmt.Println(e.Message.Author.String(), e.Message.Content, e.TimeReceived.String())
+		case m := <-b.commandLog:
+			b.db.Exec("INSERT INTO commandlog VALUES(DEFAULT, $1, $2, $3, $4, $5, $6,$7);",
+				m.Args()[0], strings.Join(m.Args(), " "), m.Message.Author.ID, m.Message.GuildID,
+				m.Message.ChannelID, m.Message.ID, time.Now())
+			fmt.Println(m.Message.Author.String(), m.Message.Content, m.TimeReceived.String())
 		}
 	}
 }

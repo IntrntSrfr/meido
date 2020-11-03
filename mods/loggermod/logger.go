@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
+	"github.com/jmoiron/sqlx"
 )
 
 type LoggerMod struct {
@@ -35,8 +36,11 @@ func (m *LoggerMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *LoggerMod) Help(msg *meidov2.DiscordMessage) {
 
 }
+func (m *LoggerMod) Commands() []meidov2.ModCommand {
+	return nil
+}
 
-func (m *LoggerMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) error {
+func (m *LoggerMod) Hook(b *meidov2.Bot, _ *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
 	m.cl = cl
 
 	m.dmLogChannels = b.Config.DmLogChannels
@@ -50,6 +54,9 @@ func (m *LoggerMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) error 
 }
 
 func (m *LoggerMod) Message(msg *meidov2.DiscordMessage) {
+	if msg.Type != meidov2.MessageTypeCreate {
+		return
+	}
 	for _, c := range m.commands {
 		go c(msg)
 	}

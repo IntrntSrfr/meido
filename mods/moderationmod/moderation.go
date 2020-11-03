@@ -2,6 +2,7 @@ package moderationmod
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
@@ -37,17 +38,38 @@ func (m *ModerationMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *ModerationMod) Help(msg *meidov2.DiscordMessage) {
 
 }
+func (m *ModerationMod) Commands() []meidov2.ModCommand {
+	return nil
+}
 
-func (m *ModerationMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) error {
+func (m *ModerationMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
 	m.cl = cl
+	m.db = db
+
+	b.Discord.Client.On(disgord.EvtGuildCreate, func(s disgord.Session, g disgord.GuildCreate) {
+		dbg := &DiscordGuild{}
+		err := db.Get(dbg, "SELECT guild_id FROM discordguilds WHERE guild_id = $1;", g.Guild.ID)
+		if err != nil && err != sql.ErrNoRows {
+			fmt.Println(err)
+		} else if err == sql.ErrNoRows {
+			db.Exec("INSERT INTO discordguilds(guild_id, use_strikes, max_strikes) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
+			fmt.Println(fmt.Sprintf("Inserted new guild: %v [%v]", g.Guild.Name, g.Guild.ID))
+		}
+	})
 
 	m.commands = append(m.commands, m.Ban, m.Unban, m.Hackban)
+	m.commands = append(m.commands, m.WarnLog)
+	m.commands = append(m.commands, m.FilterWord, m.ClearFilter, m.ListFilterWords)
 
 	return nil
 }
 
 func (m *ModerationMod) Message(msg *meidov2.DiscordMessage) {
+	// moderation only is for servers, so dms are ignored
 	if msg.Message.IsDirectMessage() {
+		return
+	}
+	if msg.Type == meidov2.MessageTypeDelete {
 		return
 	}
 	for _, c := range m.commands {
@@ -58,6 +80,9 @@ func (m *ModerationMod) Message(msg *meidov2.DiscordMessage) {
 func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 
 	if msg.LenArgs() < 2 || msg.Args()[0] != ".b" {
+		return
+	}
+	if msg.Type != meidov2.MessageTypeCreate {
 		return
 	}
 
@@ -198,6 +223,9 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || msg.Args()[0] != ".ub" {
 		return
 	}
+	if msg.Type != meidov2.MessageTypeCreate {
+		return
+	}
 
 	m.cl <- msg
 
@@ -252,6 +280,9 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 
 	if msg.LenArgs() < 2 || msg.Args()[0] != "m?hb" {
+		return
+	}
+	if msg.Type != meidov2.MessageTypeCreate {
 		return
 	}
 
@@ -309,9 +340,6 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 			badBans++
 			continue
 		}
-
 	}
-
 	msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
-
 }

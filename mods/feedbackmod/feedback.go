@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
+	"github.com/jmoiron/sqlx"
 	"strconv"
 	"sync"
 )
@@ -41,8 +42,11 @@ func (m *FeedbackMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *FeedbackMod) Help(msg *meidov2.DiscordMessage) {
 
 }
+func (m *FeedbackMod) Commands() []meidov2.ModCommand {
+	return nil
+}
 
-func (m *FeedbackMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) error {
+func (m *FeedbackMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
 	m.cl = cl
 
 	m.owners = b.Config.OwnerIds
@@ -57,6 +61,9 @@ func (m *FeedbackMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) erro
 }
 
 func (m *FeedbackMod) Message(msg *meidov2.DiscordMessage) {
+	if msg.Type != meidov2.MessageTypeCreate {
+		return
+	}
 	if msg.LenArgs() == 0 {
 		return
 	}

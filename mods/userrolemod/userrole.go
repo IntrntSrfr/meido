@@ -10,8 +10,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"strconv"
 	"strings"
-
-	_ "github.com/lib/pq"
 )
 
 type UserRoleMod struct {
@@ -42,17 +40,19 @@ func (m *UserRoleMod) Help(msg *meidov2.DiscordMessage) {
 
 }
 
-func (m *UserRoleMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) error {
-	m.cl = cl
+func (m *UserRoleMod) Commands() []meidov2.ModCommand {
+	return nil
+}
 
-	psql, err := sqlx.Connect("postgres", b.Config.ConnectionString)
-	if err != nil {
-		panic(err)
-	}
-	m.db = psql
-	fmt.Println("psql connection for userroles established")
+func (m *UserRoleMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
+	m.cl = cl
+	m.db = db
 
 	m.owo = owo.NewClient(b.Config.OwoToken)
+
+	b.Discord.Client.On(disgord.EvtGuildRoleDelete, func(s disgord.Session, r *disgord.GuildRoleDelete) {
+		db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND role_id=$2", r.GuildID, r.RoleID)
+	})
 
 	m.commands = append(m.commands, m.ToggleUserRole, m.MyRole, m.ListUserRoles)
 	//m.commands = append(m.commands, m.check)
@@ -62,6 +62,9 @@ func (m *UserRoleMod) Hook(b *meidov2.Bot, cl chan *meidov2.DiscordMessage) erro
 
 func (m *UserRoleMod) Message(msg *meidov2.DiscordMessage) {
 	if msg.Message.IsDirectMessage() {
+		return
+	}
+	if msg.Type != meidov2.MessageTypeCreate {
 		return
 	}
 	for _, c := range m.commands {
@@ -243,7 +246,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 						return
 					}
 				*/
-				msg.Reply(&disgord.Embed{Description: "Some error occured: `" + err.Error() + "`.", Color: 0xC80000})
+				msg.Reply(&disgord.Embed{Description: "Some error occured: `" + err.Error(), Color: 0xC80000})
 				return
 			}
 
@@ -271,7 +274,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 
 			_, err = msg.Discord.Client.UpdateGuildRole(context.Background(), msg.Message.GuildID, oldRole.ID).SetColor(uint(color)).Execute()
 			if err != nil {
-				msg.Reply(&disgord.Embed{Description: "Some error occured: `" + err.Error() + "`.", Color: 0xC80000})
+				msg.Reply(&disgord.Embed{Description: "Some error occured: `" + err.Error(), Color: 0xC80000})
 				return
 			}
 
@@ -373,6 +376,7 @@ func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() != 1 || msg.Args()[0] != "m?listuserroles" {
 		return
 	}
+	m.cl <- msg
 
 	userroles := []*Userrole{}
 
