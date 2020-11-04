@@ -143,7 +143,6 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", targetUser.Mention()))
 
 	} else {
-
 		if userChError == nil {
 			msg.Discord.Client.SendMsg(context.Background(), userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
 				g.Name, dge.MaxStrikes, reason))

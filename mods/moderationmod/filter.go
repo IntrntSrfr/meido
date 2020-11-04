@@ -236,7 +236,7 @@ func (m *ModerationMod) ToggleStrikes(msg *meidov2.DiscordMessage) {
 
 	dge := &DiscordGuild{}
 
-	err = m.db.Get(&dge, "SELECT use_strikes FROM guilds WHERE guild_id = $1", msg.Message.GuildID)
+	err = m.db.Get(dge, "SELECT use_strikes FROM guilds WHERE guild_id = $1", msg.Message.GuildID)
 	if err != nil {
 		return
 	}
