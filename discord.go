@@ -32,7 +32,8 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 			DisableChannelCaching:    false,
 			DisableGuildCaching:      false,
 		},
-		Intents: disgord.AllIntents(disgord.IntentGuildPresences, disgord.IntentGuildMembers),
+		LoadMembersQuietly: true,
+		Intents:            disgord.AllIntents(disgord.IntentGuildPresences, disgord.IntentGuildMembers),
 	})
 
 	d.Client = s
@@ -57,8 +58,9 @@ func (d *Discord) Run() error {
 }
 
 func (d *Discord) onMessageCreate(s disgord.Session, m *disgord.MessageCreate) {
-
 	d.messageChan <- &DiscordMessage{
+		Ctx:          m.Ctx,
+		Sess:         s,
 		Discord:      d,
 		Message:      m.Message,
 		Type:         MessageTypeCreate,
@@ -67,6 +69,8 @@ func (d *Discord) onMessageCreate(s disgord.Session, m *disgord.MessageCreate) {
 }
 func (d *Discord) onMessageUpdate(s disgord.Session, m *disgord.MessageUpdate) {
 	d.messageChan <- &DiscordMessage{
+		Ctx:          m.Ctx,
+		Sess:         s,
 		Discord:      d,
 		Message:      m.Message,
 		Type:         MessageTypeUpdate,
@@ -76,6 +80,8 @@ func (d *Discord) onMessageUpdate(s disgord.Session, m *disgord.MessageUpdate) {
 
 func (d *Discord) onMessageDelete(s disgord.Session, m *disgord.MessageDelete) {
 	d.messageChan <- &DiscordMessage{
+		Ctx:          m.Ctx,
+		Sess:         s,
 		Discord:      d,
 		Message:      nil,
 		Type:         MessageTypeDelete,

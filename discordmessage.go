@@ -17,6 +17,8 @@ const (
 )
 
 type DiscordMessage struct {
+	Ctx          context.Context
+	Sess         disgord.Session
 	Discord      *Discord
 	Message      *disgord.Message
 	Type         MessageType
@@ -24,7 +26,7 @@ type DiscordMessage struct {
 }
 
 func (m *DiscordMessage) Reply(data interface{}) (*disgord.Message, error) {
-	return m.Discord.Client.SendMsg(context.Background(), m.Message.ChannelID, data)
+	return m.Sess.SendMsg(context.Background(), m.Message.ChannelID, data)
 }
 
 func (m *DiscordMessage) Args() []string {

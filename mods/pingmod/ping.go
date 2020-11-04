@@ -1,7 +1,6 @@
 package pingmod
 
 import (
-	"context"
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
@@ -70,7 +69,7 @@ func (m *PingMod) PingCommand(msg *meidov2.DiscordMessage) {
 
 	startTime := time.Now()
 
-	first, err := msg.Message.Reply(context.Background(), msg.Discord.Client, "Ping")
+	first, err := msg.Reply("Ping")
 	if err != nil {
 		return
 	}
@@ -79,7 +78,7 @@ func (m *PingMod) PingCommand(msg *meidov2.DiscordMessage) {
 	discordLatency := now.Sub(startTime)
 	botLatency := now.Sub(msg.TimeReceived)
 
-	msg.Discord.Client.SetMsgContent(context.Background(), first.ChannelID, first.ID,
-		fmt.Sprintf("Test Pong!\nDiscord delay: %s\nBot delay: %s",
+	msg.Sess.SetMsgContent(msg.Ctx, first.ChannelID, first.ID,
+		fmt.Sprintf("Pong!\nDiscord delay: %s\nBot delay: %s",
 			discordLatency, botLatency))
 }

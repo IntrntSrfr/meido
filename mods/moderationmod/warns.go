@@ -229,7 +229,6 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 		warns = warns[page*10 : min(page*10+10, len(warns))]
 
 		for _, warn := range warns {
-			fmt.Println(warn)
 			field := &disgord.EmbedField{}
 			field.Value = warn.Reason
 
