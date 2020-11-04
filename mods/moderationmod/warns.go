@@ -113,7 +113,6 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 	_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
 		msg.Message.GuildID, targetUser.UserID, reason, msg.Message.Author.ID, time.Now(), true)
 	if err != nil {
-		fmt.Println(err)
 		msg.Reply("couldnt give strike, try again?")
 		return
 	}
@@ -135,12 +134,15 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 			msg.Reply(err.Error())
 			return
 		}
+		_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
+			cu.ID, time.Now(), g.ID, msg.Message.Author.ID)
+
 		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", targetUser.Mention()))
 
 	} else {
 		if userChError == nil {
-			msg.Discord.Client.SendMsg(context.Background(), userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
-				g.Name, dge.MaxStrikes, reason))
+			msg.Discord.Client.SendMsg(context.Background(), userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
+				g.Name, reason, warnCount+1, dge.MaxStrikes))
 		}
 
 		msg.Reply(fmt.Sprintf("%v has been warned\nThey are currently at warn %v/%v", targetUser.Mention(), warnCount+1, dge.MaxStrikes))
