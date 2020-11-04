@@ -77,12 +77,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		}
 	}
 
-	if targetUser.UserID == cu.ID {
-		msg.Reply("no")
-		return
-	}
-
-	if targetUser.UserID == msg.Message.Author.ID {
+	if targetUser.UserID == cu.ID || targetUser.User.Bot || targetUser.UserID == msg.Message.Author.ID {
 		msg.Reply("no")
 		return
 	}
