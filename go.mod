@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/andersfylling/disgord v0.21.0
+	github.com/bwmarrin/discordgo v0.22.0
 	github.com/dustin/go-humanize v1.0.0
 	github.com/intrntsrfr/owo v0.0.0-20190908123752-c365293bebfd
 	github.com/jmoiron/sqlx v1.2.0

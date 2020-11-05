@@ -2,7 +2,7 @@ package pingmod
 
 import (
 	"fmt"
-	"github.com/andersfylling/disgord"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
 	"github.com/jmoiron/sqlx"
 	"time"
@@ -40,7 +40,7 @@ func (m *PingMod) Commands() []meidov2.ModCommand {
 func (m *PingMod) Hook(b *meidov2.Bot, _ *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
 	m.cl = cl
 
-	b.Discord.Client.Gateway().Ready(func(s disgord.Session, r *disgord.Ready) {
+	b.Discord.Client.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		fmt.Println(len(r.Guilds))
 		fmt.Println(r.User.String())
 	})
@@ -78,7 +78,6 @@ func (m *PingMod) PingCommand(msg *meidov2.DiscordMessage) {
 	discordLatency := now.Sub(startTime)
 	botLatency := now.Sub(msg.TimeReceived)
 
-	msg.Sess.Channel(msg.Message.ChannelID).Message(first.ID).SetContent(
-		fmt.Sprintf("Pong!\nDiscord delay: %s\nBot delay: %s",
-			discordLatency, botLatency))
+	msg.Sess.ChannelMessageEdit(msg.Message.ChannelID, first.ID,
+		fmt.Sprintf("Pong!\nDiscord delay: %s\nBot delay: %s", discordLatency, botLatency))
 }

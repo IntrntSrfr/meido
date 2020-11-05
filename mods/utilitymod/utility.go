@@ -3,6 +3,7 @@ package utilitymod
 import (
 	"fmt"
 	"github.com/andersfylling/disgord"
+	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meidov2"
 	"github.com/jmoiron/sqlx"
@@ -51,11 +52,11 @@ func (m *UtilityMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.DiscordM
 	m.cl = cl
 	m.db = db
 
-	b.Discord.Client.Gateway().Ready(func(s disgord.Session, r *disgord.Ready) {
-		s.UpdateStatus(&disgord.UpdateStatusPayload{
-			Game: &disgord.Activity{
-				Type: disgord.ActivityTypeGame,
+	b.Discord.Client.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		s.UpdateStatusComplex(discordgo.UpdateStatusData{
+			Game: &discordgo.Game{
 				Name: "BEING REWORKED, WILL WORK AGAIN SOON",
+				Type: discordgo.GameTypeGame,
 			},
 		})
 	})
@@ -81,18 +82,14 @@ func (m *UtilityMod) Avatar(msg *meidov2.DiscordMessage) {
 
 	m.cl <- msg
 
-	var targetUser *disgord.User
+	var targetUser *discordgo.User
 	var err error
 
 	if msg.LenArgs() > 1 {
 		if len(msg.Message.Mentions) >= 1 {
 			targetUser = msg.Message.Mentions[0]
 		} else {
-			id, err := strconv.Atoi(msg.Args()[1])
-			if err != nil {
-				return
-			}
-			targetUser, err = msg.Discord.Client.User(disgord.Snowflake(id)).Get()
+			targetUser, err = msg.Sess.User(msg.Args()[1])
 			if err != nil {
 				return
 			}

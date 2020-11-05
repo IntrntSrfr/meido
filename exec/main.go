@@ -3,11 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/intrntsrfr/meidov2"
-	"github.com/intrntsrfr/meidov2/mods/loggermod"
-	"github.com/intrntsrfr/meidov2/mods/moderationmod"
 	"github.com/intrntsrfr/meidov2/mods/pingmod"
-	"github.com/intrntsrfr/meidov2/mods/userrolemod"
-	"github.com/intrntsrfr/meidov2/mods/utilitymod"
 	"io/ioutil"
 	"os"
 	"os/signal"
@@ -32,10 +28,10 @@ func main() {
 	}
 
 	bot.RegisterMod(pingmod.New(), "ping")
-	bot.RegisterMod(loggermod.New(), "logs")
-	bot.RegisterMod(utilitymod.New(), "utility")
-	bot.RegisterMod(moderationmod.New(), "moderation")
-	bot.RegisterMod(userrolemod.New(), "userrole")
+	//bot.RegisterMod(loggermod.New(), "logs")
+	//bot.RegisterMod(utilitymod.New(), "utility")
+	//bot.RegisterMod(moderationmod.New(), "moderation")
+	//bot.RegisterMod(userrolemod.New(), "userrole")
 
 	bot.Run()
 	defer bot.Close()
