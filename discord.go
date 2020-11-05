@@ -1,7 +1,6 @@
 package meidov2
 
 import (
-	"context"
 	"github.com/andersfylling/disgord"
 	"time"
 )
@@ -25,22 +24,16 @@ func NewDiscord(token string) *Discord {
 func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 
 	s := disgord.New(disgord.Config{
-		BotToken: d.token,
-		CacheConfig: &disgord.CacheConfig{
-			DisableVoiceStateCaching: true,
-			DisableUserCaching:       false,
-			DisableChannelCaching:    false,
-			DisableGuildCaching:      false,
-		},
+		BotToken:           d.token,
 		LoadMembersQuietly: true,
 		Intents:            disgord.AllIntents(disgord.IntentGuildPresences, disgord.IntentGuildMembers),
 	})
 
 	d.Client = s
 
-	s.On(disgord.EvtMessageCreate, d.onMessageCreate)
-	s.On(disgord.EvtMessageUpdate, d.onMessageUpdate)
-	s.On(disgord.EvtMessageDelete, d.onMessageDelete)
+	s.Gateway().MessageCreate(d.onMessageCreate)
+	s.Gateway().MessageUpdate(d.onMessageUpdate)
+	s.Gateway().MessageDelete(d.onMessageDelete)
 	/*
 		err := s.Connect(context.Background())
 		if err != nil {
@@ -54,12 +47,11 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 }
 
 func (d *Discord) Run() error {
-	return d.Client.Connect(context.Background())
+	return d.Client.Gateway().Connect()
 }
 
 func (d *Discord) onMessageCreate(s disgord.Session, m *disgord.MessageCreate) {
 	d.messageChan <- &DiscordMessage{
-		Ctx:          m.Ctx,
 		Sess:         s,
 		Discord:      d,
 		Message:      m.Message,
@@ -69,7 +61,6 @@ func (d *Discord) onMessageCreate(s disgord.Session, m *disgord.MessageCreate) {
 }
 func (d *Discord) onMessageUpdate(s disgord.Session, m *disgord.MessageUpdate) {
 	d.messageChan <- &DiscordMessage{
-		Ctx:          m.Ctx,
 		Sess:         s,
 		Discord:      d,
 		Message:      m.Message,
@@ -80,10 +71,13 @@ func (d *Discord) onMessageUpdate(s disgord.Session, m *disgord.MessageUpdate) {
 
 func (d *Discord) onMessageDelete(s disgord.Session, m *disgord.MessageDelete) {
 	d.messageChan <- &DiscordMessage{
-		Ctx:          m.Ctx,
-		Sess:         s,
-		Discord:      d,
-		Message:      nil,
+		Sess:    s,
+		Discord: d,
+		Message: &disgord.Message{
+			ID:        m.MessageID,
+			ChannelID: m.ChannelID,
+			GuildID:   m.GuildID,
+		},
 		Type:         MessageTypeDelete,
 		TimeReceived: time.Now(),
 	}

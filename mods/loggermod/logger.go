@@ -1,7 +1,6 @@
 package loggermod
 
 import (
-	"context"
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
@@ -45,7 +44,7 @@ func (m *LoggerMod) Hook(b *meidov2.Bot, _ *sqlx.DB, cl chan *meidov2.DiscordMes
 
 	m.dmLogChannels = b.Config.DmLogChannels
 
-	b.Discord.Client.On(disgord.EvtGuildCreate, func(s disgord.Session, g *disgord.GuildCreate) {
+	b.Discord.Client.Gateway().GuildCreate(func(s disgord.Session, g *disgord.GuildCreate) {
 		fmt.Println("loaded: ", g.Guild.Name)
 	})
 
@@ -83,6 +82,6 @@ func (m *LoggerMod) ForwardDms(msg *meidov2.DiscordMessage) {
 	}
 
 	for _, id := range m.dmLogChannels {
-		msg.Discord.Client.SendMsg(context.Background(), disgord.Snowflake(id), embed)
+		msg.Sess.SendMsg(disgord.Snowflake(id), embed)
 	}
 }

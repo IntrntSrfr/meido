@@ -1,7 +1,6 @@
 package feedbackmod
 
 import (
-	"context"
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/intrntsrfr/meidov2"
@@ -128,6 +127,6 @@ func (m *FeedbackMod) LeaveFeedback(msg *meidov2.DiscordMessage) {
 		}
 	}
 
-	msg.Discord.Client.SendMsg(context.Background(), m.feedbackChannel, fmt.Sprintf(`%v`, msg.Args()[1:]))
+	msg.Discord.Client.SendMsg(m.feedbackChannel, fmt.Sprintf(`%v`, msg.Args()[1:]))
 	msg.Reply("Feedback left")
 }

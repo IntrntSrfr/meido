@@ -62,7 +62,7 @@ func (b *Bot) Run() error {
 }
 
 func (b *Bot) Close() {
-	b.Discord.Client.Disconnect()
+	b.Discord.Client.Gateway().Disconnect()
 }
 
 func (b *Bot) RegisterMod(mod Mod, name string) {

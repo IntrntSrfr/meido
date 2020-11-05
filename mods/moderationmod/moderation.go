@@ -79,7 +79,6 @@ func (m *ModerationMod) Message(msg *meidov2.DiscordMessage) {
 }
 
 func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
-
 	if msg.LenArgs() < 2 || (msg.Args()[0] != ".ban" && msg.Args()[0] != ".b" && msg.Args()[0] != "m?ban" && msg.Args()[0] != "m?b") {
 		return
 	}
@@ -87,22 +86,20 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
+	cu, err := msg.Discord.Client.CurrentUser().Get()
 	if err != nil {
 		return
 	}
-	botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
+	botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 	if botPerms&disgord.PermissionBanMembers == 0 && botPerms&disgord.PermissionAdministrator == 0 {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
@@ -117,10 +114,11 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		pruneDays  int
 	)
 
-	if msg.LenArgs() == 2 {
+	switch la := msg.LenArgs(); {
+	case la == 2:
 		pruneDays = 0
 		reason = ""
-	} else if msg.LenArgs() >= 3 {
+	case la >= 3:
 		pruneDays, err = strconv.Atoi(msg.Args()[2])
 		if err != nil {
 			pruneDays = 0
@@ -136,7 +134,27 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 			pruneDays = 0
 		}
 	}
+	/*
+		if msg.LenArgs() == 2 {
+			pruneDays = 0
+			reason = ""
+		} else if msg.LenArgs() >= 3 {
+			pruneDays, err = strconv.Atoi(msg.Args()[2])
+			if err != nil {
+				pruneDays = 0
+				reason = strings.Join(msg.Args()[2:], " ")
+			} else {
+				reason = strings.Join(msg.Args()[3:], " ")
+			}
 
+			//pruneDays = int(math.Max(float64(0), float64(pruneDays)))
+			if pruneDays > 7 {
+				pruneDays = 7
+			} else if pruneDays < 0 {
+				pruneDays = 0
+			}
+		}
+	*/
 	if len(msg.Message.Mentions) > 0 {
 		targetUser = msg.Message.Mentions[0]
 	} else {
@@ -144,7 +162,7 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		if err != nil {
 			return
 		}
-		targetUser, err = msg.Discord.Client.GetUser(context.Background(), disgord.NewSnowflake(sn))
+		targetUser, err = msg.Discord.Client.User(disgord.Snowflake(sn)).Get()
 		if err != nil {
 			return
 		}
@@ -170,10 +188,10 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 
 	if topTargetRole > 0 {
 
-		userChannel, userChErr := msg.Discord.Client.CreateDM(context.Background(), targetUser.ID)
+		userChannel, userChErr := msg.Discord.Client.User(targetUser.ID).CreateDM()
 
 		if userChErr == nil {
-			g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+			g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
 			if err != nil {
 				return
 			}
@@ -187,7 +205,7 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		}
 	}
 
-	err = msg.Discord.Client.BanMember(context.Background(), msg.Message.GuildID, targetUser.ID, &disgord.BanMemberParams{
+	err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(targetUser.ID).Ban(&disgord.BanMemberParams{
 		DeleteMessageDays: pruneDays,
 		Reason:            fmt.Sprintf("%v: %v", msg.Message.Author.Tag(), reason),
 	})
@@ -223,11 +241,11 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
+	cu, err := msg.Discord.Client.CurrentUser().Get()
 	if err != nil {
 		return
 	}
-	botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
+	botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -236,7 +254,7 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -252,12 +270,12 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	err = msg.Discord.Client.UnbanMember(context.Background(), msg.Message.GuildID, disgord.NewSnowflake(userID), msg.Message.Author.Tag())
+	err = msg.Discord.Client.Guild(msg.Message.GuildID).UnbanUser(disgord.Snowflake(userID), msg.Message.Author.Tag())
 	if err != nil {
 		return
 	}
 
-	targetUser, err := msg.Discord.Client.GetUser(context.Background(), disgord.NewSnowflake(userID))
+	targetUser, err := msg.Discord.Client.User(disgord.Snowflake(userID)).Get()
 	if err != nil {
 		return
 	}
@@ -278,11 +296,11 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
+	cu, err := msg.Discord.Client.CurrentUser().Get()
 	if err != nil {
 		return
 	}
-	botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
+	botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -291,7 +309,7 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -321,11 +339,18 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 			badIDs++
 			continue
 		}
-		err = msg.Discord.Client.BanMember(context.Background(), msg.Message.GuildID, disgord.Snowflake(userID), &disgord.BanMemberParams{
+		err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(disgord.Snowflake(userID)).Ban(&disgord.BanMemberParams{
 			DeleteMessageDays: 7,
 			Reason:            fmt.Sprintf("[%v] - Hackban", msg.Message.Author.Tag()),
 		})
+		/*
+			err = msg.Discord.Client.BanMember(context.Background(), msg.Message.GuildID, disgord.Snowflake(userID), &disgord.BanMemberParams{
+				DeleteMessageDays: 7,
+				Reason:            fmt.Sprintf("[%v] - Hackban", msg.Message.Author.Tag()),
+			})
+		*/
 		if err != nil {
+			fmt.Println(err)
 			badBans++
 			continue
 		}

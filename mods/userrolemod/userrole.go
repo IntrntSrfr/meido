@@ -1,7 +1,6 @@
 package userrolemod
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"github.com/andersfylling/disgord"
@@ -50,7 +49,7 @@ func (m *UserRoleMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.Discord
 
 	m.owo = owo.NewClient(b.Config.OwoToken)
 
-	b.Discord.Client.On(disgord.EvtGuildRoleDelete, func(s disgord.Session, r *disgord.GuildRoleDelete) {
+	b.Discord.Client.Gateway().GuildRoleDelete(func(s disgord.Session, r *disgord.GuildRoleDelete) {
 		db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND role_id=$2", r.GuildID, r.RoleID)
 	})
 
@@ -77,11 +76,11 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
+	cu, err := msg.Discord.Client.CurrentUser().Get()
 	if err != nil {
 		return
 	}
-	botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
+	botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -90,7 +89,7 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -107,7 +106,7 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 	)
 
 	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Discord.Client.GetMember(context.Background(), msg.Message.GuildID, msg.Message.Mentions[0].ID)
+		targetUser, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(msg.Message.Mentions[0].ID).Get()
 		if err != nil {
 			//s.ChannelMessageSend(ch.ID, err.Error())
 			return
@@ -117,7 +116,7 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 		if err != nil {
 			return
 		}
-		targetUser, err = msg.Discord.Client.GetMember(context.Background(), msg.Message.GuildID, disgord.Snowflake(id))
+		targetUser, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(disgord.Snowflake(id)).Get()
 		if err != nil {
 			//s.ChannelMessageSend(ch.ID, err.Error())
 			return
@@ -128,7 +127,7 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
 	if err != nil {
 		msg.Reply(err.Error())
 		return
@@ -194,11 +193,11 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 			return
 		}
 
-		cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
+		cu, err := msg.Discord.Client.CurrentUser().Get()
 		if err != nil {
 			return
 		}
-		botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
+		botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -218,7 +217,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 			return
 		}
 
-		g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+		g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
 		if err != nil {
 			msg.Reply("some error occurred")
 			return
@@ -239,7 +238,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 
 			newName := strings.Join(msg.Args()[2:], " ")
 
-			_, err = msg.Discord.Client.UpdateGuildRole(context.Background(), msg.Message.GuildID, oldRole.ID).SetName(newName).Execute()
+			_, err = msg.Discord.Client.Guild(msg.Message.GuildID).Role(oldRole.ID).Update().SetName(newName).Execute()
 			if err != nil {
 				/*
 					if strings.Contains(err.Error(), strconv.Itoa(discordgo.ErrCodeMissingPermissions)) {
@@ -273,7 +272,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 				return
 			}
 
-			_, err = msg.Discord.Client.UpdateGuildRole(context.Background(), msg.Message.GuildID, oldRole.ID).SetColor(uint(color)).Execute()
+			_, err = msg.Discord.Client.Guild(msg.Message.GuildID).Role(oldRole.ID).Update().SetColor(uint(color)).Execute()
 			if err != nil {
 				msg.Reply(&disgord.Embed{Description: "Some error occured: `" + err.Error(), Color: 0xC80000})
 				return
@@ -289,7 +288,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 
 		return
 	case la == 1:
-		target, err = msg.Discord.Client.GetMember(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+		target, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(msg.Message.Author.ID).Get()
 		if err != nil {
 			//s.ChannelMessageSend(ch.ID, err.Error())
 			return
@@ -297,7 +296,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 	case la == 2:
 
 		if len(msg.Message.Mentions) >= 1 {
-			target, err = msg.Discord.Client.GetMember(context.Background(), msg.Message.GuildID, msg.Message.Mentions[0].ID)
+			target, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(msg.Message.Mentions[0].ID).Get()
 			if err != nil {
 				//s.ChannelMessageSend(ch.ID, err.Error())
 				fmt.Println(err)
@@ -308,7 +307,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 			if err != nil {
 				return
 			}
-			target, err = msg.Discord.Client.GetMember(context.Background(), msg.Message.GuildID, disgord.Snowflake(id))
+			target, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(disgord.Snowflake(id)).Get()
 			if err != nil {
 				//s.ChannelMessageSend(ch.ID, err.Error())
 				fmt.Println(err)
@@ -336,7 +335,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 
 	var customRole *disgord.Role
 
-	g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
 	if err != nil {
 		msg.Reply("error occurred")
 		return
@@ -387,7 +386,7 @@ func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
 	if err != nil {
 		msg.Reply("some error occurred, please try again")
 		return

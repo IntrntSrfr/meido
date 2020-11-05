@@ -1,7 +1,6 @@
 package moderationmod
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"github.com/andersfylling/disgord"
@@ -19,7 +18,7 @@ func (m *ModerationMod) FilterWord(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -55,7 +54,7 @@ func (m *ModerationMod) FilterWordsList(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -90,7 +89,7 @@ func (m *ModerationMod) ClearFilter(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -115,7 +114,7 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 	isIllegal := false
 	trigger := ""
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		return
 	}
@@ -158,11 +157,11 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 			return
 		}
 
-		g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+		g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
 		if err != nil {
 			return
 		}
-		cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
+		cu, err := msg.Discord.Client.CurrentUser().Get()
 		if err != nil {
 			return
 		}
@@ -174,16 +173,16 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 			return
 		}
 
-		userChannel, userChError := msg.Discord.Client.CreateDM(context.Background(), msg.Message.Author.ID)
+		userChannel, userChError := msg.Discord.Client.User(msg.Message.Author.ID).CreateDM()
 
 		// 3 / 3 strikes
 		if warnCount+1 >= dge.MaxStrikes {
 
 			if userChError == nil {
-				msg.Discord.Client.SendMsg(context.Background(), userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
+				msg.Discord.Client.SendMsg(userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
 					g.Name, dge.MaxStrikes, reason))
 			}
-			err = msg.Discord.Client.BanMember(context.Background(), g.ID, msg.Message.Author.ID, &disgord.BanMemberParams{
+			err = msg.Discord.Client.Guild(g.ID).Member(msg.Message.Author.ID).Ban(&disgord.BanMemberParams{
 				Reason:            reason,
 				DeleteMessageDays: 0,
 			})
@@ -201,7 +200,7 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 
 		} else {
 			if userChError == nil {
-				msg.Discord.Client.SendMsg(context.Background(), userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
+				msg.Discord.Client.SendMsg(userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
 					g.Name, reason, warnCount+1, dge.MaxStrikes))
 			}
 			/*
@@ -223,7 +222,7 @@ func (m *ModerationMod) ToggleStrikes(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -256,7 +255,7 @@ func (m *ModerationMod) SetMaxStrikes(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		fmt.Println(err)
 		return

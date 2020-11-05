@@ -1,7 +1,6 @@
 package moderationmod
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"github.com/andersfylling/disgord"
@@ -20,11 +19,11 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	cu, err := msg.Discord.Client.GetCurrentUser(context.Background())
+	cu, err := msg.Discord.Client.CurrentUser().Get()
 	if err != nil {
 		return
 	}
-	botPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, cu.ID)
+	botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
 	if err != nil {
 		return
 	}
@@ -32,7 +31,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		return
 	}
@@ -60,7 +59,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 	)
 
 	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Discord.Client.GetMember(context.Background(), msg.Message.GuildID, msg.Message.Mentions[0].ID)
+		targetUser, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(msg.Message.Mentions[0].ID).Get()
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
@@ -70,7 +69,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		if err != nil {
 			return
 		}
-		targetUser, err = msg.Discord.Client.GetMember(context.Background(), msg.Message.GuildID, disgord.Snowflake(id))
+		targetUser, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(disgord.Snowflake(id)).Get()
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
@@ -104,7 +103,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
 	if err != nil {
 		msg.Reply("error occured")
 		return
@@ -117,16 +116,16 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	userChannel, userChError := msg.Discord.Client.CreateDM(context.Background(), targetUser.UserID)
+	userChannel, userChError := msg.Discord.Client.User(targetUser.UserID).CreateDM()
 
 	// 3 / 3 strikes
 	if warnCount+1 >= dge.MaxStrikes {
 
 		if userChError == nil {
-			msg.Discord.Client.SendMsg(context.Background(), userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
+			msg.Discord.Client.SendMsg(userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
 				g.Name, dge.MaxStrikes, reason))
 		}
-		err = msg.Discord.Client.BanMember(context.Background(), g.ID, targetUser.UserID, &disgord.BanMemberParams{
+		err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(targetUser.UserID).Ban(&disgord.BanMemberParams{
 			Reason:            reason,
 			DeleteMessageDays: 0,
 		})
@@ -141,7 +140,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 
 	} else {
 		if userChError == nil {
-			msg.Discord.Client.SendMsg(context.Background(), userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
+			msg.Discord.Client.SendMsg(userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
 				g.Name, reason, warnCount+1, dge.MaxStrikes))
 		}
 
@@ -158,7 +157,7 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		msg.Reply("An error occurred: " + err.Error())
 		return
@@ -193,7 +192,7 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 		if err != nil {
 			return
 		}
-		targetUser, err = msg.Discord.Client.GetUser(context.Background(), disgord.Snowflake(id))
+		targetUser, err = msg.Discord.Client.User(disgord.Snowflake(id)).Get()
 		if err != nil {
 			msg.Reply("error occurred: " + err.Error())
 			return
@@ -232,7 +231,7 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 			field := &disgord.EmbedField{}
 			field.Value = warn.Reason
 
-			gb, err := msg.Discord.Client.GetUser(context.Background(), disgord.Snowflake(warn.GivenByID))
+			gb, err := msg.Discord.Client.User(disgord.Snowflake(warn.GivenByID)).Get()
 			if err != nil {
 				msg.Reply("something terrible has happened")
 				return
@@ -244,7 +243,7 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 				if warn.ClearedByID == nil {
 					return
 				}
-				cb, err := msg.Discord.Client.GetUser(context.Background(), disgord.Snowflake(*warn.ClearedByID))
+				cb, err := msg.Discord.Client.User(disgord.Snowflake(*warn.ClearedByID)).Get()
 				if err != nil {
 					return
 				}
@@ -272,7 +271,7 @@ func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		msg.Reply("An error occurred: " + err.Error())
 		return
@@ -321,7 +320,7 @@ func (m *ModerationMod) ClearWarns(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.GetMemberPermissions(context.Background(), msg.Message.GuildID, msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
 	if err != nil {
 		msg.Reply("An error occurred: " + err.Error())
 		return
@@ -341,7 +340,7 @@ func (m *ModerationMod) ClearWarns(msg *meidov2.DiscordMessage) {
 		if err != nil {
 			return
 		}
-		targetUser, err = msg.Discord.Client.GetUser(context.Background(), disgord.Snowflake(id))
+		targetUser, err = msg.Discord.Client.User(disgord.Snowflake(id)).Get()
 		if err != nil {
 			return
 		}

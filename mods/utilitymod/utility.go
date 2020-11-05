@@ -1,7 +1,6 @@
 package utilitymod
 
 import (
-	"context"
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/dustin/go-humanize"
@@ -52,7 +51,7 @@ func (m *UtilityMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.DiscordM
 	m.cl = cl
 	m.db = db
 
-	b.Discord.Client.On(disgord.EvtReady, func(s disgord.Session, r *disgord.Ready) {
+	b.Discord.Client.Gateway().Ready(func(s disgord.Session, r *disgord.Ready) {
 		s.UpdateStatus(&disgord.UpdateStatusPayload{
 			Game: &disgord.Activity{
 				Type: disgord.ActivityTypeGame,
@@ -60,6 +59,7 @@ func (m *UtilityMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.DiscordM
 			},
 		})
 	})
+
 	m.commands = append(m.commands, m.Avatar, m.About, m.Server, m.ServerBanner, m.ServerSplash)
 
 	return nil
@@ -92,13 +92,13 @@ func (m *UtilityMod) Avatar(msg *meidov2.DiscordMessage) {
 			if err != nil {
 				return
 			}
-			targetUser, err = msg.Discord.Client.GetUser(context.Background(), disgord.Snowflake(id))
+			targetUser, err = msg.Discord.Client.User(disgord.Snowflake(id)).Get()
 			if err != nil {
 				return
 			}
 		}
 	} else {
-		targetUser, err = msg.Discord.Client.GetUser(context.Background(), msg.Message.Author.ID)
+		targetUser, err = msg.Discord.Client.User(msg.Message.Author.ID).Get()
 		if err != nil {
 			return
 		}
@@ -136,7 +136,7 @@ func (m *UtilityMod) Server(msg *meidov2.DiscordMessage) {
 	}
 	m.cl <- msg
 
-	g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
 	if err != nil {
 		msg.Reply("Error getting guild data")
 		return
@@ -153,7 +153,7 @@ func (m *UtilityMod) Server(msg *meidov2.DiscordMessage) {
 		}
 	}
 
-	owner, err := msg.Discord.Client.GetMember(context.Background(), g.ID, g.OwnerID)
+	owner, err := msg.Discord.Client.Guild(g.ID).Member(g.OwnerID).Get()
 	if err != nil {
 		msg.Reply("Error getting guild data")
 		return
@@ -211,8 +211,8 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 	m.cl <- msg
 
 	var (
+		totalUsers uint
 		/*
-			totalUsers  int
 			totalBots   int
 			totalHumans int
 		*/
@@ -220,7 +220,16 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 		totalCommands int
 	)
 	runtime.ReadMemStats(&memory)
-	guilds := len(msg.Discord.Client.GetConnectedGuilds())
+	guildIDs := msg.Discord.Client.GetConnectedGuilds()
+
+	for _, id := range guildIDs {
+
+		g, err := msg.Discord.Client.Guild(id).Get()
+		if err != nil {
+			continue
+		}
+		totalUsers += g.MemberCount
+	}
 
 	uptime := time.Now().Sub(m.startTime)
 	err := m.db.Get(&totalCommands, "SELECT COUNT(*) FROM commandlog;")
@@ -231,7 +240,7 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 
 	msg.Reply(&disgord.Embed{
 		Title: "About",
-		Color: 0xFFFFFF,
+		Color: 0xFEFEFE,
 		Fields: []*disgord.EmbedField{
 			{
 				Name:   "Uptime",
@@ -245,7 +254,12 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 			},
 			{
 				Name:   "Guilds",
-				Value:  strconv.Itoa(guilds),
+				Value:  strconv.Itoa(len(guildIDs)),
+				Inline: false,
+			},
+			{
+				Name:   "Users",
+				Value:  strconv.Itoa(int(totalUsers)),
 				Inline: true,
 			},
 			{
@@ -256,7 +270,7 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 			{
 				Name:   "Garbage collected",
 				Value:  humanize.Bytes(memory.TotalAlloc - memory.Alloc),
-				Inline: false,
+				Inline: true,
 			},
 		},
 	})
@@ -271,7 +285,7 @@ func (m *UtilityMod) ServerSplash(msg *meidov2.DiscordMessage) {
 
 	m.cl <- msg
 
-	g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
 	if err != nil {
 		return
 	}
@@ -301,7 +315,7 @@ func (m *UtilityMod) ServerBanner(msg *meidov2.DiscordMessage) {
 
 	m.cl <- msg
 
-	g, err := msg.Discord.Client.GetGuild(context.Background(), msg.Message.GuildID)
+	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
 	if err != nil {
 		return
 	}

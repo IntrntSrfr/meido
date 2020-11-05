@@ -26,7 +26,7 @@ type DiscordMessage struct {
 }
 
 func (m *DiscordMessage) Reply(data interface{}) (*disgord.Message, error) {
-	return m.Sess.SendMsg(context.Background(), m.Message.ChannelID, data)
+	return m.Sess.SendMsg(m.Message.ChannelID, data)
 }
 
 func (m *DiscordMessage) Args() []string {
@@ -39,12 +39,12 @@ func (m *DiscordMessage) LenArgs() int {
 
 func (m *DiscordMessage) HighestRole(gid, uid disgord.Snowflake) int {
 
-	mem, err := m.Discord.Client.GetMember(context.Background(), gid, uid)
+	mem, err := m.Discord.Client.Guild(gid).Member(uid).Get()
 	if err != nil {
 		return -1
 	}
 
-	gRoles, err := m.Discord.Client.GetGuildRoles(context.Background(), gid)
+	gRoles, err := m.Discord.Client.Guild(gid).GetRoles()
 	if err != nil {
 		return -1
 	}
@@ -64,14 +64,14 @@ func (m *DiscordMessage) HighestRole(gid, uid disgord.Snowflake) int {
 
 func (m *DiscordMessage) HighestColor(gid, uid disgord.Snowflake) int {
 
-	mem, err := m.Discord.Client.GetMember(context.Background(), gid, uid)
+	mem, err := m.Discord.Client.Guild(gid).Member(uid).Get()
 	if err != nil {
-		return 0
+		return -1
 	}
 
-	gRoles, err := m.Discord.Client.GetGuildRoles(context.Background(), gid)
+	gRoles, err := m.Discord.Client.Guild(gid).GetRoles()
 	if err != nil {
-		return 0
+		return -1
 	}
 
 	sort.Sort(RoleByPos(gRoles))
