@@ -5,6 +5,8 @@ import (
 	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"strings"
+	"time"
 )
 
 type Config struct {
@@ -96,11 +98,11 @@ func (b *Bot) logCommands() {
 	for {
 		select {
 		case m := <-b.CommandLog:
-			/*
-				b.db.Exec("INSERT INTO commandlog VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
-					m.Args()[0], strings.Join(m.Args(), " "), m.Message.Author.ID, m.Message.GuildID,
-					m.Message.ChannelID, m.Message.ID, time.Now())
-			*/
+
+			b.DB.Exec("INSERT INTO commandlog VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
+				m.Args()[0], strings.Join(m.Args(), " "), m.Message.Author.ID, m.Message.GuildID,
+				m.Message.ChannelID, m.Message.ID, time.Now())
+
 			fmt.Println(m.Shard, m.Message.Author.String(), m.Message.Content, m.TimeReceived.String())
 		}
 	}
