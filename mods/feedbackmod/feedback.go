@@ -2,28 +2,25 @@ package feedbackmod
 
 import (
 	"fmt"
-	"github.com/andersfylling/disgord"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
-	"github.com/jmoiron/sqlx"
-	"strconv"
 	"sync"
 )
 
 type FeedbackMod struct {
 	cl          chan *meidov2.DiscordMessage
 	commands    []func(msg *meidov2.DiscordMessage)
-	bannedUsers map[disgord.Snowflake]bool
+	bannedUsers map[string]bool
 	sync.Mutex
-	feedbackChannel disgord.Snowflake
-	owners          []int
+	feedbackChannel string
+	owners          []string
 }
 
 func New() meidov2.Mod {
 	return &FeedbackMod{
-		//cl:              make(chan *meidov2.DiscordMessage),
-		bannedUsers:     make(map[disgord.Snowflake]bool),
-		feedbackChannel: disgord.Snowflake(497106582144942101),
-		owners:          []int{},
+		bannedUsers:     make(map[string]bool),
+		feedbackChannel: "497106582144942101",
+		owners:          []string{},
 	}
 }
 
@@ -45,12 +42,11 @@ func (m *FeedbackMod) Commands() []meidov2.ModCommand {
 	return nil
 }
 
-func (m *FeedbackMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
-	m.cl = cl
-
+func (m *FeedbackMod) Hook(b *meidov2.Bot) error {
+	m.cl = b.CommandLog
 	m.owners = b.Config.OwnerIds
 
-	b.Discord.Client.On(disgord.EvtReady, func(s disgord.Session, r *disgord.Ready) {
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		fmt.Println(r.User.String())
 	})
 
@@ -78,7 +74,7 @@ func (m *FeedbackMod) ToggleBan(msg *meidov2.DiscordMessage) {
 
 	owner := false
 	for _, id := range m.owners {
-		if msg.Message.Author.ID == disgord.Snowflake(id) {
+		if msg.Message.Author.ID == id {
 			owner = true
 		}
 	}
@@ -88,24 +84,19 @@ func (m *FeedbackMod) ToggleBan(msg *meidov2.DiscordMessage) {
 
 	m.cl <- msg
 
-	memId, err := strconv.Atoi(msg.Args()[1])
-	if err != nil {
-		return
-	}
-
 	m.Lock()
 	defer m.Unlock()
-	b, ok := m.bannedUsers[disgord.Snowflake(memId)]
+	b, ok := m.bannedUsers[msg.Args()[1]]
 	if ok {
 		if b {
-			m.bannedUsers[disgord.Snowflake(memId)] = false
+			m.bannedUsers[msg.Args()[1]] = false
 			// send unbanned mesage
 		} else {
-			m.bannedUsers[disgord.Snowflake(memId)] = true
+			m.bannedUsers[msg.Args()[1]] = true
 			// send banned message
 		}
 	} else {
-		m.bannedUsers[disgord.Snowflake(memId)] = true
+		m.bannedUsers[msg.Args()[1]] = true
 		// send banned message
 	}
 }
@@ -127,6 +118,6 @@ func (m *FeedbackMod) LeaveFeedback(msg *meidov2.DiscordMessage) {
 		}
 	}
 
-	msg.Discord.Client.SendMsg(m.feedbackChannel, fmt.Sprintf(`%v`, msg.Args()[1:]))
+	msg.Discord.Sess.ChannelMessageSend(m.feedbackChannel, fmt.Sprintf(`%v`, msg.Args()[1:]))
 	msg.Reply("Feedback left")
 }

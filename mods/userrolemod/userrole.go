@@ -3,7 +3,7 @@ package userrolemod
 import (
 	"database/sql"
 	"fmt"
-	"github.com/andersfylling/disgord"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
 	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
@@ -19,9 +19,7 @@ type UserRoleMod struct {
 }
 
 func New() meidov2.Mod {
-	return &UserRoleMod{
-		//cl: make(chan *meidov2.DiscordMessage),
-	}
+	return &UserRoleMod{}
 }
 
 func (m *UserRoleMod) Save() error {
@@ -43,14 +41,13 @@ func (m *UserRoleMod) Commands() []meidov2.ModCommand {
 	return nil
 }
 
-func (m *UserRoleMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
-	m.cl = cl
-	m.db = db
+func (m *UserRoleMod) Hook(b *meidov2.Bot) error {
+	m.cl = b.CommandLog
+	m.db = b.DB
+	m.owo = b.Owo
 
-	m.owo = owo.NewClient(b.Config.OwoToken)
-
-	b.Discord.Client.Gateway().GuildRoleDelete(func(s disgord.Session, r *disgord.GuildRoleDelete) {
-		db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND role_id=$2", r.GuildID, r.RoleID)
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.GuildRoleDelete) {
+		m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND role_id=$2", r.GuildID, r.RoleID)
 	})
 
 	m.commands = append(m.commands, m.ToggleUserRole, m.MyRole, m.ListUserRoles)
@@ -60,7 +57,7 @@ func (m *UserRoleMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.Discord
 }
 
 func (m *UserRoleMod) Message(msg *meidov2.DiscordMessage) {
-	if msg.Message.IsDirectMessage() {
+	if msg.IsDM() {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
@@ -76,47 +73,39 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	cu, err := msg.Discord.Client.CurrentUser().Get()
-	if err != nil {
-		return
-	}
-	botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
+	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Discord.Sess.State.User.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if botPerms&disgord.PermissionManageRoles == 0 && botPerms&disgord.PermissionAdministrator == 0 {
+	if botPerms&discordgo.PermissionManageRoles == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if uPerms&disgord.PermissionManageRoles == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionManageRoles == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
 	m.cl <- msg
 
 	var (
-		targetUser   *disgord.Member
-		selectedRole *disgord.Role
+		targetUser   *discordgo.Member
+		selectedRole *discordgo.Role
 	)
 
 	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(msg.Message.Mentions[0].ID).Get()
+		targetUser, err = msg.Discord.Sess.State.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
 		if err != nil {
 			//s.ChannelMessageSend(ch.ID, err.Error())
 			return
 		}
 	} else {
-		id, err := strconv.Atoi(msg.Args()[1])
-		if err != nil {
-			return
-		}
-		targetUser, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(disgord.Snowflake(id)).Get()
+		targetUser, err = msg.Discord.Sess.State.Member(msg.Message.GuildID, msg.Args()[1])
 		if err != nil {
 			//s.ChannelMessageSend(ch.ID, err.Error())
 			return
@@ -127,7 +116,7 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
+	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
 		msg.Reply(err.Error())
 		return
@@ -136,15 +125,10 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 	for i := range g.Roles {
 		role := g.Roles[i]
 
-		roleID, err := strconv.Atoi(msg.Args()[2])
-		if err != nil {
-			if strings.ToLower(role.Name) == strings.ToLower(strings.Join(msg.Args()[2:], " ")) {
-				selectedRole = role
-			}
-		} else {
-			if role.ID == disgord.Snowflake(roleID) {
-				selectedRole = role
-			}
+		if role.ID == msg.Args()[2] {
+			selectedRole = role
+		} else if strings.ToLower(role.Name) == strings.ToLower(strings.Join(msg.Args()[2:], " ")) {
+			selectedRole = role
 		}
 	}
 
@@ -158,16 +142,16 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 	err = m.db.Get(userRole, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, targetUser.User.ID)
 	switch err {
 	case nil:
-		if selectedRole.ID == disgord.Snowflake(userRole.RoleID) {
+		if selectedRole.ID == userRole.RoleID {
 			m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetUser.User.ID, selectedRole.ID)
-			msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetUser.User.Tag()))
+			msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetUser.User.String()))
 		} else {
 			m.db.Exec("UPDATE userroles SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetUser.User.ID)
 			msg.Reply(fmt.Sprintf("Updated userrole for **%v** to **%v**", targetUser.User.String(), selectedRole.Name))
 		}
 	case sql.ErrNoRows:
 		m.db.Exec("INSERT INTO userroles(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetUser.User.ID, selectedRole.ID)
-		msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetUser.User.Tag()))
+		msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetUser.User.String()))
 	default:
 		fmt.Println(err)
 		msg.Reply("there was an error, please try again")
@@ -183,9 +167,15 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 
 	var (
 		err     error
-		oldRole *disgord.Role
-		target  *disgord.Member
+		oldRole *discordgo.Role
+		target  *discordgo.Member
 	)
+
+	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
+	if err != nil {
+		msg.Reply("some error occurred")
+		return
+	}
 
 	switch la := msg.LenArgs(); {
 	case la > 2:
@@ -193,21 +183,17 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 			return
 		}
 
-		cu, err := msg.Discord.Client.CurrentUser().Get()
-		if err != nil {
-			return
-		}
-		botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
+		botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Discord.Sess.State.User.ID, msg.Message.ChannelID)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		if botPerms&disgord.PermissionManageRoles == 0 && botPerms&disgord.PermissionAdministrator == 0 {
+		if botPerms&discordgo.PermissionManageRoles == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
 			return
 		}
 
 		ur := &Userrole{}
-		err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", msg.Message.GuildID, msg.Message.Author.ID)
+		err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, msg.Message.Author.ID)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
 			msg.Reply("there was an error, please try again")
@@ -217,14 +203,8 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 			return
 		}
 
-		g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
-		if err != nil {
-			msg.Reply("some error occurred")
-			return
-		}
-
 		for _, role := range g.Roles {
-			if role.ID == disgord.Snowflake(ur.RoleID) {
+			if role.ID == ur.RoleID {
 				oldRole = role
 			}
 		}
@@ -238,57 +218,56 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 
 			newName := strings.Join(msg.Args()[2:], " ")
 
-			_, err = msg.Discord.Client.Guild(msg.Message.GuildID).Role(oldRole.ID).Update().SetName(newName).Execute()
+			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, newName, oldRole.Color, oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
 			if err != nil {
-				/*
-					if strings.Contains(err.Error(), strconv.Itoa(discordgo.ErrCodeMissingPermissions)) {
-						ctx.SendEmbed(&discordgo.MessageEmbed{Description: "Missing permissions.", Color: dColorRed})
-						return
-					}
-				*/
-				msg.Reply(&disgord.Embed{Description: "Some error occured: `" + err.Error(), Color: 0xC80000})
+				if strings.Contains(err.Error(), strconv.Itoa(discordgo.ErrCodeMissingPermissions)) {
+					msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Missing permissions.", Color: 0xC80000})
+					return
+				}
+				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occured: `" + err.Error() + "`.", Color: 0xC80000})
 				return
 			}
 
-			embed := &disgord.Embed{
-				Color:       int(oldRole.Color),
+			embed := &discordgo.MessageEmbed{
+				Color:       oldRole.Color,
 				Description: fmt.Sprintf("Role name changed from %v to %v", oldRole.Name, newName),
 			}
-			msg.Reply(embed)
+			msg.ReplyEmbed(embed)
 
 		case "color":
 
-			if strings.HasPrefix(msg.Args()[2], "#") {
-				msg.Args()[2] = msg.Args()[2][1:]
+			clr := msg.Args()[2]
+			if strings.HasPrefix(clr, "#") {
+				clr = clr[1:]
 			}
 
-			color, err := strconv.ParseInt("0x"+msg.Args()[2], 0, 64)
+			color, err := strconv.ParseInt(clr, 16, 64)
 			if err != nil {
-				msg.Reply(&disgord.Embed{Description: "Invalid color code.", Color: 0xC80000})
+				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code.", Color: 0xC80000})
 				return
 			}
 			if color < 0 || color > 0xFFFFFF {
-				msg.Reply(&disgord.Embed{Description: "Invalid color code.", Color: 0xC80000})
+				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code.", Color: 0xC80000})
 				return
 			}
 
-			_, err = msg.Discord.Client.Guild(msg.Message.GuildID).Role(oldRole.ID).Update().SetColor(uint(color)).Execute()
+			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, oldRole.Name, int(color), oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
 			if err != nil {
-				msg.Reply(&disgord.Embed{Description: "Some error occured: `" + err.Error(), Color: 0xC80000})
+				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occured: `" + err.Error(), Color: 0xC80000})
 				return
 			}
 
-			embed := &disgord.Embed{
+			embed := &discordgo.MessageEmbed{
 				Color:       int(color),
 				Description: fmt.Sprintf("Color changed from #%v to #%v", fmt.Sprintf("%06X", oldRole.Color), fmt.Sprintf("%06X", color)),
 			}
-			msg.Reply(embed)
+			msg.ReplyEmbed(embed)
 		default:
 		}
 
 		return
 	case la == 1:
-		target, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(msg.Message.Author.ID).Get()
+		target, err = msg.Discord.Sess.State.Member(g.ID, msg.Message.Author.ID)
 		if err != nil {
 			//s.ChannelMessageSend(ch.ID, err.Error())
 			return
@@ -296,18 +275,14 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 	case la == 2:
 
 		if len(msg.Message.Mentions) >= 1 {
-			target, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(msg.Message.Mentions[0].ID).Get()
+			target, err = msg.Discord.Sess.State.Member(g.ID, msg.Message.Mentions[0].ID)
 			if err != nil {
 				//s.ChannelMessageSend(ch.ID, err.Error())
 				fmt.Println(err)
 				return
 			}
 		} else {
-			id, err := strconv.Atoi(msg.Args()[1])
-			if err != nil {
-				return
-			}
-			target, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(disgord.Snowflake(id)).Get()
+			target, err = msg.Discord.Sess.State.Member(g.ID, msg.Args()[1])
 			if err != nil {
 				//s.ChannelMessageSend(ch.ID, err.Error())
 				fmt.Println(err)
@@ -323,7 +298,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 	}
 
 	ur := &Userrole{}
-	err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", msg.Message.GuildID, target.User.ID)
+	err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, target.User.ID)
 	if err != nil && err != sql.ErrNoRows {
 		msg.Reply("there was an error, please try again")
 		fmt.Println(err)
@@ -333,17 +308,12 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	var customRole *disgord.Role
+	var customRole *discordgo.Role
 
-	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
-	if err != nil {
-		msg.Reply("error occurred")
-		return
-	}
 	for i := range g.Roles {
 		role := g.Roles[i]
 
-		if role.ID == disgord.Snowflake(ur.RoleID) {
+		if role.ID == ur.RoleID {
 			customRole = role
 		}
 	}
@@ -353,10 +323,10 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	embed := &disgord.Embed{
-		Color: int(customRole.Color),
-		Title: fmt.Sprintf("Custom role for %v", target.User.Tag()),
-		Fields: []*disgord.EmbedField{
+	embed := &discordgo.MessageEmbed{
+		Color: customRole.Color,
+		Title: fmt.Sprintf("Custom role for %v", target.User.String()),
+		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "Name",
 				Value:  customRole.Name,
@@ -369,7 +339,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 			},
 		},
 	}
-	msg.Reply(embed)
+	msg.ReplyEmbed(embed)
 }
 
 func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
@@ -386,7 +356,7 @@ func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
+	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("some error occurred, please try again")
 		return
@@ -395,14 +365,12 @@ func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
 	text := fmt.Sprintf("Userroles in %v\n\n", g.Name)
 	count := 0
 	for _, ur := range userRoles {
-
-		role, err := g.Role(disgord.Snowflake(ur.RoleID))
+		role, err := msg.Sess.State.Role(g.ID, ur.RoleID)
 		if err != nil {
-			fmt.Println(err)
 			continue
 		}
 
-		mem, err := g.Member(disgord.Snowflake(ur.UserID))
+		mem, err := msg.Sess.State.Member(g.ID, ur.UserID)
 		if err != nil {
 			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v - User no longer in guild.\n", count, role.Name, role.ID, ur.UserID)
 		} else {

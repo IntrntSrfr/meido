@@ -1,9 +1,7 @@
 package meidov2
 
-import "github.com/jmoiron/sqlx"
-
 type Mod interface {
-	Hook(*Bot, *sqlx.DB, chan *DiscordMessage) error
+	Hook(*Bot) error
 	Message(*DiscordMessage)
 	Settings(*DiscordMessage)
 	Help(*DiscordMessage)

@@ -1,14 +1,14 @@
 package moderationmod
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
-	"github.com/andersfylling/disgord"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
 	"github.com/jmoiron/sqlx"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type ModerationMod struct {
@@ -18,9 +18,7 @@ type ModerationMod struct {
 }
 
 func New() meidov2.Mod {
-	return &ModerationMod{
-		//cl: make(chan *meidov2.DiscordMessage),
-	}
+	return &ModerationMod{}
 }
 
 func (m *ModerationMod) Save() error {
@@ -42,17 +40,17 @@ func (m *ModerationMod) Commands() []meidov2.ModCommand {
 	return nil
 }
 
-func (m *ModerationMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
-	m.cl = cl
-	m.db = db
+func (m *ModerationMod) Hook(b *meidov2.Bot) error {
+	m.cl = b.CommandLog
+	m.db = b.DB
 
-	b.Discord.Client.On(disgord.EvtGuildCreate, func(s disgord.Session, g *disgord.GuildCreate) {
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		dbg := &DiscordGuild{}
-		err := db.Get(dbg, "SELECT guild_id FROM guilds WHERE guild_id = $1;", g.Guild.ID)
+		err := m.db.Get(dbg, "SELECT guild_id FROM guilds WHERE guild_id = $1;", g.Guild.ID)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
 		} else if err == sql.ErrNoRows {
-			db.Exec("INSERT INTO guilds(guild_id, use_strikes, max_strikes) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
+			m.db.Exec("INSERT INTO guilds(guild_id, use_strikes, max_strikes) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
 			fmt.Println(fmt.Sprintf("Inserted new guild: %v [%v]", g.Guild.Name, g.Guild.ID))
 		}
 	})
@@ -67,7 +65,7 @@ func (m *ModerationMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.Disco
 
 func (m *ModerationMod) Message(msg *meidov2.DiscordMessage) {
 	// moderation only is for servers, so dms are ignored
-	if msg.Message.IsDirectMessage() {
+	if msg.IsDM() {
 		return
 	}
 	if msg.Type == meidov2.MessageTypeDelete {
@@ -86,30 +84,26 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	cu, err := msg.Discord.Client.CurrentUser().Get()
+	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Sess.State.User.ID, msg.Message.ChannelID)
 	if err != nil {
 		return
 	}
-	botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
-	if err != nil {
-		return
-	}
-	if botPerms&disgord.PermissionBanMembers == 0 && botPerms&disgord.PermissionAdministrator == 0 {
+	if botPerms&discordgo.PermissionBanMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		return
 	}
-	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
 	m.cl <- msg
 
 	var (
-		targetUser *disgord.User
+		targetUser *discordgo.User
 		reason     string
 		pruneDays  int
 	)
@@ -134,41 +128,17 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 			pruneDays = 0
 		}
 	}
-	/*
-		if msg.LenArgs() == 2 {
-			pruneDays = 0
-			reason = ""
-		} else if msg.LenArgs() >= 3 {
-			pruneDays, err = strconv.Atoi(msg.Args()[2])
-			if err != nil {
-				pruneDays = 0
-				reason = strings.Join(msg.Args()[2:], " ")
-			} else {
-				reason = strings.Join(msg.Args()[3:], " ")
-			}
 
-			//pruneDays = int(math.Max(float64(0), float64(pruneDays)))
-			if pruneDays > 7 {
-				pruneDays = 7
-			} else if pruneDays < 0 {
-				pruneDays = 0
-			}
-		}
-	*/
 	if len(msg.Message.Mentions) > 0 {
 		targetUser = msg.Message.Mentions[0]
 	} else {
-		sn, err := strconv.ParseUint(msg.Args()[1], 10, 64)
-		if err != nil {
-			return
-		}
-		targetUser, err = msg.Discord.Client.User(disgord.Snowflake(sn)).Get()
+		targetUser, err = msg.Discord.Sess.User(msg.Args()[1])
 		if err != nil {
 			return
 		}
 	}
 
-	if targetUser.ID == cu.ID {
+	if targetUser.ID == msg.Sess.State.User.ID {
 		msg.Reply("no")
 		return
 	}
@@ -179,7 +149,7 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 
 	topUserRole := msg.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
 	topTargetRole := msg.HighestRole(msg.Message.GuildID, targetUser.ID)
-	topBotRole := msg.HighestRole(msg.Message.GuildID, cu.ID)
+	topBotRole := msg.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		msg.Reply("no")
@@ -187,36 +157,34 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 	}
 
 	if topTargetRole > 0 {
-
-		userChannel, userChErr := msg.Discord.Client.User(targetUser.ID).CreateDM()
-
+		userChannel, userChErr := msg.Discord.Sess.UserChannelCreate(targetUser.ID)
 		if userChErr == nil {
-			g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
+			g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 			if err != nil {
 				return
 			}
 
 			if reason == "" {
-				userChannel.SendMsgString(context.Background(), msg.Discord.Client, fmt.Sprintf("You have been banned from %v", g.Name))
-
+				msg.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v", g.Name))
 			} else {
-				userChannel.SendMsgString(context.Background(), msg.Discord.Client, fmt.Sprintf("You have been banned from %v for the following reason:\n%v", g.Name, reason))
+				msg.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v for the following reason:\n%v", g.Name, reason))
 			}
 		}
 	}
 
-	err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(targetUser.ID).Ban(&disgord.BanMemberParams{
-		DeleteMessageDays: pruneDays,
-		Reason:            fmt.Sprintf("%v: %v", msg.Message.Author.Tag(), reason),
-	})
+	err = msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, targetUser.ID, fmt.Sprintf("%v - %v", msg.Message.Author.String(), reason), pruneDays)
 	if err != nil {
+		msg.Reply(err.Error())
 		return
 	}
 
-	embed := &disgord.Embed{
+	_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
+		msg.Sess.State.User.ID, time.Now(), msg.Message.GuildID, targetUser.ID)
+
+	embed := &discordgo.MessageEmbed{
 		Title: "User banned",
 		Color: 0xC80000,
-		Fields: []*disgord.EmbedField{
+		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "Username",
 				Value:  fmt.Sprintf("%v", targetUser.Mention()),
@@ -230,7 +198,7 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		},
 	}
 
-	msg.Reply(embed)
+	msg.ReplyEmbed(embed)
 }
 
 func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
@@ -241,51 +209,47 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	cu, err := msg.Discord.Client.CurrentUser().Get()
-	if err != nil {
-		return
-	}
-	botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
+	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Sess.State.User.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if botPerms&disgord.PermissionBanMembers == 0 && botPerms&disgord.PermissionAdministrator == 0 {
+	if botPerms&discordgo.PermissionBanMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
 	m.cl <- msg
 
-	userID, err := strconv.ParseUint(msg.Args()[1], 10, 64)
+	_, err = strconv.ParseUint(msg.Args()[1], 10, 64)
 	if err != nil {
 		return
 	}
 
-	err = msg.Discord.Client.Guild(msg.Message.GuildID).UnbanUser(disgord.Snowflake(userID), msg.Message.Author.Tag())
+	err = msg.Discord.Sess.GuildBanDelete(msg.Message.GuildID, msg.Args()[1])
 	if err != nil {
 		return
 	}
 
-	targetUser, err := msg.Discord.Client.User(disgord.Snowflake(userID)).Get()
+	targetUser, err := msg.Discord.Sess.User(msg.Args()[1])
 	if err != nil {
 		return
 	}
 
-	embed := &disgord.Embed{
+	embed := &discordgo.MessageEmbed{
 		Description: fmt.Sprintf("**Unbanned** %v - %v#%v (%v)", targetUser.Mention(), targetUser.Username, targetUser.Discriminator, targetUser.ID),
 		Color:       0x00C800,
 	}
 
-	msg.Reply(embed)
+	msg.ReplyEmbed(embed)
 }
 
 func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
@@ -296,25 +260,21 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	cu, err := msg.Discord.Client.CurrentUser().Get()
-	if err != nil {
-		return
-	}
-	botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
+	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Sess.State.User.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if botPerms&disgord.PermissionBanMembers == 0 && botPerms&disgord.PermissionAdministrator == 0 {
+	if botPerms&discordgo.PermissionBanMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -334,15 +294,12 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 	badIDs := 0
 
 	for _, userIDString := range userList {
-		userID, err := strconv.Atoi(userIDString)
+		_, err := strconv.Atoi(userIDString)
 		if err != nil {
 			badIDs++
 			continue
 		}
-		err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(disgord.Snowflake(userID)).Ban(&disgord.BanMemberParams{
-			DeleteMessageDays: 7,
-			Reason:            fmt.Sprintf("[%v] - Hackban", msg.Message.Author.Tag()),
-		})
+		err = msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, userIDString, fmt.Sprintf("[%v] - Hackban", msg.Message.Author.String()), 7)
 		/*
 			err = msg.Discord.Client.BanMember(context.Background(), msg.Message.GuildID, disgord.Snowflake(userID), &disgord.BanMemberParams{
 				DeleteMessageDays: 7,

@@ -3,7 +3,7 @@ package moderationmod
 import (
 	"database/sql"
 	"fmt"
-	"github.com/andersfylling/disgord"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
 	"strconv"
 	"strings"
@@ -18,12 +18,12 @@ func (m *ModerationMod) FilterWord(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if uPerms&disgord.PermissionManageMessages == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionManageMessages == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -54,12 +54,12 @@ func (m *ModerationMod) FilterWordsList(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if uPerms&disgord.PermissionManageMessages == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionManageMessages == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -89,12 +89,12 @@ func (m *ModerationMod) ClearFilter(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -114,12 +114,21 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 	isIllegal := false
 	trigger := ""
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		return
 	}
-	if uPerms&disgord.PermissionManageMessages != 0 || uPerms&disgord.PermissionAdministrator != 0 {
+	if uPerms&discordgo.PermissionManageMessages != 0 || uPerms&discordgo.PermissionAdministrator != 0 {
 		return
+	}
+
+	dge := &DiscordGuild{}
+	err = m.db.Get(dge, "SELECT use_strikes, max_strikes FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
+	if err != nil {
+		return
+	}
+	if !dge.UseStrikes {
+		msg.Reply(fmt.Sprintf("%v, you are not allowed to use a banned word/phrase", msg.Message.Author.Mention()))
 	}
 
 	var filterEntries []*FilterEntry
@@ -140,77 +149,61 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	dge := &DiscordGuild{}
-	err = m.db.Get(dge, "SELECT use_strikes, max_strikes FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
+	reason := "Triggering filter: " + trigger
+	warnCount := 0
+
+	err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warns WHERE user_id=$1 AND guild_id=$2 AND is_valid",
+		msg.Message.Author.ID, msg.Message.GuildID)
 	if err != nil {
 		return
 	}
 
-	if dge.UseStrikes {
+	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
+	if err != nil {
+		return
+	}
+	cu := msg.Discord.Sess.State.User
 
-		reason := "Triggering filter: " + trigger
-		warnCount := 0
+	_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
+		msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), true)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
-		err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warns WHERE user_id=$1 AND guild_id=$2 AND is_valid",
-			msg.Message.Author.ID, msg.Message.GuildID)
+	userChannel, userChError := msg.Discord.Sess.UserChannelCreate(msg.Message.Author.ID)
+
+	// 3 / 3 strikes
+	if warnCount+1 >= dge.MaxStrikes {
+
+		if userChError == nil {
+			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
+				g.Name, dge.MaxStrikes, reason))
+		}
+		err = msg.Discord.Sess.GuildBanCreateWithReason(g.ID, msg.Message.Author.ID, reason, 0)
 		if err != nil {
 			return
 		}
+		/*
+			_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
+				msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), false)
+		*/
 
-		g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
-		if err != nil {
-			return
-		}
-		cu, err := msg.Discord.Client.CurrentUser().Get()
-		if err != nil {
-			return
-		}
+		_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
+			cu.ID, time.Now(), g.ID, msg.Message.Author.ID)
 
-		_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
-			msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), true)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", msg.Message.Author.Mention()))
 
-		userChannel, userChError := msg.Discord.Client.User(msg.Message.Author.ID).CreateDM()
-
-		// 3 / 3 strikes
-		if warnCount+1 >= dge.MaxStrikes {
-
-			if userChError == nil {
-				msg.Discord.Client.SendMsg(userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
-					g.Name, dge.MaxStrikes, reason))
-			}
-			err = msg.Discord.Client.Guild(g.ID).Member(msg.Message.Author.ID).Ban(&disgord.BanMemberParams{
-				Reason:            reason,
-				DeleteMessageDays: 0,
-			})
-			if err != nil {
-				return
-			}
-			/*
-				_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
-					msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), false)
-			*/
-			_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
-				cu.ID, time.Now(), g.ID, msg.Message.Author.ID)
-
-			msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", msg.Message.Author.Mention()))
-
-		} else {
-			if userChError == nil {
-				msg.Discord.Client.SendMsg(userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
-					g.Name, reason, warnCount+1, dge.MaxStrikes))
-			}
-			/*
-				_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
-					msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), true)
-			*/
-			msg.Reply(fmt.Sprintf("%v has been warned\nThey are currently at warn %v/%v", msg.Message.Author.Mention(), warnCount+1, dge.MaxStrikes))
-		}
 	} else {
-		msg.Reply(fmt.Sprintf("%v, you are not allowed to use a banned word/phrase", msg.Message.Author.Mention()))
+		if userChError == nil {
+			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
+				g.Name, reason, warnCount+1, dge.MaxStrikes))
+		}
+		/*
+			_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
+				msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), true)
+		*/
+		msg.Reply(fmt.Sprintf("%v has been warned\nThey are currently at warn %v/%v", msg.Message.Author.Mention(), warnCount+1, dge.MaxStrikes))
 	}
 }
 
@@ -222,12 +215,12 @@ func (m *ModerationMod) ToggleStrikes(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -255,12 +248,12 @@ func (m *ModerationMod) SetMaxStrikes(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -276,5 +269,10 @@ func (m *ModerationMod) SetMaxStrikes(msg *meidov2.DiscordMessage) {
 		n = 10
 	}
 
-	m.db.Exec("UPDATE guilds SET max_strikes=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
+	_, err = m.db.Exec("UPDATE guilds SET max_strikes=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
+	if err != nil {
+		msg.Reply("error setting max strikes")
+		return
+	}
+	msg.Reply(fmt.Sprintf("set max strikes to %v", n))
 }

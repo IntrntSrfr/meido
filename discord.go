@@ -1,15 +1,17 @@
 package meidov2
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"net/http"
 	"time"
 )
 
 type Discord struct {
 	token    string
-	Client   *discordgo.Session
-	sessions []*discordgo.Session
+	Sess     *discordgo.Session
+	Sessions []*discordgo.Session
 	ownerIds []string
 
 	messageChan chan *DiscordMessage
@@ -28,26 +30,52 @@ type Log struct {
 func (l *Log) Debug(v ...interface{}) {
 	fmt.Println(v)
 }
+
 func (l *Log) Info(v ...interface{}) {
 	fmt.Println(v)
 }
+
 func (l *Log) Error(v ...interface{}) {
 	fmt.Println(v)
 }
 
 func (d *Discord) Open() (<-chan *DiscordMessage, error) {
-
-	s, err := discordgo.New("Bot " + d.token)
+	req, _ := http.NewRequest("GET", "https://discord.com/api/v8/gateway/bot", nil)
+	req.Header.Add("Authorization", "Bot "+d.token)
+	res, err := http.DefaultClient.Do(req)
+	defer res.Body.Close()
 	if err != nil {
-		return nil, err
+		panic(err)
+	}
+	resp := &discordgo.GatewayBotResponse{}
+	err = json.NewDecoder(res.Body).Decode(&resp)
+	if err != nil {
+		panic(err)
 	}
 
-	s.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAllWithoutPrivileged)
-	d.Client = s
+	shardCount := resp.Shards
+	d.Sessions = make([]*discordgo.Session, shardCount)
 
-	s.AddHandler(d.onMessageCreate)
-	s.AddHandler(d.onMessageUpdate)
-	s.AddHandler(d.onMessageDelete)
+	for i := 0; i < shardCount; i++ {
+		s, err := discordgo.New("Bot " + d.token)
+		if err != nil {
+			return nil, err
+		}
+
+		s.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAllWithoutPrivileged)
+		s.State.TrackVoice = false
+		s.State.TrackPresences = false
+		s.ShardCount = shardCount
+		s.ShardID = i
+
+		s.AddHandler(d.onMessageCreate)
+		s.AddHandler(d.onMessageUpdate)
+		s.AddHandler(d.onMessageDelete)
+
+		d.Sessions[i] = s
+		fmt.Println("created session:", i)
+	}
+	d.Sess = d.Sessions[0]
 
 	/*
 		err := s.Connect(context.Background())
@@ -62,7 +90,16 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 }
 
 func (d *Discord) Run() error {
-	return d.Client.Open()
+	for _, sess := range d.Sessions {
+		sess.Open()
+	}
+	return nil
+}
+
+func (d *Discord) Close() {
+	for _, sess := range d.Sessions {
+		sess.Close()
+	}
 }
 
 func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -72,8 +109,10 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 		Message:      m.Message,
 		Type:         MessageTypeCreate,
 		TimeReceived: time.Now(),
+		Shard:        s.ShardID,
 	}
 }
+
 func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 	d.messageChan <- &DiscordMessage{
 		Sess:         s,
@@ -81,6 +120,7 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 		Message:      m.Message,
 		Type:         MessageTypeUpdate,
 		TimeReceived: time.Now(),
+		Shard:        s.ShardID,
 	}
 }
 
@@ -91,5 +131,6 @@ func (d *Discord) onMessageDelete(s *discordgo.Session, m *discordgo.MessageDele
 		Message:      m.Message,
 		Type:         MessageTypeDelete,
 		TimeReceived: time.Now(),
+		Shard:        s.ShardID,
 	}
 }

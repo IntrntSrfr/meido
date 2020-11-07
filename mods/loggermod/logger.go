@@ -2,21 +2,19 @@ package loggermod
 
 import (
 	"fmt"
-	"github.com/andersfylling/disgord"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
-	"github.com/jmoiron/sqlx"
 )
 
 type LoggerMod struct {
 	cl            chan *meidov2.DiscordMessage
 	commands      []func(msg *meidov2.DiscordMessage)
-	dmLogChannels []int
+	dmLogChannels []string
 }
 
 func New() meidov2.Mod {
 	return &LoggerMod{
-		//cl:            make(chan *meidov2.DiscordMessage),
-		dmLogChannels: []int{},
+		dmLogChannels: []string{},
 	}
 }
 
@@ -39,12 +37,11 @@ func (m *LoggerMod) Commands() []meidov2.ModCommand {
 	return nil
 }
 
-func (m *LoggerMod) Hook(b *meidov2.Bot, _ *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
-	m.cl = cl
-
+func (m *LoggerMod) Hook(b *meidov2.Bot) error {
+	m.cl = b.CommandLog
 	m.dmLogChannels = b.Config.DmLogChannels
 
-	b.Discord.Client.Gateway().GuildCreate(func(s disgord.Session, g *disgord.GuildCreate) {
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		fmt.Println("loaded: ", g.Guild.Name)
 	})
 
@@ -65,23 +62,22 @@ func (m *LoggerMod) ForwardDms(msg *meidov2.DiscordMessage) {
 	if msg.Message.Author.Bot {
 		return
 	}
-
-	if !msg.Message.IsDirectMessage() {
+	if !msg.IsDM() {
 		return
 	}
 
-	embed := &disgord.Embed{
-		Color:       0xffffff,
-		Title:       fmt.Sprintf("Message from %v", msg.Message.Author.Tag()),
+	embed := &discordgo.MessageEmbed{
+		Color:       0xFEFEFE,
+		Title:       fmt.Sprintf("Message from %v", msg.Message.Author.String()),
 		Description: msg.Message.Content,
-		Footer:      &disgord.EmbedFooter{Text: msg.Message.Author.ID.String()},
-		Timestamp:   msg.Message.Timestamp,
+		Footer:      &discordgo.MessageEmbedFooter{Text: msg.Message.Author.ID},
+		Timestamp:   string(msg.Message.Timestamp),
 	}
 	if len(msg.Message.Attachments) > 0 {
-		embed.Image = &disgord.EmbedImage{URL: msg.Message.Attachments[0].URL}
+		embed.Image = &discordgo.MessageEmbedImage{URL: msg.Message.Attachments[0].URL}
 	}
 
 	for _, id := range m.dmLogChannels {
-		msg.Sess.SendMsg(disgord.Snowflake(id), embed)
+		msg.Sess.ChannelMessageSendEmbed(id, embed)
 	}
 }

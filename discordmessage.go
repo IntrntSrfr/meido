@@ -21,6 +21,7 @@ type DiscordMessage struct {
 	Message      *discordgo.Message
 	Type         MessageType
 	TimeReceived time.Time
+	Shard        int
 }
 
 func (m *DiscordMessage) Reply(data string) (*discordgo.Message, error) {
@@ -37,6 +38,10 @@ func (m *DiscordMessage) Args() []string {
 
 func (m *DiscordMessage) LenArgs() int {
 	return len(m.Args())
+}
+
+func (m *DiscordMessage) IsDM() bool {
+	return m.Message.Type == discordgo.MessageTypeDefault && m.Message.GuildID == ""
 }
 
 func (m *DiscordMessage) HighestRole(gid, uid string) int {
@@ -84,7 +89,7 @@ func (m *DiscordMessage) HighestColor(gid, uid string) int {
 		for _, r := range mem.Roles {
 			if r == gr.ID {
 				if gr.Color != 0 {
-					return int(gr.Color)
+					return gr.Color
 				}
 			}
 		}

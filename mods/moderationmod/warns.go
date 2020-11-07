@@ -3,7 +3,7 @@ package moderationmod
 import (
 	"database/sql"
 	"fmt"
-	"github.com/andersfylling/disgord"
+	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meidov2"
 	"strconv"
@@ -19,23 +19,19 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	cu, err := msg.Discord.Client.CurrentUser().Get()
+	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Discord.Sess.State.User.ID, msg.Message.ChannelID)
 	if err != nil {
 		return
 	}
-	botPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(cu.ID)
-	if err != nil {
-		return
-	}
-	if botPerms&disgord.PermissionBanMembers == 0 && botPerms&disgord.PermissionAdministrator == 0 {
+	if botPerms&discordgo.PermissionBanMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		return
 	}
-	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -54,36 +50,36 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 	}
 
 	var (
-		targetUser *disgord.Member
+		targetUser *discordgo.Member
 		reason     = "no reason"
 	)
 
 	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(msg.Message.Mentions[0].ID).Get()
+		targetUser, err = msg.Discord.Sess.State.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
 		}
 	} else {
-		id, err := strconv.Atoi(msg.Args()[1])
+		_, err := strconv.Atoi(msg.Args()[1])
 		if err != nil {
 			return
 		}
-		targetUser, err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(disgord.Snowflake(id)).Get()
+		targetUser, err = msg.Discord.Sess.State.Member(msg.Message.GuildID, msg.Args()[1])
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
 		}
 	}
 
-	if targetUser.UserID == cu.ID || targetUser.User.Bot || targetUser.UserID == msg.Message.Author.ID {
+	if targetUser.User.ID == msg.Sess.State.User.ID || targetUser.User.Bot || targetUser.User.ID == msg.Message.Author.ID {
 		msg.Reply("no")
 		return
 	}
 
 	topUserRole := msg.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
-	topTargetRole := msg.HighestRole(msg.Message.GuildID, targetUser.UserID)
-	topBotRole := msg.HighestRole(msg.Message.GuildID, cu.ID)
+	topTargetRole := msg.HighestRole(msg.Message.GuildID, targetUser.User.ID)
+	topBotRole := msg.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		msg.Reply("no")
@@ -97,55 +93,51 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 	warnCount := 0
 
 	err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warns WHERE user_id=$1 AND guild_id=$2 AND is_valid",
-		targetUser.UserID, msg.Message.GuildID)
+		targetUser.User.ID, msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("something wrong happened")
 		return
 	}
 
-	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
+	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
-		msg.Reply("error occured")
+		msg.Reply("error occurred")
 		return
 	}
 
 	_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
-		msg.Message.GuildID, targetUser.UserID, reason, msg.Message.Author.ID, time.Now(), true)
+		msg.Message.GuildID, targetUser.User.ID, reason, msg.Message.Author.ID, time.Now(), true)
 	if err != nil {
-		msg.Reply("couldnt give strike, try again?")
+		msg.Reply("error giving strike, try again?")
 		return
 	}
 
-	userChannel, userChError := msg.Discord.Client.User(targetUser.UserID).CreateDM()
+	userChannel, userChError := msg.Discord.Sess.UserChannelCreate(targetUser.User.ID)
 
 	// 3 / 3 strikes
 	if warnCount+1 >= dge.MaxStrikes {
 
 		if userChError == nil {
-			msg.Discord.Client.SendMsg(userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
+			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
 				g.Name, dge.MaxStrikes, reason))
 		}
-		err = msg.Discord.Client.Guild(msg.Message.GuildID).Member(targetUser.UserID).Ban(&disgord.BanMemberParams{
-			Reason:            reason,
-			DeleteMessageDays: 0,
-		})
+		err = msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, targetUser.User.ID, reason, 0)
 		if err != nil {
 			msg.Reply(err.Error())
 			return
 		}
 		_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
-			cu.ID, time.Now(), g.ID, msg.Message.Author.ID)
+			msg.Sess.State.User.ID, time.Now(), g.ID, msg.Message.Author.ID)
 
 		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", targetUser.Mention()))
 
 	} else {
 		if userChError == nil {
-			msg.Discord.Client.SendMsg(userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
+			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
 				g.Name, reason, warnCount+1, dge.MaxStrikes))
 		}
 
 		msg.Reply(fmt.Sprintf("%v has been warned\nThey are currently at warn %v/%v", targetUser.Mention(), warnCount+1, dge.MaxStrikes))
-
 	}
 }
 
@@ -157,12 +149,12 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		msg.Reply("An error occurred: " + err.Error())
 		return
 	}
-	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -183,16 +175,16 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 		page--
 	}
 
-	var targetUser *disgord.User
+	var targetUser *discordgo.User
 
 	if len(msg.Message.Mentions) >= 1 {
 		targetUser = msg.Message.Mentions[0]
 	} else {
-		id, err := strconv.Atoi(msg.Args()[1])
+		_, err := strconv.Atoi(msg.Args()[1])
 		if err != nil {
 			return
 		}
-		targetUser, err = msg.Discord.Client.User(disgord.Snowflake(id)).Get()
+		targetUser, err = msg.Discord.Sess.User(msg.Args()[1])
 		if err != nil {
 			msg.Reply("error occurred: " + err.Error())
 			return
@@ -209,9 +201,9 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	embed := &disgord.Embed{}
-	embed.Title = fmt.Sprintf("Warns issued to %v", targetUser.Tag())
-	embed.Footer = &disgord.EmbedFooter{
+	embed := &discordgo.MessageEmbed{}
+	embed.Title = fmt.Sprintf("Warns issued to %v", targetUser.String())
+	embed.Footer = &discordgo.MessageEmbedFooter{
 		Text: fmt.Sprintf("Page %v", page+1),
 	}
 	embed.Color = 0xF08152
@@ -228,32 +220,32 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 		warns = warns[page*10 : min(page*10+10, len(warns))]
 
 		for _, warn := range warns {
-			field := &disgord.EmbedField{}
+			field := &discordgo.MessageEmbedField{}
 			field.Value = warn.Reason
 
-			gb, err := msg.Discord.Client.User(disgord.Snowflake(warn.GivenByID)).Get()
+			gb, err := msg.Discord.Sess.User(warn.GivenByID)
 			if err != nil {
 				msg.Reply("something terrible has happened")
 				return
 			}
 
 			if warn.IsValid {
-				field.Name = fmt.Sprintf("ID: %v | Issued by %v (%v) %v", warn.UID, gb.Tag(), gb.ID, humanize.Time(warn.GivenAt))
+				field.Name = fmt.Sprintf("ID: %v | Issued by %v (%v) %v", warn.UID, gb.String(), gb.ID, humanize.Time(warn.GivenAt))
 			} else {
 				if warn.ClearedByID == nil {
 					return
 				}
-				cb, err := msg.Discord.Client.User(disgord.Snowflake(*warn.ClearedByID)).Get()
+				cb, err := msg.Discord.Sess.User(*warn.ClearedByID)
 				if err != nil {
 					return
 				}
-				field.Name = fmt.Sprintf("ID: %v | !NOT VALID! | Cleared by %v (%v) %v", warn.UID, cb.Tag(), cb.ID, humanize.Time(*warn.ClearedAt))
+				field.Name = fmt.Sprintf("ID: %v | !NOT VALID! | Cleared by %v (%v) %v", warn.UID, cb.String(), cb.ID, humanize.Time(*warn.ClearedAt))
 			}
 
 			embed.Fields = append(embed.Fields, field)
 		}
 	}
-	msg.Reply(embed)
+	msg.ReplyEmbed(embed)
 }
 
 func min(a, b int) int {
@@ -271,12 +263,12 @@ func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		msg.Reply("An error occurred: " + err.Error())
 		return
 	}
-	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -294,11 +286,11 @@ func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
 		msg.Reply("there was an error, please try again")
 		return
 	} else if err == sql.ErrNoRows {
-		msg.Reply("Warn does not exist.")
+		msg.Reply("Warn does not exist")
 		return
 	}
 
-	if msg.Message.GuildID != disgord.Snowflake(we.GuildID) {
+	if msg.Message.GuildID != we.GuildID {
 		msg.Reply("Nice try")
 		return
 	}
@@ -320,27 +312,27 @@ func (m *ModerationMod) ClearWarns(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Client.Guild(msg.Message.GuildID).GetMemberPermissions(msg.Message.Author.ID)
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
 	if err != nil {
 		msg.Reply("An error occurred: " + err.Error())
 		return
 	}
-	if uPerms&disgord.PermissionBanMembers == 0 && uPerms&disgord.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
 	m.cl <- msg
 
-	var targetUser *disgord.User
+	var targetUser *discordgo.User
 
 	if len(msg.Message.Mentions) >= 1 {
 		targetUser = msg.Message.Mentions[0]
 	} else {
-		id, err := strconv.Atoi(msg.Args()[1])
+		_, err := strconv.Atoi(msg.Args()[1])
 		if err != nil {
 			return
 		}
-		targetUser, err = msg.Discord.Client.User(disgord.Snowflake(id)).Get()
+		targetUser, err = msg.Discord.Sess.User(msg.Args()[1])
 		if err != nil {
 			return
 		}

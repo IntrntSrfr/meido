@@ -2,24 +2,26 @@ package meidov2
 
 import (
 	"fmt"
+	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 type Config struct {
-	Token            string `json:"token"`
-	OwoToken         string `json:"owo_token"`
-	ConnectionString string `json:"connection_string"`
-	DmLogChannels    []int  `json:"dm_log_channels"`
-	OwnerIds         []int  `json:"owner_ids"`
+	Token            string   `json:"token"`
+	OwoToken         string   `json:"owo_token"`
+	ConnectionString string   `json:"connection_string"`
+	DmLogChannels    []string `json:"dm_log_channels"`
+	OwnerIds         []string `json:"owner_ids"`
 }
 
 type Bot struct {
 	Discord    *Discord
 	Config     *Config
 	Mods       map[string]Mod
-	commandLog chan *DiscordMessage
-	db         *sqlx.DB
+	CommandLog chan *DiscordMessage
+	DB         *sqlx.DB
+	Owo        *owo.Client
 }
 
 func NewBot(config *Config) *Bot {
@@ -31,7 +33,7 @@ func NewBot(config *Config) *Bot {
 		Discord:    d,
 		Config:     config,
 		Mods:       make(map[string]Mod),
-		commandLog: make(chan *DiscordMessage, 256),
+		CommandLog: make(chan *DiscordMessage, 256),
 	}
 }
 
@@ -42,14 +44,17 @@ func (b *Bot) Open() error {
 	}
 
 	fmt.Println("open and run")
-	/*
-		psql, err := sqlx.Connect("postgres", b.Config.ConnectionString)
-		if err != nil {
-			panic(err)
-		}
-		b.db = psql
-		fmt.Println("psql connection established")
-	*/
+
+	psql, err := sqlx.Connect("postgres", b.Config.ConnectionString)
+	if err != nil {
+		panic(err)
+	}
+	b.DB = psql
+	fmt.Println("psql connection established")
+
+	b.Owo = owo.NewClient(b.Config.OwoToken)
+	fmt.Println("owo client created")
+
 	go b.listen(msgChan)
 	go b.logCommands()
 	return nil
@@ -60,15 +65,14 @@ func (b *Bot) Run() error {
 }
 
 func (b *Bot) Close() {
-	b.Discord.Client.Close()
+	b.Discord.Close()
 }
 
 func (b *Bot) RegisterMod(mod Mod, name string) {
 	fmt.Println(fmt.Sprintf("registering mod '%s'", name))
-	err := mod.Hook(b, b.db, b.commandLog)
+	err := mod.Hook(b)
 	if err != nil {
-		fmt.Println("could not attach mod:", name)
-		return
+		panic(err)
 	}
 	b.Mods[name] = mod
 }
@@ -80,6 +84,7 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 			if m.Message.Author == nil || m.Message.Author.Bot {
 				continue
 			}
+
 			for _, mod := range b.Mods {
 				go mod.Message(m)
 			}
@@ -90,13 +95,13 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 func (b *Bot) logCommands() {
 	for {
 		select {
-		case m := <-b.commandLog:
+		case m := <-b.CommandLog:
 			/*
 				b.db.Exec("INSERT INTO commandlog VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
 					m.Args()[0], strings.Join(m.Args(), " "), m.Message.Author.ID, m.Message.GuildID,
 					m.Message.ChannelID, m.Message.ID, time.Now())
 			*/
-			fmt.Println(m.Message.Author.String(), m.Message.Content, m.TimeReceived.String())
+			fmt.Println(m.Shard, m.Message.Author.String(), m.Message.Content, m.TimeReceived.String())
 		}
 	}
 }

@@ -44,21 +44,44 @@ func (m *UtilityMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *UtilityMod) Help(msg *meidov2.DiscordMessage) {
 
 }
+
 func (m *UtilityMod) Commands() []meidov2.ModCommand {
 	return nil
 }
 
-func (m *UtilityMod) Hook(b *meidov2.Bot, db *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
-	m.cl = cl
-	m.db = db
+func (m *UtilityMod) Hook(b *meidov2.Bot) error {
+	m.cl = b.CommandLog
+	m.db = b.DB
 
-	b.Discord.Client.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		s.UpdateStatusComplex(discordgo.UpdateStatusData{
-			Game: &discordgo.Game{
-				Name: "BEING REWORKED, WILL WORK AGAIN SOON",
-				Type: discordgo.GameTypeGame,
-			},
-		})
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		statusTimer := time.NewTicker(time.Second * 15)
+		oldMemCount := 0
+		oldSrvCount := 0
+		go func() {
+			for range statusTimer.C {
+				memCount := 0
+				srvCount := 0
+				for _, sess := range b.Discord.Sessions {
+					srvCount++
+					for _, g := range sess.State.Guilds {
+						memCount += g.MemberCount
+					}
+				}
+
+				if memCount == oldMemCount && srvCount == oldSrvCount {
+					continue
+				}
+
+				s.UpdateStatusComplex(discordgo.UpdateStatusData{
+					Game: &discordgo.Game{
+						Name: fmt.Sprintf("BEING REWORKED, %v MEMBERS, %v SERVERS", memCount, srvCount),
+						Type: discordgo.GameTypeGame,
+					},
+				})
+				oldMemCount = memCount
+				oldSrvCount = srvCount
+			}
+		}()
 	})
 
 	m.commands = append(m.commands, m.Avatar, m.About, m.Server, m.ServerBanner, m.ServerSplash)
@@ -95,7 +118,7 @@ func (m *UtilityMod) Avatar(msg *meidov2.DiscordMessage) {
 			}
 		}
 	} else {
-		targetUser, err = msg.Discord.Client.User(msg.Message.Author.ID).Get()
+		targetUser, err = msg.Discord.Sess.User(msg.Message.Author.ID)
 		if err != nil {
 			return
 		}
@@ -106,19 +129,20 @@ func (m *UtilityMod) Avatar(msg *meidov2.DiscordMessage) {
 	}
 
 	if targetUser.Avatar == "" {
-		msg.Reply(&disgord.Embed{
+		msg.ReplyEmbed(&discordgo.MessageEmbed{
 			Color:       0xC80000,
-			Description: fmt.Sprintf("%v has no avatar set.", targetUser.Tag()),
+			Description: fmt.Sprintf("%v has no avatar set.", targetUser.String()),
 		})
 	} else {
-		msg.Reply(&disgord.Embed{
+		msg.ReplyEmbed(&discordgo.MessageEmbed{
 			Color: msg.HighestColor(msg.Message.GuildID, targetUser.ID),
-			Title: targetUser.Tag(),
-			Image: &disgord.EmbedImage{URL: AvatarURL(targetUser, 1024)},
+			Title: targetUser.String(),
+			Image: &discordgo.MessageEmbedImage{URL: targetUser.AvatarURL("1024")},
 		})
 	}
 }
 
+// only here in case of disgord
 func AvatarURL(u *disgord.User, size int) string {
 	a, _ := u.AvatarURL(size, true)
 	return a
@@ -128,12 +152,12 @@ func (m *UtilityMod) Server(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 || msg.Args()[0] != "m?server" {
 		return
 	}
-	if msg.Message.IsDirectMessage() {
+	if msg.IsDM() {
 		return
 	}
 	m.cl <- msg
 
-	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
+	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("Error getting guild data")
 		return
@@ -143,36 +167,44 @@ func (m *UtilityMod) Server(msg *meidov2.DiscordMessage) {
 	vc := 0
 
 	for _, ch := range g.Channels {
-		if ch.Type == disgord.ChannelTypeGuildText {
+		if ch.Type == discordgo.ChannelTypeGuildText {
 			tc++
-		} else if ch.Type == disgord.ChannelTypeGuildVoice {
+		} else if ch.Type == discordgo.ChannelTypeGuildVoice {
 			vc++
 		}
 	}
 
-	owner, err := msg.Discord.Client.Guild(g.ID).Member(g.OwnerID).Get()
+	owner, err := msg.Discord.Sess.State.Member(g.ID, g.OwnerID)
 	if err != nil {
 		msg.Reply("Error getting guild data")
 		return
 	}
 
-	c := g.ID.Date()
-	dur := time.Since(c)
+	id, err := strconv.ParseInt(g.ID, 10, 64)
+	if err != nil {
+		return
+	}
 
-	embed := disgord.Embed{
+	id = ((id >> 22) + 1420070400000) / 1000
+
+	dur := time.Since(time.Unix(id, 0))
+
+	ts := time.Unix(id, 0)
+
+	embed := discordgo.MessageEmbed{
 		Color: 0xFFFFFF,
-		Author: &disgord.EmbedAuthor{
+		Author: &discordgo.MessageEmbedAuthor{
 			Name: g.Name,
 		},
-		Fields: []*disgord.EmbedField{
+		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "Owner",
-				Value:  fmt.Sprintf("%v\n(%v)", owner.Mention(), owner.UserID),
+				Value:  fmt.Sprintf("%v\n(%v)", owner.Mention(), owner.User.ID),
 				Inline: true,
 			},
 			{
 				Name:  "Creation date",
-				Value: fmt.Sprintf("%v\n%v days ago", c.Format(time.RFC1123), math.Floor(dur.Hours()/24.0)),
+				Value: fmt.Sprintf("%v\n%v days ago", ts.Format(time.RFC1123), math.Floor(dur.Hours()/24.0)),
 			},
 			{
 				Name:   "Members",
@@ -192,13 +224,13 @@ func (m *UtilityMod) Server(msg *meidov2.DiscordMessage) {
 		},
 	}
 	if g.Icon != "" {
-		embed.Thumbnail = &disgord.EmbedThumbnail{
+		embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
 			URL: fmt.Sprintf("https://cdn.discordapp.com/icons/%v/%v.png", g.ID, g.Icon),
 		}
 		embed.Author.IconURL = fmt.Sprintf("https://cdn.discordapp.com/icons/%v/%v.png", g.ID, g.Icon)
 	}
 
-	msg.Reply(&embed)
+	msg.ReplyEmbed(&embed)
 }
 
 func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
@@ -208,7 +240,7 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 	m.cl <- msg
 
 	var (
-		totalUsers uint
+		totalUsers int
 		/*
 			totalBots   int
 			totalHumans int
@@ -217,15 +249,10 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 		totalCommands int
 	)
 	runtime.ReadMemStats(&memory)
-	guildIDs := msg.Discord.Client.GetConnectedGuilds()
+	guilds := msg.Discord.Sess.State.Guilds
 
-	for _, id := range guildIDs {
-
-		g, err := msg.Discord.Client.Guild(id).Get()
-		if err != nil {
-			continue
-		}
-		totalUsers += g.MemberCount
+	for _, guild := range guilds {
+		totalUsers += guild.MemberCount
 	}
 
 	uptime := time.Now().Sub(m.startTime)
@@ -235,10 +262,10 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	msg.Reply(&disgord.Embed{
+	msg.ReplyEmbed(&discordgo.MessageEmbed{
 		Title: "About",
 		Color: 0xFEFEFE,
-		Fields: []*disgord.EmbedField{
+		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "Uptime",
 				Value:  uptime.String(),
@@ -251,12 +278,12 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 			},
 			{
 				Name:   "Guilds",
-				Value:  strconv.Itoa(len(guildIDs)),
+				Value:  strconv.Itoa(len(guilds)),
 				Inline: false,
 			},
 			{
 				Name:   "Users",
-				Value:  strconv.Itoa(int(totalUsers)),
+				Value:  strconv.Itoa(totalUsers),
 				Inline: true,
 			},
 			{
@@ -272,17 +299,18 @@ func (m *UtilityMod) About(msg *meidov2.DiscordMessage) {
 		},
 	})
 }
+
 func (m *UtilityMod) ServerSplash(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() == 0 || msg.Args()[0] != "m?serversplash" {
 		return
 	}
-	if msg.Message.IsDirectMessage() {
+	if msg.IsDM() {
 		return
 	}
 
 	m.cl <- msg
 
-	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
+	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
 		return
 	}
@@ -292,27 +320,27 @@ func (m *UtilityMod) ServerSplash(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	embed := &disgord.Embed{
+	embed := &discordgo.MessageEmbed{
 		Title: g.Name,
 		Color: 0xFFFFFF,
-		Image: &disgord.EmbedImage{
+		Image: &discordgo.MessageEmbedImage{
 			URL: fmt.Sprintf("https://cdn.discordapp.com/splashes/%v/%v.png", g.ID, g.Splash),
 		},
 	}
-	msg.Reply(embed)
+	msg.ReplyEmbed(embed)
 }
 
 func (m *UtilityMod) ServerBanner(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() == 0 || msg.Args()[0] != "m?serverbanner" {
 		return
 	}
-	if msg.Message.IsDirectMessage() {
+	if msg.IsDM() {
 		return
 	}
 
 	m.cl <- msg
 
-	g, err := msg.Discord.Client.Guild(msg.Message.GuildID).Get()
+	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
 		return
 	}
@@ -322,12 +350,12 @@ func (m *UtilityMod) ServerBanner(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	embed := &disgord.Embed{
+	embed := &discordgo.MessageEmbed{
 		Title: g.Name,
 		Color: 0xFFFFFF,
-		Image: &disgord.EmbedImage{
+		Image: &discordgo.MessageEmbedImage{
 			URL: fmt.Sprintf("https://cdn.discordapp.com/banners/%v/%v.png", g.ID, g.Splash),
 		},
 	}
-	msg.Reply(embed)
+	msg.ReplyEmbed(embed)
 }

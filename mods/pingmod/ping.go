@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
-	"github.com/jmoiron/sqlx"
 	"time"
 )
 
@@ -14,9 +13,7 @@ type PingMod struct {
 }
 
 func New() meidov2.Mod {
-	return &PingMod{
-		//cl: make(chan *meidov2.DiscordMessage),
-	}
+	return &PingMod{}
 }
 
 func (m *PingMod) Save() error {
@@ -37,10 +34,10 @@ func (m *PingMod) Commands() []meidov2.ModCommand {
 	return nil
 }
 
-func (m *PingMod) Hook(b *meidov2.Bot, _ *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
-	m.cl = cl
+func (m *PingMod) Hook(b *meidov2.Bot) error {
+	m.cl = b.CommandLog
 
-	b.Discord.Client.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		fmt.Println(len(r.Guilds))
 		fmt.Println(r.User.String())
 	})
