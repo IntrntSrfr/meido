@@ -36,7 +36,7 @@ func (m *ModerationMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *ModerationMod) Help(msg *meidov2.DiscordMessage) {
 
 }
-func (m *ModerationMod) Commands() []meidov2.ModCommand {
+func (m *ModerationMod) Commands() map[string]meidov2.ModCommand {
 	return nil
 }
 

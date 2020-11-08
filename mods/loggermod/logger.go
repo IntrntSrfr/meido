@@ -33,7 +33,7 @@ func (m *LoggerMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *LoggerMod) Help(msg *meidov2.DiscordMessage) {
 
 }
-func (m *LoggerMod) Commands() []meidov2.ModCommand {
+func (m *LoggerMod) Commands() map[string]meidov2.ModCommand {
 	return nil
 }
 

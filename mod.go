@@ -7,7 +7,7 @@ type Mod interface {
 	Help(*DiscordMessage)
 	Save() error
 	Load() error
-	Commands() []ModCommand
+	Commands() map[string]ModCommand
 }
 
 type ModCommand interface {
@@ -19,6 +19,7 @@ type ModCommand interface {
 	RequiredPerms() int
 	OwnerOnly() bool
 	Enabled() bool
+	Cooldown() int
 	Run(*DiscordMessage)
 }
 

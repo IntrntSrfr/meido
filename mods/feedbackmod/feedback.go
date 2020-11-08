@@ -38,7 +38,7 @@ func (m *FeedbackMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *FeedbackMod) Help(msg *meidov2.DiscordMessage) {
 
 }
-func (m *FeedbackMod) Commands() []meidov2.ModCommand {
+func (m *FeedbackMod) Commands() map[string]meidov2.ModCommand {
 	return nil
 }
 

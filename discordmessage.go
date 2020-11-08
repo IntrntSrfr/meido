@@ -1,6 +1,7 @@
 package meidov2
 
 import (
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"sort"
 	"strings"
@@ -16,9 +17,12 @@ const (
 )
 
 type DiscordMessage struct {
-	Sess         *discordgo.Session
-	Discord      *Discord
-	Message      *discordgo.Message
+	Sess    *discordgo.Session
+	Discord *Discord
+	Message *discordgo.Message
+
+	// Partial guild member, use only for guild related stuff
+	Member       *discordgo.Member
 	Type         MessageType
 	TimeReceived time.Time
 	Shard        int
@@ -74,10 +78,14 @@ func (m *DiscordMessage) HighestColor(gid, uid string) int {
 
 	g, err := m.Sess.State.Guild(gid)
 	if err != nil {
+		fmt.Println("1", err)
 		return 0
 	}
+
 	mem, err := m.Sess.State.Member(gid, uid)
 	if err != nil {
+		fmt.Println("2", err)
+
 		return 0
 	}
 

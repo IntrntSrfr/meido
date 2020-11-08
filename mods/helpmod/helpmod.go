@@ -28,7 +28,7 @@ func (m *HelpMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *HelpMod) Help(msg *meidov2.DiscordMessage) {
 
 }
-func (m *HelpMod) Commands() []meidov2.ModCommand {
+func (m *HelpMod) Commands() map[string]meidov2.ModCommand {
 	return nil
 }
 

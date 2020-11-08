@@ -37,7 +37,7 @@ func (m *UserRoleMod) Help(msg *meidov2.DiscordMessage) {
 
 }
 
-func (m *UserRoleMod) Commands() []meidov2.ModCommand {
+func (m *UserRoleMod) Commands() map[string]meidov2.ModCommand {
 	return nil
 }
 

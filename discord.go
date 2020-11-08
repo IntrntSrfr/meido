@@ -24,21 +24,6 @@ func NewDiscord(token string) *Discord {
 	}
 }
 
-type Log struct {
-}
-
-func (l *Log) Debug(v ...interface{}) {
-	fmt.Println(v)
-}
-
-func (l *Log) Info(v ...interface{}) {
-	fmt.Println(v)
-}
-
-func (l *Log) Error(v ...interface{}) {
-	fmt.Println(v)
-}
-
 func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 	req, _ := http.NewRequest("GET", "https://discord.com/api/v8/gateway/bot", nil)
 	req.Header.Add("Authorization", "Bot "+d.token)
@@ -62,7 +47,6 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 			return nil, err
 		}
 
-		s.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAllWithoutPrivileged)
 		s.State.TrackVoice = false
 		s.State.TrackPresences = false
 		s.ShardCount = shardCount
@@ -76,15 +60,6 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 		fmt.Println("created session:", i)
 	}
 	d.Sess = d.Sessions[0]
-
-	/*
-		err := s.Connect(context.Background())
-		if err != nil {
-			fmt.Println(err)
-			return nil, err
-		}
-	*/
-	//go d.listen()
 
 	return d.messageChan, nil
 }
@@ -118,6 +93,7 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 		Sess:         s,
 		Discord:      d,
 		Message:      m.Message,
+		Member:       m.Member,
 		Type:         MessageTypeUpdate,
 		TimeReceived: time.Now(),
 		Shard:        s.ShardID,

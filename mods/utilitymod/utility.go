@@ -45,7 +45,7 @@ func (m *UtilityMod) Help(msg *meidov2.DiscordMessage) {
 
 }
 
-func (m *UtilityMod) Commands() []meidov2.ModCommand {
+func (m *UtilityMod) Commands() map[string]meidov2.ModCommand {
 	return nil
 }
 
