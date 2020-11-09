@@ -9,17 +9,23 @@ import (
 	"github.com/jmoiron/sqlx"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type UserRoleMod struct {
+	Name string
+	sync.Mutex
 	cl       chan *meidov2.DiscordMessage
-	commands []func(msg *meidov2.DiscordMessage)
+	commands map[string]meidov2.ModCommand
 	db       *sqlx.DB
 	owo      *owo.Client
 }
 
-func New() meidov2.Mod {
-	return &UserRoleMod{}
+func New(name string) meidov2.Mod {
+	return &UserRoleMod{
+		Name:     name,
+		commands: make(map[string]meidov2.ModCommand),
+	}
 }
 
 func (m *UserRoleMod) Save() error {
@@ -50,10 +56,20 @@ func (m *UserRoleMod) Hook(b *meidov2.Bot) error {
 		m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND role_id=$2", r.GuildID, r.RoleID)
 	})
 
-	m.commands = append(m.commands, m.ToggleUserRole, m.MyRole, m.ListUserRoles)
-	//m.commands = append(m.commands, m.check)
+	m.RegisterCommand(NewToggleUserRoleCommand(m))
+	m.RegisterCommand(NewMyRoleCommand(m))
+	m.RegisterCommand(NewListUserRolesCommand(m))
 
 	return nil
+}
+
+func (m *UserRoleMod) RegisterCommand(cmd meidov2.ModCommand) {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.commands[cmd.Name()]; ok {
+		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name(), m.Name))
+	}
+	m.commands[cmd.Name()] = cmd
 }
 
 func (m *UserRoleMod) Message(msg *meidov2.DiscordMessage) {
@@ -64,11 +80,55 @@ func (m *UserRoleMod) Message(msg *meidov2.DiscordMessage) {
 		return
 	}
 	for _, c := range m.commands {
-		go c(msg)
+		go c.Run(msg)
 	}
 }
 
-func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
+type ToggleUserRoleCommand struct {
+	m       *UserRoleMod
+	Enabled bool
+}
+
+func NewToggleUserRoleCommand(m *UserRoleMod) meidov2.ModCommand {
+	return &ToggleUserRoleCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+
+func (c *ToggleUserRoleCommand) Name() string {
+	return "Userrole"
+}
+
+func (c *ToggleUserRoleCommand) Description() string {
+	return "Binds, unbinds or changes a userrole bind to a user"
+}
+
+func (c *ToggleUserRoleCommand) Triggers() []string {
+	return []string{"m?setuserrole"}
+}
+
+func (c *ToggleUserRoleCommand) Usage() string {
+	return "m?setuserrole 1231231231231 cool role"
+}
+
+func (c *ToggleUserRoleCommand) Cooldown() int {
+	return 30
+}
+
+func (c *ToggleUserRoleCommand) RequiredPerms() int {
+	return discordgo.PermissionManageRoles
+}
+
+func (c *ToggleUserRoleCommand) RequiresOwner() bool {
+	return false
+}
+
+func (c *ToggleUserRoleCommand) IsEnabled() bool {
+	return c.Enabled
+}
+
+func (c *ToggleUserRoleCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 3 || msg.Args()[0] != "m?setuserrole" {
 		return
 	}
@@ -91,7 +151,7 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	var (
 		targetUser   *discordgo.Member
@@ -139,18 +199,18 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 
 	userRole := &Userrole{}
 
-	err = m.db.Get(userRole, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, targetUser.User.ID)
+	err = c.m.db.Get(userRole, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, targetUser.User.ID)
 	switch err {
 	case nil:
 		if selectedRole.ID == userRole.RoleID {
-			m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetUser.User.ID, selectedRole.ID)
+			c.m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetUser.User.ID, selectedRole.ID)
 			msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetUser.User.String()))
 		} else {
-			m.db.Exec("UPDATE userroles SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetUser.User.ID)
+			c.m.db.Exec("UPDATE userroles SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetUser.User.ID)
 			msg.Reply(fmt.Sprintf("Updated userrole for **%v** to **%v**", targetUser.User.String(), selectedRole.Name))
 		}
 	case sql.ErrNoRows:
-		m.db.Exec("INSERT INTO userroles(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetUser.User.ID, selectedRole.ID)
+		c.m.db.Exec("INSERT INTO userroles(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetUser.User.ID, selectedRole.ID)
 		msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetUser.User.String()))
 	default:
 		fmt.Println(err)
@@ -158,12 +218,56 @@ func (m *UserRoleMod) ToggleUserRole(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
+type MyRoleCommand struct {
+	m       *UserRoleMod
+	Enabled bool
+}
+
+func NewMyRoleCommand(m *UserRoleMod) meidov2.ModCommand {
+	return &MyRoleCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+
+func (c *MyRoleCommand) Name() string {
+	return "MyRole"
+}
+
+func (c *MyRoleCommand) Description() string {
+	return "Displays a users bound role, or lets the user change the name or color of their bound role"
+}
+
+func (c *MyRoleCommand) Triggers() []string {
+	return []string{"m?myrole"}
+}
+
+func (c *MyRoleCommand) Usage() string {
+	return "m?myrole\nm?myrole 123123123123\nm?myrole color c0ffee\nm?myrole name jeff"
+}
+
+func (c *MyRoleCommand) Cooldown() int {
+	return 5
+}
+
+func (c *MyRoleCommand) RequiredPerms() int {
+	return 0
+}
+
+func (c *MyRoleCommand) RequiresOwner() bool {
+	return false
+}
+
+func (c *MyRoleCommand) IsEnabled() bool {
+	return c.Enabled
+}
+
+func (c *MyRoleCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 || msg.Args()[0] != "m?myrole" {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	var (
 		err     error
@@ -193,7 +297,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 		}
 
 		ur := &Userrole{}
-		err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, msg.Message.Author.ID)
+		err = c.m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, msg.Message.Author.ID)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
 			msg.Reply("there was an error, please try again")
@@ -298,7 +402,7 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 	}
 
 	ur := &Userrole{}
-	err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, target.User.ID)
+	err = c.m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, target.User.ID)
 	if err != nil && err != sql.ErrNoRows {
 		msg.Reply("there was an error, please try again")
 		fmt.Println(err)
@@ -342,15 +446,60 @@ func (m *UserRoleMod) MyRole(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
+type ListUserRolesCommand struct {
+	m       *UserRoleMod
+	Enabled bool
+}
+
+func NewListUserRolesCommand(m *UserRoleMod) meidov2.ModCommand {
+	return &ListUserRolesCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+
+func (c *ListUserRolesCommand) Name() string {
+	return "ListUserRoles"
+}
+
+func (c *ListUserRolesCommand) Description() string {
+	return "Returns a list of the user roles that are in the server, displays if some users still are in the server or not"
+}
+
+func (c *ListUserRolesCommand) Triggers() []string {
+	return []string{"m?listuserroles"}
+}
+
+func (c *ListUserRolesCommand) Usage() string {
+	return "m?listuserroles"
+}
+
+func (c *ListUserRolesCommand) Cooldown() int {
+	return 30
+}
+
+func (c *ListUserRolesCommand) RequiredPerms() int {
+	return 0
+}
+
+func (c *ListUserRolesCommand) RequiresOwner() bool {
+	return false
+}
+
+func (c *ListUserRolesCommand) IsEnabled() bool {
+	return c.Enabled
+}
+
+func (c *ListUserRolesCommand) Run(msg *meidov2.DiscordMessage) {
+
 	if msg.LenArgs() != 1 || msg.Args()[0] != "m?listuserroles" {
 		return
 	}
-	m.cl <- msg
+	c.m.cl <- msg
 
 	var userRoles []*Userrole
 
-	err := m.db.Select(&userRoles, "SELECT role_id, user_id FROM userroles WHERE guild_id=$1;", msg.Message.GuildID)
+	err := c.m.db.Select(&userRoles, "SELECT role_id, user_id FROM userroles WHERE guild_id=$1;", msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
@@ -379,10 +528,11 @@ func (m *UserRoleMod) ListUserRoles(msg *meidov2.DiscordMessage) {
 		count++
 	}
 
-	link, err := m.owo.Upload(text)
+	link, err := c.m.owo.Upload(text)
 	if err != nil {
 		msg.Reply("Error getting user roles.")
 		return
 	}
 	msg.Reply(fmt.Sprintf("User roles in %v\n%v", g.Name, link))
+
 }
