@@ -24,6 +24,7 @@ type Bot struct {
 	CommandLog chan *DiscordMessage
 	DB         *sqlx.DB
 	Owo        *owo.Client
+	Cooldowns  map[string]time.Time
 }
 
 func NewBot(config *Config) *Bot {

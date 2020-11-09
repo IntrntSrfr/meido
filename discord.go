@@ -78,6 +78,9 @@ func (d *Discord) Close() {
 }
 
 func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Message.Author == nil || m.Message.Author.Bot {
+		return
+	}
 	d.messageChan <- &DiscordMessage{
 		Sess:         s,
 		Discord:      d,
@@ -89,6 +92,9 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 }
 
 func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
+	if m.Message.Author == nil || m.Message.Author.Bot {
+		return
+	}
 	d.messageChan <- &DiscordMessage{
 		Sess:         s,
 		Discord:      d,

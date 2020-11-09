@@ -1,25 +1,25 @@
 package meidov2
 
 type Mod interface {
-	Hook(*Bot) error
-	Message(*DiscordMessage)
-	Settings(*DiscordMessage)
-	Help(*DiscordMessage)
 	Save() error
 	Load() error
 	Commands() map[string]ModCommand
+	Hook(*Bot) error
+	RegisterCommand(ModCommand)
+	Settings(*DiscordMessage)
+	Help(*DiscordMessage)
+	Message(*DiscordMessage)
 }
 
 type ModCommand interface {
 	Name() string
-	Aliases() []string
-	Triggers() []string
 	Description() string
+	Triggers() []string
 	Usage() string
-	RequiredPerms() int
-	OwnerOnly() bool
-	Enabled() bool
 	Cooldown() int
+	RequiredPerms() int
+	RequiresOwner() bool
+	IsEnabled() bool
 	Run(*DiscordMessage)
 }
 
