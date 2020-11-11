@@ -8,10 +8,13 @@ import (
 	"github.com/jmoiron/sqlx"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 type ModerationMod struct {
+	Name string
+	sync.Mutex
 	cl       chan *meidov2.DiscordMessage
 	commands []func(msg *meidov2.DiscordMessage)
 	db       *sqlx.DB
@@ -53,6 +56,34 @@ func (m *ModerationMod) Hook(b *meidov2.Bot) error {
 			m.db.Exec("INSERT INTO guilds(guild_id, use_strikes, max_strikes) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
 			fmt.Println(fmt.Sprintf("Inserted new guild: %v [%v]", g.Guild.Name, g.Guild.ID))
 		}
+	})
+
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		refreshTicker := time.NewTicker(time.Hour)
+
+		go func() {
+			for range refreshTicker.C {
+				for _, g := range b.Discord.Sess.State.Guilds {
+					dge := &DiscordGuild{}
+					err := b.DB.Get(dge, "SELECT * FROM guilds WHERE guild_id=$1", g.ID)
+					if err != nil {
+						continue
+					}
+
+					var warns []*WarnEntry
+					err = b.DB.Select(&warns, "SELECT * FROM warns WHERE guild_id=$1", g.ID)
+					if err != nil {
+						continue
+					}
+
+					for _, warn := range warns {
+						if warn.GivenAt.Unix() < time.Now().Add(time.Hour*24*30*-1).Unix() {
+							b.DB.Exec("DELETE FROM warns WHERE uid=$1", warn.UID)
+						}
+					}
+				}
+			}
+		}()
 	})
 
 	m.commands = append(m.commands, m.Ban, m.Unban, m.Hackban)
@@ -313,4 +344,112 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 		}
 	}
 	msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
+}
+
+func (m *ModerationMod) Kick(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 2 || (msg.Args()[0] != ".kick" && msg.Args()[0] != ".k" && msg.Args()[0] != "m?kick" && msg.Args()[0] != "m?k") {
+		return
+	}
+	if msg.Type != meidov2.MessageTypeCreate {
+		return
+	}
+
+	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Sess.State.User.ID, msg.Message.ChannelID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if botPerms&discordgo.PermissionKickMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
+		return
+	}
+
+	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if uPerms&discordgo.PermissionKickMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
+		return
+	}
+
+	m.cl <- msg
+
+	var targetUser *discordgo.Member
+
+	reason := ""
+	if msg.LenArgs() > 2 {
+		reason = strings.Join(msg.Args()[2:], " ")
+	}
+
+	if len(msg.Message.Mentions) >= 1 {
+		targetUser, err = msg.Sess.State.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
+		if err != nil {
+			msg.Reply("that person isnt even here wtf :(")
+			return
+		}
+	} else {
+		targetUser, err = msg.Sess.State.Member(msg.Message.GuildID, msg.Args()[1])
+		if err != nil {
+			msg.Reply("that person isnt even here wtf :(")
+			return
+		}
+	}
+
+	if targetUser.User.ID == msg.Sess.State.User.ID {
+		msg.Reply("no")
+		return
+	}
+	if targetUser.User.ID == msg.Message.Author.ID {
+		msg.Reply("no")
+		return
+	}
+
+	topUserRole := msg.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
+	topTargetRole := msg.HighestRole(msg.Message.GuildID, targetUser.User.ID)
+	topBotRole := msg.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
+
+	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
+		msg.Reply("no")
+		return
+	}
+
+	g, err := msg.Sess.State.Guild(msg.Message.GuildID)
+	if err != nil {
+		return
+	}
+
+	userCh, userChErr := msg.Sess.UserChannelCreate(targetUser.User.ID)
+
+	if userChErr == nil {
+		if reason == "" {
+			msg.Sess.ChannelMessageSend(userCh.ID, fmt.Sprintf("You have been kicked from %v.", g.Name))
+		} else {
+			msg.Sess.ChannelMessageSend(userCh.ID, fmt.Sprintf("You have been kicked from %v for the following reason: %v", g.Name, reason))
+		}
+	}
+
+	err = msg.Sess.GuildMemberDeleteWithReason(g.ID, targetUser.User.ID, fmt.Sprintf("%v - %v", msg.Message.Author.String(), reason))
+	if err != nil {
+		msg.Reply("failed to kick user")
+		return
+	}
+
+	embed := &discordgo.MessageEmbed{
+		Title: "User kicked",
+		Fields: []*discordgo.MessageEmbedField{
+			{
+				Name:   "Username",
+				Value:  fmt.Sprintf("%v", targetUser.Mention()),
+				Inline: true,
+			},
+			{
+				Name:   "ID",
+				Value:  fmt.Sprintf("%v", targetUser.User.ID),
+				Inline: true,
+			},
+		},
+		Color: 0xC80000,
+	}
+
+	msg.ReplyEmbed(embed)
 }

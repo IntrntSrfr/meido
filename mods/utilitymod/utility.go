@@ -1,12 +1,16 @@
 package utilitymod
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/andersfylling/disgord"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meidov2"
 	"github.com/jmoiron/sqlx"
+	"image"
+	"image/color"
+	"image/png"
 	"math"
 	"runtime"
 	"strconv"
@@ -93,6 +97,7 @@ func (m *UtilityMod) Hook(b *meidov2.Bot) error {
 	m.RegisterCommand(NewServerCommand(m))
 	m.RegisterCommand(NewServerBannerCommand(m))
 	m.RegisterCommand(NewServerSplashCommand(m))
+	m.RegisterCommand(NewColorCommand(m))
 
 	//m.commands = append(m.commands, m.Avatar, m.About, m.Server, m.ServerBanner, m.ServerSplash)
 
@@ -559,4 +564,82 @@ func (c *ServerBannerCommand) Run(msg *meidov2.DiscordMessage) {
 		},
 	}
 	msg.ReplyEmbed(embed)
+}
+
+type ColorCommand struct {
+	m       *UtilityMod
+	Enabled bool
+}
+
+func NewColorCommand(m *UtilityMod) meidov2.ModCommand {
+	return &ColorCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+func (c *ColorCommand) Name() string {
+	return "Color"
+}
+func (c *ColorCommand) Description() string {
+	return "Displays a provided hex color"
+}
+func (c *ColorCommand) Triggers() []string {
+	return []string{"m?color"}
+}
+func (c *ColorCommand) Usage() string {
+	return "m?color #c0ffee\nm?color c0ffee"
+}
+func (c *ColorCommand) Cooldown() int {
+	return 3
+}
+func (c *ColorCommand) RequiredPerms() int {
+	return 0
+}
+func (c *ColorCommand) RequiresOwner() bool {
+	return false
+}
+func (c *ColorCommand) IsEnabled() bool {
+	return c.Enabled
+}
+func (c *ColorCommand) Run(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 2 || msg.Args()[0] != "m?color" {
+		return
+	}
+
+	clrStr := msg.Args()[1]
+
+	if clrStr[0] == '#' {
+		clrStr = clrStr[1:]
+	}
+
+	clr, err := strconv.ParseInt(clrStr, 16, 32)
+	if err != nil {
+		msg.Reply("invalid color")
+		return
+	}
+	if clr < 0 || clr > 0xffffff {
+		msg.Reply("invalid color")
+		return
+	}
+
+	red := clr >> 16
+	green := (clr >> 8) & 0xff
+	blue := clr & 0xff
+
+	img := image.NewRGBA(image.Rect(0, 0, 64, 64))
+
+	for y := 0; y < 64; y++ {
+		for x := 0; x < 64; x++ {
+			img.Set(x, y, color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255})
+		}
+	}
+
+	buf := &bytes.Buffer{}
+
+	err = png.Encode(buf, img)
+	if err != nil {
+		return
+	}
+
+	msg.Sess.ChannelFileSend(msg.Message.ChannelID, "color.png", buf)
 }

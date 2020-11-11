@@ -95,39 +95,30 @@ func NewToggleUserRoleCommand(m *UserRoleMod) meidov2.ModCommand {
 		Enabled: true,
 	}
 }
-
 func (c *ToggleUserRoleCommand) Name() string {
 	return "Userrole"
 }
-
 func (c *ToggleUserRoleCommand) Description() string {
 	return "Binds, unbinds or changes a userrole bind to a user"
 }
-
 func (c *ToggleUserRoleCommand) Triggers() []string {
 	return []string{"m?setuserrole"}
 }
-
 func (c *ToggleUserRoleCommand) Usage() string {
 	return "m?setuserrole 1231231231231 cool role"
 }
-
 func (c *ToggleUserRoleCommand) Cooldown() int {
 	return 30
 }
-
 func (c *ToggleUserRoleCommand) RequiredPerms() int {
 	return discordgo.PermissionManageRoles
 }
-
 func (c *ToggleUserRoleCommand) RequiresOwner() bool {
 	return false
 }
-
 func (c *ToggleUserRoleCommand) IsEnabled() bool {
 	return c.Enabled
 }
-
 func (c *ToggleUserRoleCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 3 || msg.Args()[0] != "m?setuserrole" {
 		return
@@ -229,39 +220,30 @@ func NewMyRoleCommand(m *UserRoleMod) meidov2.ModCommand {
 		Enabled: true,
 	}
 }
-
 func (c *MyRoleCommand) Name() string {
 	return "MyRole"
 }
-
 func (c *MyRoleCommand) Description() string {
 	return "Displays a users bound role, or lets the user change the name or color of their bound role"
 }
-
 func (c *MyRoleCommand) Triggers() []string {
 	return []string{"m?myrole"}
 }
-
 func (c *MyRoleCommand) Usage() string {
 	return "m?myrole\nm?myrole 123123123123\nm?myrole color c0ffee\nm?myrole name jeff"
 }
-
 func (c *MyRoleCommand) Cooldown() int {
 	return 5
 }
-
 func (c *MyRoleCommand) RequiredPerms() int {
 	return 0
 }
-
 func (c *MyRoleCommand) RequiresOwner() bool {
 	return false
 }
-
 func (c *MyRoleCommand) IsEnabled() bool {
 	return c.Enabled
 }
-
 func (c *MyRoleCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 || msg.Args()[0] != "m?myrole" {
 		return
@@ -317,9 +299,7 @@ func (c *MyRoleCommand) Run(msg *meidov2.DiscordMessage) {
 			return
 		}
 
-		switch msg.Args()[1] {
-		case "name":
-
+		if msg.Args()[1] == "name" {
 			newName := strings.Join(msg.Args()[2:], " ")
 
 			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, newName, oldRole.Color, oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
@@ -338,8 +318,7 @@ func (c *MyRoleCommand) Run(msg *meidov2.DiscordMessage) {
 			}
 			msg.ReplyEmbed(embed)
 
-		case "color":
-
+		} else if msg.Args()[1] == "color" {
 			clr := msg.Args()[2]
 			if strings.HasPrefix(clr, "#") {
 				clr = clr[1:]
@@ -362,13 +341,12 @@ func (c *MyRoleCommand) Run(msg *meidov2.DiscordMessage) {
 			}
 
 			embed := &discordgo.MessageEmbed{
-				Color:       int(color),
-				Description: fmt.Sprintf("Color changed from #%v to #%v", fmt.Sprintf("%06X", oldRole.Color), fmt.Sprintf("%06X", color)),
+				Color: int(color),
+				//Description: fmt.Sprintf("Color changed from #%v to #%v", fmt.Sprintf("%06X", oldRole.Color), fmt.Sprintf("%06X", color)),
+				Description: fmt.Sprintf("Color changed from #%v to #%v", strconv.FormatInt(int64(oldRole.Color), 16), strconv.FormatInt(color, 16)), // fmt.Sprintf("%06X", color)),
 			}
 			msg.ReplyEmbed(embed)
-		default:
 		}
-
 		return
 	case la == 1:
 		target, err = msg.Discord.Sess.State.Member(g.ID, msg.Message.Author.ID)
@@ -377,7 +355,6 @@ func (c *MyRoleCommand) Run(msg *meidov2.DiscordMessage) {
 			return
 		}
 	case la == 2:
-
 		if len(msg.Message.Mentions) >= 1 {
 			target, err = msg.Discord.Sess.State.Member(g.ID, msg.Message.Mentions[0].ID)
 			if err != nil {
@@ -457,39 +434,30 @@ func NewListUserRolesCommand(m *UserRoleMod) meidov2.ModCommand {
 		Enabled: true,
 	}
 }
-
 func (c *ListUserRolesCommand) Name() string {
 	return "ListUserRoles"
 }
-
 func (c *ListUserRolesCommand) Description() string {
 	return "Returns a list of the user roles that are in the server, displays if some users still are in the server or not"
 }
-
 func (c *ListUserRolesCommand) Triggers() []string {
 	return []string{"m?listuserroles"}
 }
-
 func (c *ListUserRolesCommand) Usage() string {
 	return "m?listuserroles"
 }
-
 func (c *ListUserRolesCommand) Cooldown() int {
 	return 30
 }
-
 func (c *ListUserRolesCommand) RequiredPerms() int {
 	return 0
 }
-
 func (c *ListUserRolesCommand) RequiresOwner() bool {
 	return false
 }
-
 func (c *ListUserRolesCommand) IsEnabled() bool {
 	return c.Enabled
 }
-
 func (c *ListUserRolesCommand) Run(msg *meidov2.DiscordMessage) {
 
 	if msg.LenArgs() != 1 || msg.Args()[0] != "m?listuserroles" {
@@ -534,5 +502,4 @@ func (c *ListUserRolesCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 	msg.Reply(fmt.Sprintf("User roles in %v\n%v", g.Name, link))
-
 }

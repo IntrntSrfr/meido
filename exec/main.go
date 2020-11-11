@@ -5,6 +5,7 @@ import (
 	"github.com/intrntsrfr/meidov2"
 	"github.com/intrntsrfr/meidov2/mods/loggermod"
 	"github.com/intrntsrfr/meidov2/mods/pingmod"
+	"github.com/intrntsrfr/meidov2/mods/userrolemod"
 	"github.com/intrntsrfr/meidov2/mods/utilitymod"
 	"io/ioutil"
 	"os"
@@ -22,7 +23,6 @@ func main() {
 	if err != nil {
 		panic("mangled config file, fix it")
 	}
-
 	bot := meidov2.NewBot(config)
 	err = bot.Open()
 	if err != nil {
@@ -33,7 +33,7 @@ func main() {
 	bot.RegisterMod(loggermod.New("logs"), "logs")
 	bot.RegisterMod(utilitymod.New("utility"), "utility")
 	//bot.RegisterMod(moderationmod.New(), "moderation")
-	//bot.RegisterMod(userrolemod.New(), "userrole")
+	bot.RegisterMod(userrolemod.New("userrole"), "userrole")
 
 	bot.Run()
 	defer bot.Close()
