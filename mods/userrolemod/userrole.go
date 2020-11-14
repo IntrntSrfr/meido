@@ -124,21 +124,21 @@ func (c *ToggleUserRoleCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if uPerms&discordgo.PermissionManageRoles == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
+		return
+	}
+
 	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Discord.Sess.State.User.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	if botPerms&discordgo.PermissionManageRoles == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if uPerms&discordgo.PermissionManageRoles == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -150,13 +150,13 @@ func (c *ToggleUserRoleCommand) Run(msg *meidov2.DiscordMessage) {
 	)
 
 	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Discord.Sess.State.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
+		targetUser, err = msg.Discord.Sess.GuildMember(msg.Message.GuildID, msg.Message.Mentions[0].ID)
 		if err != nil {
 			//s.ChannelMessageSend(ch.ID, err.Error())
 			return
 		}
 	} else {
-		targetUser, err = msg.Discord.Sess.State.Member(msg.Message.GuildID, msg.Args()[1])
+		targetUser, err = msg.Discord.Sess.GuildMember(msg.Message.GuildID, msg.Args()[1])
 		if err != nil {
 			//s.ChannelMessageSend(ch.ID, err.Error())
 			return
@@ -271,7 +271,6 @@ func (c *MyRoleCommand) Run(msg *meidov2.DiscordMessage) {
 
 		botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Discord.Sess.State.User.ID, msg.Message.ChannelID)
 		if err != nil {
-			fmt.Println(err)
 			return
 		}
 		if botPerms&discordgo.PermissionManageRoles == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
@@ -349,21 +348,17 @@ func (c *MyRoleCommand) Run(msg *meidov2.DiscordMessage) {
 		}
 		return
 	case la == 1:
-		target, err = msg.Discord.Sess.State.Member(g.ID, msg.Message.Author.ID)
-		if err != nil {
-			//s.ChannelMessageSend(ch.ID, err.Error())
-			return
-		}
+		target = msg.Author
 	case la == 2:
 		if len(msg.Message.Mentions) >= 1 {
-			target, err = msg.Discord.Sess.State.Member(g.ID, msg.Message.Mentions[0].ID)
+			target, err = msg.Discord.Sess.GuildMember(g.ID, msg.Message.Mentions[0].ID)
 			if err != nil {
 				//s.ChannelMessageSend(ch.ID, err.Error())
 				fmt.Println(err)
 				return
 			}
 		} else {
-			target, err = msg.Discord.Sess.State.Member(g.ID, msg.Args()[1])
+			target, err = msg.Discord.Sess.GuildMember(g.ID, msg.Args()[1])
 			if err != nil {
 				//s.ChannelMessageSend(ch.ID, err.Error())
 				fmt.Println(err)

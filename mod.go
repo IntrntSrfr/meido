@@ -24,13 +24,15 @@ type ModCommand interface {
 }
 
 /*
-type ModCommand struct {
-	Name string
-	Aliases []string
-	Triggers []string
+type ModCommandStruct struct {
+	Mod
+	Name          string
+	Description   string
+	Triggers      []string
+	Usage         string
+	Cooldown      int
 	RequiredPerms int
-	OwnerOnly bool
-	Enabled bool
-	Run func(*Message)
+	RequiresOwner bool
+	Enabled       bool
 }
 */

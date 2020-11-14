@@ -157,6 +157,8 @@ func (c *AvatarCommand) RequiresOwner() bool {
 func (c *AvatarCommand) IsEnabled() bool {
 	return c.Enabled
 }
+
+// true and (not m?av and not >av)
 func (c *AvatarCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 || (msg.Args()[0] != "m?av" && msg.Args()[0] != ">av") {
 		return
@@ -268,7 +270,7 @@ func (c *ServerCommand) Run(msg *meidov2.DiscordMessage) {
 		}
 	}
 
-	owner, err := msg.Discord.Sess.State.Member(g.ID, g.OwnerID)
+	owner, err := msg.Discord.Sess.GuildMember(g.ID, g.OwnerID)
 	if err != nil {
 		msg.Reply("Error getting guild data")
 		return
@@ -472,7 +474,7 @@ func (c *ServerSplashCommand) IsEnabled() bool {
 	return c.Enabled
 }
 func (c *ServerSplashCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() == 0 || msg.Args()[0] != "m?serversplash" {
+	if msg.LenArgs() < 1 || msg.Args()[0] != "m?serversplash" {
 		return
 	}
 	if msg.IsDM() {
@@ -537,7 +539,7 @@ func (c *ServerBannerCommand) IsEnabled() bool {
 	return c.Enabled
 }
 func (c *ServerBannerCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() == 0 || msg.Args()[0] != "m?serverbanner" {
+	if msg.LenArgs() < 1 || msg.Args()[0] != "m?serverbanner" {
 		return
 	}
 	if msg.IsDM() {

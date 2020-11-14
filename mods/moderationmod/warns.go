@@ -12,10 +12,19 @@ import (
 )
 
 func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 3 || (msg.Args()[0] != ".warn" && msg.Args()[0] != "m?warn") {
+	if msg.LenArgs() < 2 || (msg.Args()[0] != ".warn" && msg.Args()[0] != "m?warn") {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
+		return
+	}
+
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -24,14 +33,6 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		return
 	}
 	if botPerms&discordgo.PermissionBanMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
-	if err != nil {
-		return
-	}
-	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -55,7 +56,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 	)
 
 	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Discord.Sess.State.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
+		targetUser, err = msg.Discord.Sess.GuildMember(msg.Message.GuildID, msg.Message.Mentions[0].ID)
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
@@ -65,7 +66,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		if err != nil {
 			return
 		}
-		targetUser, err = msg.Discord.Sess.State.Member(msg.Message.GuildID, msg.Args()[1])
+		targetUser, err = msg.Discord.Sess.GuildMember(msg.Message.GuildID, msg.Args()[1])
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
@@ -149,9 +150,9 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
 	if err != nil {
-		msg.Reply("An error occurred: " + err.Error())
+		fmt.Println(err)
 		return
 	}
 	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
@@ -263,9 +264,9 @@ func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
 	if err != nil {
-		msg.Reply("An error occurred: " + err.Error())
+		fmt.Println(err)
 		return
 	}
 	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
@@ -312,9 +313,9 @@ func (m *ModerationMod) ClearWarns(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
 	if err != nil {
-		msg.Reply("An error occurred: " + err.Error())
+		fmt.Println(err)
 		return
 	}
 	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {

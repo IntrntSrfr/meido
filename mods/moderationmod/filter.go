@@ -18,7 +18,7 @@ func (m *ModerationMod) FilterWord(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -54,7 +54,7 @@ func (m *ModerationMod) FilterWordsList(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -89,7 +89,7 @@ func (m *ModerationMod) ClearFilter(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -114,7 +114,7 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 	isIllegal := false
 	trigger := ""
 
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
 	if err != nil {
 		return
 	}
@@ -215,7 +215,7 @@ func (m *ModerationMod) ToggleStrikes(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -248,7 +248,7 @@ func (m *ModerationMod) SetMaxStrikes(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return

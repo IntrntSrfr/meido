@@ -15,8 +15,9 @@ import (
 type ModerationMod struct {
 	Name string
 	sync.Mutex
-	cl       chan *meidov2.DiscordMessage
-	commands []func(msg *meidov2.DiscordMessage)
+	cl chan *meidov2.DiscordMessage
+	//commands []func(msg *meidov2.DiscordMessage)
+	commands map[string]meidov2.ModCommand
 	db       *sqlx.DB
 }
 
@@ -94,6 +95,15 @@ func (m *ModerationMod) Hook(b *meidov2.Bot) error {
 	return nil
 }
 
+func (m *ModerationMod) RegisterCommand(cmd meidov2.ModCommand) {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.commands[cmd.Name()]; ok {
+		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name(), m.Name))
+	}
+	m.commands[cmd.Name()] = cmd
+}
+
 func (m *ModerationMod) Message(msg *meidov2.DiscordMessage) {
 	// moderation only is for servers, so dms are ignored
 	if msg.IsDM() {
@@ -115,19 +125,20 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
+		return
+	}
+
 	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Sess.State.User.ID, msg.Message.ChannelID)
 	if err != nil {
 		return
 	}
 	if botPerms&discordgo.PermissionBanMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
-	if err != nil {
-		return
-	}
-	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -249,7 +260,7 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -291,21 +302,21 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
+		return
+	}
+
 	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Sess.State.User.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	if botPerms&discordgo.PermissionBanMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -354,21 +365,21 @@ func (m *ModerationMod) Kick(msg *meidov2.DiscordMessage) {
 		return
 	}
 
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if uPerms&discordgo.PermissionKickMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
+		return
+	}
+
 	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Sess.State.User.ID, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	if botPerms&discordgo.PermissionKickMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	uPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Message.Author.ID, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if uPerms&discordgo.PermissionKickMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -382,13 +393,13 @@ func (m *ModerationMod) Kick(msg *meidov2.DiscordMessage) {
 	}
 
 	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Sess.State.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
+		targetUser, err = msg.Sess.GuildMember(msg.Message.GuildID, msg.Message.Mentions[0].ID)
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
 		}
 	} else {
-		targetUser, err = msg.Sess.State.Member(msg.Message.GuildID, msg.Args()[1])
+		targetUser, err = msg.Sess.GuildMember(msg.Message.GuildID, msg.Args()[1])
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
