@@ -81,10 +81,15 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 	if m.Message.Author == nil || m.Message.Author.Bot {
 		return
 	}
+
+	author := m.Member
+	author.User = m.Author
+
 	d.messageChan <- &DiscordMessage{
 		Sess:         s,
 		Discord:      d,
 		Message:      m.Message,
+		Author:       author,
 		Type:         MessageTypeCreate,
 		TimeReceived: time.Now(),
 		Shard:        s.ShardID,
@@ -95,11 +100,15 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 	if m.Message.Author == nil || m.Message.Author.Bot {
 		return
 	}
+
+	author := m.Member
+	author.User = m.Author
+
 	d.messageChan <- &DiscordMessage{
 		Sess:         s,
 		Discord:      d,
 		Message:      m.Message,
-		Author:       m.Member,
+		Author:       author,
 		Type:         MessageTypeUpdate,
 		TimeReceived: time.Now(),
 		Shard:        s.ShardID,
@@ -117,14 +126,14 @@ func (d *Discord) onMessageDelete(s *discordgo.Session, m *discordgo.MessageDele
 	}
 }
 
-func (s *Discord) UserChannelPermissions(m *discordgo.Member, channelID string) (apermissions int, err error) {
+func (d *Discord) UserChannelPermissions(m *discordgo.Member, channelID string) (apermissions int, err error) {
 
-	channel, err := s.Sess.State.Channel(channelID)
+	channel, err := d.Sess.State.Channel(channelID)
 	if err != nil {
 		return
 	}
 
-	guild, err := s.Sess.State.Guild(channel.GuildID)
+	guild, err := d.Sess.State.Guild(channel.GuildID)
 	if err != nil {
 		return
 	}

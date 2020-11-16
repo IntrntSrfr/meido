@@ -18,11 +18,15 @@ type ModerationMod struct {
 	cl chan *meidov2.DiscordMessage
 	//commands []func(msg *meidov2.DiscordMessage)
 	commands map[string]meidov2.ModCommand
+	passives []func(*meidov2.DiscordMessage)
 	db       *sqlx.DB
 }
 
-func New() meidov2.Mod {
-	return &ModerationMod{}
+func New(name string) meidov2.Mod {
+	return &ModerationMod{
+		Name:     name,
+		commands: make(map[string]meidov2.ModCommand),
+	}
 }
 
 func (m *ModerationMod) Save() error {
@@ -87,10 +91,33 @@ func (m *ModerationMod) Hook(b *meidov2.Bot) error {
 		}()
 	})
 
-	m.commands = append(m.commands, m.Ban, m.Unban, m.Hackban)
-	m.commands = append(m.commands, m.Warn, m.WarnLog, m.RemoveWarn, m.ClearWarns)
-	m.commands = append(m.commands, m.CheckFilter, m.FilterWord, m.ClearFilter, m.FilterWordsList)
-	m.commands = append(m.commands, m.SetMaxStrikes, m.ToggleStrikes)
+	m.passives = append(m.passives, m.CheckFilter)
+
+	m.RegisterCommand(NewBanCommand(m))
+	m.RegisterCommand(NewUnbanCommand(m))
+	m.RegisterCommand(NewHackbanCommand(m))
+
+	m.RegisterCommand(NewWarnCommand(m))
+	m.RegisterCommand(NewWarnLogCommand(m))
+	m.RegisterCommand(NewRemoveWarnCommand(m))
+	m.RegisterCommand(NewClearWarnsCommand(m))
+
+	m.RegisterCommand(NewFilterWordCommand(m))
+	m.RegisterCommand(NewClearFilterCommand(m))
+	m.RegisterCommand(NewFilterWordListCommand(m))
+
+	m.RegisterCommand(NewSetMaxWarnsCommand(m))
+	m.RegisterCommand(NewToggleStrikeCommand(m))
+
+	m.RegisterCommand(NewLockdownChannelCommand(m))
+	m.RegisterCommand(NewUnlockChannelCommand(m))
+
+	/*
+		m.commands = append(m.commands, m.Unban, m.Hackban)
+		m.commands = append(m.commands, m.Warn, m.WarnLog, m.RemoveWarn, m.ClearWarns)
+		m.commands = append(m.commands, m.FilterWord, m.ClearFilter, m.FilterWordsList)
+		m.commands = append(m.commands, m.SetMaxStrikes, m.ToggleStrikes)
+	*/
 
 	return nil
 }
@@ -112,12 +139,60 @@ func (m *ModerationMod) Message(msg *meidov2.DiscordMessage) {
 	if msg.Type == meidov2.MessageTypeDelete {
 		return
 	}
-	for _, c := range m.commands {
+	for _, c := range m.passives {
 		go c(msg)
+	}
+
+	for _, c := range m.commands {
+		go c.Run(msg)
 	}
 }
 
-func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
+type BanCommand struct {
+	m       *ModerationMod
+	Enabled bool
+}
+
+func NewBanCommand(m *ModerationMod) meidov2.ModCommand {
+	return &BanCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+
+func (c *BanCommand) Name() string {
+	return "Ban"
+}
+
+func (c *BanCommand) Description() string {
+	return "Bans a user. Days of messages to be deleted and reason is optional"
+}
+
+func (c *BanCommand) Triggers() []string {
+	return []string{"m?ban", "m?b", ".b", ".ban"}
+}
+
+func (c *BanCommand) Usage() string {
+	return ".b @internet surfer#0001\n.b 163454407999094786\n.b 163454407999094786 being very mean\n.b 163454407999094786 1 being very mean\n.b 163454407999094786 1"
+}
+
+func (c *BanCommand) Cooldown() int {
+	return 10
+}
+
+func (c *BanCommand) RequiredPerms() int {
+	return discordgo.PermissionBanMembers
+}
+
+func (c *BanCommand) RequiresOwner() bool {
+	return false
+}
+
+func (c *BanCommand) IsEnabled() bool {
+	return c.Enabled
+}
+
+func (c *BanCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || (msg.Args()[0] != ".ban" && msg.Args()[0] != ".b" && msg.Args()[0] != "m?ban" && msg.Args()[0] != "m?b") {
 		return
 	}
@@ -142,7 +217,7 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	var (
 		targetUser *discordgo.User
@@ -220,7 +295,7 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
+	_, err = c.m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
 		msg.Sess.State.User.ID, time.Now(), msg.Message.GuildID, targetUser.ID)
 
 	embed := &discordgo.MessageEmbed{
@@ -243,20 +318,56 @@ func (m *ModerationMod) Ban(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
+type UnbanCommand struct {
+	m       *ModerationMod
+	Enabled bool
+}
+
+func NewUnbanCommand(m *ModerationMod) meidov2.ModCommand {
+	return &UnbanCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+
+func (c *UnbanCommand) Name() string {
+	return "Unban"
+}
+
+func (c *UnbanCommand) Description() string {
+	return "Unbans a user."
+}
+
+func (c *UnbanCommand) Triggers() []string {
+	return []string{"m?unban", "m?ub", ".ub", ".unban"}
+}
+
+func (c *UnbanCommand) Usage() string {
+	return ".unban 163454407999094786"
+}
+
+func (c *UnbanCommand) Cooldown() int {
+	return 10
+}
+
+func (c *UnbanCommand) RequiredPerms() int {
+	return discordgo.PermissionBanMembers
+}
+
+func (c *UnbanCommand) RequiresOwner() bool {
+	return false
+}
+
+func (c *UnbanCommand) IsEnabled() bool {
+	return c.Enabled
+}
+
+func (c *UnbanCommand) Run(msg *meidov2.DiscordMessage) {
+
 	if msg.LenArgs() < 2 || (msg.Args()[0] != ".unban" && msg.Args()[0] != ".ub" && msg.Args()[0] != "m?unban" && msg.Args()[0] != "m?ub") {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
-		return
-	}
-
-	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Sess.State.User.ID, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if botPerms&discordgo.PermissionBanMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
@@ -269,7 +380,16 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Sess.State.User.ID, msg.Message.ChannelID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	if botPerms&discordgo.PermissionBanMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
+		return
+	}
+
+	c.m.cl <- msg
 
 	_, err = strconv.ParseUint(msg.Args()[1], 10, 64)
 	if err != nil {
@@ -294,7 +414,51 @@ func (m *ModerationMod) Unban(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
+type HackbanCommand struct {
+	m       *ModerationMod
+	Enabled bool
+}
+
+func NewHackbanCommand(m *ModerationMod) meidov2.ModCommand {
+	return &HackbanCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+
+func (c *HackbanCommand) Name() string {
+	return "Hackban"
+}
+
+func (c *HackbanCommand) Description() string {
+	return "Hackbans one or several users. Prunes 7 days."
+}
+
+func (c *HackbanCommand) Triggers() []string {
+	return []string{"m?hackban", "m?hb"}
+}
+
+func (c *HackbanCommand) Usage() string {
+	return "m?hb 123 123 12 31 23 123"
+}
+
+func (c *HackbanCommand) Cooldown() int {
+	return 10
+}
+
+func (c *HackbanCommand) RequiredPerms() int {
+	return discordgo.PermissionBanMembers
+}
+
+func (c *HackbanCommand) RequiresOwner() bool {
+	return false
+}
+
+func (c *HackbanCommand) IsEnabled() bool {
+	return c.Enabled
+}
+
+func (c *HackbanCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?hackban" && msg.Args()[0] != "m?hb") {
 		return
 	}
@@ -320,7 +484,7 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	var userList []string
 
@@ -357,7 +521,44 @@ func (m *ModerationMod) Hackban(msg *meidov2.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
 }
 
-func (m *ModerationMod) Kick(msg *meidov2.DiscordMessage) {
+type KickCommand struct {
+	m       *ModerationMod
+	Enabled bool
+}
+
+func (c *KickCommand) Name() string {
+	return "Kick"
+}
+
+func (c *KickCommand) Description() string {
+	return "Kicks a user. Reason is optional"
+}
+
+func (c *KickCommand) Triggers() []string {
+	return []string{"m?kick", "m?k", ".kick", ".k"}
+}
+
+func (c *KickCommand) Usage() string {
+	return "m?k @internet surfer#0001\n.k 163454407999094786"
+}
+
+func (c *KickCommand) Cooldown() int {
+	return 10
+}
+
+func (c *KickCommand) RequiredPerms() int {
+	return discordgo.PermissionKickMembers
+}
+
+func (c *KickCommand) RequiresOwner() bool {
+	return false
+}
+
+func (c *KickCommand) IsEnabled() bool {
+	return c.Enabled
+}
+
+func (c *KickCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || (msg.Args()[0] != ".kick" && msg.Args()[0] != ".k" && msg.Args()[0] != "m?kick" && msg.Args()[0] != "m?k") {
 		return
 	}
@@ -383,7 +584,7 @@ func (m *ModerationMod) Kick(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	var targetUser *discordgo.Member
 

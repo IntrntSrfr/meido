@@ -6,7 +6,43 @@ import (
 	"github.com/intrntsrfr/meidov2"
 )
 
-func (m *ModerationMod) LockdownChannel(msg *meidov2.DiscordMessage) {
+type LockdownChannelCommand struct {
+	m       *ModerationMod
+	Enabled bool
+}
+
+func NewLockdownChannelCommand(m *ModerationMod) meidov2.ModCommand {
+	return &LockdownChannelCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+
+func (c *LockdownChannelCommand) Name() string {
+	return "Lockdown"
+}
+func (c *LockdownChannelCommand) Description() string {
+	return "Locks down the current channel, denying the everyonerole send message perms."
+}
+func (c *LockdownChannelCommand) Triggers() []string {
+	return []string{"m?lockdown"}
+}
+func (c *LockdownChannelCommand) Usage() string {
+	return "m?lockdown"
+}
+func (c *LockdownChannelCommand) Cooldown() int {
+	return 30
+}
+func (c *LockdownChannelCommand) RequiredPerms() int {
+	return discordgo.PermissionManageRoles
+}
+func (c *LockdownChannelCommand) RequiresOwner() bool {
+	return false
+}
+func (c *LockdownChannelCommand) IsEnabled() bool {
+	return c.Enabled
+}
+func (c *LockdownChannelCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 || msg.Args()[0] != "m?lockdown" {
 		return
 	}
@@ -28,7 +64,7 @@ func (m *ModerationMod) LockdownChannel(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	g, err := msg.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
@@ -98,7 +134,43 @@ func (m *ModerationMod) LockdownChannel(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func (m *ModerationMod) UnlockChannel(msg *meidov2.DiscordMessage) {
+type UnlockChannelCommand struct {
+	m       *ModerationMod
+	Enabled bool
+}
+
+func NewUnlockChannelCommand(m *ModerationMod) meidov2.ModCommand {
+	return &UnlockChannelCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+
+func (c *UnlockChannelCommand) Name() string {
+	return "unlock"
+}
+func (c *UnlockChannelCommand) Description() string {
+	return "Unlocks a previously locked channel, setting the everyone roles send message permissions to default."
+}
+func (c *UnlockChannelCommand) Triggers() []string {
+	return []string{"m?lockdown"}
+}
+func (c *UnlockChannelCommand) Usage() string {
+	return "m?unlock"
+}
+func (c *UnlockChannelCommand) Cooldown() int {
+	return 30
+}
+func (c *UnlockChannelCommand) RequiredPerms() int {
+	return discordgo.PermissionManageRoles
+}
+func (c *UnlockChannelCommand) RequiresOwner() bool {
+	return false
+}
+func (c *UnlockChannelCommand) IsEnabled() bool {
+	return c.Enabled
+}
+func (c *UnlockChannelCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 || msg.Args()[0] != "m?unlock" {
 		return
 	}
@@ -120,7 +192,7 @@ func (m *ModerationMod) UnlockChannel(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	g, err := msg.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {

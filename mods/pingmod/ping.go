@@ -102,7 +102,7 @@ func (c *PingCommand) IsEnabled() bool {
 	return c.Enabled
 }
 func (c *PingCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.Message.Content != "m?ping" {
+	if msg.Args()[0] != "m?ping" {
 		return
 	}
 

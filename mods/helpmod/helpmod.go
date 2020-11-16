@@ -10,6 +10,10 @@ type HelpMod struct {
 	b        *meidov2.Bot
 }
 
+func (m *HelpMod) RegisterCommand(command meidov2.ModCommand) {
+	panic("implement me")
+}
+
 func New() meidov2.Mod {
 	return &HelpMod{}
 }

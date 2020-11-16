@@ -179,10 +179,7 @@ func (c *AvatarCommand) Run(msg *meidov2.DiscordMessage) {
 			}
 		}
 	} else {
-		targetUser, err = msg.Discord.Sess.User(msg.Message.Author.ID)
-		if err != nil {
-			return
-		}
+		targetUser = msg.Message.Author
 	}
 
 	if targetUser == nil {
@@ -343,11 +340,9 @@ func NewAboutCommand(m *UtilityMod) meidov2.ModCommand {
 func (c *AboutCommand) Name() string {
 	return "About"
 }
-
 func (c *AboutCommand) Description() string {
 	return "Displays current Meido statistics"
 }
-
 func (c *AboutCommand) Triggers() []string {
 	return []string{"m?about"}
 }
@@ -429,11 +424,13 @@ func (c *AboutCommand) Run(msg *meidov2.DiscordMessage) {
 				Value:  humanize.Bytes(memory.TotalAlloc - memory.Alloc),
 				Inline: true,
 			},
-			{
-				Name:   "Allocs | Frees",
-				Value:  fmt.Sprintf("%v | %v", memory.Mallocs, memory.Frees),
-				Inline: false,
-			},
+			/*
+				{
+					Name:   "Allocs | Frees",
+					Value:  fmt.Sprintf("%v | %v", memory.Mallocs, memory.Frees),
+					Inline: false,
+				},
+			*/
 		},
 	})
 }
@@ -592,7 +589,7 @@ func (c *ColorCommand) Usage() string {
 	return "m?color #c0ffee\nm?color c0ffee"
 }
 func (c *ColorCommand) Cooldown() int {
-	return 3
+	return 1
 }
 func (c *ColorCommand) RequiredPerms() int {
 	return 0
@@ -607,6 +604,8 @@ func (c *ColorCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || msg.Args()[0] != "m?color" {
 		return
 	}
+
+	c.m.cl <- msg
 
 	clrStr := msg.Args()[1]
 

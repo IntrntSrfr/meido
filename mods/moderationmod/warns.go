@@ -11,7 +11,51 @@ import (
 	"time"
 )
 
-func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
+type WarnCommand struct {
+	m       *ModerationMod
+	Enabled bool
+}
+
+func NewWarnCommand(m *ModerationMod) meidov2.ModCommand {
+	return &WarnCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+
+func (c *WarnCommand) Name() string {
+	return "Warn"
+}
+
+func (c *WarnCommand) Description() string {
+	return "Warns a user, adding a strike. Does not work if strike system is disabled."
+}
+
+func (c *WarnCommand) Triggers() []string {
+	return []string{"m?warn", ".warn"}
+}
+
+func (c *WarnCommand) Usage() string {
+	return "m?warn 163454407999094786\n.warn @internet surfer#0001"
+}
+
+func (c *WarnCommand) Cooldown() int {
+	return 10
+}
+
+func (c *WarnCommand) RequiredPerms() int {
+	return discordgo.PermissionBanMembers
+}
+
+func (c *WarnCommand) RequiresOwner() bool {
+	return false
+}
+
+func (c *WarnCommand) IsEnabled() bool {
+	return c.Enabled
+}
+
+func (c *WarnCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || (msg.Args()[0] != ".warn" && msg.Args()[0] != "m?warn") {
 		return
 	}
@@ -36,10 +80,10 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	dge := &DiscordGuild{}
-	err = m.db.Get(dge, "SELECT use_strikes, max_strikes FROM guilds WHERE guild_id = $1;", msg.Message.GuildID)
+	err = c.m.db.Get(dge, "SELECT use_strikes, max_strikes FROM guilds WHERE guild_id = $1;", msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
@@ -93,7 +137,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 
 	warnCount := 0
 
-	err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warns WHERE user_id=$1 AND guild_id=$2 AND is_valid",
+	err = c.m.db.Get(&warnCount, "SELECT COUNT(*) FROM warns WHERE user_id=$1 AND guild_id=$2 AND is_valid",
 		targetUser.User.ID, msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("something wrong happened")
@@ -106,7 +150,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
+	_, err = c.m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
 		msg.Message.GuildID, targetUser.User.ID, reason, msg.Message.Author.ID, time.Now(), true)
 	if err != nil {
 		msg.Reply("error giving strike, try again?")
@@ -127,7 +171,7 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 			msg.Reply(err.Error())
 			return
 		}
-		_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
+		_, err = c.m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
 			msg.Sess.State.User.ID, time.Now(), g.ID, msg.Message.Author.ID)
 
 		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", targetUser.Mention()))
@@ -140,9 +184,54 @@ func (m *ModerationMod) Warn(msg *meidov2.DiscordMessage) {
 
 		msg.Reply(fmt.Sprintf("%v has been warned\nThey are currently at warn %v/%v", targetUser.Mention(), warnCount+1, dge.MaxStrikes))
 	}
+
 }
 
-func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
+type WarnLogCommand struct {
+	m       *ModerationMod
+	Enabled bool
+}
+
+func NewWarnLogCommand(m *ModerationMod) meidov2.ModCommand {
+	return &WarnLogCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+
+func (c *WarnLogCommand) Name() string {
+	return "WarnLog"
+}
+
+func (c *WarnLogCommand) Description() string {
+	return "Displays a users warns"
+}
+
+func (c *WarnLogCommand) Triggers() []string {
+	return []string{"m?warnlog"}
+}
+
+func (c *WarnLogCommand) Usage() string {
+	return "m?warnlog 123123123123"
+}
+
+func (c *WarnLogCommand) Cooldown() int {
+	return 20
+}
+
+func (c *WarnLogCommand) RequiredPerms() int {
+	return discordgo.PermissionManageMessages
+}
+
+func (c *WarnLogCommand) RequiresOwner() bool {
+	return false
+}
+
+func (c *WarnLogCommand) IsEnabled() bool {
+	return c.Enabled
+}
+
+func (c *WarnLogCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || msg.Args()[0] != "m?warnlog" {
 		return
 	}
@@ -155,11 +244,11 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 		fmt.Println(err)
 		return
 	}
-	if uPerms&discordgo.PermissionBanMembers == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
+	if uPerms&discordgo.PermissionManageMessages == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	page := 0
 
@@ -196,7 +285,7 @@ func (m *ModerationMod) WarnLog(msg *meidov2.DiscordMessage) {
 	}
 
 	var warns []*WarnEntry
-	err = m.db.Select(&warns, "SELECT * FROM warns WHERE user_id=$1 AND guild_id=$2 ORDER BY given_at DESC;", targetUser.ID, msg.Message.GuildID)
+	err = c.m.db.Select(&warns, "SELECT * FROM warns WHERE user_id=$1 AND guild_id=$2 ORDER BY given_at DESC;", targetUser.ID, msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
@@ -256,7 +345,42 @@ func min(a, b int) int {
 	return b
 }
 
-func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
+type RemoveWarnCommand struct {
+	m       *ModerationMod
+	Enabled bool
+}
+
+func NewRemoveWarnCommand(m *ModerationMod) meidov2.ModCommand {
+	return &RemoveWarnCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+func (c *RemoveWarnCommand) Name() string {
+	return "RemoveWarn"
+}
+func (c *RemoveWarnCommand) Description() string {
+	return "Removes a warn from a user using a warnID. Use warnlog to get warnIDs"
+}
+func (c *RemoveWarnCommand) Triggers() []string {
+	return []string{"m?rmwarn", "m?removewarn"}
+}
+func (c *RemoveWarnCommand) Usage() string {
+	return "m?removewarn 123"
+}
+func (c *RemoveWarnCommand) Cooldown() int {
+	return 5
+}
+func (c *RemoveWarnCommand) RequiredPerms() int {
+	return discordgo.PermissionBanMembers
+}
+func (c *RemoveWarnCommand) RequiresOwner() bool {
+	return false
+}
+func (c *RemoveWarnCommand) IsEnabled() bool {
+	return c.Enabled
+}
+func (c *RemoveWarnCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?removewarn" && msg.Args()[0] != "m?rmwarn") {
 		return
 	}
@@ -273,7 +397,7 @@ func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	uid, err := strconv.Atoi(msg.Args()[1])
 	if err != nil {
@@ -282,7 +406,7 @@ func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
 	}
 
 	we := &WarnEntry{}
-	err = m.db.Get(we, "SELECT guild_id FROM warns WHERE uid=$1;", uid)
+	err = c.m.db.Get(we, "SELECT guild_id FROM warns WHERE uid=$1;", uid)
 	if err != nil && err != sql.ErrNoRows {
 		msg.Reply("there was an error, please try again")
 		return
@@ -296,7 +420,7 @@ func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3 AND is_valid", msg.Message.Author.ID, time.Now(), uid)
+	_, err = c.m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3 AND is_valid", msg.Message.Author.ID, time.Now(), uid)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
@@ -305,7 +429,42 @@ func (m *ModerationMod) RemoveWarn(msg *meidov2.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("Invalidated warn with ID: %v", uid))
 }
 
-func (m *ModerationMod) ClearWarns(msg *meidov2.DiscordMessage) {
+type ClearWarnsCommand struct {
+	m       *ModerationMod
+	Enabled bool
+}
+
+func NewClearWarnsCommand(m *ModerationMod) meidov2.ModCommand {
+	return &ClearWarnsCommand{
+		m:       m,
+		Enabled: true,
+	}
+}
+func (c *ClearWarnsCommand) Name() string {
+	return "ClearWarns"
+}
+func (c *ClearWarnsCommand) Description() string {
+	return "Invalidates every active warn for a user"
+}
+func (c *ClearWarnsCommand) Triggers() []string {
+	return []string{"m?clearwarns", "m?cw"}
+}
+func (c *ClearWarnsCommand) Usage() string {
+	return "m?clearwarns 123123123123"
+}
+func (c *ClearWarnsCommand) Cooldown() int {
+	return 10
+}
+func (c *ClearWarnsCommand) RequiredPerms() int {
+	return discordgo.PermissionBanMembers
+}
+func (c *ClearWarnsCommand) RequiresOwner() bool {
+	return false
+}
+func (c *ClearWarnsCommand) IsEnabled() bool {
+	return c.Enabled
+}
+func (c *ClearWarnsCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?clearwarns" && msg.Args()[0] != "m?cw") {
 		return
 	}
@@ -322,7 +481,7 @@ func (m *ModerationMod) ClearWarns(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	c.m.cl <- msg
 
 	var targetUser *discordgo.User
 
@@ -339,7 +498,7 @@ func (m *ModerationMod) ClearWarns(msg *meidov2.DiscordMessage) {
 		}
 	}
 
-	_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE user_id=$3 AND guild_id=$4 AND is_valid",
+	_, err = c.m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE user_id=$3 AND guild_id=$4 AND is_valid",
 		msg.Message.Author.ID, time.Now(), targetUser.ID, msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
