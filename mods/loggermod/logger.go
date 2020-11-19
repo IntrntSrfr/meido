@@ -2,21 +2,26 @@ package loggermod
 
 import (
 	"fmt"
-	"github.com/andersfylling/disgord"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
-	"github.com/jmoiron/sqlx"
+	"sync"
 )
 
 type LoggerMod struct {
+	Name string
+	sync.Mutex
 	cl            chan *meidov2.DiscordMessage
-	commands      []func(msg *meidov2.DiscordMessage)
-	dmLogChannels []int
+	commands      map[string]meidov2.ModCommand
+	passives      []func(*meidov2.DiscordMessage)
+	dmLogChannels []string
 }
 
-func New() meidov2.Mod {
+func New(name string) meidov2.Mod {
 	return &LoggerMod{
-		//cl:            make(chan *meidov2.DiscordMessage),
-		dmLogChannels: []int{},
+		Name:          name,
+		dmLogChannels: []string{},
+		commands:      make(map[string]meidov2.ModCommand),
+		passives:      []func(*meidov2.DiscordMessage){},
 	}
 }
 
@@ -35,21 +40,34 @@ func (m *LoggerMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *LoggerMod) Help(msg *meidov2.DiscordMessage) {
 
 }
-func (m *LoggerMod) Commands() []meidov2.ModCommand {
+func (m *LoggerMod) Commands() map[string]meidov2.ModCommand {
 	return nil
 }
 
-func (m *LoggerMod) Hook(b *meidov2.Bot, _ *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
-	m.cl = cl
-
+func (m *LoggerMod) Hook(b *meidov2.Bot) error {
+	m.cl = b.CommandLog
 	m.dmLogChannels = b.Config.DmLogChannels
 
-	b.Discord.Client.Gateway().GuildCreate(func(s disgord.Session, g *disgord.GuildCreate) {
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		fmt.Println("user:", r.User.String())
+		fmt.Println("servers:", len(r.Guilds))
+	})
+
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		fmt.Println("loaded: ", g.Guild.Name)
 	})
 
-	m.commands = append(m.commands, m.ForwardDms)
+	m.passives = append(m.passives, m.ForwardDms)
 	return nil
+}
+
+func (m *LoggerMod) RegisterCommand(cmd meidov2.ModCommand) {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.commands[cmd.Name()]; ok {
+		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name(), m.Name))
+	}
+	m.commands[cmd.Name()] = cmd
 }
 
 func (m *LoggerMod) Message(msg *meidov2.DiscordMessage) {
@@ -57,31 +75,32 @@ func (m *LoggerMod) Message(msg *meidov2.DiscordMessage) {
 		return
 	}
 	for _, c := range m.commands {
+		go c.Run(msg)
+	}
+	for _, c := range m.passives {
 		go c(msg)
 	}
 }
 func (m *LoggerMod) ForwardDms(msg *meidov2.DiscordMessage) {
-
 	if msg.Message.Author.Bot {
 		return
 	}
-
-	if !msg.Message.IsDirectMessage() {
+	if !msg.IsDM() {
 		return
 	}
 
-	embed := &disgord.Embed{
-		Color:       0xffffff,
-		Title:       fmt.Sprintf("Message from %v", msg.Message.Author.Tag()),
+	embed := &discordgo.MessageEmbed{
+		Color:       0xFEFEFE,
+		Title:       fmt.Sprintf("Message from %v", msg.Message.Author.String()),
 		Description: msg.Message.Content,
-		Footer:      &disgord.EmbedFooter{Text: msg.Message.Author.ID.String()},
-		Timestamp:   msg.Message.Timestamp,
+		Footer:      &discordgo.MessageEmbedFooter{Text: msg.Message.Author.ID},
+		Timestamp:   string(msg.Message.Timestamp),
 	}
 	if len(msg.Message.Attachments) > 0 {
-		embed.Image = &disgord.EmbedImage{URL: msg.Message.Attachments[0].URL}
+		embed.Image = &discordgo.MessageEmbedImage{URL: msg.Message.Attachments[0].URL}
 	}
 
 	for _, id := range m.dmLogChannels {
-		msg.Sess.SendMsg(disgord.Snowflake(id), embed)
+		msg.Sess.ChannelMessageSendEmbed(id, embed)
 	}
 }

@@ -2,18 +2,20 @@ package helpmod
 
 import (
 	"github.com/intrntsrfr/meidov2"
-	"github.com/jmoiron/sqlx"
 )
 
 type HelpMod struct {
 	cl       chan *meidov2.DiscordMessage
 	commands []func(msg *meidov2.DiscordMessage)
+	b        *meidov2.Bot
+}
+
+func (m *HelpMod) RegisterCommand(command meidov2.ModCommand) {
+	panic("implement me")
 }
 
 func New() meidov2.Mod {
-	return &HelpMod{
-		//cl: make(chan *meidov2.DiscordMessage),
-	}
+	return &HelpMod{}
 }
 
 func (m *HelpMod) Save() error {
@@ -30,12 +32,13 @@ func (m *HelpMod) Settings(msg *meidov2.DiscordMessage) {
 func (m *HelpMod) Help(msg *meidov2.DiscordMessage) {
 
 }
-func (m *HelpMod) Commands() []meidov2.ModCommand {
+func (m *HelpMod) Commands() map[string]meidov2.ModCommand {
 	return nil
 }
 
-func (m *HelpMod) Hook(b *meidov2.Bot, _ *sqlx.DB, cl chan *meidov2.DiscordMessage) error {
-	m.cl = cl
+func (m *HelpMod) Hook(b *meidov2.Bot) error {
+	m.cl = b.CommandLog
+	m.b = b
 
 	return nil
 }

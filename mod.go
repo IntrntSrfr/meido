@@ -1,37 +1,38 @@
 package meidov2
 
-import "github.com/jmoiron/sqlx"
-
 type Mod interface {
-	Hook(*Bot, *sqlx.DB, chan *DiscordMessage) error
-	Message(*DiscordMessage)
-	Settings(*DiscordMessage)
-	Help(*DiscordMessage)
 	Save() error
 	Load() error
-	Commands() []ModCommand
+	Commands() map[string]ModCommand
+	Hook(*Bot) error
+	RegisterCommand(ModCommand)
+	Settings(*DiscordMessage)
+	Help(*DiscordMessage)
+	Message(*DiscordMessage)
 }
 
 type ModCommand interface {
 	Name() string
-	Aliases() []string
-	Triggers() []string
 	Description() string
+	Triggers() []string
 	Usage() string
+	Cooldown() int
 	RequiredPerms() int
-	OwnerOnly() bool
-	Enabled() bool
+	RequiresOwner() bool
+	IsEnabled() bool
 	Run(*DiscordMessage)
 }
 
 /*
-type ModCommand struct {
-	Name string
-	Aliases []string
-	Triggers []string
+type ModCommandStruct struct {
+	Mod
+	Name          string
+	Description   string
+	Triggers      []string
+	Usage         string
+	Cooldown      int
 	RequiredPerms int
-	OwnerOnly bool
-	Enabled bool
-	Run func(*Message)
+	RequiresOwner bool
+	Enabled       bool
 }
 */

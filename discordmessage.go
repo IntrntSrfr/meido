@@ -1,8 +1,7 @@
 package meidov2
 
 import (
-	"context"
-	"github.com/andersfylling/disgord"
+	"github.com/bwmarrin/discordgo"
 	"sort"
 	"strings"
 	"time"
@@ -17,16 +16,24 @@ const (
 )
 
 type DiscordMessage struct {
-	Ctx          context.Context
-	Sess         disgord.Session
-	Discord      *Discord
-	Message      *disgord.Message
+	Sess    *discordgo.Session
+	Discord *Discord
+	Message *discordgo.Message
+
+	// Partial guild member, use only for guild related stuff
+	Author       *discordgo.User
+	Member       *discordgo.Member
 	Type         MessageType
 	TimeReceived time.Time
+	Shard        int
 }
 
-func (m *DiscordMessage) Reply(data interface{}) (*disgord.Message, error) {
-	return m.Sess.SendMsg(m.Message.ChannelID, data)
+func (m *DiscordMessage) Reply(data string) (*discordgo.Message, error) {
+	return m.Sess.ChannelMessageSend(m.Message.ChannelID, data)
+}
+
+func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
+	return m.Sess.ChannelMessageSendEmbed(m.Message.ChannelID, embed)
 }
 
 func (m *DiscordMessage) Args() []string {
@@ -37,17 +44,22 @@ func (m *DiscordMessage) LenArgs() int {
 	return len(m.Args())
 }
 
-func (m *DiscordMessage) HighestRole(gid, uid disgord.Snowflake) int {
+func (m *DiscordMessage) IsDM() bool {
+	return m.Message.Type == discordgo.MessageTypeDefault && m.Message.GuildID == ""
+}
 
-	mem, err := m.Discord.Client.Guild(gid).Member(uid).Get()
+func (m *DiscordMessage) HighestRole(gid, uid string) int {
+
+	g, err := m.Sess.State.Guild(gid)
+	if err != nil {
+		return -1
+	}
+	mem, err := m.Sess.GuildMember(gid, uid)
 	if err != nil {
 		return -1
 	}
 
-	gRoles, err := m.Discord.Client.Guild(gid).GetRoles()
-	if err != nil {
-		return -1
-	}
+	gRoles := g.Roles
 
 	sort.Sort(RoleByPos(gRoles))
 
@@ -62,17 +74,19 @@ func (m *DiscordMessage) HighestRole(gid, uid disgord.Snowflake) int {
 	return -1
 }
 
-func (m *DiscordMessage) HighestColor(gid, uid disgord.Snowflake) int {
+func (m *DiscordMessage) HighestColor(gid, uid string) int {
 
-	mem, err := m.Discord.Client.Guild(gid).Member(uid).Get()
+	g, err := m.Sess.State.Guild(gid)
 	if err != nil {
-		return -1
+		return 0
 	}
 
-	gRoles, err := m.Discord.Client.Guild(gid).GetRoles()
+	mem, err := m.Sess.GuildMember(gid, uid)
 	if err != nil {
-		return -1
+		return 0
 	}
+
+	gRoles := g.Roles
 
 	sort.Sort(RoleByPos(gRoles))
 
@@ -80,7 +94,7 @@ func (m *DiscordMessage) HighestColor(gid, uid disgord.Snowflake) int {
 		for _, r := range mem.Roles {
 			if r == gr.ID {
 				if gr.Color != 0 {
-					return int(gr.Color)
+					return gr.Color
 				}
 			}
 		}
@@ -89,7 +103,7 @@ func (m *DiscordMessage) HighestColor(gid, uid disgord.Snowflake) int {
 	return 0
 }
 
-type RoleByPos []*disgord.Role
+type RoleByPos []*discordgo.Role
 
 func (a RoleByPos) Len() int           { return len(a) }
 func (a RoleByPos) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
