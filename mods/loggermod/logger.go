@@ -48,6 +48,11 @@ func (m *LoggerMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 	m.dmLogChannels = b.Config.DmLogChannels
 
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		fmt.Println("user:", r.User.String())
+		fmt.Println("servers:", len(r.Guilds))
+	})
+
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		fmt.Println("loaded: ", g.Guild.Name)
 	})
@@ -77,7 +82,6 @@ func (m *LoggerMod) Message(msg *meidov2.DiscordMessage) {
 	}
 }
 func (m *LoggerMod) ForwardDms(msg *meidov2.DiscordMessage) {
-
 	if msg.Message.Author.Bot {
 		return
 	}

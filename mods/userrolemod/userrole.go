@@ -124,7 +124,7 @@ func (c *ToggleUserRoleCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -348,7 +348,7 @@ func (c *MyRoleCommand) Run(msg *meidov2.DiscordMessage) {
 		}
 		return
 	case la == 1:
-		target = msg.Author
+		target = msg.Member
 	case la == 2:
 		if len(msg.Message.Mentions) >= 1 {
 			target, err = msg.Discord.Sess.GuildMember(g.ID, msg.Message.Mentions[0].ID)

@@ -56,3 +56,12 @@ create table if not exists warns
     cleared_at    timestamp
 );
 
+create table if not exists autorole
+(
+    id      serial        not null
+        constraint autorole_pkey
+            primary key,
+    guild_id text          not null,
+    role_id text not null,
+    enabled boolean not null
+);

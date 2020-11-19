@@ -47,7 +47,7 @@ func (c *LockdownChannelCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -175,7 +175,7 @@ func (c *UnlockChannelCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return

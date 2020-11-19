@@ -15,6 +15,7 @@ type Config struct {
 	ConnectionString string   `json:"connection_string"`
 	DmLogChannels    []string `json:"dm_log_channels"`
 	OwnerIds         []string `json:"owner_ids"`
+	YouTubeKey       string   `json:"youtube_key"`
 }
 
 type Bot struct {

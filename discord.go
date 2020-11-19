@@ -78,18 +78,26 @@ func (d *Discord) Close() {
 }
 
 func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Message.Author == nil || m.Message.Author.Bot {
+	if m.Author == nil || m.Message.Author.Bot {
 		return
 	}
 
-	author := m.Member
-	author.User = m.Author
+	var author *discordgo.User
+	var member *discordgo.Member
+
+	author = m.Author
+
+	if m.GuildID != "" {
+		member = m.Member
+		member.User = author
+	}
 
 	d.messageChan <- &DiscordMessage{
 		Sess:         s,
 		Discord:      d,
 		Message:      m.Message,
 		Author:       author,
+		Member:       member,
 		Type:         MessageTypeCreate,
 		TimeReceived: time.Now(),
 		Shard:        s.ShardID,
@@ -97,19 +105,27 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 }
 
 func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
-	if m.Message.Author == nil || m.Message.Author.Bot {
+	if m.Author == nil || m.Message.Author.Bot {
 		return
 	}
 
-	author := m.Member
-	author.User = m.Author
+	var author *discordgo.User
+	var member *discordgo.Member
+
+	author = m.Author
+
+	if m.GuildID != "" {
+		member = m.Member
+		member.User = author
+	}
 
 	d.messageChan <- &DiscordMessage{
 		Sess:         s,
 		Discord:      d,
 		Message:      m.Message,
 		Author:       author,
-		Type:         MessageTypeUpdate,
+		Member:       member,
+		Type:         MessageTypeCreate,
 		TimeReceived: time.Now(),
 		Shard:        s.ShardID,
 	}

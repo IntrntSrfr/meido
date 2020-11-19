@@ -53,7 +53,7 @@ func (c *FilterWordCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -124,7 +124,7 @@ func (c *FilterWordListCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -203,7 +203,7 @@ func (c *ClearFilterCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -266,7 +266,7 @@ func (c *ToggleStrikeCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -336,7 +336,7 @@ func (c *SetMaxWarnsCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -370,7 +370,7 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 	isIllegal := false
 	trigger := ""
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		return
 	}

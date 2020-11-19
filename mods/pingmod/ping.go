@@ -2,7 +2,6 @@ package pingmod
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
 	"sync"
 	"time"
@@ -32,11 +31,6 @@ func (m *PingMod) Commands() map[string]meidov2.ModCommand {
 }
 func (m *PingMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
-
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		fmt.Println("user:", r.User.String())
-		fmt.Println("servers:", len(r.Guilds))
-	})
 
 	m.RegisterCommand(NewPingCommand(m))
 
@@ -102,7 +96,7 @@ func (c *PingCommand) IsEnabled() bool {
 	return c.Enabled
 }
 func (c *PingCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.Args()[0] != "m?ping" {
+	if msg.LenArgs() < 1 || msg.Args()[0] != "m?ping" {
 		return
 	}
 

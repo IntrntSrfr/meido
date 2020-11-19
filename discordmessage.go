@@ -21,7 +21,8 @@ type DiscordMessage struct {
 	Message *discordgo.Message
 
 	// Partial guild member, use only for guild related stuff
-	Author       *discordgo.Member
+	Author       *discordgo.User
+	Member       *discordgo.Member
 	Type         MessageType
 	TimeReceived time.Time
 	Shard        int

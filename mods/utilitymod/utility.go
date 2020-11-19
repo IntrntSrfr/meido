@@ -285,7 +285,7 @@ func (c *ServerCommand) Run(msg *meidov2.DiscordMessage) {
 	ts := time.Unix(id, 0)
 
 	embed := discordgo.MessageEmbed{
-		Color: 0xFFFFFF,
+		Color: 0xFEFEFE,
 		Author: &discordgo.MessageEmbedAuthor{
 			Name: g.Name,
 		},
@@ -350,7 +350,7 @@ func (c *AboutCommand) Usage() string {
 	return "m?about"
 }
 func (c *AboutCommand) Cooldown() int {
-	return 30
+	return 15
 }
 func (c *AboutCommand) RequiredPerms() int {
 	return 0

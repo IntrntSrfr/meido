@@ -63,7 +63,7 @@ func (c *WarnCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -239,7 +239,7 @@ func (c *WarnLogCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -388,7 +388,7 @@ func (c *RemoveWarnCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -472,7 +472,7 @@ func (c *ClearWarnsCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return

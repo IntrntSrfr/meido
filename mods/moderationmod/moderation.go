@@ -63,51 +63,54 @@ func (m *ModerationMod) Hook(b *meidov2.Bot) error {
 		}
 	})
 
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		refreshTicker := time.NewTicker(time.Hour)
+	// add this later
+	/*
+		b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+			refreshTicker := time.NewTicker(time.Hour)
 
-		go func() {
-			for range refreshTicker.C {
-				for _, g := range b.Discord.Sess.State.Guilds {
-					dge := &DiscordGuild{}
-					err := b.DB.Get(dge, "SELECT * FROM guilds WHERE guild_id=$1", g.ID)
-					if err != nil {
-						continue
-					}
+			go func() {
+				for range refreshTicker.C {
+					for _, g := range b.Discord.Sess.State.Guilds {
+						dge := &DiscordGuild{}
+						err := b.DB.Get(dge, "SELECT * FROM guilds WHERE guild_id=$1", g.ID)
+						if err != nil {
+							continue
+						}
 
-					var warns []*WarnEntry
-					err = b.DB.Select(&warns, "SELECT * FROM warns WHERE guild_id=$1", g.ID)
-					if err != nil {
-						continue
-					}
+						var warns []*WarnEntry
+						err = b.DB.Select(&warns, "SELECT * FROM warns WHERE guild_id=$1", g.ID)
+						if err != nil {
+							continue
+						}
 
-					for _, warn := range warns {
-						if warn.GivenAt.Unix() < time.Now().Add(time.Hour*24*30*-1).Unix() {
-							b.DB.Exec("DELETE FROM warns WHERE uid=$1", warn.UID)
+						for _, warn := range warns {
+							if warn.GivenAt.Unix() < time.Now().Add(time.Hour*24*30*-1).Unix() {
+								b.DB.Exec("DELETE FROM warns WHERE uid=$1", warn.UID)
+							}
 						}
 					}
 				}
-			}
-		}()
-	})
+			}()
+		})
+	*/
 
-	m.passives = append(m.passives, m.CheckFilter)
+	//m.passives = append(m.passives, m.CheckFilter)
 
 	m.RegisterCommand(NewBanCommand(m))
 	m.RegisterCommand(NewUnbanCommand(m))
 	m.RegisterCommand(NewHackbanCommand(m))
 
-	m.RegisterCommand(NewWarnCommand(m))
-	m.RegisterCommand(NewWarnLogCommand(m))
-	m.RegisterCommand(NewRemoveWarnCommand(m))
-	m.RegisterCommand(NewClearWarnsCommand(m))
+	//m.RegisterCommand(NewWarnCommand(m))
+	//m.RegisterCommand(NewWarnLogCommand(m))
+	//m.RegisterCommand(NewRemoveWarnCommand(m))
+	//m.RegisterCommand(NewClearWarnsCommand(m))
 
-	m.RegisterCommand(NewFilterWordCommand(m))
-	m.RegisterCommand(NewClearFilterCommand(m))
-	m.RegisterCommand(NewFilterWordListCommand(m))
+	//m.RegisterCommand(NewFilterWordCommand(m))
+	//m.RegisterCommand(NewClearFilterCommand(m))
+	//m.RegisterCommand(NewFilterWordListCommand(m))
 
-	m.RegisterCommand(NewSetMaxWarnsCommand(m))
-	m.RegisterCommand(NewToggleStrikeCommand(m))
+	//m.RegisterCommand(NewSetMaxWarnsCommand(m))
+	//m.RegisterCommand(NewToggleStrikeCommand(m))
 
 	m.RegisterCommand(NewLockdownChannelCommand(m))
 	m.RegisterCommand(NewUnlockChannelCommand(m))
@@ -159,39 +162,30 @@ func NewBanCommand(m *ModerationMod) meidov2.ModCommand {
 		Enabled: true,
 	}
 }
-
 func (c *BanCommand) Name() string {
 	return "Ban"
 }
-
 func (c *BanCommand) Description() string {
 	return "Bans a user. Days of messages to be deleted and reason is optional"
 }
-
 func (c *BanCommand) Triggers() []string {
 	return []string{"m?ban", "m?b", ".b", ".ban"}
 }
-
 func (c *BanCommand) Usage() string {
 	return ".b @internet surfer#0001\n.b 163454407999094786\n.b 163454407999094786 being very mean\n.b 163454407999094786 1 being very mean\n.b 163454407999094786 1"
 }
-
 func (c *BanCommand) Cooldown() int {
 	return 10
 }
-
 func (c *BanCommand) RequiredPerms() int {
 	return discordgo.PermissionBanMembers
 }
-
 func (c *BanCommand) RequiresOwner() bool {
 	return false
 }
-
 func (c *BanCommand) IsEnabled() bool {
 	return c.Enabled
 }
-
 func (c *BanCommand) Run(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || (msg.Args()[0] != ".ban" && msg.Args()[0] != ".b" && msg.Args()[0] != "m?ban" && msg.Args()[0] != "m?b") {
 		return
@@ -200,7 +194,7 @@ func (c *BanCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -371,7 +365,7 @@ func (c *UnbanCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -466,7 +460,7 @@ func (c *HackbanCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -566,7 +560,7 @@ func (c *KickCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Author, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		fmt.Println(err)
 		return
