@@ -80,7 +80,6 @@ func scrape(query string) (links []string) {
 		ma := string(m)
 		ma = strings.TrimPrefix(ma, `"`)
 		ma = strings.TrimSuffix(ma, `"`)
-		fmt.Println(ma)
 		links = append(links, ma)
 	}
 	return
