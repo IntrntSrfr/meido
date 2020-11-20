@@ -39,6 +39,9 @@ func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.M
 func (m *DiscordMessage) Args() []string {
 	return strings.Fields(strings.ToLower(m.Message.Content))
 }
+func (m *DiscordMessage) Content() []string {
+	return strings.Fields(m.Message.Content)
+}
 
 func (m *DiscordMessage) LenArgs() int {
 	return len(m.Args())

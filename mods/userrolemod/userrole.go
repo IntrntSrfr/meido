@@ -299,7 +299,7 @@ func (c *MyRoleCommand) Run(msg *meidov2.DiscordMessage) {
 		}
 
 		if msg.Args()[1] == "name" {
-			newName := strings.Join(msg.Args()[2:], " ")
+			newName := strings.Join(msg.Content()[2:], " ")
 
 			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, newName, oldRole.Color, oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
 			if err != nil {
