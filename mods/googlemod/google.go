@@ -249,6 +249,7 @@ func (m *GoogleMod) MessageReactionRemoveHandler(s *discordgo.Session, msg *disc
 	m.Unlock()
 
 	if msg.UserID != search.AuthorMsg.Author.ID {
+		return
 	}
 	switch msg.Emoji.Name {
 	case "⬅":
