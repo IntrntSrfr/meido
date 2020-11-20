@@ -70,8 +70,8 @@ func (m *UtilityMod) Hook(b *meidov2.Bot) error {
 				memCount := 0
 				srvCount := 0
 				for _, sess := range b.Discord.Sessions {
-					srvCount++
 					for _, g := range sess.State.Guilds {
+						srvCount++
 						memCount += g.MemberCount
 					}
 				}
