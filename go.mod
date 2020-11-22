@@ -3,7 +3,6 @@ module github.com/intrntsrfr/meidov2
 go 1.15
 
 require (
-	github.com/PuerkitoBio/goquery v1.6.0
 	github.com/andersfylling/disgord v0.21.0
 	github.com/bwmarrin/discordgo v0.22.0
 	github.com/dustin/go-humanize v1.0.0

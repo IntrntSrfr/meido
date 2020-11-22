@@ -1,6 +1,7 @@
 package moderationmod
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
@@ -22,7 +23,7 @@ func NewFilterWordCommand(m *ModerationMod) meidov2.ModCommand {
 	}
 }
 func (c *FilterWordCommand) Name() string {
-	return "FilterWord"
+	return "filterword"
 }
 func (c *FilterWordCommand) Description() string {
 	return "Adds or removes a word or phrase to the server filter."
@@ -93,10 +94,10 @@ func NewFilterWordListCommand(m *ModerationMod) meidov2.ModCommand {
 	}
 }
 func (c *FilterWordListCommand) Name() string {
-	return "FilterWordList"
+	return "filterwordlist"
 }
 func (c *FilterWordListCommand) Description() string {
-	return "Displays a list of all filtered phrases for this server"
+	return "Lists of all filtered phrases for this server"
 }
 func (c *FilterWordListCommand) Triggers() []string {
 	return []string{"m?fwl", "m?filterwordlist"}
@@ -151,8 +152,15 @@ func (c *FilterWordListCommand) Run(msg *meidov2.DiscordMessage) {
 		filterListBuilder.WriteString(fmt.Sprintf("- %s\n", fe.Phrase))
 	}
 	filterListBuilder.WriteString("```")
-	msg.Reply(filterListBuilder.String())
 
+	if len(filterListBuilder.String()) > 1000 {
+		buf := &bytes.Buffer{}
+		buf.WriteString(filterListBuilder.String())
+
+		msg.Sess.ChannelFileSend(msg.Message.ChannelID, "filter.txt", buf)
+	} else {
+		msg.Reply(filterListBuilder.String())
+	}
 }
 
 type ClearFilterCommand struct {
@@ -278,60 +286,59 @@ func (c *ToggleStrikeCommand) Run(msg *meidov2.DiscordMessage) {
 	c.m.cl <- msg
 
 	dge := &DiscordGuild{}
-
 	err = c.m.db.Get(dge, "SELECT * FROM guilds WHERE guild_id = $1", msg.Message.GuildID)
 	if err != nil {
 		return
 	}
-	if dge.UseStrikes {
-		c.m.db.Exec("UPDATE guilds SET use_strikes=false WHERE guild_id=$1 AND use_strikes=true", dge.GuildID)
+	if dge.UseWarns {
+		c.m.db.Exec("UPDATE guilds SET use_warns=false WHERE guild_id=$1 AND use_warns=true", dge.GuildID)
 		msg.Reply("Strike system is now DISABLED")
 	} else {
-		c.m.db.Exec("UPDATE guilds SET use_strikes=true WHERE guild_id=$1 AND use_strikes=false", dge.GuildID)
+		c.m.db.Exec("UPDATE guilds SET use_warns=true WHERE guild_id=$1 AND use_warns=false", dge.GuildID)
 		msg.Reply("Strike system is now ENABLED")
 	}
 }
 
-type SetMaxWarnsCommand struct {
+type ModerationSettingsCommand struct {
 	m       *ModerationMod
 	Enabled bool
 }
 
-func NewSetMaxWarnsCommand(m *ModerationMod) meidov2.ModCommand {
-	return &SetMaxWarnsCommand{
+func NewModerationSettingsCommand(m *ModerationMod) meidov2.ModCommand {
+	return &ModerationSettingsCommand{
 		m:       m,
 		Enabled: true,
 	}
 }
-func (c *SetMaxWarnsCommand) Name() string {
-	return "SetMaxWarns"
+func (c *ModerationSettingsCommand) Name() string {
+	return "moderationsettings"
 }
-func (c *SetMaxWarnsCommand) Description() string {
-	return "Sets the amount of warns a user needs to acquire to get banned."
+func (c *ModerationSettingsCommand) Description() string {
+	return "Moderation settings:\n- Toggle warn system [enable/disable]\n- Set max warns [0-10]\n- Set warn duration [0(infinite)-365]"
 }
-func (c *SetMaxWarnsCommand) Triggers() []string {
-	return []string{"m?setmaxwarns"}
+func (c *ModerationSettingsCommand) Triggers() []string {
+	return []string{"m?settings moderation"}
 }
-func (c *SetMaxWarnsCommand) Usage() string {
-	return "m?setmaxwarns 5"
+func (c *ModerationSettingsCommand) Usage() string {
+	return "m?settings moderation warns enable/disable\nm?settings moderation maxwarns [0-10]\nm?settings moderation warnduration [0-365]"
 }
-func (c *SetMaxWarnsCommand) Cooldown() int {
-	return 10
+func (c *ModerationSettingsCommand) Cooldown() int {
+	return 5
 }
-func (c *SetMaxWarnsCommand) RequiredPerms() int {
+func (c *ModerationSettingsCommand) RequiredPerms() int {
 	return discordgo.PermissionAdministrator
 }
-func (c *SetMaxWarnsCommand) RequiresOwner() bool {
+func (c *ModerationSettingsCommand) RequiresOwner() bool {
 	return false
 }
-func (c *SetMaxWarnsCommand) IsEnabled() bool {
+func (c *ModerationSettingsCommand) IsEnabled() bool {
 	return c.Enabled
 }
-func (c *SetMaxWarnsCommand) Run(msg *meidov2.DiscordMessage) {
-
-	if msg.LenArgs() < 2 || msg.Args()[0] != "m?maxstrikes" {
+func (c *ModerationSettingsCommand) Run(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 4 || strings.Join(msg.Args()[:2], " ") != "m?settings moderation" {
 		return
 	}
+
 	if msg.Type != meidov2.MessageTypeCreate {
 		return
 	}
@@ -347,22 +354,47 @@ func (c *SetMaxWarnsCommand) Run(msg *meidov2.DiscordMessage) {
 
 	c.m.cl <- msg
 
-	n, err := strconv.Atoi(msg.Args()[1])
-	if err != nil {
-		return
-	}
-	if n < 0 {
-		n = 0
-	} else if n > 10 {
-		n = 10
-	}
+	switch msg.Args()[2] {
+	case "warns":
+		if msg.Args()[3] == "enable" {
+			c.m.db.Exec("UPDATE guilds SET use_warns=true WHERE guild_id=$1 AND NOT use_warns", msg.Message.GuildID)
+			msg.Reply("Strike system is now ENABLED")
 
-	_, err = c.m.db.Exec("UPDATE guilds SET max_strikes=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
-	if err != nil {
-		msg.Reply("error setting max strikes")
-		return
+		} else if msg.Args()[3] == "disable" {
+			c.m.db.Exec("UPDATE guilds SET use_warns=false WHERE guild_id=$1 AND use_warns", msg.Message.GuildID)
+			msg.Reply("Strike system is now DISABLED")
+		}
+	case "maxwarns":
+
+		n, err := strconv.Atoi(msg.Args()[3])
+		if err != nil {
+			return
+		}
+
+		n = meidov2.Clamp(0, 10, n)
+
+		_, err = c.m.db.Exec("UPDATE guilds SET max_warns=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
+		if err != nil {
+			msg.Reply("error setting max warns")
+			return
+		}
+		msg.Reply(fmt.Sprintf("set max warns to %v", n))
+	case "warnduration":
+
+		n, err := strconv.Atoi(msg.Args()[3])
+		if err != nil {
+			return
+		}
+
+		n = meidov2.Clamp(0, 365, n)
+
+		_, err = c.m.db.Exec("UPDATE guilds SET warn_duration=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
+		if err != nil {
+			msg.Reply("error setting warn duration")
+			return
+		}
+		msg.Reply(fmt.Sprintf("set warn duration to %v days", n))
 	}
-	msg.Reply(fmt.Sprintf("set max strikes to %v", n))
 }
 
 func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
@@ -396,12 +428,14 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 		return
 	}
 
+	msg.Sess.ChannelMessageDelete(msg.Message.ChannelID, msg.Message.ID)
+
 	dge := &DiscordGuild{}
-	err = m.db.Get(dge, "SELECT use_strikes, max_strikes FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
+	err = m.db.Get(dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		return
 	}
-	if !dge.UseStrikes {
+	if !dge.UseWarns {
 		msg.Reply(fmt.Sprintf("%v, you are not allowed to use a banned word/phrase", msg.Message.Author.Mention()))
 		return
 	}
@@ -431,11 +465,11 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 	userChannel, userChError := msg.Discord.Sess.UserChannelCreate(msg.Message.Author.ID)
 
 	// 3 / 3 strikes
-	if warnCount+1 >= dge.MaxStrikes {
+	if warnCount+1 >= dge.MaxWarns {
 
 		if userChError == nil {
 			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
-				g.Name, dge.MaxStrikes, reason))
+				g.Name, dge.MaxWarns, reason))
 		}
 		err = msg.Discord.Sess.GuildBanCreateWithReason(g.ID, msg.Message.Author.ID, reason, 0)
 		if err != nil {
@@ -454,12 +488,12 @@ func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
 	} else {
 		if userChError == nil {
 			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
-				g.Name, reason, warnCount+1, dge.MaxStrikes))
+				g.Name, reason, warnCount+1, dge.MaxWarns))
 		}
 		/*
 			_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
 				msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), true)
 		*/
-		msg.Reply(fmt.Sprintf("%v has been warned\nThey are currently at warn %v/%v", msg.Message.Author.Mention(), warnCount+1, dge.MaxStrikes))
+		msg.Reply(fmt.Sprintf("%v has been warned\nThey are currently at warn %v/%v", msg.Message.Author.Mention(), warnCount+1, dge.MaxWarns))
 	}
 }

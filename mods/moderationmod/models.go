@@ -9,10 +9,13 @@ type FilterEntry struct {
 }
 
 type DiscordGuild struct {
-	UID        int    `db:"uid"`
-	GuildID    string `db:"guild_id"`
-	UseStrikes bool   `db:"use_strikes"`
-	MaxStrikes int    `db:"max_strikes"`
+	UID      int    `db:"uid"`
+	GuildID  string `db:"guild_id"`
+	UseWarns bool   `db:"use_warns"`
+	MaxWarns int    `db:"max_warns"`
+
+	// described in days, 0 means infinite duration
+	WarnDuration int `db:"warn_duration"`
 }
 
 type WarnEntry struct {

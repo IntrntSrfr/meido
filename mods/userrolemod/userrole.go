@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
 type UserRoleMod struct {
@@ -54,6 +55,41 @@ func (m *UserRoleMod) Hook(b *meidov2.Bot) error {
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.GuildRoleDelete) {
 		m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND role_id=$2", r.GuildID, r.RoleID)
+	})
+
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		refreshTicker := time.NewTicker(time.Hour)
+
+		go func() {
+			for range refreshTicker.C {
+				for _, g := range b.Discord.Sess.State.Guilds {
+					if g.Unavailable {
+						continue
+					}
+
+					var userRoles []*Userrole
+
+					err := b.DB.Get(&userRoles, "SELECT * FROM userroles WHERE guild_id=$1", g.ID)
+					if err != nil {
+						continue
+					}
+
+					for _, ur := range userRoles {
+						hasRole := false
+
+						for _, r := range g.Roles {
+							if r.ID == ur.RoleID {
+								hasRole = true
+							}
+						}
+
+						if !hasRole {
+							b.DB.Exec("DELETE FROM userroles WHERE uid=$1", ur.UID)
+						}
+					}
+				}
+			}
+		}()
 	})
 
 	m.RegisterCommand(NewToggleUserRoleCommand(m))

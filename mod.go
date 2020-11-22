@@ -36,3 +36,21 @@ type ModCommandStruct struct {
 	Enabled       bool
 }
 */
+
+func Min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func Max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func Clamp(lower, upper, n int) int {
+	return Max(lower, Min(upper, n))
+}

@@ -58,69 +58,67 @@ func (m *ModerationMod) Hook(b *meidov2.Bot) error {
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
 		} else if err == sql.ErrNoRows {
-			m.db.Exec("INSERT INTO guilds(guild_id, use_strikes, max_strikes) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
+			m.db.Exec("INSERT INTO guilds(guild_id, use_warns, max_warns) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
 			fmt.Println(fmt.Sprintf("Inserted new guild: %v [%v]", g.Guild.Name, g.Guild.ID))
 		}
 	})
 
-	// add this later
-	/*
-		b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-			refreshTicker := time.NewTicker(time.Hour)
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		refreshTicker := time.NewTicker(time.Hour)
 
-			go func() {
-				for range refreshTicker.C {
-					for _, g := range b.Discord.Sess.State.Guilds {
-						dge := &DiscordGuild{}
-						err := b.DB.Get(dge, "SELECT * FROM guilds WHERE guild_id=$1", g.ID)
-						if err != nil {
-							continue
-						}
+		go func() {
+			for range refreshTicker.C {
+				for _, g := range b.Discord.Sess.State.Guilds {
+					if g.Unavailable {
+						continue
+					}
+					dge := &DiscordGuild{}
+					err := b.DB.Get(dge, "SELECT * FROM guilds WHERE guild_id=$1", g.ID)
+					if err != nil {
+						continue
+					}
 
-						var warns []*WarnEntry
-						err = b.DB.Select(&warns, "SELECT * FROM warns WHERE guild_id=$1", g.ID)
-						if err != nil {
-							continue
-						}
+					if dge.WarnDuration <= 0 {
+						continue
+					}
 
-						for _, warn := range warns {
-							if warn.GivenAt.Unix() < time.Now().Add(time.Hour*24*30*-1).Unix() {
-								b.DB.Exec("DELETE FROM warns WHERE uid=$1", warn.UID)
-							}
+					var warns []*WarnEntry
+					err = b.DB.Select(&warns, "SELECT * FROM warns WHERE guild_id=$1 AND is_valid", g.ID)
+					if err != nil {
+						continue
+					}
+
+					dur := time.Duration(dge.WarnDuration)
+					for _, warn := range warns {
+						if warn.GivenAt.Unix() < time.Now().Add(-1*time.Hour*24*dur).Unix() {
+							b.DB.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3",
+								b.Discord.Sess.State.User.ID, time.Now(), warn.UID)
 						}
 					}
 				}
-			}()
-		})
-	*/
+			}
+		}()
+	})
 
-	//m.passives = append(m.passives, m.CheckFilter)
+	m.passives = append(m.passives, m.CheckFilter)
 
 	m.RegisterCommand(NewBanCommand(m))
 	m.RegisterCommand(NewUnbanCommand(m))
 	m.RegisterCommand(NewHackbanCommand(m))
 
-	//m.RegisterCommand(NewWarnCommand(m))
-	//m.RegisterCommand(NewWarnLogCommand(m))
-	//m.RegisterCommand(NewRemoveWarnCommand(m))
-	//m.RegisterCommand(NewClearWarnsCommand(m))
+	m.RegisterCommand(NewWarnCommand(m))
+	m.RegisterCommand(NewClearWarnCommand(m))
+	m.RegisterCommand(NewWarnLogCommand(m))
+	m.RegisterCommand(NewClearAllWarnsCommand(m))
 
-	//m.RegisterCommand(NewFilterWordCommand(m))
-	//m.RegisterCommand(NewClearFilterCommand(m))
-	//m.RegisterCommand(NewFilterWordListCommand(m))
+	m.RegisterCommand(NewFilterWordCommand(m))
+	m.RegisterCommand(NewClearFilterCommand(m))
+	m.RegisterCommand(NewFilterWordListCommand(m))
 
-	//m.RegisterCommand(NewSetMaxWarnsCommand(m))
-	//m.RegisterCommand(NewToggleStrikeCommand(m))
+	m.RegisterCommand(NewModerationSettingsCommand(m))
 
 	m.RegisterCommand(NewLockdownChannelCommand(m))
 	m.RegisterCommand(NewUnlockChannelCommand(m))
-
-	/*
-		m.commands = append(m.commands, m.Unban, m.Hackban)
-		m.commands = append(m.commands, m.Warn, m.WarnLog, m.RemoveWarn, m.ClearWarns)
-		m.commands = append(m.commands, m.FilterWord, m.ClearFilter, m.FilterWordsList)
-		m.commands = append(m.commands, m.SetMaxStrikes, m.ToggleStrikes)
-	*/
 
 	return nil
 }
@@ -500,12 +498,6 @@ func (c *HackbanCommand) Run(msg *meidov2.DiscordMessage) {
 			continue
 		}
 		err = msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, userIDString, fmt.Sprintf("[%v] - Hackban", msg.Message.Author.String()), 7)
-		/*
-			err = msg.Discord.Client.BanMember(context.Background(), msg.Message.GuildID, disgord.Snowflake(userID), &disgord.BanMemberParams{
-				DeleteMessageDays: 7,
-				Reason:            fmt.Sprintf("[%v] - Hackban", msg.Message.Author.Tag()),
-			})
-		*/
 		if err != nil {
 			fmt.Println(err)
 			badBans++

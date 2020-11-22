@@ -83,13 +83,13 @@ func (c *WarnCommand) Run(msg *meidov2.DiscordMessage) {
 	c.m.cl <- msg
 
 	dge := &DiscordGuild{}
-	err = c.m.db.Get(dge, "SELECT use_strikes, max_strikes FROM guilds WHERE guild_id = $1;", msg.Message.GuildID)
+	err = c.m.db.Get(dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id = $1;", msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
 	}
 
-	if !dge.UseStrikes {
+	if !dge.UseWarns {
 		msg.Reply("Strike system not enabled")
 		return
 	}
@@ -131,8 +131,8 @@ func (c *WarnCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	if msg.LenArgs() > 3 {
-		reason = strings.Join(msg.Args()[3:], " ")
+	if msg.LenArgs() > 2 {
+		reason = strings.Join(msg.Args()[2:], " ")
 	}
 
 	warnCount := 0
@@ -160,11 +160,11 @@ func (c *WarnCommand) Run(msg *meidov2.DiscordMessage) {
 	userChannel, userChError := msg.Discord.Sess.UserChannelCreate(targetUser.User.ID)
 
 	// 3 / 3 strikes
-	if warnCount+1 >= dge.MaxStrikes {
+	if warnCount+1 >= dge.MaxWarns {
 
 		if userChError == nil {
 			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
-				g.Name, dge.MaxStrikes, reason))
+				g.Name, dge.MaxWarns, reason))
 		}
 		err = msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, targetUser.User.ID, reason, 0)
 		if err != nil {
@@ -179,12 +179,11 @@ func (c *WarnCommand) Run(msg *meidov2.DiscordMessage) {
 	} else {
 		if userChError == nil {
 			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
-				g.Name, reason, warnCount+1, dge.MaxStrikes))
+				g.Name, reason, warnCount+1, dge.MaxWarns))
 		}
 
-		msg.Reply(fmt.Sprintf("%v has been warned\nThey are currently at warn %v/%v", targetUser.Mention(), warnCount+1, dge.MaxStrikes))
+		msg.Reply(fmt.Sprintf("%v has been warned\nThey are currently at warn %v/%v", targetUser.Mention(), warnCount+1, dge.MaxWarns))
 	}
-
 }
 
 type WarnLogCommand struct {
@@ -307,16 +306,23 @@ func (c *WarnLogCommand) Run(msg *meidov2.DiscordMessage) {
 			return
 		}
 
-		warns = warns[page*10 : min(page*10+10, len(warns))]
+		warns = warns[page*10 : meidov2.Min(page*10+10, len(warns))]
+
+		userCache := make(map[string]*discordgo.User)
 
 		for _, warn := range warns {
 			field := &discordgo.MessageEmbedField{}
 			field.Value = warn.Reason
 
-			gb, err := msg.Discord.Sess.User(warn.GivenByID)
-			if err != nil {
-				msg.Reply("something terrible has happened")
-				return
+			var gb *discordgo.User
+			gb, ok := userCache[warn.GivenByID]
+			if !ok {
+				gb, err = msg.Discord.Sess.User(warn.GivenByID)
+				if err != nil {
+					msg.Reply("something terrible has happened")
+					return
+				}
+				userCache[warn.GivenByID] = gb
 			}
 
 			if warn.IsValid {
@@ -325,11 +331,19 @@ func (c *WarnLogCommand) Run(msg *meidov2.DiscordMessage) {
 				if warn.ClearedByID == nil {
 					return
 				}
-				cb, err := msg.Discord.Sess.User(*warn.ClearedByID)
-				if err != nil {
-					return
+
+				var cb *discordgo.User
+				cb, ok := userCache[*warn.ClearedByID]
+				if !ok {
+					cb, err = msg.Discord.Sess.User(*warn.ClearedByID)
+					if err != nil {
+						msg.Reply("something terrible has happened")
+						return
+					}
+					userCache[*warn.ClearedByID] = cb
 				}
-				field.Name = fmt.Sprintf("ID: %v | !NOT VALID! | Cleared by %v (%v) %v", warn.UID, cb.String(), cb.ID, humanize.Time(*warn.ClearedAt))
+
+				field.Name = fmt.Sprintf("ID: %v | !CLEARED! | Cleared by %v (%v) %v", warn.UID, cb.String(), cb.ID, humanize.Time(*warn.ClearedAt))
 			}
 
 			embed.Fields = append(embed.Fields, field)
@@ -338,50 +352,43 @@ func (c *WarnLogCommand) Run(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-type RemoveWarnCommand struct {
+type ClearWarnCommand struct {
 	m       *ModerationMod
 	Enabled bool
 }
 
-func NewRemoveWarnCommand(m *ModerationMod) meidov2.ModCommand {
-	return &RemoveWarnCommand{
+func NewClearWarnCommand(m *ModerationMod) meidov2.ModCommand {
+	return &ClearWarnCommand{
 		m:       m,
 		Enabled: true,
 	}
 }
-func (c *RemoveWarnCommand) Name() string {
-	return "RemoveWarn"
+func (c *ClearWarnCommand) Name() string {
+	return "clearwarn"
 }
-func (c *RemoveWarnCommand) Description() string {
-	return "Removes a warn from a user using a warnID. Use warnlog to get warnIDs"
+func (c *ClearWarnCommand) Description() string {
+	return "Clears a warn from a user using a warnID. Use warnlog to get warnIDs"
 }
-func (c *RemoveWarnCommand) Triggers() []string {
-	return []string{"m?rmwarn", "m?removewarn"}
+func (c *ClearWarnCommand) Triggers() []string {
+	return []string{"m?clearwarn"}
 }
-func (c *RemoveWarnCommand) Usage() string {
-	return "m?removewarn 123"
+func (c *ClearWarnCommand) Usage() string {
+	return "m?clearwarn 123"
 }
-func (c *RemoveWarnCommand) Cooldown() int {
+func (c *ClearWarnCommand) Cooldown() int {
 	return 5
 }
-func (c *RemoveWarnCommand) RequiredPerms() int {
+func (c *ClearWarnCommand) RequiredPerms() int {
 	return discordgo.PermissionBanMembers
 }
-func (c *RemoveWarnCommand) RequiresOwner() bool {
+func (c *ClearWarnCommand) RequiresOwner() bool {
 	return false
 }
-func (c *RemoveWarnCommand) IsEnabled() bool {
+func (c *ClearWarnCommand) IsEnabled() bool {
 	return c.Enabled
 }
-func (c *RemoveWarnCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?removewarn" && msg.Args()[0] != "m?rmwarn") {
+func (c *ClearWarnCommand) Run(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?clearwarn") {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
@@ -429,43 +436,43 @@ func (c *RemoveWarnCommand) Run(msg *meidov2.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("Invalidated warn with ID: %v", uid))
 }
 
-type ClearWarnsCommand struct {
+type ClearAllWarnsCommand struct {
 	m       *ModerationMod
 	Enabled bool
 }
 
-func NewClearWarnsCommand(m *ModerationMod) meidov2.ModCommand {
-	return &ClearWarnsCommand{
+func NewClearAllWarnsCommand(m *ModerationMod) meidov2.ModCommand {
+	return &ClearAllWarnsCommand{
 		m:       m,
 		Enabled: true,
 	}
 }
-func (c *ClearWarnsCommand) Name() string {
+func (c *ClearAllWarnsCommand) Name() string {
 	return "ClearWarns"
 }
-func (c *ClearWarnsCommand) Description() string {
+func (c *ClearAllWarnsCommand) Description() string {
 	return "Invalidates every active warn for a user"
 }
-func (c *ClearWarnsCommand) Triggers() []string {
-	return []string{"m?clearwarns", "m?cw"}
+func (c *ClearAllWarnsCommand) Triggers() []string {
+	return []string{"m?clearallwarns"}
 }
-func (c *ClearWarnsCommand) Usage() string {
-	return "m?clearwarns 123123123123"
+func (c *ClearAllWarnsCommand) Usage() string {
+	return "m?clearallwarns 123123123123"
 }
-func (c *ClearWarnsCommand) Cooldown() int {
+func (c *ClearAllWarnsCommand) Cooldown() int {
 	return 10
 }
-func (c *ClearWarnsCommand) RequiredPerms() int {
+func (c *ClearAllWarnsCommand) RequiredPerms() int {
 	return discordgo.PermissionBanMembers
 }
-func (c *ClearWarnsCommand) RequiresOwner() bool {
+func (c *ClearAllWarnsCommand) RequiresOwner() bool {
 	return false
 }
-func (c *ClearWarnsCommand) IsEnabled() bool {
+func (c *ClearAllWarnsCommand) IsEnabled() bool {
 	return c.Enabled
 }
-func (c *ClearWarnsCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?clearwarns" && msg.Args()[0] != "m?cw") {
+func (c *ClearAllWarnsCommand) Run(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?clearallwarns") {
 		return
 	}
 	if msg.Type != meidov2.MessageTypeCreate {
@@ -505,5 +512,5 @@ func (c *ClearWarnsCommand) Run(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	msg.Reply(fmt.Sprintf("Invalidated warns issued to %v", targetUser.Mention()))
+	msg.Reply(fmt.Sprintf("Cleared all active warns issued to %v", targetUser.Mention()))
 }
