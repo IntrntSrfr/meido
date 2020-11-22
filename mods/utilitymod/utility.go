@@ -82,8 +82,8 @@ func (m *UtilityMod) Hook(b *meidov2.Bot) error {
 
 				s.UpdateStatusComplex(discordgo.UpdateStatusData{
 					Game: &discordgo.Game{
-						Name: fmt.Sprintf("BEING REWORKED, %v MEMBERS, %v SERVERS", memCount, srvCount),
-						Type: discordgo.GameTypeGame,
+						Name: fmt.Sprintf("over %v servers and %v members", srvCount, memCount),
+						Type: discordgo.GameTypeWatching,
 					},
 				})
 				oldMemCount = memCount
