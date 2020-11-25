@@ -551,7 +551,7 @@ func NewInviteCommand(m *UtilityMod) *meidov2.ModCommand {
 func (m *UtilityMod) inviteCommand(msg *meidov2.DiscordMessage) {
 	m.cl <- msg
 
-	botLink := "https://discordapp.com/oauth2/authorize?client_id=394162399348785152&scope=bot"
+	botLink := "<https://discordapp.com/oauth2/authorize?client_id=394162399348785152&scope=bot>"
 	serverLink := "https://discord.gg/KgMEGK3"
 	msg.Reply(fmt.Sprintf("Invite me to your server: %v\nSupport server: %v", botLink, serverLink))
 }
