@@ -3,7 +3,6 @@ package utilitymod
 import (
 	"bytes"
 	"fmt"
-	"github.com/andersfylling/disgord"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meidov2"
@@ -21,22 +20,29 @@ import (
 )
 
 type UtilityMod struct {
-	Name string
 	sync.Mutex
-	cl        chan *meidov2.DiscordMessage
-	commands  map[string]meidov2.ModCommand
-	startTime time.Time
-	db        *sqlx.DB
+	name         string
+	cl           chan *meidov2.DiscordMessage
+	commands     map[string]*meidov2.ModCommand
+	startTime    time.Time
+	db           *sqlx.DB
+	allowedTypes meidov2.MessageType
+	allowDMs     bool
 }
 
 func New(name string) meidov2.Mod {
 	return &UtilityMod{
-		startTime: time.Now(),
-		Name:      name,
-		commands:  make(map[string]meidov2.ModCommand),
+		startTime:    time.Now(),
+		name:         name,
+		commands:     make(map[string]*meidov2.ModCommand),
+		allowedTypes: meidov2.MessageTypeCreate,
+		allowDMs:     true,
 	}
 }
 
+func (m *UtilityMod) Name() string {
+	return m.name
+}
 func (m *UtilityMod) Save() error {
 	return nil
 }
@@ -44,17 +50,14 @@ func (m *UtilityMod) Save() error {
 func (m *UtilityMod) Load() error {
 	return nil
 }
-
-func (m *UtilityMod) Settings(msg *meidov2.DiscordMessage) {
-
+func (m *UtilityMod) Commands() map[string]*meidov2.ModCommand {
+	return m.commands
 }
-
-func (m *UtilityMod) Help(msg *meidov2.DiscordMessage) {
-
+func (m *UtilityMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
 }
-
-func (m *UtilityMod) Commands() map[string]meidov2.ModCommand {
-	return nil
+func (m *UtilityMod) AllowDMs() bool {
+	return m.allowDMs
 }
 
 func (m *UtilityMod) Hook(b *meidov2.Bot) error {
@@ -99,20 +102,21 @@ func (m *UtilityMod) Hook(b *meidov2.Bot) error {
 	m.RegisterCommand(NewServerSplashCommand(m))
 	m.RegisterCommand(NewColorCommand(m))
 
-	//m.commands = append(m.commands, m.Avatar, m.About, m.Server, m.ServerBanner, m.ServerSplash)
-
 	return nil
 }
 
-func (m *UtilityMod) RegisterCommand(cmd meidov2.ModCommand) {
+func (m *UtilityMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name()]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name(), m.Name))
+	if _, ok := m.commands[cmd.Name]; ok {
+		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.name))
 	}
-	m.commands[cmd.Name()] = cmd
+	m.commands[cmd.Name] = cmd
 }
 
+func (m *UtilityMod) Passives() []*meidov2.ModPassive {
+	return []*meidov2.ModPassive{}
+}
 func (m *UtilityMod) Message(msg *meidov2.DiscordMessage) {
 	if msg.Type != meidov2.MessageTypeCreate {
 		return
@@ -122,49 +126,29 @@ func (m *UtilityMod) Message(msg *meidov2.DiscordMessage) {
 	}
 }
 
-type AvatarCommand struct {
-	m       *UtilityMod
-	Enabled bool
-}
-
-func NewAvatarCommand(m *UtilityMod) meidov2.ModCommand {
-	return &AvatarCommand{
-		m:       m,
-		Enabled: true,
+func NewAvatarCommand(m *UtilityMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "avatar",
+		Description:   "Displays profile picture of user or mentioned user",
+		Triggers:      []string{"m?avatar", "m?av", ">av"},
+		Usage:         ">av | >av 123123123123",
+		Cooldown:      5,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.avatarCommand,
 	}
 }
-func (c *AvatarCommand) Name() string {
-	return "Avatar"
-}
-func (c *AvatarCommand) Description() string {
-	return "Displays the profile picture of either the author or whoever is mentioned"
-}
-func (c *AvatarCommand) Triggers() []string {
-	return []string{"m?avatar", "m?av", ">av"}
-}
-func (c *AvatarCommand) Usage() string {
-	return ">av\n>av 123123123123\nm?av\nm?avatar"
-}
-func (c *AvatarCommand) Cooldown() int {
-	return 10
-}
-func (c *AvatarCommand) RequiredPerms() int {
-	return 0
-}
-func (c *AvatarCommand) RequiresOwner() bool {
-	return false
-}
-func (c *AvatarCommand) IsEnabled() bool {
-	return c.Enabled
-}
 
-// true and (not m?av and not >av)
-func (c *AvatarCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 1 || (msg.Args()[0] != "m?av" && msg.Args()[0] != ">av") {
+func (m *UtilityMod) avatarCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 1 {
 		return
 	}
 
-	c.m.cl <- msg
+	m.cl <- msg
 
 	var targetUser *discordgo.User
 	var err error
@@ -200,55 +184,32 @@ func (c *AvatarCommand) Run(msg *meidov2.DiscordMessage) {
 	}
 }
 
-// only here in case of disgord
-func AvatarURL(u *disgord.User, size int) string {
-	a, _ := u.AvatarURL(size, true)
-	return a
-}
-
-type ServerCommand struct {
-	m       *UtilityMod
-	Enabled bool
-}
-
-func NewServerCommand(m *UtilityMod) meidov2.ModCommand {
-	return &ServerCommand{
-		m:       m,
-		Enabled: true,
+func NewServerCommand(m *UtilityMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "server",
+		Description:   "Displays information about the server",
+		Triggers:      []string{"m?server"},
+		Usage:         "m?server",
+		Cooldown:      10,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           m.serverCommand,
 	}
 }
-func (c *ServerCommand) Name() string {
-	return "Server"
-}
-func (c *ServerCommand) Description() string {
-	return "Displays information about the current server"
-}
-func (c *ServerCommand) Triggers() []string {
-	return []string{"m?server"}
-}
-func (c *ServerCommand) Usage() string {
-	return "m?server"
-}
-func (c *ServerCommand) Cooldown() int {
-	return 10
-}
-func (c *ServerCommand) RequiredPerms() int {
-	return 0
-}
-func (c *ServerCommand) RequiresOwner() bool {
-	return false
-}
-func (c *ServerCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *ServerCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 1 || msg.Args()[0] != "m?server" {
+
+func (m *UtilityMod) serverCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 1 {
 		return
 	}
 	if msg.IsDM() {
 		return
 	}
-	c.m.cl <- msg
+
+	m.cl <- msg
 
 	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
@@ -326,46 +287,28 @@ func (c *ServerCommand) Run(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(&embed)
 }
 
-type AboutCommand struct {
-	m       *UtilityMod
-	Enabled bool
+func NewAboutCommand(m *UtilityMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "about",
+		Description:   "Displays Meido statistics",
+		Triggers:      []string{"m?about"},
+		Usage:         "m?about",
+		Cooldown:      10,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowDMs:      true,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		Enabled:       true,
+		Run:           m.aboutCommand,
+	}
 }
 
-func NewAboutCommand(m *UtilityMod) meidov2.ModCommand {
-	return &AboutCommand{
-		m:       m,
-		Enabled: true,
-	}
-}
-func (c *AboutCommand) Name() string {
-	return "About"
-}
-func (c *AboutCommand) Description() string {
-	return "Displays current Meido statistics"
-}
-func (c *AboutCommand) Triggers() []string {
-	return []string{"m?about"}
-}
-func (c *AboutCommand) Usage() string {
-	return "m?about"
-}
-func (c *AboutCommand) Cooldown() int {
-	return 15
-}
-func (c *AboutCommand) RequiredPerms() int {
-	return 0
-}
-func (c *AboutCommand) RequiresOwner() bool {
-	return false
-}
-func (c *AboutCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *AboutCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 1 || msg.Args()[0] != "m?about" {
+func (m *UtilityMod) aboutCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 1 {
 		return
 	}
-	c.m.cl <- msg
+	m.cl <- msg
 
 	var (
 		totalUsers int
@@ -383,8 +326,8 @@ func (c *AboutCommand) Run(msg *meidov2.DiscordMessage) {
 		totalUsers += guild.MemberCount
 	}
 
-	uptime := time.Now().Sub(c.m.startTime)
-	err := c.m.db.Get(&totalCommands, "SELECT COUNT(*) FROM commandlog;")
+	uptime := time.Now().Sub(m.startTime)
+	err := m.db.Get(&totalCommands, "SELECT COUNT(*) FROM commandlog;")
 	if err != nil {
 		msg.Reply("Error getting data")
 		return
@@ -435,50 +378,31 @@ func (c *AboutCommand) Run(msg *meidov2.DiscordMessage) {
 	})
 }
 
-type ServerSplashCommand struct {
-	m       *UtilityMod
-	Enabled bool
-}
-
-func NewServerSplashCommand(m *UtilityMod) meidov2.ModCommand {
-	return &ServerSplashCommand{
-		m:       m,
-		Enabled: true,
+func NewServerSplashCommand(m *UtilityMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "serversplash",
+		Description:   "Displays server splash if one exists",
+		Triggers:      []string{"m?serversplash"},
+		Usage:         "m?serversplash",
+		Cooldown:      5,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           m.serverSplashCommand,
 	}
 }
-func (c *ServerSplashCommand) Name() string {
-	return "ServerSplash"
-}
-func (c *ServerSplashCommand) Description() string {
-	return "Displays the server splash if one exists"
-}
-func (c *ServerSplashCommand) Triggers() []string {
-	return []string{"m?serversplash"}
-}
-func (c *ServerSplashCommand) Usage() string {
-	return "m?serversplash"
-}
-func (c *ServerSplashCommand) Cooldown() int {
-	return 10
-}
-func (c *ServerSplashCommand) RequiredPerms() int {
-	return 0
-}
-func (c *ServerSplashCommand) RequiresOwner() bool {
-	return false
-}
-func (c *ServerSplashCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *ServerSplashCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 1 || msg.Args()[0] != "m?serversplash" {
+func (m *UtilityMod) serverSplashCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 1 {
 		return
 	}
 	if msg.IsDM() {
 		return
 	}
 
-	c.m.cl <- msg
+	m.cl <- msg
 
 	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
@@ -494,56 +418,37 @@ func (c *ServerSplashCommand) Run(msg *meidov2.DiscordMessage) {
 		Title: g.Name,
 		Color: 0xFFFFFF,
 		Image: &discordgo.MessageEmbedImage{
-			URL: fmt.Sprintf("https://cdn.discordapp.com/splashes/%v/%v.png", g.ID, g.Splash),
+			URL: fmt.Sprintf("https://cdn.discordapp.com/splashes/%v/%v.png?size=2048", g.ID, g.Splash),
 		},
 	}
 	msg.ReplyEmbed(embed)
 }
 
-type ServerBannerCommand struct {
-	m       *UtilityMod
-	Enabled bool
-}
-
-func NewServerBannerCommand(m *UtilityMod) meidov2.ModCommand {
-	return &ServerBannerCommand{
-		m:       m,
-		Enabled: true,
+func NewServerBannerCommand(m *UtilityMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "serverbanner",
+		Description:   "Displays server banner if one exists",
+		Triggers:      []string{"m?serverbanner"},
+		Usage:         "m?serverbanner",
+		Cooldown:      5,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           m.serverBannerCommand,
 	}
 }
-func (c *ServerBannerCommand) Name() string {
-	return "ServerBanner"
-}
-func (c *ServerBannerCommand) Description() string {
-	return "Displays the server banner if one exists"
-}
-func (c *ServerBannerCommand) Triggers() []string {
-	return []string{"m?serverbanner"}
-}
-func (c *ServerBannerCommand) Usage() string {
-	return "m?serverbanner"
-}
-func (c *ServerBannerCommand) Cooldown() int {
-	return 10
-}
-func (c *ServerBannerCommand) RequiredPerms() int {
-	return 0
-}
-func (c *ServerBannerCommand) RequiresOwner() bool {
-	return false
-}
-func (c *ServerBannerCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *ServerBannerCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 1 || msg.Args()[0] != "m?serverbanner" {
+func (m *UtilityMod) serverBannerCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 1 {
 		return
 	}
 	if msg.IsDM() {
 		return
 	}
 
-	c.m.cl <- msg
+	m.cl <- msg
 
 	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
@@ -559,53 +464,34 @@ func (c *ServerBannerCommand) Run(msg *meidov2.DiscordMessage) {
 		Title: g.Name,
 		Color: 0xFFFFFF,
 		Image: &discordgo.MessageEmbedImage{
-			URL: fmt.Sprintf("https://cdn.discordapp.com/banners/%v/%v.png", g.ID, g.Splash),
+			URL: fmt.Sprintf("https://cdn.discordapp.com/banners/%v/%v.png?size=2048", g.ID, g.Banner),
 		},
 	}
 	msg.ReplyEmbed(embed)
 }
 
-type ColorCommand struct {
-	m       *UtilityMod
-	Enabled bool
-}
-
-func NewColorCommand(m *UtilityMod) meidov2.ModCommand {
-	return &ColorCommand{
-		m:       m,
-		Enabled: true,
+func NewColorCommand(m *UtilityMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "color",
+		Description:   "Displays a hex color",
+		Triggers:      []string{"m?color"},
+		Usage:         "m?color #c0ffee\nm?color c0ffee",
+		Cooldown:      1,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.colorCommand,
 	}
 }
-func (c *ColorCommand) Name() string {
-	return "Color"
-}
-func (c *ColorCommand) Description() string {
-	return "Displays a provided hex color"
-}
-func (c *ColorCommand) Triggers() []string {
-	return []string{"m?color"}
-}
-func (c *ColorCommand) Usage() string {
-	return "m?color #c0ffee\nm?color c0ffee"
-}
-func (c *ColorCommand) Cooldown() int {
-	return 1
-}
-func (c *ColorCommand) RequiredPerms() int {
-	return 0
-}
-func (c *ColorCommand) RequiresOwner() bool {
-	return false
-}
-func (c *ColorCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *ColorCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 2 || msg.Args()[0] != "m?color" {
+func (m *UtilityMod) colorCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 2 {
 		return
 	}
 
-	c.m.cl <- msg
+	m.cl <- msg
 
 	clrStr := msg.Args()[1]
 

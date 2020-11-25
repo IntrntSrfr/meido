@@ -8,42 +8,36 @@ import (
 )
 
 type LoggerMod struct {
-	Name string
 	sync.Mutex
+	name          string
 	cl            chan *meidov2.DiscordMessage
-	commands      map[string]meidov2.ModCommand
-	passives      []func(*meidov2.DiscordMessage)
+	commands      map[string]*meidov2.ModCommand
+	passives      []*meidov2.ModPassive
 	dmLogChannels []string
+	allowedTypes  meidov2.MessageType
+	allowDMs      bool
 }
 
 func New(name string) meidov2.Mod {
 	return &LoggerMod{
-		Name:          name,
+		name:          name,
 		dmLogChannels: []string{},
-		commands:      make(map[string]meidov2.ModCommand),
-		passives:      []func(*meidov2.DiscordMessage){},
+		commands:      make(map[string]*meidov2.ModCommand),
+		passives:      []*meidov2.ModPassive{},
+		allowedTypes:  meidov2.MessageTypeCreate,
+		allowDMs:      true,
 	}
 }
 
+func (m *LoggerMod) Name() string {
+	return m.name
+}
 func (m *LoggerMod) Save() error {
 	return nil
 }
-
 func (m *LoggerMod) Load() error {
 	return nil
 }
-
-func (m *LoggerMod) Settings(msg *meidov2.DiscordMessage) {
-
-}
-
-func (m *LoggerMod) Help(msg *meidov2.DiscordMessage) {
-
-}
-func (m *LoggerMod) Commands() map[string]meidov2.ModCommand {
-	return nil
-}
-
 func (m *LoggerMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 	m.dmLogChannels = b.Config.DmLogChannels
@@ -57,34 +51,43 @@ func (m *LoggerMod) Hook(b *meidov2.Bot) error {
 		fmt.Println("loaded: ", g.Guild.Name)
 	})
 
-	m.passives = append(m.passives, m.ForwardDms)
+	m.passives = append(m.passives, NewForwardDmsPassive(m))
 	return nil
 }
 
-func (m *LoggerMod) RegisterCommand(cmd meidov2.ModCommand) {
+func (m *LoggerMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name()]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name(), m.Name))
+	if _, ok := m.commands[cmd.Name]; ok {
+		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.name))
 	}
-	m.commands[cmd.Name()] = cmd
+	m.commands[cmd.Name] = cmd
 }
 
-func (m *LoggerMod) Message(msg *meidov2.DiscordMessage) {
-	if msg.Type != meidov2.MessageTypeCreate {
-		return
-	}
-	for _, c := range m.commands {
-		go c.Run(msg)
-	}
-	for _, c := range m.passives {
-		go c(msg)
+func (m *LoggerMod) Commands() map[string]*meidov2.ModCommand {
+	return m.commands
+}
+func (m *LoggerMod) Passives() []*meidov2.ModPassive {
+	return m.passives
+}
+func (m *LoggerMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
+}
+func (m *LoggerMod) AllowDMs() bool {
+	return m.allowDMs
+}
+
+func NewForwardDmsPassive(m *LoggerMod) *meidov2.ModPassive {
+	return &meidov2.ModPassive{
+		Mod:          m,
+		Name:         "forwarddms",
+		Description:  "forwards all dms sent to channels found in config",
+		Enabled:      true,
+		AllowedTypes: meidov2.MessageTypeCreate,
+		Run:          m.forwardDmsPassive,
 	}
 }
-func (m *LoggerMod) ForwardDms(msg *meidov2.DiscordMessage) {
-	if msg.Message.Author.Bot {
-		return
-	}
+func (m *LoggerMod) forwardDmsPassive(msg *meidov2.DiscordMessage) {
 	if !msg.IsDM() {
 		return
 	}

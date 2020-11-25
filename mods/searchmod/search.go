@@ -12,107 +12,92 @@ import (
 )
 
 type SearchMod struct {
-	Name string
 	sync.Mutex
-	cl         chan *meidov2.DiscordMessage
-	commands   map[string]meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
-	youtubeKey string
+	name         string
+	cl           chan *meidov2.DiscordMessage
+	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
+	youtubeKey   string
+	allowedTypes meidov2.MessageType
+	allowDMs     bool
 }
 
 func New(n string) meidov2.Mod {
 	return &SearchMod{
-		Name:     n,
-		commands: make(map[string]meidov2.ModCommand),
+		name:         n,
+		commands:     make(map[string]*meidov2.ModCommand),
+		allowedTypes: meidov2.MessageTypeCreate,
+		allowDMs:     true,
 	}
 }
+
+func (m *SearchMod) Name() string {
+	return m.name
+}
+
 func (m *SearchMod) Save() error {
 	return nil
 }
 func (m *SearchMod) Load() error {
 	return nil
 }
-func (m *SearchMod) Commands() map[string]meidov2.ModCommand {
-	return m.commands
-}
 func (m *SearchMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 	m.youtubeKey = b.Config.YouTubeKey
 
-	m.RegisterCommand(NewSearchYouTubeCommand(m))
+	m.RegisterCommand(NewYouTubeCommand(m))
 
 	return nil
 }
-func (m *SearchMod) RegisterCommand(cmd meidov2.ModCommand) {
+func (m *SearchMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name()]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name(), m.Name))
+	if _, ok := m.commands[cmd.Name]; ok {
+		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
 	}
-	m.commands[cmd.Name()] = cmd
+	m.commands[cmd.Name] = cmd
 }
 
-func (m *SearchMod) Settings(msg *meidov2.DiscordMessage) {
-
+func (m *SearchMod) Commands() map[string]*meidov2.ModCommand {
+	return m.commands
 }
-func (m *SearchMod) Help(msg *meidov2.DiscordMessage) {
-
+func (m *SearchMod) Passives() []*meidov2.ModPassive {
+	return []*meidov2.ModPassive{}
 }
-func (m *SearchMod) Message(msg *meidov2.DiscordMessage) {
-	if msg.Type != meidov2.MessageTypeCreate {
-		return
+func (m *SearchMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
+}
+func (m *SearchMod) AllowDMs() bool {
+	return m.allowDMs
+}
+
+func NewYouTubeCommand(m *SearchMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "youtube",
+		Description:   "Search for a YouTube video",
+		Triggers:      []string{"m?youtube", "m?yt"},
+		Usage:         "m?yt deez nuts",
+		Cooldown:      3,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.youtubeCommand,
 	}
-	for _, c := range m.commands {
-		go c.Run(msg)
-	}
 }
-
-type SearchYouTubeCommand struct {
-	m       *SearchMod
-	Enabled bool
-}
-
-func NewSearchYouTubeCommand(m *SearchMod) meidov2.ModCommand {
-	return &SearchYouTubeCommand{
-		m:       m,
-		Enabled: true,
-	}
-}
-func (c *SearchYouTubeCommand) Name() string {
-	return "SearchYouTube"
-}
-func (c *SearchYouTubeCommand) Description() string {
-	return "Search for a YouTube Video"
-}
-func (c *SearchYouTubeCommand) Triggers() []string {
-	return []string{"m?youtube", "m?yt"}
-}
-func (c *SearchYouTubeCommand) Usage() string {
-	return "m?yt deez nuts"
-}
-func (c *SearchYouTubeCommand) Cooldown() int {
-	return 10
-}
-func (c *SearchYouTubeCommand) RequiredPerms() int {
-	return 0
-}
-func (c *SearchYouTubeCommand) RequiresOwner() bool {
-	return false
-}
-func (c *SearchYouTubeCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *SearchYouTubeCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?youtube" && msg.Args()[0] != "m?yt") {
+func (m *SearchMod) youtubeCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 2 {
 		return
 	}
 
-	c.m.cl <- msg
+	m.cl <- msg
 
 	query := strings.Join(msg.Args()[1:], " ")
 	URI, _ := url.Parse("https://www.googleapis.com/youtube/v3/search")
 
 	params := url.Values{}
-	params.Add("key", c.m.youtubeKey)
+	params.Add("key", m.youtubeKey)
 	params.Add("q", query)
 	params.Add("type", "video")
 	params.Add("part", "snippet")

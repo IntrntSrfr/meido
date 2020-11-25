@@ -11,133 +11,70 @@ import (
 	"time"
 )
 
-type FilterWordCommand struct {
-	m       *ModerationMod
-	Enabled bool
-}
-
-func NewFilterWordCommand(m *ModerationMod) meidov2.ModCommand {
-	return &FilterWordCommand{
-		m:       m,
-		Enabled: true,
+func NewFilterWordCommand(m *ModerationMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "filterword",
+		Description:   "Adds or removes a word or phrase to the server filter.",
+		Triggers:      []string{"m?fw", "m?filterword"},
+		Usage:         "m?fw jeff",
+		Cooldown:      2,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           m.filterwordCommand,
 	}
 }
-func (c *FilterWordCommand) Name() string {
-	return "filterword"
-}
-func (c *FilterWordCommand) Description() string {
-	return "Adds or removes a word or phrase to the server filter."
-}
-func (c *FilterWordCommand) Triggers() []string {
-	return []string{"m?fw", "m?filterword"}
-}
-func (c *FilterWordCommand) Usage() string {
-	return "m?fw jeff"
-}
-func (c *FilterWordCommand) Cooldown() int {
-	return 3
-}
-func (c *FilterWordCommand) RequiredPerms() int {
-	return discordgo.PermissionManageMessages
-}
-func (c *FilterWordCommand) RequiresOwner() bool {
-	return false
-}
-func (c *FilterWordCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *FilterWordCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?filterword" && msg.Args()[0] != "m?fw") {
-		return
-	}
-	if msg.Type != meidov2.MessageTypeCreate {
+func (m *ModerationMod) filterwordCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 2 {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if uPerms&discordgo.PermissionManageMessages == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	c.m.cl <- msg
+	m.cl <- msg
 
 	phrase := strings.Join(msg.Args()[1:], " ")
 
 	fe := &FilterEntry{}
 
-	err = c.m.db.Get(fe, "SELECT phrase FROM filters WHERE phrase = $1 AND guild_id = $2;", phrase, msg.Message.GuildID)
+	err := m.db.Get(fe, "SELECT phrase FROM filters WHERE phrase = $1 AND guild_id = $2;", phrase, msg.Message.GuildID)
 	switch err {
 	case nil:
-		c.m.db.Exec("DELETE FROM filters WHERE guild_id=$1 AND phrase=$2;", msg.Message.GuildID, phrase)
+		m.db.Exec("DELETE FROM filters WHERE guild_id=$1 AND phrase=$2;", msg.Message.GuildID, phrase)
 		msg.Reply(fmt.Sprintf("Removed `%v` from the filter.", phrase))
 	case sql.ErrNoRows:
-		c.m.db.Exec("INSERT INTO filters (guild_id, phrase) VALUES ($1,$2);", msg.Message.GuildID, phrase)
+		m.db.Exec("INSERT INTO filters (guild_id, phrase) VALUES ($1,$2);", msg.Message.GuildID, phrase)
 		msg.Reply(fmt.Sprintf("Added `%v` to the filter.", phrase))
 	default:
 		msg.Reply("there was an error, please try again")
 	}
 }
 
-type FilterWordListCommand struct {
-	m       *ModerationMod
-	Enabled bool
-}
-
-func NewFilterWordListCommand(m *ModerationMod) meidov2.ModCommand {
-	return &FilterWordListCommand{
-		m:       m,
-		Enabled: true,
+func NewFilterWordListCommand(m *ModerationMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "filterwordlist",
+		Description:   "Lists of all filtered phrases for this server",
+		Triggers:      []string{"m?fwl", "m?filterwordlist"},
+		Usage:         "m?fwl",
+		Cooldown:      10,
+		RequiredPerms: discordgo.PermissionManageMessages,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           m.filterwordlistCommand,
 	}
 }
-func (c *FilterWordListCommand) Name() string {
-	return "filterwordlist"
-}
-func (c *FilterWordListCommand) Description() string {
-	return "Lists of all filtered phrases for this server"
-}
-func (c *FilterWordListCommand) Triggers() []string {
-	return []string{"m?fwl", "m?filterwordlist"}
-}
-func (c *FilterWordListCommand) Usage() string {
-	return "m?fwl"
-}
-func (c *FilterWordListCommand) Cooldown() int {
-	return 10
-}
-func (c *FilterWordListCommand) RequiredPerms() int {
-	return discordgo.PermissionManageMessages
-}
-func (c *FilterWordListCommand) RequiresOwner() bool {
-	return false
-}
-func (c *FilterWordListCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *FilterWordListCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 1 || (msg.Args()[0] != "m?filterwordlist" && msg.Args()[0] != "m?fwl") {
+func (m *ModerationMod) filterwordlistCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 1 {
 		return
 	}
-	if msg.Type != meidov2.MessageTypeCreate {
-		return
-	}
-
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if uPerms&discordgo.PermissionManageMessages == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	c.m.cl <- msg
+	m.cl <- msg
 
 	var fel []*FilterEntry
-	err = c.m.db.Select(&fel, "SELECT * FROM filters WHERE guild_id=$1;", msg.Message.GuildID)
+	err := m.db.Select(&fel, "SELECT * FROM filters WHERE guild_id=$1;", msg.Message.GuildID)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -163,66 +100,31 @@ func (c *FilterWordListCommand) Run(msg *meidov2.DiscordMessage) {
 	}
 }
 
-type ClearFilterCommand struct {
-	m       *ModerationMod
-	Enabled bool
-}
-
-func NewClearFilterCommand(m *ModerationMod) meidov2.ModCommand {
-	return &ClearFilterCommand{
-		m:       m,
-		Enabled: true,
+func NewClearFilterCommand(m *ModerationMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "clearfilter",
+		Description:   "Removes all phrases from the server filter",
+		Triggers:      []string{"m?clearfilter"},
+		Usage:         "m?clearfilter",
+		Cooldown:      10,
+		RequiredPerms: discordgo.PermissionAdministrator,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           m.clearfilterCommand,
 	}
 }
-func (c *ClearFilterCommand) Name() string {
-	return "ClearFilter"
-}
 
-func (c *ClearFilterCommand) Description() string {
-	return "Removes all phrases from the server filter"
-}
-
-func (c *ClearFilterCommand) Triggers() []string {
-	return []string{"m?clearfilter"}
-}
-
-func (c *ClearFilterCommand) Usage() string {
-	return "m?clearfilter"
-}
-
-func (c *ClearFilterCommand) Cooldown() int {
-	return 30
-}
-
-func (c *ClearFilterCommand) RequiredPerms() int {
-	return discordgo.PermissionAdministrator
-}
-
-func (c *ClearFilterCommand) RequiresOwner() bool {
-	return false
-}
-
-func (c *ClearFilterCommand) IsEnabled() bool {
-	return c.Enabled
-}
-
-func (c *ClearFilterCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 1 || msg.Args()[0] != "m?clearfilter" {
+func (m *ModerationMod) clearfilterCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 1 {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if uPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
+	m.cl <- msg
 
-	c.m.cl <- msg
-
-	_, err = c.m.db.Exec("DELETE FROM filters WHERE guild_id=$1", msg.Message.GuildID)
+	_, err := m.db.Exec("DELETE FROM filters WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error")
 		return
@@ -231,137 +133,42 @@ func (c *ClearFilterCommand) Run(msg *meidov2.DiscordMessage) {
 	msg.Reply("Filter was cleared")
 }
 
-type ToggleStrikeCommand struct {
-	m       *ModerationMod
-	Enabled bool
-}
-
-func NewToggleStrikeCommand(m *ModerationMod) meidov2.ModCommand {
-	return &ToggleStrikeCommand{
-		m:       m,
-		Enabled: true,
-	}
-}
-func (c *ToggleStrikeCommand) Name() string {
-	return "ToggleStrikes"
-}
-func (c *ToggleStrikeCommand) Description() string {
-	return "Toggles strike system for the server"
-}
-func (c *ToggleStrikeCommand) Triggers() []string {
-	return []string{"m?togglestrikes"}
-}
-func (c *ToggleStrikeCommand) Usage() string {
-	return "m?togglestrikes"
-}
-func (c *ToggleStrikeCommand) Cooldown() int {
-	return 30
-}
-func (c *ToggleStrikeCommand) RequiredPerms() int {
-	return discordgo.PermissionAdministrator
-}
-func (c *ToggleStrikeCommand) RequiresOwner() bool {
-	return false
-}
-func (c *ToggleStrikeCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *ToggleStrikeCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 1 || msg.Args()[0] != "m?togglestrikes" {
-		return
-	}
-	if msg.Type != meidov2.MessageTypeCreate {
-		return
-	}
-
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if uPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	c.m.cl <- msg
-
-	dge := &DiscordGuild{}
-	err = c.m.db.Get(dge, "SELECT * FROM guilds WHERE guild_id = $1", msg.Message.GuildID)
-	if err != nil {
-		return
-	}
-	if dge.UseWarns {
-		c.m.db.Exec("UPDATE guilds SET use_warns=false WHERE guild_id=$1 AND use_warns=true", dge.GuildID)
-		msg.Reply("Strike system is now DISABLED")
-	} else {
-		c.m.db.Exec("UPDATE guilds SET use_warns=true WHERE guild_id=$1 AND use_warns=false", dge.GuildID)
-		msg.Reply("Strike system is now ENABLED")
-	}
-}
-
 type ModerationSettingsCommand struct {
 	m       *ModerationMod
 	Enabled bool
 }
 
-func NewModerationSettingsCommand(m *ModerationMod) meidov2.ModCommand {
-	return &ModerationSettingsCommand{
-		m:       m,
-		Enabled: true,
+func NewModerationSettingsCommand(m *ModerationMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "moderationsettings",
+		Description:   "Moderation settings:\n- Toggle warn system [enable/disable]\n- Set max warns [0-10]\n- Set warn duration [0(infinite)-365]",
+		Triggers:      []string{"m?settings moderation"},
+		Usage:         "m?settings moderation warns enable/disable\nm?settings moderation maxwarns [0-10]\nm?settings moderation warnduration [0-365]",
+		Cooldown:      5,
+		RequiredPerms: discordgo.PermissionAdministrator,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           m.moderationsettingsCommand,
 	}
 }
-func (c *ModerationSettingsCommand) Name() string {
-	return "moderationsettings"
-}
-func (c *ModerationSettingsCommand) Description() string {
-	return "Moderation settings:\n- Toggle warn system [enable/disable]\n- Set max warns [0-10]\n- Set warn duration [0(infinite)-365]"
-}
-func (c *ModerationSettingsCommand) Triggers() []string {
-	return []string{"m?settings moderation"}
-}
-func (c *ModerationSettingsCommand) Usage() string {
-	return "m?settings moderation warns enable/disable\nm?settings moderation maxwarns [0-10]\nm?settings moderation warnduration [0-365]"
-}
-func (c *ModerationSettingsCommand) Cooldown() int {
-	return 5
-}
-func (c *ModerationSettingsCommand) RequiredPerms() int {
-	return discordgo.PermissionAdministrator
-}
-func (c *ModerationSettingsCommand) RequiresOwner() bool {
-	return false
-}
-func (c *ModerationSettingsCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *ModerationSettingsCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 4 || strings.Join(msg.Args()[:2], " ") != "m?settings moderation" {
+func (m *ModerationMod) moderationsettingsCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 4 {
 		return
 	}
 
-	if msg.Type != meidov2.MessageTypeCreate {
-		return
-	}
-
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if uPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	c.m.cl <- msg
+	m.cl <- msg
 
 	switch msg.Args()[2] {
 	case "warns":
 		if msg.Args()[3] == "enable" {
-			c.m.db.Exec("UPDATE guilds SET use_warns=true WHERE guild_id=$1 AND NOT use_warns", msg.Message.GuildID)
+			m.db.Exec("UPDATE guilds SET use_warns=true WHERE guild_id=$1 AND NOT use_warns", msg.Message.GuildID)
 			msg.Reply("Strike system is now ENABLED")
 
 		} else if msg.Args()[3] == "disable" {
-			c.m.db.Exec("UPDATE guilds SET use_warns=false WHERE guild_id=$1 AND use_warns", msg.Message.GuildID)
+			m.db.Exec("UPDATE guilds SET use_warns=false WHERE guild_id=$1 AND use_warns", msg.Message.GuildID)
 			msg.Reply("Strike system is now DISABLED")
 		}
 	case "maxwarns":
@@ -373,7 +180,7 @@ func (c *ModerationSettingsCommand) Run(msg *meidov2.DiscordMessage) {
 
 		n = meidov2.Clamp(0, 10, n)
 
-		_, err = c.m.db.Exec("UPDATE guilds SET max_warns=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
+		_, err = m.db.Exec("UPDATE guilds SET max_warns=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
 		if err != nil {
 			msg.Reply("error setting max warns")
 			return
@@ -388,7 +195,7 @@ func (c *ModerationSettingsCommand) Run(msg *meidov2.DiscordMessage) {
 
 		n = meidov2.Clamp(0, 365, n)
 
-		_, err = c.m.db.Exec("UPDATE guilds SET warn_duration=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
+		_, err = m.db.Exec("UPDATE guilds SET warn_duration=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
 		if err != nil {
 			msg.Reply("error setting warn duration")
 			return
@@ -397,7 +204,21 @@ func (c *ModerationSettingsCommand) Run(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func (m *ModerationMod) CheckFilter(msg *meidov2.DiscordMessage) {
+func NewCheckFilterPassive(m *ModerationMod) *meidov2.ModPassive {
+	return &meidov2.ModPassive{
+		Mod:          m,
+		Name:         "checkfilter",
+		Description:  "checks if messages contain phrases found in the server filter",
+		Enabled:      true,
+		AllowedTypes: meidov2.MessageTypeCreate | meidov2.MessageTypeUpdate,
+		Run:          m.checkfilterPassive,
+	}
+}
+
+func (m *ModerationMod) checkfilterPassive(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 1 {
+		return
+	}
 
 	isIllegal := false
 	trigger := ""

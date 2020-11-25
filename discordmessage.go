@@ -10,10 +10,43 @@ import (
 type MessageType int
 
 const (
-	MessageTypeCreate MessageType = iota
+	MessageTypeCreate MessageType = 1 << iota
 	MessageTypeUpdate
 	MessageTypeDelete
 )
+
+var PermMap = map[int]string{
+	0:                                        "none",
+	discordgo.PermissionCreateInstantInvite:  "create instant invite",
+	discordgo.PermissionKickMembers:          "kick members",
+	discordgo.PermissionBanMembers:           "ban members",
+	discordgo.PermissionAdministrator:        "administrator",
+	discordgo.PermissionManageChannels:       "manage channels",
+	discordgo.PermissionManageServer:         "manage server",
+	discordgo.PermissionAddReactions:         "add reactions",
+	discordgo.PermissionViewAuditLogs:        "view audit log",
+	discordgo.PermissionVoicePrioritySpeaker: "priority speaker",
+	discordgo.PermissionViewChannel:          "view channel",
+	discordgo.PermissionSendMessages:         "send messages",
+	discordgo.PermissionSendTTSMessages:      "send tts messages",
+	discordgo.PermissionManageMessages:       "manage messages",
+	discordgo.PermissionEmbedLinks:           "embed links",
+	discordgo.PermissionAttachFiles:          "attach files",
+	discordgo.PermissionReadMessageHistory:   "read message history",
+	discordgo.PermissionMentionEveryone:      "mention everyone",
+	discordgo.PermissionUseExternalEmojis:    "use external emojis",
+	discordgo.PermissionVoiceConnect:         "connect",
+	discordgo.PermissionVoiceSpeak:           "speak",
+	discordgo.PermissionVoiceMuteMembers:     "mute members",
+	discordgo.PermissionVoiceDeafenMembers:   "deafen members",
+	discordgo.PermissionVoiceMoveMembers:     "move members",
+	discordgo.PermissionVoiceUseVAD:          "use VAD",
+	discordgo.PermissionChangeNickname:       "change nickname",
+	discordgo.PermissionManageNicknames:      "manage nicknames",
+	discordgo.PermissionManageRoles:          "manage roles",
+	discordgo.PermissionManageWebhooks:       "manage webhooks",
+	discordgo.PermissionManageEmojis:         "manage emojis",
+}
 
 type DiscordMessage struct {
 	Sess    *discordgo.Session

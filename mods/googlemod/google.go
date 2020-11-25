@@ -10,12 +10,14 @@ import (
 )
 
 type GoogleMod struct {
-	Name string
 	sync.Mutex
+	name              string
 	cl                chan *meidov2.DiscordMessage
-	commands          map[string]meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
+	commands          map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
 	activeImgSearches map[string]*ImageSearch
 	deleteImgCh       chan string
+	allowedTypes      meidov2.MessageType
+	allowDMs          bool
 }
 
 type ImageSearch struct {
@@ -28,21 +30,41 @@ type ImageSearch struct {
 
 func New(n string) meidov2.Mod {
 	return &GoogleMod{
-		Name:              n,
-		commands:          make(map[string]meidov2.ModCommand),
+		name:              n,
+		commands:          make(map[string]*meidov2.ModCommand),
 		activeImgSearches: make(map[string]*ImageSearch),
 		deleteImgCh:       make(chan string),
+		allowedTypes:      meidov2.MessageTypeCreate,
+		allowDMs:          true,
 	}
 }
+
+func (m *GoogleMod) Name() string {
+	return m.name
+}
+
 func (m *GoogleMod) Save() error {
 	return nil
 }
 func (m *GoogleMod) Load() error {
 	return nil
 }
-func (m *GoogleMod) Commands() map[string]meidov2.ModCommand {
+func (m *GoogleMod) Commands() map[string]*meidov2.ModCommand {
 	return m.commands
 }
+
+func (m *GoogleMod) Passives() []*meidov2.ModPassive {
+	return []*meidov2.ModPassive{}
+}
+
+func (m *GoogleMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
+}
+
+func (m *GoogleMod) AllowDMs() bool {
+	return m.allowDMs
+}
+
 func (m *GoogleMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 
@@ -64,13 +86,13 @@ func (m *GoogleMod) Hook(b *meidov2.Bot) error {
 
 	return nil
 }
-func (m *GoogleMod) RegisterCommand(cmd meidov2.ModCommand) {
+func (m *GoogleMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name()]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name(), m.Name))
+	if _, ok := m.commands[cmd.Name]; ok {
+		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
 	}
-	m.commands[cmd.Name()] = cmd
+	m.commands[cmd.Name] = cmd
 }
 
 func (m *GoogleMod) Settings(msg *meidov2.DiscordMessage) {
@@ -88,47 +110,29 @@ func (m *GoogleMod) Message(msg *meidov2.DiscordMessage) {
 	}
 }
 
-type ImageCommand struct {
-	m       *GoogleMod
-	Enabled bool
-}
-
-func NewImageCommand(m *GoogleMod) meidov2.ModCommand {
-	return &ImageCommand{
-		m:       m,
-		Enabled: true,
+func NewImageCommand(m *GoogleMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "image",
+		Description:   "Search for an image",
+		Triggers:      []string{"m?image", "m?img"},
+		Usage:         "m?img jeff from 22 jump street",
+		Cooldown:      3,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.googleCommand,
 	}
 }
-func (c *ImageCommand) Name() string {
-	return "image"
-}
-func (c *ImageCommand) Description() string {
-	return "Search for an image"
-}
-func (c *ImageCommand) Triggers() []string {
-	return []string{"m?image", "m?img"}
-}
-func (c *ImageCommand) Usage() string {
-	return "m?img deez nuts"
-}
-func (c *ImageCommand) Cooldown() int {
-	return 10
-}
-func (c *ImageCommand) RequiredPerms() int {
-	return 0
-}
-func (c *ImageCommand) RequiresOwner() bool {
-	return false
-}
-func (c *ImageCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *ImageCommand) Run(msg *meidov2.DiscordMessage) {
+
+func (m *GoogleMod) googleCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?image" && msg.Args()[0] != "m?img" && msg.Args()[0] != "m?im") {
 		return
 	}
 
-	c.m.cl <- msg
+	m.cl <- msg
 
 	query := strings.Join(msg.Args()[1:], "+")
 	links := scrape(query)
@@ -160,18 +164,18 @@ func (c *ImageCommand) Run(msg *meidov2.DiscordMessage) {
 	msg.Sess.MessageReactionAdd(msg.Message.ChannelID, reply.ID, "➡")
 	msg.Sess.MessageReactionAdd(msg.Message.ChannelID, reply.ID, "⏹")
 
-	c.m.Lock()
-	c.m.activeImgSearches[reply.ID] = &ImageSearch{
+	m.Lock()
+	m.activeImgSearches[reply.ID] = &ImageSearch{
 		AuthorMsg:    msg.Message,
 		BotMsg:       reply,
 		Images:       links,
 		CurrentImage: 0,
 	}
-	c.m.Unlock()
+	m.Unlock()
 
 	go time.AfterFunc(time.Second*30, func() {
 		msg.Sess.MessageReactionsRemoveAll(msg.Message.ChannelID, reply.ID)
-		c.m.deleteImgCh <- reply.ID
+		m.deleteImgCh <- reply.ID
 	})
 
 }

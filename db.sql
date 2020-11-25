@@ -58,10 +58,10 @@ create table if not exists warns
 
 create table if not exists autorole
 (
-    id      serial        not null
+    id       serial  not null
         constraint autorole_pkey
             primary key,
-    guild_id text          not null,
-    role_id text not null,
-    enabled boolean not null
+    guild_id text    not null,
+    role_id  text    not null,
+    enabled  boolean not null
 );

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/intrntsrfr/meidov2"
 	"github.com/intrntsrfr/meidov2/mods/googlemod"
+	"github.com/intrntsrfr/meidov2/mods/helpmod"
 	"github.com/intrntsrfr/meidov2/mods/loggermod"
 	"github.com/intrntsrfr/meidov2/mods/moderationmod"
 	"github.com/intrntsrfr/meidov2/mods/pingmod"
@@ -38,13 +39,14 @@ func main() {
 		panic(err)
 	}
 
-	bot.RegisterMod(pingmod.New("ping"), "ping")
-	bot.RegisterMod(loggermod.New("logs"), "logs")
-	bot.RegisterMod(utilitymod.New("utility"), "utility")
-	bot.RegisterMod(moderationmod.New("moderation"), "moderation")
-	bot.RegisterMod(userrolemod.New("userrole"), "userrole")
-	bot.RegisterMod(searchmod.New("search"), "search")
-	bot.RegisterMod(googlemod.New("google"), "google")
+	bot.RegisterMod(pingmod.New("pinger"))
+	bot.RegisterMod(loggermod.New("logs"))
+	bot.RegisterMod(utilitymod.New("utility"))
+	bot.RegisterMod(moderationmod.New("moderation"))
+	bot.RegisterMod(userrolemod.New("userrole"))
+	bot.RegisterMod(searchmod.New("search"))
+	bot.RegisterMod(googlemod.New("google"))
+	bot.RegisterMod(helpmod.New("helper"))
 
 	bot.Run()
 	defer bot.Close()

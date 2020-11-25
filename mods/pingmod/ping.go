@@ -8,26 +8,31 @@ import (
 )
 
 type PingMod struct {
-	Name string
 	sync.Mutex
-	cl       chan *meidov2.DiscordMessage
-	commands map[string]meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
+	name         string
+	cl           chan *meidov2.DiscordMessage
+	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
+	allowedTypes meidov2.MessageType
+	allowDMs     bool
 }
 
 func New(n string) meidov2.Mod {
 	return &PingMod{
-		Name:     n,
-		commands: make(map[string]meidov2.ModCommand),
+		name:         n,
+		commands:     make(map[string]*meidov2.ModCommand),
+		allowedTypes: meidov2.MessageTypeCreate,
+		allowDMs:     true,
 	}
+}
+
+func (m *PingMod) Name() string {
+	return m.name
 }
 func (m *PingMod) Save() error {
 	return nil
 }
 func (m *PingMod) Load() error {
 	return nil
-}
-func (m *PingMod) Commands() map[string]meidov2.ModCommand {
-	return m.commands
 }
 func (m *PingMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
@@ -36,71 +41,51 @@ func (m *PingMod) Hook(b *meidov2.Bot) error {
 
 	return nil
 }
-func (m *PingMod) RegisterCommand(cmd meidov2.ModCommand) {
+func (m *PingMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name()]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name(), m.Name))
+	if _, ok := m.commands[cmd.Name]; ok {
+		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
 	}
-	m.commands[cmd.Name()] = cmd
+	m.commands[cmd.Name] = cmd
 }
 
-func (m *PingMod) Settings(msg *meidov2.DiscordMessage) {
-
+func (m *PingMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
 }
-func (m *PingMod) Help(msg *meidov2.DiscordMessage) {
-
+func (m *PingMod) AllowDMs() bool {
+	return m.allowDMs
 }
-func (m *PingMod) Message(msg *meidov2.DiscordMessage) {
-	if msg.Type != meidov2.MessageTypeCreate {
-		return
+func (m *PingMod) Commands() map[string]*meidov2.ModCommand {
+	return m.commands
+}
+func (m *PingMod) Passives() []*meidov2.ModPassive {
+	return []*meidov2.ModPassive{}
+}
+
+func NewPingCommand(m *PingMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "ping",
+		Description:   "Checks ping",
+		Triggers:      []string{"m?ping"},
+		Usage:         "m?ping",
+		Cooldown:      2,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.pingCommand,
 	}
-	for _, c := range m.commands {
-		go c.Run(msg)
-	}
 }
 
-type PingCommand struct {
-	m       *PingMod
-	Enabled bool
-}
-
-func NewPingCommand(m *PingMod) *PingCommand {
-	return &PingCommand{
-		m:       m,
-		Enabled: true,
-	}
-}
-func (c *PingCommand) Name() string {
-	return "Ping"
-}
-func (c *PingCommand) Description() string {
-	return "Checks the bots ping against Discord"
-}
-func (c *PingCommand) Triggers() []string {
-	return []string{"m?ping"}
-}
-func (c *PingCommand) Usage() string {
-	return "m?ping"
-}
-func (c *PingCommand) Cooldown() int {
-	return 10
-}
-func (c *PingCommand) RequiredPerms() int {
-	return 0
-}
-func (c *PingCommand) RequiresOwner() bool {
-	return false
-}
-func (c *PingCommand) IsEnabled() bool {
-	return c.Enabled
-}
-func (c *PingCommand) Run(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 1 || msg.Args()[0] != "m?ping" {
+func (m *PingMod) pingCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 1 {
 		return
 	}
 
-	c.m.cl <- msg
+	m.cl <- msg
 
 	startTime := time.Now()
 
