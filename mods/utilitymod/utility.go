@@ -101,6 +101,7 @@ func (m *UtilityMod) Hook(b *meidov2.Bot) error {
 	m.RegisterCommand(NewServerBannerCommand(m))
 	m.RegisterCommand(NewServerSplashCommand(m))
 	m.RegisterCommand(NewColorCommand(m))
+	m.RegisterCommand(NewInviteCommand(m))
 
 	return nil
 }
@@ -529,4 +530,28 @@ func (m *UtilityMod) colorCommand(msg *meidov2.DiscordMessage) {
 	}
 
 	msg.Sess.ChannelFileSend(msg.Message.ChannelID, "color.png", buf)
+}
+
+func NewInviteCommand(m *UtilityMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "invite",
+		Description:   "Sends an invite link for Meido, as well as support server",
+		Triggers:      []string{"m?invite"},
+		Usage:         "m?invite",
+		Cooldown:      1,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.inviteCommand,
+	}
+}
+func (m *UtilityMod) inviteCommand(msg *meidov2.DiscordMessage) {
+	m.cl <- msg
+
+	botLink := "https://discordapp.com/oauth2/authorize?client_id=394162399348785152&scope=bot"
+	serverLink := "https://discord.gg/KgMEGK3"
+	msg.Reply(fmt.Sprintf("Invite me to your server: %v\nSupport server: %v", botLink, serverLink))
 }
