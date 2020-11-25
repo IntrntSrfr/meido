@@ -43,13 +43,6 @@ func (m *UserRoleMod) Load() error {
 	return nil
 }
 
-func (m *UserRoleMod) Settings(msg *meidov2.DiscordMessage) {
-
-}
-func (m *UserRoleMod) Help(msg *meidov2.DiscordMessage) {
-
-}
-
 func (m *UserRoleMod) Commands() map[string]*meidov2.ModCommand {
 	return m.commands
 }

@@ -42,7 +42,6 @@ func New(n string) meidov2.Mod {
 func (m *GoogleMod) Name() string {
 	return m.name
 }
-
 func (m *GoogleMod) Save() error {
 	return nil
 }
@@ -52,19 +51,15 @@ func (m *GoogleMod) Load() error {
 func (m *GoogleMod) Commands() map[string]*meidov2.ModCommand {
 	return m.commands
 }
-
 func (m *GoogleMod) Passives() []*meidov2.ModPassive {
 	return []*meidov2.ModPassive{}
 }
-
 func (m *GoogleMod) AllowedTypes() meidov2.MessageType {
 	return m.allowedTypes
 }
-
 func (m *GoogleMod) AllowDMs() bool {
 	return m.allowDMs
 }
-
 func (m *GoogleMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 
@@ -95,12 +90,6 @@ func (m *GoogleMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func (m *GoogleMod) Settings(msg *meidov2.DiscordMessage) {
-
-}
-func (m *GoogleMod) Help(msg *meidov2.DiscordMessage) {
-
-}
 func (m *GoogleMod) Message(msg *meidov2.DiscordMessage) {
 	if msg.Type != meidov2.MessageTypeCreate {
 		return
