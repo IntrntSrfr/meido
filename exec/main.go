@@ -6,6 +6,7 @@ import (
 	"github.com/intrntsrfr/meidov2/mods/googlemod"
 	"github.com/intrntsrfr/meidov2/mods/helpmod"
 	"github.com/intrntsrfr/meidov2/mods/loggermod"
+	"github.com/intrntsrfr/meidov2/mods/mediaconvertmod"
 	"github.com/intrntsrfr/meidov2/mods/moderationmod"
 	"github.com/intrntsrfr/meidov2/mods/pingmod"
 	"github.com/intrntsrfr/meidov2/mods/searchmod"
@@ -47,6 +48,7 @@ func main() {
 	bot.RegisterMod(searchmod.New("search"))
 	bot.RegisterMod(googlemod.New("google"))
 	bot.RegisterMod(helpmod.New("helper"))
+	bot.RegisterMod(mediaconvertmod.New("mediaconvert"))
 
 	bot.Run()
 	defer bot.Close()

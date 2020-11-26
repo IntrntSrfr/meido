@@ -9,6 +9,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"image"
 	"image/color"
+	"image/draw"
 	"image/png"
 	"math"
 	"runtime"
@@ -46,9 +47,11 @@ func (m *UtilityMod) Name() string {
 func (m *UtilityMod) Save() error {
 	return nil
 }
-
 func (m *UtilityMod) Load() error {
 	return nil
+}
+func (m *UtilityMod) Passives() []*meidov2.ModPassive {
+	return []*meidov2.ModPassive{}
 }
 func (m *UtilityMod) Commands() map[string]*meidov2.ModCommand {
 	return m.commands
@@ -59,7 +62,6 @@ func (m *UtilityMod) AllowedTypes() meidov2.MessageType {
 func (m *UtilityMod) AllowDMs() bool {
 	return m.allowDMs
 }
-
 func (m *UtilityMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 	m.db = b.DB
@@ -105,7 +107,6 @@ func (m *UtilityMod) Hook(b *meidov2.Bot) error {
 
 	return nil
 }
-
 func (m *UtilityMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
@@ -113,18 +114,6 @@ func (m *UtilityMod) RegisterCommand(cmd *meidov2.ModCommand) {
 		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.name))
 	}
 	m.commands[cmd.Name] = cmd
-}
-
-func (m *UtilityMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
-}
-func (m *UtilityMod) Message(msg *meidov2.DiscordMessage) {
-	if msg.Type != meidov2.MessageTypeCreate {
-		return
-	}
-	for _, c := range m.commands {
-		go c.Run(msg)
-	}
 }
 
 func NewAvatarCommand(m *UtilityMod) *meidov2.ModCommand {
@@ -516,11 +505,7 @@ func (m *UtilityMod) colorCommand(msg *meidov2.DiscordMessage) {
 
 	img := image.NewRGBA(image.Rect(0, 0, 64, 64))
 
-	for y := 0; y < 64; y++ {
-		for x := 0; x < 64; x++ {
-			img.Set(x, y, color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255})
-		}
-	}
+	draw.Draw(img, img.Bounds(), &image.Uniform{C: color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255}}, image.Point{}, draw.Src)
 
 	buf := &bytes.Buffer{}
 

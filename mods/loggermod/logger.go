@@ -38,6 +38,18 @@ func (m *LoggerMod) Save() error {
 func (m *LoggerMod) Load() error {
 	return nil
 }
+func (m *LoggerMod) Passives() []*meidov2.ModPassive {
+	return m.passives
+}
+func (m *LoggerMod) Commands() map[string]*meidov2.ModCommand {
+	return m.commands
+}
+func (m *LoggerMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
+}
+func (m *LoggerMod) AllowDMs() bool {
+	return m.allowDMs
+}
 func (m *LoggerMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 	m.dmLogChannels = b.Config.DmLogChannels
@@ -54,7 +66,6 @@ func (m *LoggerMod) Hook(b *meidov2.Bot) error {
 	m.passives = append(m.passives, NewForwardDmsPassive(m))
 	return nil
 }
-
 func (m *LoggerMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
@@ -62,19 +73,6 @@ func (m *LoggerMod) RegisterCommand(cmd *meidov2.ModCommand) {
 		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.name))
 	}
 	m.commands[cmd.Name] = cmd
-}
-
-func (m *LoggerMod) Commands() map[string]*meidov2.ModCommand {
-	return m.commands
-}
-func (m *LoggerMod) Passives() []*meidov2.ModPassive {
-	return m.passives
-}
-func (m *LoggerMod) AllowedTypes() meidov2.MessageType {
-	return m.allowedTypes
-}
-func (m *LoggerMod) AllowDMs() bool {
-	return m.allowDMs
 }
 
 func NewForwardDmsPassive(m *LoggerMod) *meidov2.ModPassive {

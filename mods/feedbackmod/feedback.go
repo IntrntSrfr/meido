@@ -1,6 +1,5 @@
 package feedbackmod
 
-/*
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
@@ -9,40 +8,47 @@ import (
 )
 
 type FeedbackMod struct {
-	cl          chan *meidov2.DiscordMessage
-	commands    []func(msg *meidov2.DiscordMessage)
-	bannedUsers map[string]bool
 	sync.Mutex
+	name            string
+	cl              chan *meidov2.DiscordMessage
+	commands        map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
+	bannedUsers     map[string]bool
 	feedbackChannel string
 	owners          []string
+	allowedTypes    meidov2.MessageType
+	allowDMs        bool
 }
 
-func New() meidov2.Mod {
+func New(n string) meidov2.Mod {
 	return &FeedbackMod{
-		bannedUsers:     make(map[string]bool),
-		feedbackChannel: "497106582144942101",
-		owners:          []string{},
+		name:         n,
+		commands:     make(map[string]*meidov2.ModCommand),
+		allowedTypes: meidov2.MessageTypeCreate,
+		allowDMs:     true,
 	}
 }
 
+func (m *FeedbackMod) Name() string {
+	return m.name
+}
 func (m *FeedbackMod) Save() error {
 	return nil
 }
-
 func (m *FeedbackMod) Load() error {
 	return nil
 }
-
-func (m *FeedbackMod) Settings(msg *meidov2.DiscordMessage) {
-
+func (m *FeedbackMod) Passives() []*meidov2.ModPassive {
+	return []*meidov2.ModPassive{}
 }
-func (m *FeedbackMod) Help(msg *meidov2.DiscordMessage) {
-
+func (m *FeedbackMod) Commands() map[string]*meidov2.ModCommand {
+	return m.commands
 }
-func (m *FeedbackMod) Commands() map[string]meidov2.ModCommand {
-	return nil
+func (m *FeedbackMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
 }
-
+func (m *FeedbackMod) AllowDMs() bool {
+	return m.allowDMs
+}
 func (m *FeedbackMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 	m.owners = b.Config.OwnerIds
@@ -51,21 +57,15 @@ func (m *FeedbackMod) Hook(b *meidov2.Bot) error {
 		fmt.Println(r.User.String())
 	})
 
-	m.commands = append(m.commands, m.LeaveFeedback)
-
 	return nil
 }
-
-func (m *FeedbackMod) Message(msg *meidov2.DiscordMessage) {
-	if msg.Type != meidov2.MessageTypeCreate {
-		return
+func (m *FeedbackMod) RegisterCommand(cmd *meidov2.ModCommand) {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.commands[cmd.Name]; ok {
+		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
 	}
-	if msg.LenArgs() == 0 {
-		return
-	}
-	for _, c := range m.commands {
-		go c(msg)
-	}
+	m.commands[cmd.Name] = cmd
 }
 
 func (m *FeedbackMod) ToggleBan(msg *meidov2.DiscordMessage) {
@@ -122,4 +122,3 @@ func (m *FeedbackMod) LeaveFeedback(msg *meidov2.DiscordMessage) {
 	msg.Discord.Sess.ChannelMessageSend(m.feedbackChannel, fmt.Sprintf(`%v`, msg.Args()[1:]))
 	msg.Reply("Feedback left")
 }
-*/

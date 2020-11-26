@@ -40,6 +40,18 @@ func (m *SearchMod) Save() error {
 func (m *SearchMod) Load() error {
 	return nil
 }
+func (m *SearchMod) Passives() []*meidov2.ModPassive {
+	return []*meidov2.ModPassive{}
+}
+func (m *SearchMod) Commands() map[string]*meidov2.ModCommand {
+	return m.commands
+}
+func (m *SearchMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
+}
+func (m *SearchMod) AllowDMs() bool {
+	return m.allowDMs
+}
 func (m *SearchMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 	m.youtubeKey = b.Config.YouTubeKey
@@ -55,19 +67,6 @@ func (m *SearchMod) RegisterCommand(cmd *meidov2.ModCommand) {
 		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
 	}
 	m.commands[cmd.Name] = cmd
-}
-
-func (m *SearchMod) Commands() map[string]*meidov2.ModCommand {
-	return m.commands
-}
-func (m *SearchMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
-}
-func (m *SearchMod) AllowedTypes() meidov2.MessageType {
-	return m.allowedTypes
-}
-func (m *SearchMod) AllowDMs() bool {
-	return m.allowDMs
 }
 
 func NewYouTubeCommand(m *SearchMod) *meidov2.ModCommand {

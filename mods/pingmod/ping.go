@@ -34,6 +34,18 @@ func (m *PingMod) Save() error {
 func (m *PingMod) Load() error {
 	return nil
 }
+func (m *PingMod) Passives() []*meidov2.ModPassive {
+	return []*meidov2.ModPassive{}
+}
+func (m *PingMod) Commands() map[string]*meidov2.ModCommand {
+	return m.commands
+}
+func (m *PingMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
+}
+func (m *PingMod) AllowDMs() bool {
+	return m.allowDMs
+}
 func (m *PingMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 
@@ -48,19 +60,6 @@ func (m *PingMod) RegisterCommand(cmd *meidov2.ModCommand) {
 		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
 	}
 	m.commands[cmd.Name] = cmd
-}
-
-func (m *PingMod) AllowedTypes() meidov2.MessageType {
-	return m.allowedTypes
-}
-func (m *PingMod) AllowDMs() bool {
-	return m.allowDMs
-}
-func (m *PingMod) Commands() map[string]*meidov2.ModCommand {
-	return m.commands
-}
-func (m *PingMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
 }
 
 func NewPingCommand(m *PingMod) *meidov2.ModCommand {

@@ -48,11 +48,11 @@ func (m *GoogleMod) Save() error {
 func (m *GoogleMod) Load() error {
 	return nil
 }
-func (m *GoogleMod) Commands() map[string]*meidov2.ModCommand {
-	return m.commands
-}
 func (m *GoogleMod) Passives() []*meidov2.ModPassive {
 	return []*meidov2.ModPassive{}
+}
+func (m *GoogleMod) Commands() map[string]*meidov2.ModCommand {
+	return m.commands
 }
 func (m *GoogleMod) AllowedTypes() meidov2.MessageType {
 	return m.allowedTypes

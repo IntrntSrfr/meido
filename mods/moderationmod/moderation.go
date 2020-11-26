@@ -36,20 +36,17 @@ func New(name string) meidov2.Mod {
 func (m *ModerationMod) Name() string {
 	return m.name
 }
-
 func (m *ModerationMod) Save() error {
 	return nil
 }
-
 func (m *ModerationMod) Load() error {
 	return nil
 }
-
-func (m *ModerationMod) Commands() map[string]*meidov2.ModCommand {
-	return m.commands
-}
 func (m *ModerationMod) Passives() []*meidov2.ModPassive {
 	return m.passives
+}
+func (m *ModerationMod) Commands() map[string]*meidov2.ModCommand {
+	return m.commands
 }
 func (m *ModerationMod) AllowedTypes() meidov2.MessageType {
 	return m.allowedTypes
@@ -57,7 +54,6 @@ func (m *ModerationMod) AllowedTypes() meidov2.MessageType {
 func (m *ModerationMod) AllowDMs() bool {
 	return m.allowDMs
 }
-
 func (m *ModerationMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 	m.db = b.DB
@@ -115,6 +111,7 @@ func (m *ModerationMod) Hook(b *meidov2.Bot) error {
 	m.RegisterCommand(NewBanCommand(m))
 	m.RegisterCommand(NewUnbanCommand(m))
 	m.RegisterCommand(NewHackbanCommand(m))
+	m.RegisterCommand(NewKickCommand(m))
 
 	m.RegisterCommand(NewWarnCommand(m))
 	m.RegisterCommand(NewClearWarnCommand(m))
@@ -140,11 +137,6 @@ func (m *ModerationMod) RegisterCommand(cmd *meidov2.ModCommand) {
 		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
 	}
 	m.commands[cmd.Name] = cmd
-}
-
-type BanCommand struct {
-	m       *ModerationMod
-	Enabled bool
 }
 
 func NewBanCommand(m *ModerationMod) *meidov2.ModCommand {
@@ -370,11 +362,6 @@ func (m *ModerationMod) hackbanCommand(msg *meidov2.DiscordMessage) {
 		}
 	}
 	msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
-}
-
-type KickCommand struct {
-	m       *ModerationMod
-	Enabled bool
 }
 
 func NewKickCommand(m *ModerationMod) *meidov2.ModCommand {

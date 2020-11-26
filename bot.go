@@ -140,6 +140,19 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 							return
 						}
 
+						if cmd.RequiresOwner {
+							isOwner := false
+							for _, id := range b.Config.OwnerIds {
+								if m.Author.ID == id {
+									isOwner = true
+								}
+							}
+							if !isOwner {
+								m.Reply("owner only lol")
+								return
+							}
+						}
+
 						// add some check later to see if command isnt disabled for user
 
 						// check if command for channel is on cooldown

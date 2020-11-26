@@ -4,12 +4,12 @@ type Mod interface {
 	Name() string
 	Save() error
 	Load() error
-	Commands() map[string]*ModCommand
 	Passives() []*ModPassive
-	Hook(*Bot) error
-	RegisterCommand(*ModCommand)
+	Commands() map[string]*ModCommand
 	AllowedTypes() MessageType
 	AllowDMs() bool
+	Hook(*Bot) error
+	RegisterCommand(*ModCommand)
 }
 
 type ModCommand struct {

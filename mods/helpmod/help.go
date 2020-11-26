@@ -15,8 +15,7 @@ type HelpMod struct {
 	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
 	allowedTypes meidov2.MessageType
 	allowDMs     bool
-
-	bot *meidov2.Bot
+	bot          *meidov2.Bot
 }
 
 func New(n string) meidov2.Mod {
@@ -37,11 +36,17 @@ func (m *HelpMod) Save() error {
 func (m *HelpMod) Load() error {
 	return nil
 }
+func (m *HelpMod) Passives() []*meidov2.ModPassive {
+	return []*meidov2.ModPassive{}
+}
 func (m *HelpMod) Commands() map[string]*meidov2.ModCommand {
 	return m.commands
 }
-func (m *HelpMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
+func (m *HelpMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
+}
+func (m *HelpMod) AllowDMs() bool {
+	return m.allowDMs
 }
 func (m *HelpMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
@@ -58,12 +63,6 @@ func (m *HelpMod) RegisterCommand(cmd *meidov2.ModCommand) {
 		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
 	}
 	m.commands[cmd.Name] = cmd
-}
-func (m *HelpMod) AllowedTypes() meidov2.MessageType {
-	return m.allowedTypes
-}
-func (m *HelpMod) AllowDMs() bool {
-	return m.allowDMs
 }
 
 func NewHelpCommand(m *HelpMod) *meidov2.ModCommand {
@@ -139,22 +138,35 @@ func (m *HelpMod) helpCommand(msg *meidov2.DiscordMessage) {
 				}
 			}
 			for _, cmd := range mod.Commands() {
+				isCmd := false
 				if cmd.Name == inp {
-					emb.Title = fmt.Sprintf("Command - %v", cmd.Name)
-
-					info := strings.Builder{}
-					info.WriteString(fmt.Sprintf("\n\nDescription:\n%v", cmd.Description))
-					info.WriteString(fmt.Sprintf("\n\nTriggers:\n%v", strings.Join(cmd.Triggers, ", ")))
-					info.WriteString(fmt.Sprintf("\n\nUsage:\n%v", cmd.Usage))
-					info.WriteString(fmt.Sprintf("\n\nCooldown:\n%v seconds", cmd.Cooldown))
-					info.WriteString(fmt.Sprintf("\n\nRequired permissions:\n%v", meidov2.PermMap[cmd.RequiredPerms]))
-					info.WriteString(fmt.Sprintf("\n\nWorks in DMs?:\n%v", cmd.AllowDMs))
-					emb.Description = info.String()
-
-					msg.ReplyEmbed(emb)
-
-					return
+					isCmd = true
 				}
+
+				for _, trig := range cmd.Triggers {
+					if trig == inp {
+						isCmd = true
+					}
+				}
+
+				if !isCmd {
+					continue
+				}
+
+				emb.Title = fmt.Sprintf("Command - %v", cmd.Name)
+
+				info := strings.Builder{}
+				info.WriteString(fmt.Sprintf("\n\nDescription:\n%v", cmd.Description))
+				info.WriteString(fmt.Sprintf("\n\nTriggers:\n%v", strings.Join(cmd.Triggers, ", ")))
+				info.WriteString(fmt.Sprintf("\n\nUsage:\n%v", cmd.Usage))
+				info.WriteString(fmt.Sprintf("\n\nCooldown:\n%v seconds", cmd.Cooldown))
+				info.WriteString(fmt.Sprintf("\n\nRequired permissions:\n%v", meidov2.PermMap[cmd.RequiredPerms]))
+				info.WriteString(fmt.Sprintf("\n\nWorks in DMs?:\n%v", cmd.AllowDMs))
+				emb.Description = info.String()
+
+				msg.ReplyEmbed(emb)
+
+				return
 			}
 		}
 

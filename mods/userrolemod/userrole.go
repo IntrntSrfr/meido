@@ -38,15 +38,21 @@ func (m *UserRoleMod) Name() string {
 func (m *UserRoleMod) Save() error {
 	return nil
 }
-
 func (m *UserRoleMod) Load() error {
 	return nil
 }
-
+func (m *UserRoleMod) Passives() []*meidov2.ModPassive {
+	return []*meidov2.ModPassive{}
+}
 func (m *UserRoleMod) Commands() map[string]*meidov2.ModCommand {
 	return m.commands
 }
-
+func (m *UserRoleMod) AllowedTypes() meidov2.MessageType {
+	return m.allowedTypes
+}
+func (m *UserRoleMod) AllowDMs() bool {
+	return m.allowDMs
+}
 func (m *UserRoleMod) Hook(b *meidov2.Bot) error {
 	m.cl = b.CommandLog
 	m.db = b.DB
@@ -97,7 +103,6 @@ func (m *UserRoleMod) Hook(b *meidov2.Bot) error {
 
 	return nil
 }
-
 func (m *UserRoleMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
@@ -105,16 +110,6 @@ func (m *UserRoleMod) RegisterCommand(cmd *meidov2.ModCommand) {
 		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
 	}
 	m.commands[cmd.Name] = cmd
-}
-func (m *UserRoleMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
-}
-
-func (m *UserRoleMod) AllowedTypes() meidov2.MessageType {
-	return m.allowedTypes
-}
-func (m *UserRoleMod) AllowDMs() bool {
-	return m.allowDMs
 }
 
 func NewToggleUserRoleCommand(m *UserRoleMod) *meidov2.ModCommand {
