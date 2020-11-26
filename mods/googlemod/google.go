@@ -123,7 +123,7 @@ func (m *GoogleMod) googleCommand(msg *meidov2.DiscordMessage) {
 
 	m.cl <- msg
 
-	query := strings.Join(msg.Args()[1:], "+")
+	query := strings.Join(msg.Args()[1:], " ")
 	links := scrape(query)
 
 	if len(links) < 1 {

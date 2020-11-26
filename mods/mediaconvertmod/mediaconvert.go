@@ -2,6 +2,7 @@ package mediaconvertmod
 
 import (
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
 	"net/http"
 	"path/filepath"
@@ -81,6 +82,8 @@ func (m *MediaConvertMod) jpglargeconvertPassive(msg *meidov2.DiscordMessage) {
 		return
 	}
 
+	var files []*discordgo.File
+
 	for _, att := range msg.Message.Attachments {
 		if filepath.Ext(att.URL) != ".jpglarge" {
 			continue
@@ -92,6 +95,14 @@ func (m *MediaConvertMod) jpglargeconvertPassive(msg *meidov2.DiscordMessage) {
 		}
 		defer res.Body.Close()
 
-		msg.Sess.ChannelFileSend(msg.Message.ChannelID, "converted.jpg", res.Body)
+		files = append(files, &discordgo.File{
+			Name:   "converted.jpg",
+			Reader: res.Body,
+		})
 	}
+
+	msg.Sess.ChannelMessageSendComplex(msg.Message.ChannelID, &discordgo.MessageSend{
+		Content: fmt.Sprintf("%v, I converted that to JPG for you", msg.Author.Mention()),
+		Files:   files,
+	})
 }
