@@ -70,29 +70,40 @@ func (m *UtilityMod) Hook(b *meidov2.Bot) error {
 		statusTimer := time.NewTicker(time.Second * 15)
 		oldMemCount := 0
 		oldSrvCount := 0
+		display := true
 		go func() {
 			for range statusTimer.C {
-				memCount := 0
-				srvCount := 0
-				for _, sess := range b.Discord.Sessions {
-					for _, g := range sess.State.Guilds {
-						srvCount++
-						memCount += g.MemberCount
+				if display {
+					memCount := 0
+					srvCount := 0
+					for _, sess := range b.Discord.Sessions {
+						for _, g := range sess.State.Guilds {
+							srvCount++
+							memCount += g.MemberCount
+						}
 					}
+					/*
+						if memCount == oldMemCount && srvCount == oldSrvCount {
+							continue
+						}
+					*/
+					s.UpdateStatusComplex(discordgo.UpdateStatusData{
+						Game: &discordgo.Game{
+							Name: fmt.Sprintf("over %v servers and %v members", srvCount, memCount),
+							Type: discordgo.GameTypeWatching,
+						},
+					})
+					oldMemCount = memCount
+					oldSrvCount = srvCount
+				} else {
+					s.UpdateStatusComplex(discordgo.UpdateStatusData{
+						Game: &discordgo.Game{
+							Name: fmt.Sprintf("m?help"),
+							Type: discordgo.GameTypeGame,
+						},
+					})
 				}
-
-				if memCount == oldMemCount && srvCount == oldSrvCount {
-					continue
-				}
-
-				s.UpdateStatusComplex(discordgo.UpdateStatusData{
-					Game: &discordgo.Game{
-						Name: fmt.Sprintf("over %v servers and %v members", srvCount, memCount),
-						Type: discordgo.GameTypeWatching,
-					},
-				})
-				oldMemCount = memCount
-				oldSrvCount = srvCount
+				display = !display
 			}
 		}()
 	})

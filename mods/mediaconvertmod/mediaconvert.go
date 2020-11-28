@@ -1,7 +1,6 @@
 package mediaconvertmod
 
 import (
-	"bufio"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
@@ -94,12 +93,12 @@ func (m *MediaConvertMod) jpglargeconvertPassive(msg *meidov2.DiscordMessage) {
 		if err != nil {
 			continue
 		}
-		buf := bufio.NewReader(res.Body)
-		res.Body.Close()
+
+		defer res.Body.Close()
 
 		files = append(files, &discordgo.File{
 			Name:   "converted.jpg",
-			Reader: buf,
+			Reader: res.Body,
 		})
 	}
 
