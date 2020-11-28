@@ -27,7 +27,7 @@ func (m *ModerationMod) lockdownCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	g, err := msg.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
@@ -119,7 +119,7 @@ func (m *ModerationMod) unlockCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	g, err := msg.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {

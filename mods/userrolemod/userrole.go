@@ -15,8 +15,8 @@ import (
 
 type UserRoleMod struct {
 	sync.Mutex
-	name         string
-	cl           chan *meidov2.DiscordMessage
+	name string
+	//cl           chan *meidov2.DiscordMessage
 	commands     map[string]*meidov2.ModCommand
 	db           *sqlx.DB
 	owo          *owo.Client
@@ -54,7 +54,7 @@ func (m *UserRoleMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *UserRoleMod) Hook(b *meidov2.Bot) error {
-	m.cl = b.CommandLog
+	//m.cl = b.CommandLog
 	m.db = b.DB
 	m.owo = b.Owo
 
@@ -134,29 +134,12 @@ func (m *UserRoleMod) toggleuserroleCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if uPerms&discordgo.PermissionManageRoles == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Discord.Sess.State.User.ID, msg.Message.ChannelID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	if botPerms&discordgo.PermissionManageRoles == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
-		return
-	}
-
-	m.cl <- msg
+	//m.cl <- msg
 
 	var (
 		targetUser   *discordgo.Member
 		selectedRole *discordgo.Role
+		err          error
 	)
 
 	if len(msg.Message.Mentions) >= 1 {
@@ -241,7 +224,7 @@ func (m *UserRoleMod) myroleCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	var (
 		err     error
@@ -428,11 +411,11 @@ func NewListUserRolesCommand(m *UserRoleMod) *meidov2.ModCommand {
 }
 
 func (m *UserRoleMod) listuserrolesCommand(msg *meidov2.DiscordMessage) {
-
-	if msg.LenArgs() != 1 || msg.Args()[0] != "m?listuserroles" {
+	if msg.LenArgs() != 1 {
 		return
 	}
-	m.cl <- msg
+
+	//m.cl <- msg
 
 	var userRoles []*Userrole
 

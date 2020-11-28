@@ -9,8 +9,8 @@ import (
 
 type FeedbackMod struct {
 	sync.Mutex
-	name            string
-	cl              chan *meidov2.DiscordMessage
+	name string
+	//cl              chan *meidov2.DiscordMessage
 	commands        map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
 	bannedUsers     map[string]bool
 	feedbackChannel string
@@ -50,7 +50,7 @@ func (m *FeedbackMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *FeedbackMod) Hook(b *meidov2.Bot) error {
-	m.cl = b.CommandLog
+	//m.cl = b.CommandLog
 	m.owners = b.Config.OwnerIds
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
@@ -83,7 +83,7 @@ func (m *FeedbackMod) ToggleBan(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	m.Lock()
 	defer m.Unlock()
@@ -107,7 +107,7 @@ func (m *FeedbackMod) LeaveFeedback(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	m.Lock()
 	defer m.Unlock()

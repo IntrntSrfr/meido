@@ -15,8 +15,7 @@ import (
 type ModerationMod struct {
 	sync.Mutex
 	name string
-	cl   chan *meidov2.DiscordMessage
-	//commands []func(msg *meidov2.DiscordMessage)
+	//cl   chan *meidov2.DiscordMessage
 	commands     map[string]*meidov2.ModCommand
 	passives     []*meidov2.ModPassive
 	db           *sqlx.DB
@@ -55,7 +54,7 @@ func (m *ModerationMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *ModerationMod) Hook(b *meidov2.Bot) error {
-	m.cl = b.CommandLog
+	//m.cl = b.CommandLog
 	m.db = b.DB
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
@@ -161,7 +160,7 @@ func (m *ModerationMod) banCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	var (
 		targetUser *discordgo.User
@@ -286,7 +285,7 @@ func (m *ModerationMod) unbanCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	_, err := strconv.ParseUint(msg.Args()[1], 10, 64)
 	if err != nil {
@@ -333,7 +332,7 @@ func (m *ModerationMod) hackbanCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	var userList []string
 
@@ -371,7 +370,7 @@ func NewKickCommand(m *ModerationMod) *meidov2.ModCommand {
 		Description:   "Kicks a user. Reason is optional",
 		Triggers:      []string{"m?kick", "m?k", ".kick", ".k"},
 		Usage:         "m?k @internet surfer#0001\n.k 163454407999094786",
-		Cooldown:      3,
+		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionKickMembers,
 		RequiresOwner: false,
 		AllowedTypes:  meidov2.MessageTypeCreate,
@@ -386,7 +385,7 @@ func (m *ModerationMod) kickCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	var (
 		err        error

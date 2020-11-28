@@ -24,7 +24,7 @@ type ModCommand struct {
 	AllowedTypes  MessageType
 	AllowDMs      bool
 	Enabled       bool
-	Run           func(*DiscordMessage)
+	Run           func(*DiscordMessage) `json:"-"`
 }
 
 type ModPassive struct {
@@ -33,7 +33,7 @@ type ModPassive struct {
 	Description  string
 	AllowedTypes MessageType
 	Enabled      bool
-	Run          func(*DiscordMessage)
+	Run          func(*DiscordMessage) `json:"-"`
 }
 
 func Min(a, b int) int {

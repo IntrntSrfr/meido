@@ -40,14 +40,14 @@ func main() {
 		panic(err)
 	}
 
-	bot.RegisterMod(pingmod.New("pinger"))
+	bot.RegisterMod(pingmod.New("pings"))
 	bot.RegisterMod(loggermod.New("logs"))
 	bot.RegisterMod(utilitymod.New("utility"))
 	bot.RegisterMod(moderationmod.New("moderation"))
 	bot.RegisterMod(userrolemod.New("userrole"))
 	bot.RegisterMod(searchmod.New("search"))
 	bot.RegisterMod(googlemod.New("google"))
-	bot.RegisterMod(helpmod.New("helper"))
+	bot.RegisterMod(helpmod.New("assist"))
 	bot.RegisterMod(mediaconvertmod.New("mediaconvert"))
 
 	bot.Run()

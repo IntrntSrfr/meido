@@ -9,8 +9,8 @@ import (
 
 type LoggerMod struct {
 	sync.Mutex
-	name          string
-	cl            chan *meidov2.DiscordMessage
+	name string
+	//cl            chan *meidov2.DiscordMessage
 	commands      map[string]*meidov2.ModCommand
 	passives      []*meidov2.ModPassive
 	dmLogChannels []string
@@ -51,7 +51,7 @@ func (m *LoggerMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *LoggerMod) Hook(b *meidov2.Bot) error {
-	m.cl = b.CommandLog
+	//m.cl = b.CommandLog
 	m.dmLogChannels = b.Config.DmLogChannels
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {

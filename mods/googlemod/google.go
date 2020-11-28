@@ -11,8 +11,8 @@ import (
 
 type GoogleMod struct {
 	sync.Mutex
-	name              string
-	cl                chan *meidov2.DiscordMessage
+	name string
+	//cl                chan *meidov2.DiscordMessage
 	commands          map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
 	activeImgSearches map[string]*ImageSearch
 	deleteImgCh       chan string
@@ -61,7 +61,7 @@ func (m *GoogleMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *GoogleMod) Hook(b *meidov2.Bot) error {
-	m.cl = b.CommandLog
+	//m.cl = b.CommandLog
 
 	go func() {
 		for {
@@ -104,7 +104,7 @@ func NewImageCommand(m *GoogleMod) *meidov2.ModCommand {
 		Mod:           m,
 		Name:          "image",
 		Description:   "Search for an image",
-		Triggers:      []string{"m?image", "m?img"},
+		Triggers:      []string{"m?image", "m?img", "m?im"},
 		Usage:         "m?img jeff from 22 jump street",
 		Cooldown:      3,
 		RequiredPerms: 0,
@@ -117,11 +117,11 @@ func NewImageCommand(m *GoogleMod) *meidov2.ModCommand {
 }
 
 func (m *GoogleMod) googleCommand(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 2 || (msg.Args()[0] != "m?image" && msg.Args()[0] != "m?img" && msg.Args()[0] != "m?im") {
+	if msg.LenArgs() < 2 {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	query := strings.Join(msg.Args()[1:], " ")
 	links := scrape(query)

@@ -10,8 +10,8 @@ import (
 
 type HelpMod struct {
 	sync.Mutex
-	name         string
-	cl           chan *meidov2.DiscordMessage
+	name string
+	//cl           chan *meidov2.DiscordMessage
 	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
 	allowedTypes meidov2.MessageType
 	allowDMs     bool
@@ -49,7 +49,7 @@ func (m *HelpMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *HelpMod) Hook(b *meidov2.Bot) error {
-	m.cl = b.CommandLog
+	//m.cl = b.CommandLog
 	m.bot = b
 
 	m.RegisterCommand(NewHelpCommand(m))
@@ -84,7 +84,7 @@ func NewHelpCommand(m *HelpMod) *meidov2.ModCommand {
 
 func (m *HelpMod) helpCommand(msg *meidov2.DiscordMessage) {
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	emb := &discordgo.MessageEmbed{
 		Color: 0xFEFEFE,

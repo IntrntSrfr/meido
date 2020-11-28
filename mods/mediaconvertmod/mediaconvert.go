@@ -1,6 +1,7 @@
 package mediaconvertmod
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
@@ -11,8 +12,8 @@ import (
 
 type MediaConvertMod struct {
 	sync.Mutex
-	name         string
-	cl           chan *meidov2.DiscordMessage
+	name string
+	//cl           chan *meidov2.DiscordMessage
 	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
 	passives     []*meidov2.ModPassive
 	allowedTypes meidov2.MessageType
@@ -51,7 +52,7 @@ func (m *MediaConvertMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *MediaConvertMod) Hook(b *meidov2.Bot) error {
-	m.cl = b.CommandLog
+	//m.cl = b.CommandLog
 
 	m.passives = append(m.passives, NewJpgLargeConvertPassive(m))
 
@@ -93,16 +94,45 @@ func (m *MediaConvertMod) jpglargeconvertPassive(msg *meidov2.DiscordMessage) {
 		if err != nil {
 			continue
 		}
-		defer res.Body.Close()
+		buf := bufio.NewReader(res.Body)
+		res.Body.Close()
 
 		files = append(files, &discordgo.File{
 			Name:   "converted.jpg",
-			Reader: res.Body,
+			Reader: buf,
 		})
+	}
+
+	if len(files) < 1 {
+		return
 	}
 
 	msg.Sess.ChannelMessageSendComplex(msg.Message.ChannelID, &discordgo.MessageSend{
 		Content: fmt.Sprintf("%v, I converted that to JPG for you", msg.Author.Mention()),
 		Files:   files,
 	})
+}
+
+func NewMediaConvertCommand(m *MediaConvertMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "mediaconvert",
+		Description:   "Converts some media files from one format to another",
+		Triggers:      []string{"m?mediaconvert"},
+		Usage:         "m?mediaconvert [url] [target format]",
+		Cooldown:      30,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.mediaconvertCommand,
+	}
+}
+
+func (m *MediaConvertMod) mediaconvertCommand(msg *meidov2.DiscordMessage) {
+	if msg.LenArgs() < 3 {
+		return
+	}
+
 }

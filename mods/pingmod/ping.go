@@ -9,8 +9,8 @@ import (
 
 type PingMod struct {
 	sync.Mutex
-	name         string
-	cl           chan *meidov2.DiscordMessage
+	name string
+	//cl           chan *meidov2.ExecutedCommand
 	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
 	allowedTypes meidov2.MessageType
 	allowDMs     bool
@@ -47,7 +47,7 @@ func (m *PingMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *PingMod) Hook(b *meidov2.Bot) error {
-	m.cl = b.CommandLog
+	//m.cl = b.CommandLog
 
 	m.RegisterCommand(NewPingCommand(m))
 
@@ -84,7 +84,7 @@ func (m *PingMod) pingCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- &meidov2.ExecutedCommand{0}
 
 	startTime := time.Now()
 

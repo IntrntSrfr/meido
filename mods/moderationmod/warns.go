@@ -18,7 +18,7 @@ func NewWarnCommand(m *ModerationMod) *meidov2.ModCommand {
 		Description:   "Warns a user. Does not work if warn system is disabled.",
 		Triggers:      []string{"m?warn", ".warn"},
 		Usage:         "m?warn 163454407999094786 stupid",
-		Cooldown:      5,
+		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
 		AllowedTypes:  meidov2.MessageTypeCreate,
@@ -33,7 +33,7 @@ func (m *ModerationMod) warnCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	dge := &DiscordGuild{}
 	err := m.db.Get(dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id = $1;", msg.Message.GuildID)
@@ -125,7 +125,7 @@ func (m *ModerationMod) warnCommand(msg *meidov2.DiscordMessage) {
 			return
 		}
 		_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
-			msg.Sess.State.User.ID, time.Now(), g.ID, msg.Message.Author.ID)
+			msg.Sess.State.User.ID, time.Now(), g.ID, targetUser.User.ID)
 
 		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", targetUser.Mention()))
 
@@ -145,7 +145,7 @@ func NewWarnLogCommand(m *ModerationMod) *meidov2.ModCommand {
 		Description:   "Displays a users warns",
 		Triggers:      []string{"m?warnlog"},
 		Usage:         "m?warnlog 163454407999094786",
-		Cooldown:      10,
+		Cooldown:      5,
 		RequiredPerms: discordgo.PermissionManageMessages,
 		RequiresOwner: false,
 		AllowedTypes:  meidov2.MessageTypeCreate,
@@ -160,7 +160,7 @@ func (m *ModerationMod) warnlogCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	page := 0
 
@@ -287,7 +287,7 @@ func (m *ModerationMod) clearwarnCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	uid, err := strconv.Atoi(msg.Args()[1])
 	if err != nil {
@@ -340,7 +340,7 @@ func (m *ModerationMod) clearallwarnsCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	var (
 		err        error

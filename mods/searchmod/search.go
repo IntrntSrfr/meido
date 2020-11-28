@@ -13,8 +13,8 @@ import (
 
 type SearchMod struct {
 	sync.Mutex
-	name         string
-	cl           chan *meidov2.DiscordMessage
+	name string
+	//cl           chan *meidov2.DiscordMessage
 	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
 	youtubeKey   string
 	allowedTypes meidov2.MessageType
@@ -53,7 +53,7 @@ func (m *SearchMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *SearchMod) Hook(b *meidov2.Bot) error {
-	m.cl = b.CommandLog
+	//m.cl = b.CommandLog
 	m.youtubeKey = b.Config.YouTubeKey
 
 	m.RegisterCommand(NewYouTubeCommand(m))
@@ -76,7 +76,7 @@ func NewYouTubeCommand(m *SearchMod) *meidov2.ModCommand {
 		Description:   "Search for a YouTube video",
 		Triggers:      []string{"m?youtube", "m?yt"},
 		Usage:         "m?yt deez nuts",
-		Cooldown:      3,
+		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
 		AllowedTypes:  meidov2.MessageTypeCreate,
@@ -90,7 +90,7 @@ func (m *SearchMod) youtubeCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	query := strings.Join(msg.Args()[1:], " ")
 	URI, _ := url.Parse("https://www.googleapis.com/youtube/v3/search")

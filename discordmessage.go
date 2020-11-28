@@ -64,26 +64,21 @@ type DiscordMessage struct {
 func (m *DiscordMessage) Reply(data string) (*discordgo.Message, error) {
 	return m.Sess.ChannelMessageSend(m.Message.ChannelID, data)
 }
-
 func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
 	return m.Sess.ChannelMessageSendEmbed(m.Message.ChannelID, embed)
 }
-
 func (m *DiscordMessage) Args() []string {
 	return strings.Fields(strings.ToLower(m.Message.Content))
 }
 func (m *DiscordMessage) Content() []string {
 	return strings.Fields(m.Message.Content)
 }
-
 func (m *DiscordMessage) LenArgs() int {
 	return len(m.Args())
 }
-
 func (m *DiscordMessage) IsDM() bool {
 	return m.Message.Type == discordgo.MessageTypeDefault && m.Message.GuildID == ""
 }
-
 func (m *DiscordMessage) HighestRole(gid, uid string) int {
 
 	g, err := m.Sess.State.Guild(gid)
@@ -109,7 +104,6 @@ func (m *DiscordMessage) HighestRole(gid, uid string) int {
 
 	return -1
 }
-
 func (m *DiscordMessage) HighestColor(gid, uid string) int {
 
 	g, err := m.Sess.State.Guild(gid)

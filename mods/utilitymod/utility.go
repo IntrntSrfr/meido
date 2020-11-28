@@ -22,8 +22,8 @@ import (
 
 type UtilityMod struct {
 	sync.Mutex
-	name         string
-	cl           chan *meidov2.DiscordMessage
+	name string
+	//cl           chan *meidov2.DiscordMessage
 	commands     map[string]*meidov2.ModCommand
 	startTime    time.Time
 	db           *sqlx.DB
@@ -63,7 +63,7 @@ func (m *UtilityMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *UtilityMod) Hook(b *meidov2.Bot) error {
-	m.cl = b.CommandLog
+	//m.cl = b.CommandLog
 	m.db = b.DB
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
@@ -123,7 +123,7 @@ func NewAvatarCommand(m *UtilityMod) *meidov2.ModCommand {
 		Description:   "Displays profile picture of user or mentioned user",
 		Triggers:      []string{"m?avatar", "m?av", ">av"},
 		Usage:         ">av | >av 123123123123",
-		Cooldown:      5,
+		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
 		AllowedTypes:  meidov2.MessageTypeCreate,
@@ -138,7 +138,7 @@ func (m *UtilityMod) avatarCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	var targetUser *discordgo.User
 	var err error
@@ -195,11 +195,8 @@ func (m *UtilityMod) serverCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
-	if msg.IsDM() {
-		return
-	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
@@ -298,7 +295,7 @@ func (m *UtilityMod) aboutCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
-	m.cl <- msg
+	//m.cl <- msg
 
 	var (
 		totalUsers int
@@ -388,11 +385,8 @@ func (m *UtilityMod) serverSplashCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
-	if msg.IsDM() {
-		return
-	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
@@ -434,11 +428,8 @@ func (m *UtilityMod) serverBannerCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
-	if msg.IsDM() {
-		return
-	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
 	if err != nil {
@@ -481,7 +472,7 @@ func (m *UtilityMod) colorCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	clrStr := msg.Args()[1]
 
@@ -534,7 +525,7 @@ func NewInviteCommand(m *UtilityMod) *meidov2.ModCommand {
 	}
 }
 func (m *UtilityMod) inviteCommand(msg *meidov2.DiscordMessage) {
-	m.cl <- msg
+	//m.cl <- msg
 
 	botLink := "<https://discordapp.com/oauth2/authorize?client_id=394162399348785152&scope=bot>"
 	serverLink := "https://discord.gg/KgMEGK3"

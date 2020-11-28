@@ -32,7 +32,7 @@ func (m *ModerationMod) filterwordCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	phrase := strings.Join(msg.Args()[1:], " ")
 
@@ -71,7 +71,8 @@ func (m *ModerationMod) filterwordlistCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
-	m.cl <- msg
+
+	//m.cl <- msg
 
 	var fel []*FilterEntry
 	err := m.db.Select(&fel, "SELECT * FROM filters WHERE guild_id=$1;", msg.Message.GuildID)
@@ -122,7 +123,7 @@ func (m *ModerationMod) clearfilterCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	_, err := m.db.Exec("DELETE FROM filters WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
@@ -159,7 +160,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	m.cl <- msg
+	//m.cl <- msg
 
 	switch msg.Args()[2] {
 	case "warns":
@@ -296,10 +297,6 @@ func (m *ModerationMod) checkfilterPassive(msg *meidov2.DiscordMessage) {
 		if err != nil {
 			return
 		}
-		/*
-			_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
-				msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), false)
-		*/
 
 		_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
 			cu.ID, time.Now(), g.ID, msg.Message.Author.ID)
@@ -311,10 +308,6 @@ func (m *ModerationMod) checkfilterPassive(msg *meidov2.DiscordMessage) {
 			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been warned in %v.\nWarned for: %v\nYou are currently at warn %v/%v",
 				g.Name, reason, warnCount+1, dge.MaxWarns))
 		}
-		/*
-			_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
-				msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), true)
-		*/
 		msg.Reply(fmt.Sprintf("%v has been warned\nThey are currently at warn %v/%v", msg.Message.Author.Mention(), warnCount+1, dge.MaxWarns))
 	}
 }
