@@ -28,10 +28,11 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 	req, _ := http.NewRequest("GET", "https://discord.com/api/v8/gateway/bot", nil)
 	req.Header.Add("Authorization", "Bot "+d.token)
 	res, err := http.DefaultClient.Do(req)
-	defer res.Body.Close()
 	if err != nil {
 		panic(err)
 	}
+	defer res.Body.Close()
+
 	resp := &discordgo.GatewayBotResponse{}
 	err = json.NewDecoder(res.Body).Decode(&resp)
 	if err != nil {

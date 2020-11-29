@@ -199,7 +199,7 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 							if err != nil {
 								return
 							}
-							if uPerms&cmd.RequiredPerms == 0 || uPerms&discordgo.PermissionAdministrator == 0 {
+							if uPerms&cmd.RequiredPerms == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
 								return
 							}
 
@@ -207,7 +207,7 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 							if err != nil {
 								return
 							}
-							if botPerms&discordgo.PermissionBanMembers == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
+							if botPerms&cmd.RequiredPerms == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
 								return
 							}
 						}
