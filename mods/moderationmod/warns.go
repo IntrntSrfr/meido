@@ -33,8 +33,6 @@ func (m *ModerationMod) warnCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
 	dge := &DiscordGuild{}
 	err := m.db.Get(dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id = $1;", msg.Message.GuildID)
 	if err != nil {
@@ -160,8 +158,6 @@ func (m *ModerationMod) warnlogCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
 	page := 0
 
 	if msg.LenArgs() > 2 {
@@ -265,6 +261,68 @@ func (m *ModerationMod) warnlogCommand(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
+func NewWarnCountCommand(m *ModerationMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "warncount",
+		Description:   "Displays how many warns a user has",
+		Triggers:      []string{"m?warncount"},
+		Usage:         "m?warncount | m?warncount @user",
+		Cooldown:      2,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           m.warncountCommand,
+	}
+}
+
+func (m *ModerationMod) warncountCommand(msg *meidov2.DiscordMessage) {
+
+	var (
+		err        error
+		targetUser *discordgo.User
+	)
+
+	dge := DiscordGuild{}
+	err = m.db.Get(&dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
+	if err != nil {
+		return
+	}
+
+	if !dge.UseWarns {
+		msg.Reply("warn system not enabled")
+		return
+	}
+
+	if msg.LenArgs() > 1 {
+		if len(msg.Message.Mentions) >= 1 {
+			targetUser = msg.Message.Mentions[0]
+		} else {
+			_, err := strconv.Atoi(msg.Args()[1])
+			if err != nil {
+				return
+			}
+			targetUser, err = msg.Sess.User(msg.Args()[1])
+			if err != nil {
+				return
+			}
+		}
+	} else {
+		targetUser = msg.Message.Author
+	}
+
+	warnCount := 0
+
+	err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warns WHERE guild_id=$1 AND user_id=$2 AND is_valid", msg.Message.GuildID, targetUser.ID)
+	if err != nil {
+		return
+	}
+
+	msg.Reply(fmt.Sprintf("%v is at %v/%v warns", targetUser.String(), warnCount, dge.MaxWarns))
+}
+
 func NewClearWarnCommand(m *ModerationMod) *meidov2.ModCommand {
 	return &meidov2.ModCommand{
 		Mod:           m,
@@ -286,8 +344,6 @@ func (m *ModerationMod) clearwarnCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
-
-	//m.cl <- msg
 
 	uid, err := strconv.Atoi(msg.Args()[1])
 	if err != nil {
@@ -339,8 +395,6 @@ func (m *ModerationMod) clearallwarnsCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
-
-	//m.cl <- msg
 
 	var (
 		err        error

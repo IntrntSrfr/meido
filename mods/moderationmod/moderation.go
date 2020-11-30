@@ -116,6 +116,7 @@ func (m *ModerationMod) Hook(b *meidov2.Bot) error {
 	m.RegisterCommand(NewClearWarnCommand(m))
 	m.RegisterCommand(NewWarnLogCommand(m))
 	m.RegisterCommand(NewClearAllWarnsCommand(m))
+	m.RegisterCommand(NewWarnCountCommand(m))
 
 	m.RegisterCommand(NewFilterWordCommand(m))
 	m.RegisterCommand(NewClearFilterCommand(m))
