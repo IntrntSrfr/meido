@@ -40,7 +40,7 @@ func scrape(query string) (links []string) {
 		ma = strings.TrimPrefix(ma, `"`)
 		ma = strings.TrimSuffix(ma, `"`)
 
-		if ma == "https://www.google.com/logos/doodles/2020/december-holidays-day-1-6753651837108829.5-s.png" {
+		if strings.Contains(strings.ToLower(ma), "https://www.google.com/logos/doodles") {
 			continue
 		}
 
