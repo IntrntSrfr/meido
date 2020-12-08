@@ -63,14 +63,6 @@ func (m *LoggerMod) Hook(b *meidov2.Bot) error {
 		fmt.Println("loaded: ", g.Guild.Name, g.MemberCount, len(g.Members))
 	})
 
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, mem *discordgo.GuildMemberAdd) {
-		g, err := b.Discord.Guild(mem.GuildID)
-		if err != nil {
-			return
-		}
-		fmt.Println("member joined:", g.Name, mem.User.String())
-	})
-
 	m.passives = append(m.passives, NewForwardDmsPassive(m))
 	return nil
 }
