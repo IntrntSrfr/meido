@@ -121,5 +121,6 @@ func NewFishCommand(m *PingMod) *meidov2.ModCommand {
 var fish = []string{"🐟", "🐠", "🐡", "🦈"}
 
 func (m *PingMod) fishCommand(msg *meidov2.DiscordMessage) {
+	rand.Seed(time.Now().Unix())
 	msg.Reply(fish[rand.Intn(len(fish))])
 }
