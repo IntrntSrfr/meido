@@ -1,5 +1,10 @@
 package meidov2
 
+import (
+	"strconv"
+	"time"
+)
+
 type Mod interface {
 	Name() string
 	Save() error
@@ -21,6 +26,7 @@ type ModCommand struct {
 	Cooldown      int
 	RequiredPerms int
 	RequiresOwner bool
+	CheckBotPerms bool
 	AllowedTypes  MessageType
 	AllowDMs      bool
 	Enabled       bool
@@ -52,4 +58,15 @@ func Max(a, b int) int {
 
 func Clamp(lower, upper, n int) int {
 	return Max(lower, Min(upper, n))
+}
+
+// IDToTimestamp converts a discord ID to a timestamp
+func IDToTimestamp(idStr string) time.Time {
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		return time.Now()
+	}
+
+	id = ((id >> 22) + 1420070400000) / 1000
+	return time.Unix(id, 0)
 }

@@ -73,7 +73,7 @@ func (m *ModerationMod) Hook(b *meidov2.Bot) error {
 
 		go func() {
 			for range refreshTicker.C {
-				for _, g := range b.Discord.Sess.State.Guilds {
+				for _, g := range b.Discord.Guilds() {
 					if g.Unavailable {
 						continue
 					}
@@ -149,6 +149,7 @@ func NewBanCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
+		CheckBotPerms: true,
 		AllowedTypes:  meidov2.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
@@ -160,8 +161,6 @@ func (m *ModerationMod) banCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
-
-	//m.cl <- msg
 
 	var (
 		targetUser *discordgo.User
@@ -209,9 +208,9 @@ func (m *ModerationMod) banCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	topUserRole := msg.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
-	topTargetRole := msg.HighestRole(msg.Message.GuildID, targetUser.ID)
-	topBotRole := msg.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
+	topUserRole := msg.Discord.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
+	topTargetRole := msg.Discord.HighestRole(msg.Message.GuildID, targetUser.ID)
+	topBotRole := msg.Discord.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		msg.Reply("no")
@@ -221,7 +220,7 @@ func (m *ModerationMod) banCommand(msg *meidov2.DiscordMessage) {
 	if topTargetRole > 0 {
 		userChannel, userChErr := msg.Discord.Sess.UserChannelCreate(targetUser.ID)
 		if userChErr == nil {
-			g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
+			g, err := msg.Discord.Guild(msg.Message.GuildID)
 			if err != nil {
 				return
 			}
@@ -273,6 +272,7 @@ func NewUnbanCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
+		CheckBotPerms: true,
 		AllowedTypes:  meidov2.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
@@ -285,8 +285,6 @@ func (m *ModerationMod) unbanCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
-
-	//m.cl <- msg
 
 	_, err := strconv.ParseUint(msg.Args()[1], 10, 64)
 	if err != nil {
@@ -321,6 +319,7 @@ func NewHackbanCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
+		CheckBotPerms: true,
 		AllowedTypes:  meidov2.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
@@ -332,8 +331,6 @@ func (m *ModerationMod) hackbanCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
-
-	//m.cl <- msg
 
 	var userList []string
 
@@ -374,6 +371,7 @@ func NewKickCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionKickMembers,
 		RequiresOwner: false,
+		CheckBotPerms: true,
 		AllowedTypes:  meidov2.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
@@ -386,8 +384,6 @@ func (m *ModerationMod) kickCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
 	var (
 		err        error
 		targetUser *discordgo.Member
@@ -399,13 +395,13 @@ func (m *ModerationMod) kickCommand(msg *meidov2.DiscordMessage) {
 	}
 
 	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Sess.GuildMember(msg.Message.GuildID, msg.Message.Mentions[0].ID)
+		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
 		}
 	} else {
-		targetUser, err = msg.Sess.GuildMember(msg.Message.GuildID, msg.Args()[1])
+		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
@@ -421,16 +417,16 @@ func (m *ModerationMod) kickCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	topUserRole := msg.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
-	topTargetRole := msg.HighestRole(msg.Message.GuildID, targetUser.User.ID)
-	topBotRole := msg.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
+	topUserRole := msg.Discord.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
+	topTargetRole := msg.Discord.HighestRole(msg.Message.GuildID, targetUser.User.ID)
+	topBotRole := msg.Discord.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		msg.Reply("no")
 		return
 	}
 
-	g, err := msg.Sess.State.Guild(msg.Message.GuildID)
+	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
 		return
 	}

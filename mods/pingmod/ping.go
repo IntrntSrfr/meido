@@ -3,6 +3,7 @@ package pingmod
 import (
 	"fmt"
 	"github.com/intrntsrfr/meidov2"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -50,6 +51,7 @@ func (m *PingMod) Hook(b *meidov2.Bot) error {
 	//m.cl = b.CommandLog
 
 	m.RegisterCommand(NewPingCommand(m))
+	m.RegisterCommand(NewFishCommand(m))
 
 	return nil
 }
@@ -84,8 +86,6 @@ func (m *PingMod) pingCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- &meidov2.ExecutedCommand{0}
-
 	startTime := time.Now()
 
 	first, err := msg.Reply("Ping")
@@ -99,4 +99,27 @@ func (m *PingMod) pingCommand(msg *meidov2.DiscordMessage) {
 
 	msg.Sess.ChannelMessageEdit(msg.Message.ChannelID, first.ID,
 		fmt.Sprintf("Pong!\nDiscord delay: %s\nBot delay: %s", discordLatency, botLatency))
+}
+
+func NewFishCommand(m *PingMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "fish",
+		Description:   "Fish",
+		Triggers:      []string{"m?fish"},
+		Usage:         "m?fish",
+		Cooldown:      0,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.fishCommand,
+	}
+}
+
+var fish = []string{"🐟", "🐠", "🐡", "🦈"}
+
+func (m *PingMod) fishCommand(msg *meidov2.DiscordMessage) {
+	msg.Reply(fish[rand.Intn(len(fish))])
 }

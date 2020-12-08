@@ -84,8 +84,6 @@ func NewHelpCommand(m *HelpMod) *meidov2.ModCommand {
 
 func (m *HelpMod) helpCommand(msg *meidov2.DiscordMessage) {
 
-	//m.cl <- msg
-
 	emb := &discordgo.MessageEmbed{
 		Color: 0xFEFEFE,
 		Footer: &discordgo.MessageEmbedFooter{

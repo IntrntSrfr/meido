@@ -2,7 +2,6 @@ package meidov2
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"sort"
 	"strings"
 	"time"
 )
@@ -16,36 +15,36 @@ const (
 )
 
 var PermMap = map[int]string{
-	0:                                        "none",
-	discordgo.PermissionCreateInstantInvite:  "create instant invite",
-	discordgo.PermissionKickMembers:          "kick members",
-	discordgo.PermissionBanMembers:           "ban members",
-	discordgo.PermissionAdministrator:        "administrator",
-	discordgo.PermissionManageChannels:       "manage channels",
-	discordgo.PermissionManageServer:         "manage server",
-	discordgo.PermissionAddReactions:         "add reactions",
-	discordgo.PermissionViewAuditLogs:        "view audit log",
-	discordgo.PermissionVoicePrioritySpeaker: "priority speaker",
-	discordgo.PermissionViewChannel:          "view channel",
-	discordgo.PermissionSendMessages:         "send messages",
-	discordgo.PermissionSendTTSMessages:      "send tts messages",
-	discordgo.PermissionManageMessages:       "manage messages",
-	discordgo.PermissionEmbedLinks:           "embed links",
-	discordgo.PermissionAttachFiles:          "attach files",
-	discordgo.PermissionReadMessageHistory:   "read message history",
-	discordgo.PermissionMentionEveryone:      "mention everyone",
-	discordgo.PermissionUseExternalEmojis:    "use external emojis",
-	discordgo.PermissionVoiceConnect:         "connect",
-	discordgo.PermissionVoiceSpeak:           "speak",
-	discordgo.PermissionVoiceMuteMembers:     "mute members",
-	discordgo.PermissionVoiceDeafenMembers:   "deafen members",
-	discordgo.PermissionVoiceMoveMembers:     "move members",
-	discordgo.PermissionVoiceUseVAD:          "use VAD",
-	discordgo.PermissionChangeNickname:       "change nickname",
-	discordgo.PermissionManageNicknames:      "manage nicknames",
-	discordgo.PermissionManageRoles:          "manage roles",
-	discordgo.PermissionManageWebhooks:       "manage webhooks",
-	discordgo.PermissionManageEmojis:         "manage emojis",
+	0:                                        "None",
+	discordgo.PermissionCreateInstantInvite:  "Create Instant Invite",
+	discordgo.PermissionKickMembers:          "Kick Members",
+	discordgo.PermissionBanMembers:           "Ban Members",
+	discordgo.PermissionAdministrator:        "Administrator",
+	discordgo.PermissionManageChannels:       "Manage Channels",
+	discordgo.PermissionManageServer:         "Manage Server",
+	discordgo.PermissionAddReactions:         "Add Reactions",
+	discordgo.PermissionViewAuditLogs:        "View Audit Log",
+	discordgo.PermissionVoicePrioritySpeaker: "Priority Speaker",
+	discordgo.PermissionViewChannel:          "View Channel",
+	discordgo.PermissionSendMessages:         "Send Messages",
+	discordgo.PermissionSendTTSMessages:      "Send TTS Messages",
+	discordgo.PermissionManageMessages:       "Manage Messages",
+	discordgo.PermissionEmbedLinks:           "Embed Links",
+	discordgo.PermissionAttachFiles:          "Attach Files",
+	discordgo.PermissionReadMessageHistory:   "Read Message History",
+	discordgo.PermissionMentionEveryone:      "Mention Everyone",
+	discordgo.PermissionUseExternalEmojis:    "Use External Emojis",
+	discordgo.PermissionVoiceConnect:         "Connect",
+	discordgo.PermissionVoiceSpeak:           "Speak",
+	discordgo.PermissionVoiceMuteMembers:     "Mute Members",
+	discordgo.PermissionVoiceDeafenMembers:   "Deafen Members",
+	discordgo.PermissionVoiceMoveMembers:     "Move Members",
+	discordgo.PermissionVoiceUseVAD:          "Use VAD",
+	discordgo.PermissionChangeNickname:       "Change Nickname",
+	discordgo.PermissionManageNicknames:      "Manage Nicknames",
+	discordgo.PermissionManageRoles:          "Manage Roles",
+	discordgo.PermissionManageWebhooks:       "Manage Webhooks",
+	discordgo.PermissionManageEmojis:         "Manage Emojis",
 }
 
 type DiscordMessage struct {
@@ -73,68 +72,22 @@ func (m *DiscordMessage) Args() []string {
 func (m *DiscordMessage) Content() []string {
 	return strings.Fields(m.Message.Content)
 }
+func (m *DiscordMessage) RawContent() string {
+	return m.Message.Content
+}
 func (m *DiscordMessage) LenArgs() int {
 	return len(m.Args())
 }
 func (m *DiscordMessage) IsDM() bool {
 	return m.Message.Type == discordgo.MessageTypeDefault && m.Message.GuildID == ""
 }
-func (m *DiscordMessage) HighestRole(gid, uid string) int {
-
-	g, err := m.Sess.State.Guild(gid)
-	if err != nil {
-		return -1
-	}
-	mem, err := m.Sess.GuildMember(gid, uid)
-	if err != nil {
-		return -1
-	}
-
-	gRoles := g.Roles
-
-	sort.Sort(RoleByPos(gRoles))
-
-	for _, gr := range gRoles {
-		for _, r := range mem.Roles {
-			if r == gr.ID {
-				return gr.Position
-			}
-		}
-	}
-
-	return -1
+func (m *DiscordMessage) IsOwner() bool {
+	return m.Discord.IsOwner(m)
 }
-func (m *DiscordMessage) HighestColor(gid, uid string) int {
-
-	g, err := m.Sess.State.Guild(gid)
+func (m *DiscordMessage) HasPermissions(mem *discordgo.Member, channelID string, perm int) bool {
+	uPerms, err := m.Discord.UserChannelPermissionsDirect(mem, channelID)
 	if err != nil {
-		return 0
+		return false
 	}
-
-	mem, err := m.Sess.GuildMember(gid, uid)
-	if err != nil {
-		return 0
-	}
-
-	gRoles := g.Roles
-
-	sort.Sort(RoleByPos(gRoles))
-
-	for _, gr := range gRoles {
-		for _, r := range mem.Roles {
-			if r == gr.ID {
-				if gr.Color != 0 {
-					return gr.Color
-				}
-			}
-		}
-	}
-
-	return 0
+	return uPerms&perm != 0 || uPerms&discordgo.PermissionAdministrator != 0
 }
-
-type RoleByPos []*discordgo.Role
-
-func (a RoleByPos) Len() int           { return len(a) }
-func (a RoleByPos) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a RoleByPos) Less(i, j int) bool { return a[i].Position > a[j].Position }

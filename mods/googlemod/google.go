@@ -121,8 +121,6 @@ func (m *GoogleMod) googleCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
 	query := strings.Join(msg.Args()[1:], " ")
 	links := scrape(query)
 
@@ -227,8 +225,6 @@ func (m *GoogleMod) MessageReactionAddHandler(s *discordgo.Session, msg *discord
 		s.ChannelMessageDelete(msg.ChannelID, search.BotMsg.ID)
 		s.ChannelMessageDelete(msg.ChannelID, search.AuthorMsg.ID)
 		m.deleteImgCh <- search.BotMsg.ID
-
-	default:
 	}
 }
 
@@ -289,7 +285,5 @@ func (m *GoogleMod) MessageReactionRemoveHandler(s *discordgo.Session, msg *disc
 		s.ChannelMessageDelete(msg.ChannelID, search.BotMsg.ID)
 		s.ChannelMessageDelete(msg.ChannelID, search.AuthorMsg.ID)
 		m.deleteImgCh <- search.BotMsg.ID
-
-	default:
 	}
 }

@@ -15,6 +15,7 @@ func NewLockdownChannelCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      10,
 		RequiredPerms: discordgo.PermissionManageRoles,
 		RequiresOwner: false,
+		CheckBotPerms: true,
 		AllowedTypes:  meidov2.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
@@ -27,9 +28,7 @@ func (m *ModerationMod) lockdownCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
-	g, err := msg.Sess.State.Guild(msg.Message.GuildID)
+	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
 		return
 	}
@@ -46,7 +45,7 @@ func (m *ModerationMod) lockdownCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	ch, err := msg.Sess.State.Channel(msg.Message.ChannelID)
+	ch, err := msg.Discord.Channel(msg.Message.ChannelID)
 	if err != nil {
 		return
 	}
@@ -107,6 +106,7 @@ func NewUnlockChannelCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      10,
 		RequiredPerms: discordgo.PermissionManageRoles,
 		RequiresOwner: false,
+		CheckBotPerms: true,
 		AllowedTypes:  meidov2.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
@@ -119,9 +119,7 @@ func (m *ModerationMod) unlockCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
-	g, err := msg.Sess.State.Guild(msg.Message.GuildID)
+	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
 		return
 	}
@@ -138,7 +136,7 @@ func (m *ModerationMod) unlockCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	ch, err := msg.Sess.State.Channel(msg.Message.ChannelID)
+	ch, err := msg.Discord.Channel(msg.Message.ChannelID)
 	if err != nil {
 		return
 	}

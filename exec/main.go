@@ -49,6 +49,7 @@ func main() {
 	bot.RegisterMod(googlemod.New("google"))
 	bot.RegisterMod(helpmod.New("assist"))
 	bot.RegisterMod(mediaconvertmod.New("mediaconvert"))
+	//bot.RegisterMod(autorolemod.New("autorole"))
 
 	bot.Run()
 	defer bot.Close()

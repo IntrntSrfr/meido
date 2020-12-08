@@ -67,7 +67,7 @@ func (m *UserRoleMod) Hook(b *meidov2.Bot) error {
 
 		go func() {
 			for range refreshTicker.C {
-				for _, g := range b.Discord.Sess.State.Guilds {
+				for _, g := range b.Discord.Guilds() {
 					if g.Unavailable {
 						continue
 					}
@@ -97,7 +97,7 @@ func (m *UserRoleMod) Hook(b *meidov2.Bot) error {
 		}()
 	})
 
-	m.RegisterCommand(NewToggleUserRoleCommand(m))
+	m.RegisterCommand(NewSetUserRoleCommand(m))
 	m.RegisterCommand(NewMyRoleCommand(m))
 	m.RegisterCommand(NewListUserRolesCommand(m))
 
@@ -112,29 +112,27 @@ func (m *UserRoleMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewToggleUserRoleCommand(m *UserRoleMod) *meidov2.ModCommand {
+func NewSetUserRoleCommand(m *UserRoleMod) *meidov2.ModCommand {
 	return &meidov2.ModCommand{
 		Mod:           m,
-		Name:          "toggleuserrole",
+		Name:          "setuserrole",
 		Description:   "Binds, unbinds or changes a userrole bind to a user",
 		Triggers:      []string{"m?setuserrole"},
 		Usage:         "m?setuserrole 1231231231231 cool role",
 		Cooldown:      3,
-		RequiredPerms: discordgo.PermissionManageMessages,
+		RequiredPerms: discordgo.PermissionManageRoles,
 		RequiresOwner: false,
 		AllowedTypes:  meidov2.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
-		Run:           m.toggleuserroleCommand,
+		Run:           m.setuserroleCommand,
 	}
 }
 
-func (m *UserRoleMod) toggleuserroleCommand(msg *meidov2.DiscordMessage) {
+func (m *UserRoleMod) setuserroleCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 3 {
 		return
 	}
-
-	//m.cl <- msg
 
 	var (
 		targetUser   *discordgo.Member
@@ -143,13 +141,13 @@ func (m *UserRoleMod) toggleuserroleCommand(msg *meidov2.DiscordMessage) {
 	)
 
 	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Discord.Sess.GuildMember(msg.Message.GuildID, msg.Message.Mentions[0].ID)
+		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
 		if err != nil {
 			//s.ChannelMessageSend(ch.ID, err.Error())
 			return
 		}
 	} else {
-		targetUser, err = msg.Discord.Sess.GuildMember(msg.Message.GuildID, msg.Args()[1])
+		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
 		if err != nil {
 			//s.ChannelMessageSend(ch.ID, err.Error())
 			return
@@ -160,7 +158,7 @@ func (m *UserRoleMod) toggleuserroleCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
+	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
 		msg.Reply(err.Error())
 		return
@@ -224,15 +222,13 @@ func (m *UserRoleMod) myroleCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
 	var (
 		err     error
 		oldRole *discordgo.Role
 		target  *discordgo.Member
 	)
 
-	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
+	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("some error occurred")
 		return
@@ -244,13 +240,19 @@ func (m *UserRoleMod) myroleCommand(msg *meidov2.DiscordMessage) {
 			return
 		}
 
-		botPerms, err := msg.Discord.Sess.State.UserChannelPermissions(msg.Discord.Sess.State.User.ID, msg.Message.ChannelID)
-		if err != nil {
+		if !msg.Discord.HasPermissions(msg.Message.ChannelID, discordgo.PermissionManageRoles) {
 			return
 		}
-		if botPerms&discordgo.PermissionManageRoles == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
-			return
-		}
+
+		/*
+			botPerms, err := msg.Discord.UserChannelPermissions(msg.Discord.Sess.State.User.ID, msg.Message.ChannelID)
+			if err != nil {
+				return
+			}
+			if botPerms&discordgo.PermissionManageRoles == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
+				return
+			}
+		*/
 
 		ur := &Userrole{}
 		err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, msg.Message.Author.ID)
@@ -326,14 +328,14 @@ func (m *UserRoleMod) myroleCommand(msg *meidov2.DiscordMessage) {
 		target = msg.Member
 	case la == 2:
 		if len(msg.Message.Mentions) >= 1 {
-			target, err = msg.Discord.Sess.GuildMember(g.ID, msg.Message.Mentions[0].ID)
+			target, err = msg.Discord.Member(g.ID, msg.Message.Mentions[0].ID)
 			if err != nil {
 				//s.ChannelMessageSend(ch.ID, err.Error())
 				fmt.Println(err)
 				return
 			}
 		} else {
-			target, err = msg.Discord.Sess.GuildMember(g.ID, msg.Args()[1])
+			target, err = msg.Discord.Member(g.ID, msg.Args()[1])
 			if err != nil {
 				//s.ChannelMessageSend(ch.ID, err.Error())
 				fmt.Println(err)
@@ -415,8 +417,6 @@ func (m *UserRoleMod) listuserrolesCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
 	var userRoles []*Userrole
 
 	err := m.db.Select(&userRoles, "SELECT role_id, user_id FROM userroles WHERE guild_id=$1;", msg.Message.GuildID)
@@ -425,7 +425,7 @@ func (m *UserRoleMod) listuserrolesCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
+	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("some error occurred, please try again")
 		return
@@ -434,12 +434,12 @@ func (m *UserRoleMod) listuserrolesCommand(msg *meidov2.DiscordMessage) {
 	text := fmt.Sprintf("Userroles in %v\n\n", g.Name)
 	count := 0
 	for _, ur := range userRoles {
-		role, err := msg.Sess.State.Role(g.ID, ur.RoleID)
+		role, err := msg.Discord.Role(g.ID, ur.RoleID)
 		if err != nil {
 			continue
 		}
 
-		mem, err := msg.Sess.State.Member(g.ID, ur.UserID)
+		mem, err := msg.Discord.Member(g.ID, ur.UserID)
 		if err != nil {
 			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v - User no longer in guild.\n", count, role.Name, role.ID, ur.UserID)
 		} else {

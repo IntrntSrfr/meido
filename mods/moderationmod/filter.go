@@ -32,8 +32,6 @@ func (m *ModerationMod) filterwordCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
 	phrase := strings.Join(msg.Args()[1:], " ")
 
 	fe := &FilterEntry{}
@@ -71,8 +69,6 @@ func (m *ModerationMod) filterwordlistCommand(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
-
-	//m.cl <- msg
 
 	var fel []*FilterEntry
 	err := m.db.Select(&fel, "SELECT * FROM filters WHERE guild_id=$1;", msg.Message.GuildID)
@@ -123,8 +119,6 @@ func (m *ModerationMod) clearfilterCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
 	_, err := m.db.Exec("DELETE FROM filters WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error")
@@ -134,11 +128,6 @@ func (m *ModerationMod) clearfilterCommand(msg *meidov2.DiscordMessage) {
 	msg.Reply("Filter was cleared")
 }
 
-type ModerationSettingsCommand struct {
-	m       *ModerationMod
-	Enabled bool
-}
-
 func NewModerationSettingsCommand(m *ModerationMod) *meidov2.ModCommand {
 	return &meidov2.ModCommand{
 		Mod:           m,
@@ -146,7 +135,7 @@ func NewModerationSettingsCommand(m *ModerationMod) *meidov2.ModCommand {
 		Description:   "Moderation settings:\n- Toggle warn system [enable/disable]\n- Set max warns [0-10]\n- Set warn duration [0(infinite)-365]",
 		Triggers:      []string{"m?settings moderation"},
 		Usage:         "m?settings moderation warns enable/disable\nm?settings moderation maxwarns [0-10]\nm?settings moderation warnduration [0-365]",
-		Cooldown:      5,
+		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionAdministrator,
 		RequiresOwner: false,
 		AllowedTypes:  meidov2.MessageTypeCreate,
@@ -156,52 +145,83 @@ func NewModerationSettingsCommand(m *ModerationMod) *meidov2.ModCommand {
 	}
 }
 func (m *ModerationMod) moderationsettingsCommand(msg *meidov2.DiscordMessage) {
-	if msg.LenArgs() < 4 {
+	if msg.LenArgs() < 2 {
 		return
 	}
 
-	//m.cl <- msg
-
-	switch msg.Args()[2] {
-	case "warns":
-		if msg.Args()[3] == "enable" {
-			m.db.Exec("UPDATE guilds SET use_warns=true WHERE guild_id=$1 AND NOT use_warns", msg.Message.GuildID)
-			msg.Reply("Strike system is now ENABLED")
-
-		} else if msg.Args()[3] == "disable" {
-			m.db.Exec("UPDATE guilds SET use_warns=false WHERE guild_id=$1 AND use_warns", msg.Message.GuildID)
-			msg.Reply("Strike system is now DISABLED")
-		}
-	case "maxwarns":
-
-		n, err := strconv.Atoi(msg.Args()[3])
+	switch msg.LenArgs() {
+	case 2:
+		dge := &DiscordGuild{}
+		err := m.db.Get(dge, "SELECT * FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
 		if err != nil {
 			return
 		}
 
-		n = meidov2.Clamp(0, 10, n)
-
-		_, err = m.db.Exec("UPDATE guilds SET max_warns=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
-		if err != nil {
-			msg.Reply("error setting max warns")
-			return
+		emb := &discordgo.MessageEmbed{
+			Title: "Moderation settings",
+			Color: 0xFEFEFE,
+			Fields: []*discordgo.MessageEmbedField{
+				{
+					Name:   "Warns enabled",
+					Value:  fmt.Sprint(dge.UseWarns),
+					Inline: true,
+				},
+				{
+					Name:   "Max warns",
+					Value:  fmt.Sprint(dge.MaxWarns),
+					Inline: true,
+				},
+				{
+					Name:   "Warn duration",
+					Value:  fmt.Sprintf("%v days", dge.WarnDuration),
+					Inline: true,
+				},
+			},
 		}
-		msg.Reply(fmt.Sprintf("set max warns to %v", n))
-	case "warnduration":
+		msg.ReplyEmbed(emb)
 
-		n, err := strconv.Atoi(msg.Args()[3])
-		if err != nil {
-			return
+	case 4:
+		switch msg.Args()[2] {
+		case "warns":
+			if msg.Args()[3] == "enable" {
+				m.db.Exec("UPDATE guilds SET use_warns=true WHERE guild_id=$1 AND NOT use_warns", msg.Message.GuildID)
+				msg.Reply("Strike system is now ENABLED")
+
+			} else if msg.Args()[3] == "disable" {
+				m.db.Exec("UPDATE guilds SET use_warns=false WHERE guild_id=$1 AND use_warns", msg.Message.GuildID)
+				msg.Reply("Strike system is now DISABLED")
+			}
+		case "maxwarns":
+
+			n, err := strconv.Atoi(msg.Args()[3])
+			if err != nil {
+				return
+			}
+
+			n = meidov2.Clamp(0, 10, n)
+
+			_, err = m.db.Exec("UPDATE guilds SET max_warns=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
+			if err != nil {
+				msg.Reply("error setting max warns")
+				return
+			}
+			msg.Reply(fmt.Sprintf("set max warns to %v", n))
+		case "warnduration":
+
+			n, err := strconv.Atoi(msg.Args()[3])
+			if err != nil {
+				return
+			}
+
+			n = meidov2.Clamp(0, 365, n)
+
+			_, err = m.db.Exec("UPDATE guilds SET warn_duration=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
+			if err != nil {
+				msg.Reply("error setting warn duration")
+				return
+			}
+			msg.Reply(fmt.Sprintf("set warn duration to %v days", n))
 		}
-
-		n = meidov2.Clamp(0, 365, n)
-
-		_, err = m.db.Exec("UPDATE guilds SET warn_duration=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
-		if err != nil {
-			msg.Reply("error setting warn duration")
-			return
-		}
-		msg.Reply(fmt.Sprintf("set warn duration to %v days", n))
 	}
 }
 
@@ -224,7 +244,7 @@ func (m *ModerationMod) checkfilterPassive(msg *meidov2.DiscordMessage) {
 	isIllegal := false
 	trigger := ""
 
-	uPerms, err := msg.Discord.UserChannelPermissions(msg.Member, msg.Message.ChannelID)
+	uPerms, err := msg.Discord.UserChannelPermissionsDirect(msg.Member, msg.Message.ChannelID)
 	if err != nil {
 		return
 	}
@@ -271,7 +291,7 @@ func (m *ModerationMod) checkfilterPassive(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
+	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
 		return
 	}
@@ -293,7 +313,7 @@ func (m *ModerationMod) checkfilterPassive(msg *meidov2.DiscordMessage) {
 			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
 				g.Name, dge.MaxWarns, reason))
 		}
-		err = msg.Discord.Sess.GuildBanCreateWithReason(g.ID, msg.Message.Author.ID, reason, 0)
+		err = msg.Discord.Sess.GuildBanCreateWithReason(g.ID, msg.Message.Author.ID, fmt.Sprintf("Acquired %v strikes.", dge.MaxWarns), 0)
 		if err != nil {
 			return
 		}

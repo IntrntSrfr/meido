@@ -90,8 +90,6 @@ func (m *SearchMod) youtubeCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
 	query := strings.Join(msg.Args()[1:], " ")
 	URI, _ := url.Parse("https://www.googleapis.com/youtube/v3/search")
 

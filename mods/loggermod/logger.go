@@ -51,7 +51,6 @@ func (m *LoggerMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *LoggerMod) Hook(b *meidov2.Bot) error {
-	//m.cl = b.CommandLog
 	m.dmLogChannels = b.Config.DmLogChannels
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
@@ -60,7 +59,16 @@ func (m *LoggerMod) Hook(b *meidov2.Bot) error {
 	})
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
-		fmt.Println("loaded: ", g.Guild.Name)
+		b.Discord.Sess.RequestGuildMembers(g.ID, "", 0, false)
+		fmt.Println("loaded: ", g.Guild.Name, g.MemberCount, len(g.Members))
+	})
+
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, mem *discordgo.GuildMemberAdd) {
+		g, err := b.Discord.Guild(mem.GuildID)
+		if err != nil {
+			return
+		}
+		fmt.Println("member joined:", g.Name, mem.User.String())
 	})
 
 	m.passives = append(m.passives, NewForwardDmsPassive(m))
@@ -79,7 +87,7 @@ func NewForwardDmsPassive(m *LoggerMod) *meidov2.ModPassive {
 	return &meidov2.ModPassive{
 		Mod:          m,
 		Name:         "forwarddms",
-		Description:  "forwards all dms sent to channels found in config",
+		Description:  "IGNORE THIS | forwards all dms sent to channels found in config",
 		Enabled:      true,
 		AllowedTypes: meidov2.MessageTypeCreate,
 		Run:          m.forwardDmsPassive,

@@ -2,7 +2,6 @@ package meidov2
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
@@ -147,10 +146,16 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 
 						runCmd := false
 						for _, trig := range cmd.Triggers {
-							if m.Args()[0] == trig {
+							splitTrig := strings.Split(trig, " ")
+
+							if m.LenArgs() < len(splitTrig) {
+								break
+							}
+							if strings.Join(m.Args()[:len(splitTrig)], " ") == trig {
 								runCmd = true
 							}
 						}
+
 						if !runCmd {
 							return
 						}
@@ -160,13 +165,7 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 						}
 
 						if cmd.RequiresOwner {
-							isOwner := false
-							for _, id := range b.Config.OwnerIds {
-								if m.Author.ID == id {
-									isOwner = true
-								}
-							}
-							if !isOwner {
+							if !m.IsOwner() {
 								m.Reply("owner only lol")
 								return
 							}
@@ -195,20 +194,11 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 
 						//check for perms
 						if cmd.RequiredPerms != 0 {
-							uPerms, err := m.Discord.UserChannelPermissions(m.Member, m.Message.ChannelID)
-							if err != nil {
+							if !m.HasPermissions(m.Member, m.Message.ChannelID, cmd.RequiredPerms) {
 								return
 							}
-							if uPerms&cmd.RequiredPerms == 0 && uPerms&discordgo.PermissionAdministrator == 0 {
-								return
-							}
-
-							botPerms, err := m.Discord.Sess.State.UserChannelPermissions(m.Sess.State.User.ID, m.Message.ChannelID)
-							if err != nil {
-								return
-							}
-							if botPerms&cmd.RequiredPerms == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
-								return
+							if cmd.CheckBotPerms {
+								m.Discord.HasPermissions(m.Message.ChannelID, cmd.RequiredPerms)
 							}
 						}
 

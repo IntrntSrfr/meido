@@ -21,6 +21,7 @@ func NewWarnCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
+		CheckBotPerms: true,
 		AllowedTypes:  meidov2.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
@@ -51,7 +52,7 @@ func (m *ModerationMod) warnCommand(msg *meidov2.DiscordMessage) {
 	)
 
 	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Discord.Sess.GuildMember(msg.Message.GuildID, msg.Message.Mentions[0].ID)
+		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
@@ -61,7 +62,7 @@ func (m *ModerationMod) warnCommand(msg *meidov2.DiscordMessage) {
 		if err != nil {
 			return
 		}
-		targetUser, err = msg.Discord.Sess.GuildMember(msg.Message.GuildID, msg.Args()[1])
+		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
 		if err != nil {
 			msg.Reply("that person isnt even here wtf :(")
 			return
@@ -73,9 +74,9 @@ func (m *ModerationMod) warnCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	topUserRole := msg.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
-	topTargetRole := msg.HighestRole(msg.Message.GuildID, targetUser.User.ID)
-	topBotRole := msg.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
+	topUserRole := msg.Discord.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
+	topTargetRole := msg.Discord.HighestRole(msg.Message.GuildID, targetUser.User.ID)
+	topBotRole := msg.Discord.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		msg.Reply("no")
@@ -95,7 +96,7 @@ func (m *ModerationMod) warnCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	g, err := msg.Discord.Sess.State.Guild(msg.Message.GuildID)
+	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("error occurred")
 		return
@@ -117,7 +118,7 @@ func (m *ModerationMod) warnCommand(msg *meidov2.DiscordMessage) {
 			msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v for acquiring %v warns.\nLast warning was: %v",
 				g.Name, dge.MaxWarns, reason))
 		}
-		err = msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, targetUser.User.ID, reason, 0)
+		err = msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, targetUser.User.ID, fmt.Sprintf("Acquired %v strikes.", dge.MaxWarns), 0)
 		if err != nil {
 			msg.Reply(err.Error())
 			return

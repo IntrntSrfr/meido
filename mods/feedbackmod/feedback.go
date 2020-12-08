@@ -83,8 +83,6 @@ func (m *FeedbackMod) ToggleBan(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	//m.cl <- msg
-
 	m.Lock()
 	defer m.Unlock()
 	b, ok := m.bannedUsers[msg.Args()[1]]
@@ -106,8 +104,6 @@ func (m *FeedbackMod) LeaveFeedback(msg *meidov2.DiscordMessage) {
 	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?feedback" {
 		return
 	}
-
-	//m.cl <- msg
 
 	m.Lock()
 	defer m.Unlock()
