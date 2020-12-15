@@ -139,7 +139,7 @@ func NewMonkeyCommand(m *PingMod) *meidov2.ModCommand {
 		AllowedTypes:  meidov2.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
-		Run:           m.fishCommand,
+		Run:           m.monkeyCommand,
 	}
 }
 
