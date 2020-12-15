@@ -52,6 +52,7 @@ func (m *PingMod) Hook(b *meidov2.Bot) error {
 
 	m.RegisterCommand(NewPingCommand(m))
 	m.RegisterCommand(NewFishCommand(m))
+	m.RegisterCommand(NewMonkeyCommand(m))
 
 	return nil
 }
@@ -123,4 +124,28 @@ var fish = []string{"🐟", "🐠", "🐡", "🦈"}
 func (m *PingMod) fishCommand(msg *meidov2.DiscordMessage) {
 	rand.Seed(time.Now().Unix())
 	msg.Reply(fish[rand.Intn(len(fish))])
+}
+
+func NewMonkeyCommand(m *PingMod) *meidov2.ModCommand {
+	return &meidov2.ModCommand{
+		Mod:           m,
+		Name:          "monkey",
+		Description:   "Monkey",
+		Triggers:      []string{"m?monkey", "m?monke"},
+		Usage:         "m?monkey",
+		Cooldown:      0,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.fishCommand,
+	}
+}
+
+var monkeys = []string{"🦧", "🐒", "🐒💨", "🦍"}
+
+func (m *PingMod) monkeyCommand(msg *meidov2.DiscordMessage) {
+	rand.Seed(time.Now().Unix())
+	msg.Reply(monkeys[rand.Intn(len(monkeys))])
 }
