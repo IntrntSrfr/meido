@@ -143,7 +143,7 @@ func NewMonkeyCommand(m *PingMod) *meidov2.ModCommand {
 	}
 }
 
-var monkeys = []string{"🦧", "🐒", "🐒💨", "🔫🐒", "🎷🐒", "\U0001F9FB🖊️🐒", "🦍"}
+var monkeys = []string{"🐒", "🐒💨", "🔫🐒", "🎷🐒", "\U0001F9FB🖊️🐒", "🐒🚿", "🐒\n🚽"}
 
 func (m *PingMod) monkeyCommand(msg *meidov2.DiscordMessage) {
 	rand.Seed(time.Now().Unix())

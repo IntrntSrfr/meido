@@ -19,7 +19,7 @@ func NewFilterWordCommand(m *ModerationMod) *meidov2.ModCommand {
 		Triggers:      []string{"m?fw", "m?filterword"},
 		Usage:         "m?fw jeff",
 		Cooldown:      2,
-		RequiredPerms: 0,
+		RequiredPerms: discordgo.PermissionManageMessages,
 		RequiresOwner: false,
 		AllowedTypes:  meidov2.MessageTypeCreate,
 		AllowDMs:      false,

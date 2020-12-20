@@ -69,7 +69,7 @@ func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.M
 func (m *DiscordMessage) Args() []string {
 	return strings.Fields(strings.ToLower(m.Message.Content))
 }
-func (m *DiscordMessage) Content() []string {
+func (m *DiscordMessage) RawArgs() []string {
 	return strings.Fields(m.Message.Content)
 }
 func (m *DiscordMessage) RawContent() string {
