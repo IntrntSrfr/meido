@@ -17,8 +17,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	_ "github.com/lib/pq"
 )
 
 type UtilityMod struct {

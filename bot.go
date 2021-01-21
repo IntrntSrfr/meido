@@ -10,6 +10,7 @@ import (
 	"time"
 )
 
+// Config is the config struct for the bot.
 type Config struct {
 	Token            string   `json:"token"`
 	OwoToken         string   `json:"owo_token"`
@@ -19,6 +20,7 @@ type Config struct {
 	YouTubeKey       string   `json:"youtube_key"`
 }
 
+// Bot is the main bot struct.
 type Bot struct {
 	Discord    *Discord
 	Config     *Config
@@ -29,23 +31,29 @@ type Bot struct {
 	Cooldowns  CooldownCache
 }
 
+// CooldownCache is a collection of command cooldowns.
 type CooldownCache struct {
 	sync.Mutex
 	m map[string]time.Time
 }
 
+// PermissionCache is yet to be used.
 type PermissionCache struct {
 	sync.Mutex
 	m map[string][]*PermissionSetting
 }
+
+// PermissionSetting is yet to be used.
 type PermissionSetting struct {
 }
 
+// ExecutedCommand is a struct that contains the data of a successfully executed command.
 type ExecutedCommand struct {
 	Msg *DiscordMessage
 	Cmd *ModCommand
 }
 
+// NewBot takes in a Config and returns a pointer to a new Bot
 func NewBot(config *Config) *Bot {
 	d := NewDiscord(config.Token)
 
@@ -60,6 +68,8 @@ func NewBot(config *Config) *Bot {
 	}
 }
 
+// Open sets up the required things the bot needs to run.
+// establishes a PSQL connection and starts listening for commands.
 func (b *Bot) Open() error {
 	msgChan, err := b.Discord.Open()
 	if err != nil {
@@ -83,14 +93,17 @@ func (b *Bot) Open() error {
 	return nil
 }
 
+// Run runs the bot
 func (b *Bot) Run() error {
 	return b.Discord.Run()
 }
 
+// Close attempts to stop the bot.
 func (b *Bot) Close() {
 	b.Discord.Close()
 }
 
+// RegisterMod takes in a Mod and registers it
 func (b *Bot) RegisterMod(mod Mod) {
 	fmt.Println(fmt.Sprintf("registering mod '%s'", mod.Name()))
 	err := mod.Hook(b)
@@ -100,6 +113,7 @@ func (b *Bot) RegisterMod(mod Mod) {
 	b.Mods[mod.Name()] = mod
 }
 
+// listen is the main command handler. It will listen for messages and execute commands accordingly.
 func (b *Bot) listen(msg <-chan *DiscordMessage) {
 	for {
 		select {
@@ -214,6 +228,7 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 	}
 }
 
+// logCommands logs successful command executions.
 func (b *Bot) logCommands() {
 	for {
 		select {
@@ -227,7 +242,8 @@ func (b *Bot) logCommands() {
 	}
 }
 
-// returns if its on cooldown, and the time for the cooldown if any
+// isOnCooldown checks whether a command is on cooldown.
+// Returns the value from the CooldownCache
 func (b *Bot) isOnCooldown(key string) (time.Time, bool) {
 	b.Cooldowns.Lock()
 	defer b.Cooldowns.Unlock()
@@ -235,6 +251,7 @@ func (b *Bot) isOnCooldown(key string) (time.Time, bool) {
 	return t, ok
 }
 
+// setOnCooldown sets a command on cooldown, adding it to the CooldownCache.
 func (b *Bot) setOnCooldown(key string, dur time.Duration) {
 
 	b.Cooldowns.Lock()

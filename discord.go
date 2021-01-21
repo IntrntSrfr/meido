@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Discord represents the part of the bot that deals with interaction with Discord.
 type Discord struct {
 	token    string
 	Sess     *discordgo.Session
@@ -18,6 +19,7 @@ type Discord struct {
 	messageChan chan *DiscordMessage
 }
 
+// NewDiscord takes in a token and creates a Discord object.
 func NewDiscord(token string) *Discord {
 	return &Discord{
 		token:       token,
@@ -25,22 +27,14 @@ func NewDiscord(token string) *Discord {
 	}
 }
 
+// Open populates the Discord object with Sessions and returns a DiscordMessage channel.
 func (d *Discord) Open() (<-chan *DiscordMessage, error) {
-	req, _ := http.NewRequest("GET", "https://discord.com/api/v8/gateway/bot", nil)
-	req.Header.Add("Authorization", "Bot "+d.token)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer res.Body.Close()
 
-	resp := &discordgo.GatewayBotResponse{}
-	err = json.NewDecoder(res.Body).Decode(&resp)
+	shardCount, err := recommendedShards(d.token)
 	if err != nil {
 		panic(err)
 	}
 
-	shardCount := resp.Shards
 	d.Sessions = make([]*discordgo.Session, shardCount)
 
 	for i := 0; i < shardCount; i++ {
@@ -67,6 +61,27 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 	return d.messageChan, nil
 }
 
+// recommendedShards asks discord for the recommended shardcount for the bot given the token.
+// returns -1 if the request does not go well.
+func recommendedShards(token string) (int, error) {
+	req, _ := http.NewRequest("GET", "https://discord.com/api/v8/gateway/bot", nil)
+	req.Header.Add("Authorization", "Bot "+token)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return -1, err
+	}
+	defer res.Body.Close()
+
+	resp := &discordgo.GatewayBotResponse{}
+	err = json.NewDecoder(res.Body).Decode(&resp)
+	if err != nil {
+		return -1, err
+	}
+
+	return resp.Shards, nil
+}
+
+// Run opens the Discord sessions.
 func (d *Discord) Run() error {
 	for _, sess := range d.Sessions {
 		sess.Open()
@@ -74,12 +89,15 @@ func (d *Discord) Run() error {
 	return nil
 }
 
+// Close closes the Discord sessions
 func (d *Discord) Close() {
 	for _, sess := range d.Sessions {
 		sess.Close()
 	}
 }
 
+// onMessageCreate is the handler for the *discordgo.MessageCreate event.
+// It populates a DiscordMessage object and sends it to Discord.messageChan
 func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author == nil || m.Message.Author.Bot {
 		return
@@ -107,6 +125,8 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 	}
 }
 
+// onMessageUpdate is the handler for the *discordgo.MessageUpdate event.
+// It populates a DiscordMessage object and sends it to Discord.messageChan
 func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 	if m.Author == nil || m.Message.Author.Bot {
 		return
@@ -134,6 +154,8 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 	}
 }
 
+// onMessageDelete is the handler for the *discordgo.MessageDelete event.
+// It populates a DiscordMessage object and sends it to Discord.messageChan
 func (d *Discord) onMessageDelete(s *discordgo.Session, m *discordgo.MessageDelete) {
 	d.messageChan <- &DiscordMessage{
 		Sess:         s,
@@ -145,6 +167,7 @@ func (d *Discord) onMessageDelete(s *discordgo.Session, m *discordgo.MessageDele
 	}
 }
 
+// UserChannelPermissionsDirect finds permissions based on the *discordgo.Member object directly
 func (d *Discord) UserChannelPermissionsDirect(m *discordgo.Member, channelID string) (apermissions int, err error) {
 
 	channel, err := d.Channel(channelID)
@@ -165,6 +188,7 @@ func (d *Discord) UserChannelPermissionsDirect(m *discordgo.Member, channelID st
 	return memberPermissions(guild, channel, m), nil
 }
 
+// UserChannelPermissions finds member permissions the usual way, using just the IDs.
 func (d *Discord) UserChannelPermissions(userID, channelID string) (int, error) {
 	var (
 		err         error
@@ -179,6 +203,7 @@ func (d *Discord) UserChannelPermissions(userID, channelID string) (int, error) 
 	return permissions, err
 }
 
+// HasPermissions finds if the bot user has permissions in a channel.
 func (d *Discord) HasPermissions(channelID string, perm int) bool {
 	uPerms, err := d.UserChannelPermissions(d.Sess.State.User.ID, channelID)
 	if err != nil {
@@ -187,6 +212,7 @@ func (d *Discord) HasPermissions(channelID string, perm int) bool {
 	return uPerms&perm != 0 || uPerms&discordgo.PermissionAdministrator != 0
 }
 
+// yoinked from discordgo lol. I dont remember why at this point.
 // Calculates the permissions for a member.
 // https://support.discord.com/hc/en-us/articles/206141927-How-is-the-permission-hierarchy-structured-
 func memberPermissions(guild *discordgo.Guild, channel *discordgo.Channel, member *discordgo.Member) (apermissions int) {
@@ -257,15 +283,17 @@ func memberPermissions(guild *discordgo.Guild, channel *discordgo.Channel, membe
 
 	return apermissions
 }
-func (d *Discord) HighestRole(gid, uid string) int {
+
+// HighestRole finds the highest role a user has in the guild hierarchy.
+func (d *Discord) HighestRole(gid, uid string) *discordgo.Role {
 
 	g, err := d.Guild(gid)
 	if err != nil {
-		return -1
+		return nil
 	}
 	mem, err := d.Member(gid, uid)
 	if err != nil {
-		return -1
+		return nil
 	}
 
 	gRoles := g.Roles
@@ -275,13 +303,24 @@ func (d *Discord) HighestRole(gid, uid string) int {
 	for _, gr := range gRoles {
 		for _, r := range mem.Roles {
 			if r == gr.ID {
-				return gr.Position
+				return gr
 			}
 		}
 	}
 
-	return -1
+	return nil
 }
+
+// HighestRolePosition gets the highest role position a user has in the guild hierarchy.
+func (d *Discord) HighestRolePosition(gid, uid string) int {
+	role := d.HighestRole(gid, uid)
+	if role == nil {
+		return -1
+	}
+	return role.Position
+}
+
+// HighestColor finds the role color for the top-most role where the color is non-zero.
 func (d *Discord) HighestColor(gid, uid string) int {
 
 	g, err := d.Guild(gid)
@@ -311,12 +350,14 @@ func (d *Discord) HighestColor(gid, uid string) int {
 	return 0
 }
 
+// RoleByPos is used to sort discordgo.Roles so that it accurately represents how the hierarchy looks.
 type RoleByPos []*discordgo.Role
 
 func (a RoleByPos) Len() int           { return len(a) }
 func (a RoleByPos) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a RoleByPos) Less(i, j int) bool { return a[i].Position > a[j].Position }
 
+// Guilds returns all the guild objects the bot has in its sessions.
 func (d *Discord) Guilds() []*discordgo.Guild {
 	var guilds []*discordgo.Guild
 	for _, sess := range d.Sessions {
@@ -324,6 +365,8 @@ func (d *Discord) Guilds() []*discordgo.Guild {
 	}
 	return guilds
 }
+
+// Guild takes in an ID and returns a discordgo.Guild if one with that ID exists.
 func (d *Discord) Guild(guildID string) (*discordgo.Guild, error) {
 	var err error
 	for _, sess := range d.Sessions {
@@ -335,6 +378,7 @@ func (d *Discord) Guild(guildID string) (*discordgo.Guild, error) {
 	return nil, err
 }
 
+// Channel takes in an ID and returns a discordgo.Channel if one with that ID exists.
 func (d *Discord) Channel(channelID string) (*discordgo.Channel, error) {
 	var err error
 	for _, sess := range d.Sessions {
@@ -346,6 +390,7 @@ func (d *Discord) Channel(channelID string) (*discordgo.Channel, error) {
 	return nil, err
 }
 
+// Role takes in a guild ID and a role ID and returns a discordgo.Role if one with such IDs exists.
 func (d *Discord) Role(guildID, roleID string) (*discordgo.Role, error) {
 	var err error
 	for _, sess := range d.Sessions {
@@ -357,6 +402,7 @@ func (d *Discord) Role(guildID, roleID string) (*discordgo.Role, error) {
 	return nil, err
 }
 
+// Member takes in a guild ID and a user ID and returns a discordgo.Member if one with such ID exists.
 func (d *Discord) Member(guildID, userID string) (*discordgo.Member, error) {
 	var err error
 	for _, sess := range d.Sessions {
@@ -372,6 +418,8 @@ func (d *Discord) Member(guildID, userID string) (*discordgo.Member, error) {
 	return mem, nil
 }
 
+// IsOwner returns whether the author of a DiscordMessage is a bot owner by checking
+// the IDs in the ownerIDs in the Discord struct.
 func (d *Discord) IsOwner(msg *DiscordMessage) bool {
 	isOwner := false
 	for _, id := range d.ownerIds {
@@ -382,6 +430,7 @@ func (d *Discord) IsOwner(msg *DiscordMessage) bool {
 	return isOwner
 }
 
+// StartTyping makes the bot show as 'typing..' in a channel.
 func (d *Discord) StartTyping(channelID string) error {
 	return d.Sess.ChannelTyping(channelID)
 }

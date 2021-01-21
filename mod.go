@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Mod represents a collection of commands and passives.
 type Mod interface {
 	Name() string
 	Save() error
@@ -17,6 +18,7 @@ type Mod interface {
 	RegisterCommand(*ModCommand)
 }
 
+// ModCommand represents a command for a Mod.
 type ModCommand struct {
 	Mod           Mod
 	Name          string
@@ -33,6 +35,7 @@ type ModCommand struct {
 	Run           func(*DiscordMessage) `json:"-"`
 }
 
+// ModPassive represents a passive for a Mod.
 type ModPassive struct {
 	Mod          Mod
 	Name         string
@@ -42,6 +45,7 @@ type ModPassive struct {
 	Run          func(*DiscordMessage) `json:"-"`
 }
 
+// Min returns the minimum of two numbers. Convenience function.
 func Min(a, b int) int {
 	if a < b {
 		return a
@@ -49,6 +53,7 @@ func Min(a, b int) int {
 	return b
 }
 
+// Max returns the maximum of two numbers. Convenience function.
 func Max(a, b int) int {
 	if a > b {
 		return a
@@ -56,6 +61,7 @@ func Max(a, b int) int {
 	return b
 }
 
+// Clamp clamps a number between a lower and upper limit. Convenience function.
 func Clamp(lower, upper, n int) int {
 	return Max(lower, Min(upper, n))
 }

@@ -208,9 +208,9 @@ func (m *ModerationMod) banCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	topUserRole := msg.Discord.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
-	topTargetRole := msg.Discord.HighestRole(msg.Message.GuildID, targetUser.ID)
-	topBotRole := msg.Discord.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
+	topUserRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Message.Author.ID)
+	topTargetRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, targetUser.ID)
+	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		msg.Reply("no")
@@ -417,9 +417,9 @@ func (m *ModerationMod) kickCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	topUserRole := msg.Discord.HighestRole(msg.Message.GuildID, msg.Message.Author.ID)
-	topTargetRole := msg.Discord.HighestRole(msg.Message.GuildID, targetUser.User.ID)
-	topBotRole := msg.Discord.HighestRole(msg.Message.GuildID, msg.Sess.State.User.ID)
+	topUserRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Message.Author.ID)
+	topTargetRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, targetUser.User.ID)
+	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		msg.Reply("no")
