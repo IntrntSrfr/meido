@@ -38,5 +38,6 @@ Some ideas for more features include:
 * Gambling 
 * XP and level system (maybe, as there are already tons of other bots with this feature)
 * Autoroles
+* Logging
 
 Ideas for other features are more than welcome!
