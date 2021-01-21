@@ -120,7 +120,7 @@ func NewFishCommand(m *PingMod) *meidov2.ModCommand {
 }
 
 var fish = []string{
-	"You got a - 🐟",
+	"You got a common - 🐟",
 	"You got an uncommon - 🐠",
 	"Ohhh, you got a rare! - 🐡",
 	"Woah! you got a super rare! - 🦈",
