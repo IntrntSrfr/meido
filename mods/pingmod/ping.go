@@ -119,11 +119,33 @@ func NewFishCommand(m *PingMod) *meidov2.ModCommand {
 	}
 }
 
-var fish = []string{"🐟", "🐠", "🐡", "🦈"}
+var fish = []string{
+	"You got a - 🐟",
+	"You got an uncommon - 🐠",
+	"Ohhh, you got a rare! - 🐡",
+	"Woah! you got a super rare! - 🦈",
+	"YOO YOU GOT A LEGENDARY SAXOPHONE SHARK! - 🎷🦈",
+}
 
 func (m *PingMod) fishCommand(msg *meidov2.DiscordMessage) {
 	rand.Seed(time.Now().Unix())
-	msg.Reply(fish[rand.Intn(len(fish))])
+
+	pick := rand.Intn(1000) + 1
+
+	var fp string
+	if pick <= 800 {
+		fp = fish[0]
+	} else if pick <= 940 {
+		fp = fish[1]
+	} else if pick <= 990 {
+		fp = fish[2]
+	} else if pick <= 999 {
+		fp = fish[3]
+	} else {
+		fp = fish[4]
+	}
+
+	msg.Reply(fp)
 }
 
 func NewMonkeyCommand(m *PingMod) *meidov2.ModCommand {
