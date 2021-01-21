@@ -318,7 +318,7 @@ func (m *ModerationMod) checkfilterPassive(msg *meidov2.DiscordMessage) {
 			return
 		}
 
-		_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
+		_, _ = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
 			cu.ID, time.Now(), g.ID, msg.Message.Author.ID)
 
 		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", msg.Message.Author.Mention()))

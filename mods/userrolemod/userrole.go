@@ -284,7 +284,7 @@ func (m *UserRoleMod) myroleCommand(msg *meidov2.DiscordMessage) {
 					msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Missing permissions.", Color: 0xC80000})
 					return
 				}
-				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occured: `" + err.Error() + "`.", Color: 0xC80000})
+				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error() + "`.", Color: 0xC80000})
 				return
 			}
 
@@ -312,7 +312,7 @@ func (m *UserRoleMod) myroleCommand(msg *meidov2.DiscordMessage) {
 
 			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, oldRole.Name, int(color), oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
 			if err != nil {
-				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occured: `" + err.Error(), Color: 0xC80000})
+				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error(), Color: 0xC80000})
 				return
 			}
 

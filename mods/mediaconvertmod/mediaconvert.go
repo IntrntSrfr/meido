@@ -1,19 +1,22 @@
 package mediaconvertmod
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meidov2"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os/exec"
 	"path/filepath"
 	"sync"
 )
 
 type MediaConvertMod struct {
 	sync.Mutex
-	name string
-	//cl           chan *meidov2.DiscordMessage
-	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
+	name         string
+	commands     map[string]*meidov2.ModCommand
 	passives     []*meidov2.ModPassive
 	allowedTypes meidov2.MessageType
 	allowDMs     bool
@@ -53,6 +56,7 @@ func (m *MediaConvertMod) AllowDMs() bool {
 func (m *MediaConvertMod) Hook(b *meidov2.Bot) error {
 	//m.cl = b.CommandLog
 
+	//m.RegisterCommand(NewMediaConvertCommand(m))
 	m.passives = append(m.passives, NewJpgLargeConvertPassive(m))
 
 	return nil
@@ -134,4 +138,68 @@ func (m *MediaConvertMod) mediaconvertCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
+	msg.Discord.StartTyping(msg.Message.ChannelID)
+
+	// m?mediaconvert link format
+
+	format := msg.Args()[2]
+
+	if format != "mp4" {
+		msg.Reply("invalid format")
+		return
+	}
+
+	src, err := http.Get(msg.RawArgs()[1])
+	if err != nil {
+		fmt.Println(err)
+		msg.Reply("invalid link")
+		return
+	}
+	defer src.Body.Close()
+
+	fmt.Println(src.StatusCode)
+	if src.StatusCode != 200 {
+		msg.Reply("invalid link")
+		return
+	}
+
+	p, _ := ioutil.ReadAll(src.Body)
+	if http.DetectContentType(p) != "video/webm" {
+		msg.Reply("link is not webm")
+		return
+	}
+
+	if len(p) > 1024*(1024*6) {
+		msg.Reply("file too large")
+		return
+	}
+
+	inp := &bytes.Buffer{}
+	inp.Write(p)
+
+	msg.Reply("this might take a while")
+
+	cmd := exec.Command("ffmpeg", "-i", "pipe:0", "-f", "mp4", "-movflags", "frag_keyframe", "pipe:1")
+	//cmd := exec.Command("ffmpeg", "-i", "pipe:0", "-f", "mp4", "pipe:1")
+	stdin, _ := cmd.StdinPipe()
+	stdout, _ := cmd.StdoutPipe()
+	cmd.Start()
+
+	go func() {
+		defer stdin.Close()
+		io.Copy(stdin, inp)
+	}()
+
+	var out bytes.Buffer
+	io.Copy(&out, stdout)
+
+	cmd.Wait()
+
+	fmt.Println(out.Len())
+
+	if out.Len() > 1024*(1024*8) {
+		msg.Reply("file too large")
+	}
+
+	msg.Discord.Sess.ChannelFileSend(msg.Message.ChannelID, "video.mp4", &out)
 }
