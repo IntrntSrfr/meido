@@ -2,6 +2,9 @@
 
 # Meido
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/intrntsrfr/meidov2)](https://goreportcard.com/report/github.com/intrntsrfr/meidov2)
+[![Go Reference](https://pkg.go.dev/badge/github.com/intrntsrfr/meidov2.svg)](https://pkg.go.dev/github.com/intrntsrfr/meidov2)
+
 A multi-purpose Discord Bot
 
 [Invite Meido to your server!](https://discordapp.com/oauth2/authorize?client_id=394162399348785152&scope=bot)
