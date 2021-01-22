@@ -50,6 +50,8 @@ func (m *PingMod) AllowDMs() bool {
 func (m *PingMod) Hook(b *meidov2.Bot) error {
 	//m.cl = b.CommandLog
 
+	rand.Seed(time.Now().Unix())
+
 	m.RegisterCommand(NewPingCommand(m))
 	m.RegisterCommand(NewFishCommand(m))
 	m.RegisterCommand(NewMonkeyCommand(m))
@@ -109,7 +111,8 @@ func NewFishCommand(m *PingMod) *meidov2.ModCommand {
 		Description:   "Fish",
 		Triggers:      []string{"m?fish"},
 		Usage:         "m?fish",
-		Cooldown:      0,
+		Cooldown:      2,
+		CooldownUser:  true,
 		RequiredPerms: 0,
 		RequiresOwner: false,
 		AllowedTypes:  meidov2.MessageTypeCreate,
@@ -128,8 +131,6 @@ var fish = []string{
 }
 
 func (m *PingMod) fishCommand(msg *meidov2.DiscordMessage) {
-	rand.Seed(time.Now().Unix())
-
 	pick := rand.Intn(1000) + 1
 
 	var fp string
@@ -140,9 +141,9 @@ func (m *PingMod) fishCommand(msg *meidov2.DiscordMessage) {
 	} else if pick <= 990 {
 		fp = fish[2]
 	} else if pick <= 999 {
-		fp = fish[3]
+		fp = fmt.Sprintf("%v, %v", msg.Author.Mention(), fish[3])
 	} else {
-		fp = fish[4]
+		fp = fmt.Sprintf("%v, %v", msg.Author.Mention(), fish[4])
 	}
 
 	msg.Reply(fp)

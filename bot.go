@@ -189,7 +189,12 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 						// may be based on user level, roles, channel etc..
 
 						// check if command for channel is on cooldown
-						key := fmt.Sprintf("%v:%v", m.Message.ChannelID, cmd.Name)
+						key := ""
+						if cmd.CooldownUser {
+							key = fmt.Sprintf("%v:%v", m.Message.Author.ID, cmd.Name)
+						} else {
+							key = fmt.Sprintf("%v:%v", m.Message.ChannelID, cmd.Name)
+						}
 						if t, ok := b.isOnCooldown(key); ok {
 							// if on cooldown, we know its for this command so we can break out and go next
 							cdMsg, err := m.Reply(fmt.Sprintf("on cooldown for another %v", time.Until(t)))

@@ -26,6 +26,7 @@ type ModCommand struct {
 	Triggers      []string
 	Usage         string
 	Cooldown      int
+	CooldownUser  bool
 	RequiredPerms int
 	RequiresOwner bool
 	CheckBotPerms bool
