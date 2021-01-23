@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
-	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meido"
 	"github.com/jmoiron/sqlx"
 	"image"
 	"image/color"
@@ -22,19 +22,19 @@ import (
 type UtilityMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*meidov2.ModCommand
+	commands     map[string]*meido.ModCommand
 	startTime    time.Time
 	db           *sqlx.DB
-	allowedTypes meidov2.MessageType
+	allowedTypes meido.MessageType
 	allowDMs     bool
 }
 
-func New(name string) meidov2.Mod {
+func New(name string) meido.Mod {
 	return &UtilityMod{
 		startTime:    time.Now(),
 		name:         name,
-		commands:     make(map[string]*meidov2.ModCommand),
-		allowedTypes: meidov2.MessageTypeCreate,
+		commands:     make(map[string]*meido.ModCommand),
+		allowedTypes: meido.MessageTypeCreate,
 		allowDMs:     true,
 	}
 }
@@ -48,19 +48,19 @@ func (m *UtilityMod) Save() error {
 func (m *UtilityMod) Load() error {
 	return nil
 }
-func (m *UtilityMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
+func (m *UtilityMod) Passives() []*meido.ModPassive {
+	return []*meido.ModPassive{}
 }
-func (m *UtilityMod) Commands() map[string]*meidov2.ModCommand {
+func (m *UtilityMod) Commands() map[string]*meido.ModCommand {
 	return m.commands
 }
-func (m *UtilityMod) AllowedTypes() meidov2.MessageType {
+func (m *UtilityMod) AllowedTypes() meido.MessageType {
 	return m.allowedTypes
 }
 func (m *UtilityMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *UtilityMod) Hook(b *meidov2.Bot) error {
+func (m *UtilityMod) Hook(b *meido.Bot) error {
 	//m.cl = b.CommandLog
 	m.db = b.DB
 
@@ -107,6 +107,7 @@ func (m *UtilityMod) Hook(b *meidov2.Bot) error {
 	m.RegisterCommand(NewAvatarCommand(m))
 	m.RegisterCommand(NewAboutCommand(m))
 	m.RegisterCommand(NewServerCommand(m))
+	m.RegisterCommand(NewServerAvatarCommand(m))
 	m.RegisterCommand(NewServerBannerCommand(m))
 	m.RegisterCommand(NewServerSplashCommand(m))
 	m.RegisterCommand(NewColorCommand(m))
@@ -116,7 +117,7 @@ func (m *UtilityMod) Hook(b *meidov2.Bot) error {
 
 	return nil
 }
-func (m *UtilityMod) RegisterCommand(cmd *meidov2.ModCommand) {
+func (m *UtilityMod) RegisterCommand(cmd *meido.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -125,8 +126,8 @@ func (m *UtilityMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewAvatarCommand(m *UtilityMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewAvatarCommand(m *UtilityMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "avatar",
 		Description:   "Displays profile picture of user or mentioned user",
@@ -135,14 +136,14 @@ func NewAvatarCommand(m *UtilityMod) *meidov2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.avatarCommand,
 	}
 }
 
-func (m *UtilityMod) avatarCommand(msg *meidov2.DiscordMessage) {
+func (m *UtilityMod) avatarCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -189,8 +190,8 @@ func (m *UtilityMod) avatarCommand(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func NewServerCommand(m *UtilityMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewServerCommand(m *UtilityMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "server",
 		Description:   "Displays information about the server",
@@ -199,14 +200,14 @@ func NewServerCommand(m *UtilityMod) *meidov2.ModCommand {
 		Cooldown:      10,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.serverCommand,
 	}
 }
 
-func (m *UtilityMod) serverCommand(msg *meidov2.DiscordMessage) {
+func (m *UtilityMod) serverCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -245,7 +246,7 @@ func (m *UtilityMod) serverCommand(msg *meidov2.DiscordMessage) {
 		return
 	}
 
-	ts := meidov2.IDToTimestamp(g.ID)
+	ts := meido.IDToTimestamp(g.ID)
 	dur := time.Since(ts)
 
 	embed := discordgo.MessageEmbed{
@@ -290,8 +291,8 @@ func (m *UtilityMod) serverCommand(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(&embed)
 }
 
-func NewAboutCommand(m *UtilityMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewAboutCommand(m *UtilityMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "about",
 		Description:   "Displays Meido statistics",
@@ -301,13 +302,13 @@ func NewAboutCommand(m *UtilityMod) *meidov2.ModCommand {
 		RequiredPerms: 0,
 		RequiresOwner: false,
 		AllowDMs:      true,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		Enabled:       true,
 		Run:           m.aboutCommand,
 	}
 }
 
-func (m *UtilityMod) aboutCommand(msg *meidov2.DiscordMessage) {
+func (m *UtilityMod) aboutCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -388,8 +389,8 @@ func (m *UtilityMod) aboutCommand(msg *meidov2.DiscordMessage) {
 	})
 }
 
-func NewServerSplashCommand(m *UtilityMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewServerSplashCommand(m *UtilityMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "serversplash",
 		Description:   "Displays server splash if one exists",
@@ -398,13 +399,13 @@ func NewServerSplashCommand(m *UtilityMod) *meidov2.ModCommand {
 		Cooldown:      5,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.serverSplashCommand,
 	}
 }
-func (m *UtilityMod) serverSplashCommand(msg *meidov2.DiscordMessage) {
+func (m *UtilityMod) serverSplashCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -428,9 +429,49 @@ func (m *UtilityMod) serverSplashCommand(msg *meidov2.DiscordMessage) {
 	}
 	msg.ReplyEmbed(embed)
 }
+func NewServerAvatarCommand(m *UtilityMod) *meido.ModCommand {
+	return &meido.ModCommand{
+		Mod:           m,
+		Name:          "serveravatar",
+		Description:   "Displays server avatar if one exists",
+		Triggers:      []string{"m?serveravatar", "m?servericon"},
+		Usage:         "m?servericon",
+		Cooldown:      5,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meido.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           m.serverIconCommand,
+	}
+}
+func (m *UtilityMod) serverIconCommand(msg *meido.DiscordMessage) {
+	if msg.LenArgs() < 1 {
+		return
+	}
 
-func NewServerBannerCommand(m *UtilityMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+	g, err := msg.Discord.Guild(msg.Message.GuildID)
+	if err != nil {
+		return
+	}
+
+	if g.Icon == "" {
+		msg.Reply("this server has no avatar")
+		return
+	}
+
+	embed := &discordgo.MessageEmbed{
+		Title: g.Name,
+		Color: 0xFFFFFF,
+		Image: &discordgo.MessageEmbedImage{
+			URL: fmt.Sprintf("%v?size=2048", g.IconURL()),
+		},
+	}
+	msg.ReplyEmbed(embed)
+}
+
+func NewServerBannerCommand(m *UtilityMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "serverbanner",
 		Description:   "Displays server banner if one exists",
@@ -439,13 +480,13 @@ func NewServerBannerCommand(m *UtilityMod) *meidov2.ModCommand {
 		Cooldown:      5,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.serverBannerCommand,
 	}
 }
-func (m *UtilityMod) serverBannerCommand(msg *meidov2.DiscordMessage) {
+func (m *UtilityMod) serverBannerCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -470,8 +511,8 @@ func (m *UtilityMod) serverBannerCommand(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewColorCommand(m *UtilityMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewColorCommand(m *UtilityMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "color",
 		Description:   "Displays a hex color",
@@ -480,13 +521,13 @@ func NewColorCommand(m *UtilityMod) *meidov2.ModCommand {
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.colorCommand,
 	}
 }
-func (m *UtilityMod) colorCommand(msg *meidov2.DiscordMessage) {
+func (m *UtilityMod) colorCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -525,8 +566,8 @@ func (m *UtilityMod) colorCommand(msg *meidov2.DiscordMessage) {
 	msg.Sess.ChannelFileSend(msg.Message.ChannelID, "color.png", buf)
 }
 
-func NewInviteCommand(m *UtilityMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewInviteCommand(m *UtilityMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "invite",
 		Description:   "Sends an invite link for Meido, as well as support server",
@@ -535,20 +576,20 @@ func NewInviteCommand(m *UtilityMod) *meidov2.ModCommand {
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.inviteCommand,
 	}
 }
-func (m *UtilityMod) inviteCommand(msg *meidov2.DiscordMessage) {
+func (m *UtilityMod) inviteCommand(msg *meido.DiscordMessage) {
 	botLink := "<https://discordapp.com/oauth2/authorize?client_id=394162399348785152&scope=bot>"
 	serverLink := "https://discord.gg/KgMEGK3"
 	msg.Reply(fmt.Sprintf("Invite me to your server: %v\nSupport server: %v", botLink, serverLink))
 }
 
-func NewUserPermsCommand(m *UtilityMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewUserPermsCommand(m *UtilityMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "userperms",
 		Description:   "Displays what permissions a user has in the current channel",
@@ -557,14 +598,14 @@ func NewUserPermsCommand(m *UtilityMod) *meidov2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.userpermsCommand,
 	}
 }
 
-func (m *UtilityMod) userpermsCommand(msg *meidov2.DiscordMessage) {
+func (m *UtilityMod) userpermsCommand(msg *meido.DiscordMessage) {
 
 	var (
 		err        error
@@ -598,7 +639,7 @@ func (m *UtilityMod) userpermsCommand(msg *meidov2.DiscordMessage) {
 	sb := strings.Builder{}
 	sb.WriteString("```\n")
 	sb.WriteString(fmt.Sprintf("perm binary: %032b\n\n", uPerms))
-	for k, v := range meidov2.PermMap {
+	for k, v := range meido.PermMap {
 		if k == 0 {
 			continue
 		}
@@ -614,8 +655,8 @@ func (m *UtilityMod) userpermsCommand(msg *meidov2.DiscordMessage) {
 	msg.Reply(sb.String())
 }
 
-func NewUserInfoCommand(m *UtilityMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewUserInfoCommand(m *UtilityMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "userinfo",
 		Description:   "Displays information about a user",
@@ -624,13 +665,13 @@ func NewUserInfoCommand(m *UtilityMod) *meidov2.ModCommand {
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.userinfoCommand,
 	}
 }
-func (m *UtilityMod) userinfoCommand(msg *meidov2.DiscordMessage) {
+func (m *UtilityMod) userinfoCommand(msg *meido.DiscordMessage) {
 
 	var (
 		targetUser   *discordgo.User
@@ -661,7 +702,7 @@ func (m *UtilityMod) userinfoCommand(msg *meidov2.DiscordMessage) {
 		targetUser = targetMember.User
 	}
 
-	createTs := meidov2.IDToTimestamp(targetUser.ID)
+	createTs := meido.IDToTimestamp(targetUser.ID)
 	createDur := time.Since(createTs)
 
 	emb := &discordgo.MessageEmbed{

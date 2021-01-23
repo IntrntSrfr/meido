@@ -3,7 +3,7 @@ package googlemod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meido"
 	"strings"
 	"sync"
 	"time"
@@ -11,12 +11,11 @@ import (
 
 type GoogleMod struct {
 	sync.Mutex
-	name string
-	//cl                chan *meidov2.DiscordMessage
-	commands          map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
+	name              string
+	commands          map[string]*meido.ModCommand
 	activeImgSearches map[string]*ImageSearch
 	deleteImgCh       chan string
-	allowedTypes      meidov2.MessageType
+	allowedTypes      meido.MessageType
 	allowDMs          bool
 }
 
@@ -28,13 +27,13 @@ type ImageSearch struct {
 	CurrentImage int
 }
 
-func New(n string) meidov2.Mod {
+func New(n string) meido.Mod {
 	return &GoogleMod{
 		name:              n,
-		commands:          make(map[string]*meidov2.ModCommand),
+		commands:          make(map[string]*meido.ModCommand),
 		activeImgSearches: make(map[string]*ImageSearch),
 		deleteImgCh:       make(chan string),
-		allowedTypes:      meidov2.MessageTypeCreate,
+		allowedTypes:      meido.MessageTypeCreate,
 		allowDMs:          true,
 	}
 }
@@ -48,20 +47,19 @@ func (m *GoogleMod) Save() error {
 func (m *GoogleMod) Load() error {
 	return nil
 }
-func (m *GoogleMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
+func (m *GoogleMod) Passives() []*meido.ModPassive {
+	return []*meido.ModPassive{}
 }
-func (m *GoogleMod) Commands() map[string]*meidov2.ModCommand {
+func (m *GoogleMod) Commands() map[string]*meido.ModCommand {
 	return m.commands
 }
-func (m *GoogleMod) AllowedTypes() meidov2.MessageType {
+func (m *GoogleMod) AllowedTypes() meido.MessageType {
 	return m.allowedTypes
 }
 func (m *GoogleMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *GoogleMod) Hook(b *meidov2.Bot) error {
-	//m.cl = b.CommandLog
+func (m *GoogleMod) Hook(b *meido.Bot) error {
 
 	go func() {
 		for {
@@ -81,7 +79,7 @@ func (m *GoogleMod) Hook(b *meidov2.Bot) error {
 
 	return nil
 }
-func (m *GoogleMod) RegisterCommand(cmd *meidov2.ModCommand) {
+func (m *GoogleMod) RegisterCommand(cmd *meido.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -90,8 +88,8 @@ func (m *GoogleMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func (m *GoogleMod) Message(msg *meidov2.DiscordMessage) {
-	if msg.Type != meidov2.MessageTypeCreate {
+func (m *GoogleMod) Message(msg *meido.DiscordMessage) {
+	if msg.Type != meido.MessageTypeCreate {
 		return
 	}
 	for _, c := range m.commands {
@@ -99,8 +97,8 @@ func (m *GoogleMod) Message(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func NewImageCommand(m *GoogleMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewImageCommand(m *GoogleMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "image",
 		Description:   "Search for an image",
@@ -109,14 +107,14 @@ func NewImageCommand(m *GoogleMod) *meidov2.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.googleCommand,
 	}
 }
 
-func (m *GoogleMod) googleCommand(msg *meidov2.DiscordMessage) {
+func (m *GoogleMod) googleCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

@@ -2,22 +2,23 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/intrntsrfr/meidov2"
-	"github.com/intrntsrfr/meidov2/mods/googlemod"
-	"github.com/intrntsrfr/meidov2/mods/helpmod"
-	"github.com/intrntsrfr/meidov2/mods/loggermod"
-	"github.com/intrntsrfr/meidov2/mods/mediaconvertmod"
-	"github.com/intrntsrfr/meidov2/mods/moderationmod"
-	"github.com/intrntsrfr/meidov2/mods/pingmod"
-	"github.com/intrntsrfr/meidov2/mods/searchmod"
-	"github.com/intrntsrfr/meidov2/mods/userrolemod"
-	"github.com/intrntsrfr/meidov2/mods/utilitymod"
+	"github.com/intrntsrfr/meido"
+	"github.com/intrntsrfr/meido/mods/googlemod"
+	"github.com/intrntsrfr/meido/mods/helpmod"
+	"github.com/intrntsrfr/meido/mods/loggermod"
+	"github.com/intrntsrfr/meido/mods/mediaconvertmod"
+	"github.com/intrntsrfr/meido/mods/moderationmod"
+	"github.com/intrntsrfr/meido/mods/pingmod"
+	"github.com/intrntsrfr/meido/mods/searchmod"
+	"github.com/intrntsrfr/meido/mods/userrolemod"
+	"github.com/intrntsrfr/meido/mods/utilitymod"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	_ "github.com/lib/pq"
 	_ "net/http/pprof"
 )
 
@@ -29,12 +30,12 @@ func main() {
 	if err != nil {
 		panic("config file not found")
 	}
-	var config *meidov2.Config
+	var config *meido.Config
 	err = json.Unmarshal(file, &config)
 	if err != nil {
 		panic("mangled config file, fix it")
 	}
-	bot := meidov2.NewBot(config)
+	bot := meido.NewBot(config)
 	err = bot.Open()
 	if err != nil {
 		panic(err)

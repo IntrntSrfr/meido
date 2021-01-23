@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meido"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,18 +16,18 @@ import (
 type MediaConvertMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*meidov2.ModCommand
-	passives     []*meidov2.ModPassive
-	allowedTypes meidov2.MessageType
+	commands     map[string]*meido.ModCommand
+	passives     []*meido.ModPassive
+	allowedTypes meido.MessageType
 	allowDMs     bool
 }
 
-func New(n string) meidov2.Mod {
+func New(n string) meido.Mod {
 	return &MediaConvertMod{
 		name:         n,
-		commands:     make(map[string]*meidov2.ModCommand),
-		passives:     []*meidov2.ModPassive{},
-		allowedTypes: meidov2.MessageTypeCreate,
+		commands:     make(map[string]*meido.ModCommand),
+		passives:     []*meido.ModPassive{},
+		allowedTypes: meido.MessageTypeCreate,
 		allowDMs:     true,
 	}
 }
@@ -41,27 +41,26 @@ func (m *MediaConvertMod) Save() error {
 func (m *MediaConvertMod) Load() error {
 	return nil
 }
-func (m *MediaConvertMod) Passives() []*meidov2.ModPassive {
+func (m *MediaConvertMod) Passives() []*meido.ModPassive {
 	return m.passives
 }
-func (m *MediaConvertMod) Commands() map[string]*meidov2.ModCommand {
+func (m *MediaConvertMod) Commands() map[string]*meido.ModCommand {
 	return m.commands
 }
-func (m *MediaConvertMod) AllowedTypes() meidov2.MessageType {
+func (m *MediaConvertMod) AllowedTypes() meido.MessageType {
 	return m.allowedTypes
 }
 func (m *MediaConvertMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *MediaConvertMod) Hook(b *meidov2.Bot) error {
-	//m.cl = b.CommandLog
+func (m *MediaConvertMod) Hook(b *meido.Bot) error {
 
 	//m.RegisterCommand(NewMediaConvertCommand(m))
 	m.passives = append(m.passives, NewJpgLargeConvertPassive(m))
 
 	return nil
 }
-func (m *MediaConvertMod) RegisterCommand(cmd *meidov2.ModCommand) {
+func (m *MediaConvertMod) RegisterCommand(cmd *meido.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -70,18 +69,18 @@ func (m *MediaConvertMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewJpgLargeConvertPassive(m *MediaConvertMod) *meidov2.ModPassive {
-	return &meidov2.ModPassive{
+func NewJpgLargeConvertPassive(m *MediaConvertMod) *meido.ModPassive {
+	return &meido.ModPassive{
 		Mod:          m,
 		Name:         "jpglargeconvert",
 		Description:  "Automatically converts jpglarge files to jpg",
-		AllowedTypes: meidov2.MessageTypeCreate,
+		AllowedTypes: meido.MessageTypeCreate,
 		Enabled:      true,
 		Run:          m.jpglargeconvertPassive,
 	}
 }
 
-func (m *MediaConvertMod) jpglargeconvertPassive(msg *meidov2.DiscordMessage) {
+func (m *MediaConvertMod) jpglargeconvertPassive(msg *meido.DiscordMessage) {
 	if len(msg.Message.Attachments) < 1 {
 		return
 	}
@@ -116,8 +115,8 @@ func (m *MediaConvertMod) jpglargeconvertPassive(msg *meidov2.DiscordMessage) {
 	})
 }
 
-func NewMediaConvertCommand(m *MediaConvertMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewMediaConvertCommand(m *MediaConvertMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "mediaconvert",
 		Description:   "Converts some media files from one format to another",
@@ -126,14 +125,14 @@ func NewMediaConvertCommand(m *MediaConvertMod) *meidov2.ModCommand {
 		Cooldown:      30,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.mediaconvertCommand,
 	}
 }
 
-func (m *MediaConvertMod) mediaconvertCommand(msg *meidov2.DiscordMessage) {
+func (m *MediaConvertMod) mediaconvertCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 3 {
 		return
 	}

@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meido"
 	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
 	"strconv"
@@ -15,20 +15,19 @@ import (
 
 type UserRoleMod struct {
 	sync.Mutex
-	name string
-	//cl           chan *meidov2.DiscordMessage
-	commands     map[string]*meidov2.ModCommand
+	name         string
+	commands     map[string]*meido.ModCommand
 	db           *sqlx.DB
 	owo          *owo.Client
-	allowedTypes meidov2.MessageType
+	allowedTypes meido.MessageType
 	allowDMs     bool
 }
 
-func New(name string) meidov2.Mod {
+func New(name string) meido.Mod {
 	return &UserRoleMod{
 		name:         name,
-		commands:     make(map[string]*meidov2.ModCommand),
-		allowedTypes: meidov2.MessageTypeCreate,
+		commands:     make(map[string]*meido.ModCommand),
+		allowedTypes: meido.MessageTypeCreate,
 		allowDMs:     false,
 	}
 }
@@ -41,20 +40,19 @@ func (m *UserRoleMod) Save() error {
 func (m *UserRoleMod) Load() error {
 	return nil
 }
-func (m *UserRoleMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
+func (m *UserRoleMod) Passives() []*meido.ModPassive {
+	return []*meido.ModPassive{}
 }
-func (m *UserRoleMod) Commands() map[string]*meidov2.ModCommand {
+func (m *UserRoleMod) Commands() map[string]*meido.ModCommand {
 	return m.commands
 }
-func (m *UserRoleMod) AllowedTypes() meidov2.MessageType {
+func (m *UserRoleMod) AllowedTypes() meido.MessageType {
 	return m.allowedTypes
 }
 func (m *UserRoleMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *UserRoleMod) Hook(b *meidov2.Bot) error {
-	//m.cl = b.CommandLog
+func (m *UserRoleMod) Hook(b *meido.Bot) error {
 	m.db = b.DB
 	m.owo = b.Owo
 
@@ -103,7 +101,7 @@ func (m *UserRoleMod) Hook(b *meidov2.Bot) error {
 
 	return nil
 }
-func (m *UserRoleMod) RegisterCommand(cmd *meidov2.ModCommand) {
+func (m *UserRoleMod) RegisterCommand(cmd *meido.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -112,8 +110,8 @@ func (m *UserRoleMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewSetUserRoleCommand(m *UserRoleMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewSetUserRoleCommand(m *UserRoleMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "setuserrole",
 		Description:   "Binds, unbinds or changes a userrole bind to a user",
@@ -122,14 +120,14 @@ func NewSetUserRoleCommand(m *UserRoleMod) *meidov2.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: discordgo.PermissionManageRoles,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.setuserroleCommand,
 	}
 }
 
-func (m *UserRoleMod) setuserroleCommand(msg *meidov2.DiscordMessage) {
+func (m *UserRoleMod) setuserroleCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 3 {
 		return
 	}
@@ -200,8 +198,8 @@ func (m *UserRoleMod) setuserroleCommand(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func NewMyRoleCommand(m *UserRoleMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewMyRoleCommand(m *UserRoleMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "myrole",
 		Description:   "Displays a users bound role, or lets the user change the name or color of their bound role",
@@ -210,14 +208,14 @@ func NewMyRoleCommand(m *UserRoleMod) *meidov2.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.myroleCommand,
 	}
 }
 
-func (m *UserRoleMod) myroleCommand(msg *meidov2.DiscordMessage) {
+func (m *UserRoleMod) myroleCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -395,8 +393,8 @@ func (m *UserRoleMod) myroleCommand(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewListUserRolesCommand(m *UserRoleMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewListUserRolesCommand(m *UserRoleMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "listuserroles",
 		Description:   "Returns a list of the user roles that are in the server, displays if some users still are in the server or not",
@@ -405,14 +403,14 @@ func NewListUserRolesCommand(m *UserRoleMod) *meidov2.ModCommand {
 		Cooldown:      30,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.listuserrolesCommand,
 	}
 }
 
-func (m *UserRoleMod) listuserrolesCommand(msg *meidov2.DiscordMessage) {
+func (m *UserRoleMod) listuserrolesCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() != 1 {
 		return
 	}

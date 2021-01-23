@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meido"
 	"github.com/jmoiron/sqlx"
 	"strconv"
 	"strings"
@@ -14,20 +14,19 @@ import (
 
 type ModerationMod struct {
 	sync.Mutex
-	name string
-	//cl   chan *meidov2.DiscordMessage
-	commands     map[string]*meidov2.ModCommand
-	passives     []*meidov2.ModPassive
+	name         string
+	commands     map[string]*meido.ModCommand
+	passives     []*meido.ModPassive
 	db           *sqlx.DB
-	allowedTypes meidov2.MessageType
+	allowedTypes meido.MessageType
 	allowDMs     bool
 }
 
-func New(name string) meidov2.Mod {
+func New(name string) meido.Mod {
 	return &ModerationMod{
 		name:         name,
-		commands:     make(map[string]*meidov2.ModCommand),
-		allowedTypes: meidov2.MessageTypeCreate | meidov2.MessageTypeUpdate,
+		commands:     make(map[string]*meido.ModCommand),
+		allowedTypes: meido.MessageTypeCreate | meido.MessageTypeUpdate,
 		allowDMs:     false,
 	}
 }
@@ -41,20 +40,19 @@ func (m *ModerationMod) Save() error {
 func (m *ModerationMod) Load() error {
 	return nil
 }
-func (m *ModerationMod) Passives() []*meidov2.ModPassive {
+func (m *ModerationMod) Passives() []*meido.ModPassive {
 	return m.passives
 }
-func (m *ModerationMod) Commands() map[string]*meidov2.ModCommand {
+func (m *ModerationMod) Commands() map[string]*meido.ModCommand {
 	return m.commands
 }
-func (m *ModerationMod) AllowedTypes() meidov2.MessageType {
+func (m *ModerationMod) AllowedTypes() meido.MessageType {
 	return m.allowedTypes
 }
 func (m *ModerationMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *ModerationMod) Hook(b *meidov2.Bot) error {
-	//m.cl = b.CommandLog
+func (m *ModerationMod) Hook(b *meido.Bot) error {
 	m.db = b.DB
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
@@ -130,7 +128,7 @@ func (m *ModerationMod) Hook(b *meidov2.Bot) error {
 	return nil
 }
 
-func (m *ModerationMod) RegisterCommand(cmd *meidov2.ModCommand) {
+func (m *ModerationMod) RegisterCommand(cmd *meido.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -139,8 +137,8 @@ func (m *ModerationMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewBanCommand(m *ModerationMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewBanCommand(m *ModerationMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "ban",
 		Description:   "Bans a user. Days of messages to be deleted and reason is optional",
@@ -150,14 +148,14 @@ func NewBanCommand(m *ModerationMod) *meidov2.ModCommand {
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.banCommand,
 	}
 }
 
-func (m *ModerationMod) banCommand(msg *meidov2.DiscordMessage) {
+func (m *ModerationMod) banCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -262,8 +260,8 @@ func (m *ModerationMod) banCommand(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewUnbanCommand(m *ModerationMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewUnbanCommand(m *ModerationMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "unban",
 		Description:   "Unbans a user",
@@ -273,14 +271,14 @@ func NewUnbanCommand(m *ModerationMod) *meidov2.ModCommand {
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.unbanCommand,
 	}
 }
 
-func (m *ModerationMod) unbanCommand(msg *meidov2.DiscordMessage) {
+func (m *ModerationMod) unbanCommand(msg *meido.DiscordMessage) {
 
 	if msg.LenArgs() < 2 {
 		return
@@ -309,8 +307,8 @@ func (m *ModerationMod) unbanCommand(msg *meidov2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewHackbanCommand(m *ModerationMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewHackbanCommand(m *ModerationMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "hackban",
 		Description:   "Hackbans one or several users. Prunes 7 days.",
@@ -320,14 +318,14 @@ func NewHackbanCommand(m *ModerationMod) *meidov2.ModCommand {
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.hackbanCommand,
 	}
 }
 
-func (m *ModerationMod) hackbanCommand(msg *meidov2.DiscordMessage) {
+func (m *ModerationMod) hackbanCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -361,8 +359,8 @@ func (m *ModerationMod) hackbanCommand(msg *meidov2.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
 }
 
-func NewKickCommand(m *ModerationMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewKickCommand(m *ModerationMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "kick",
 		Description:   "Kicks a user. Reason is optional",
@@ -372,14 +370,14 @@ func NewKickCommand(m *ModerationMod) *meidov2.ModCommand {
 		RequiredPerms: discordgo.PermissionKickMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.kickCommand,
 	}
 }
 
-func (m *ModerationMod) kickCommand(msg *meidov2.DiscordMessage) {
+func (m *ModerationMod) kickCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

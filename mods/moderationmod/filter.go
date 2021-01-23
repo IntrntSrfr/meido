@@ -5,14 +5,14 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meido"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func NewFilterWordCommand(m *ModerationMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewFilterWordCommand(m *ModerationMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "filterword",
 		Description:   "Adds or removes a word or phrase to the server filter.",
@@ -21,13 +21,13 @@ func NewFilterWordCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionManageMessages,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.filterwordCommand,
 	}
 }
-func (m *ModerationMod) filterwordCommand(msg *meidov2.DiscordMessage) {
+func (m *ModerationMod) filterwordCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -49,8 +49,8 @@ func (m *ModerationMod) filterwordCommand(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func NewFilterWordListCommand(m *ModerationMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewFilterWordListCommand(m *ModerationMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "filterwordlist",
 		Description:   "Lists of all filtered phrases for this server",
@@ -59,13 +59,13 @@ func NewFilterWordListCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      10,
 		RequiredPerms: discordgo.PermissionManageMessages,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.filterwordlistCommand,
 	}
 }
-func (m *ModerationMod) filterwordlistCommand(msg *meidov2.DiscordMessage) {
+func (m *ModerationMod) filterwordlistCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -97,8 +97,8 @@ func (m *ModerationMod) filterwordlistCommand(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func NewClearFilterCommand(m *ModerationMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewClearFilterCommand(m *ModerationMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "clearfilter",
 		Description:   "Removes all phrases from the server filter",
@@ -107,14 +107,14 @@ func NewClearFilterCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      10,
 		RequiredPerms: discordgo.PermissionAdministrator,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.clearfilterCommand,
 	}
 }
 
-func (m *ModerationMod) clearfilterCommand(msg *meidov2.DiscordMessage) {
+func (m *ModerationMod) clearfilterCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -128,8 +128,8 @@ func (m *ModerationMod) clearfilterCommand(msg *meidov2.DiscordMessage) {
 	msg.Reply("Filter was cleared")
 }
 
-func NewModerationSettingsCommand(m *ModerationMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewModerationSettingsCommand(m *ModerationMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "moderationsettings",
 		Description:   "Moderation settings:\n- Toggle warn system [enable/disable]\n- Set max warns [0-10]\n- Set warn duration [0(infinite)-365]",
@@ -138,13 +138,13 @@ func NewModerationSettingsCommand(m *ModerationMod) *meidov2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionAdministrator,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.moderationsettingsCommand,
 	}
 }
-func (m *ModerationMod) moderationsettingsCommand(msg *meidov2.DiscordMessage) {
+func (m *ModerationMod) moderationsettingsCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -198,7 +198,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *meidov2.DiscordMessage) {
 				return
 			}
 
-			n = meidov2.Clamp(0, 10, n)
+			n = meido.Clamp(0, 10, n)
 
 			_, err = m.db.Exec("UPDATE guilds SET max_warns=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
 			if err != nil {
@@ -213,7 +213,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *meidov2.DiscordMessage) {
 				return
 			}
 
-			n = meidov2.Clamp(0, 365, n)
+			n = meido.Clamp(0, 365, n)
 
 			_, err = m.db.Exec("UPDATE guilds SET warn_duration=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
 			if err != nil {
@@ -225,18 +225,18 @@ func (m *ModerationMod) moderationsettingsCommand(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func NewCheckFilterPassive(m *ModerationMod) *meidov2.ModPassive {
-	return &meidov2.ModPassive{
+func NewCheckFilterPassive(m *ModerationMod) *meido.ModPassive {
+	return &meido.ModPassive{
 		Mod:          m,
 		Name:         "checkfilter",
 		Description:  "checks if messages contain phrases found in the server filter",
 		Enabled:      true,
-		AllowedTypes: meidov2.MessageTypeCreate | meidov2.MessageTypeUpdate,
+		AllowedTypes: meido.MessageTypeCreate | meido.MessageTypeUpdate,
 		Run:          m.checkfilterPassive,
 	}
 }
 
-func (m *ModerationMod) checkfilterPassive(msg *meidov2.DiscordMessage) {
+func (m *ModerationMod) checkfilterPassive(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}

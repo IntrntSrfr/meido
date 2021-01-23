@@ -3,26 +3,25 @@ package helpmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meido"
 	"strings"
 	"sync"
 )
 
 type HelpMod struct {
 	sync.Mutex
-	name string
-	//cl           chan *meidov2.DiscordMessage
-	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
-	allowedTypes meidov2.MessageType
+	name         string
+	commands     map[string]*meido.ModCommand
+	allowedTypes meido.MessageType
 	allowDMs     bool
-	bot          *meidov2.Bot
+	bot          *meido.Bot
 }
 
-func New(n string) meidov2.Mod {
+func New(n string) meido.Mod {
 	return &HelpMod{
 		name:         n,
-		commands:     make(map[string]*meidov2.ModCommand),
-		allowedTypes: meidov2.MessageTypeCreate,
+		commands:     make(map[string]*meido.ModCommand),
+		allowedTypes: meido.MessageTypeCreate,
 		allowDMs:     true,
 	}
 }
@@ -36,19 +35,19 @@ func (m *HelpMod) Save() error {
 func (m *HelpMod) Load() error {
 	return nil
 }
-func (m *HelpMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
+func (m *HelpMod) Passives() []*meido.ModPassive {
+	return []*meido.ModPassive{}
 }
-func (m *HelpMod) Commands() map[string]*meidov2.ModCommand {
+func (m *HelpMod) Commands() map[string]*meido.ModCommand {
 	return m.commands
 }
-func (m *HelpMod) AllowedTypes() meidov2.MessageType {
+func (m *HelpMod) AllowedTypes() meido.MessageType {
 	return m.allowedTypes
 }
 func (m *HelpMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *HelpMod) Hook(b *meidov2.Bot) error {
+func (m *HelpMod) Hook(b *meido.Bot) error {
 	//m.cl = b.CommandLog
 	m.bot = b
 
@@ -56,7 +55,7 @@ func (m *HelpMod) Hook(b *meidov2.Bot) error {
 
 	return nil
 }
-func (m *HelpMod) RegisterCommand(cmd *meidov2.ModCommand) {
+func (m *HelpMod) RegisterCommand(cmd *meido.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -65,8 +64,8 @@ func (m *HelpMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewHelpCommand(m *HelpMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewHelpCommand(m *HelpMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "help",
 		Description:   "Displays helpful things",
@@ -75,14 +74,14 @@ func NewHelpCommand(m *HelpMod) *meidov2.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.helpCommand,
 	}
 }
 
-func (m *HelpMod) helpCommand(msg *meidov2.DiscordMessage) {
+func (m *HelpMod) helpCommand(msg *meido.DiscordMessage) {
 
 	emb := &discordgo.MessageEmbed{
 		Color: 0xFEFEFE,
@@ -158,7 +157,7 @@ func (m *HelpMod) helpCommand(msg *meidov2.DiscordMessage) {
 				info.WriteString(fmt.Sprintf("\n\nTriggers:\n%v", strings.Join(cmd.Triggers, ", ")))
 				info.WriteString(fmt.Sprintf("\n\nUsage:\n%v", cmd.Usage))
 				info.WriteString(fmt.Sprintf("\n\nCooldown:\n%v seconds", cmd.Cooldown))
-				info.WriteString(fmt.Sprintf("\n\nRequired permissions:\n%v", meidov2.PermMap[cmd.RequiredPerms]))
+				info.WriteString(fmt.Sprintf("\n\nRequired permissions:\n%v", meido.PermMap[cmd.RequiredPerms]))
 				info.WriteString(fmt.Sprintf("\n\nWorks in DMs?:\n%v", cmd.AllowDMs))
 				emb.Description = info.String()
 

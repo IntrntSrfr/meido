@@ -3,28 +3,27 @@ package loggermod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meido"
 	"sync"
 )
 
 type LoggerMod struct {
 	sync.Mutex
-	name string
-	//cl            chan *meidov2.DiscordMessage
-	commands      map[string]*meidov2.ModCommand
-	passives      []*meidov2.ModPassive
+	name          string
+	commands      map[string]*meido.ModCommand
+	passives      []*meido.ModPassive
 	dmLogChannels []string
-	allowedTypes  meidov2.MessageType
+	allowedTypes  meido.MessageType
 	allowDMs      bool
 }
 
-func New(name string) meidov2.Mod {
+func New(name string) meido.Mod {
 	return &LoggerMod{
 		name:          name,
 		dmLogChannels: []string{},
-		commands:      make(map[string]*meidov2.ModCommand),
-		passives:      []*meidov2.ModPassive{},
-		allowedTypes:  meidov2.MessageTypeCreate,
+		commands:      make(map[string]*meido.ModCommand),
+		passives:      []*meido.ModPassive{},
+		allowedTypes:  meido.MessageTypeCreate,
 		allowDMs:      true,
 	}
 }
@@ -38,19 +37,19 @@ func (m *LoggerMod) Save() error {
 func (m *LoggerMod) Load() error {
 	return nil
 }
-func (m *LoggerMod) Passives() []*meidov2.ModPassive {
+func (m *LoggerMod) Passives() []*meido.ModPassive {
 	return m.passives
 }
-func (m *LoggerMod) Commands() map[string]*meidov2.ModCommand {
+func (m *LoggerMod) Commands() map[string]*meido.ModCommand {
 	return m.commands
 }
-func (m *LoggerMod) AllowedTypes() meidov2.MessageType {
+func (m *LoggerMod) AllowedTypes() meido.MessageType {
 	return m.allowedTypes
 }
 func (m *LoggerMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *LoggerMod) Hook(b *meidov2.Bot) error {
+func (m *LoggerMod) Hook(b *meido.Bot) error {
 	m.dmLogChannels = b.Config.DmLogChannels
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
@@ -66,7 +65,7 @@ func (m *LoggerMod) Hook(b *meidov2.Bot) error {
 	m.passives = append(m.passives, NewForwardDmsPassive(m))
 	return nil
 }
-func (m *LoggerMod) RegisterCommand(cmd *meidov2.ModCommand) {
+func (m *LoggerMod) RegisterCommand(cmd *meido.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -75,17 +74,17 @@ func (m *LoggerMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewForwardDmsPassive(m *LoggerMod) *meidov2.ModPassive {
-	return &meidov2.ModPassive{
+func NewForwardDmsPassive(m *LoggerMod) *meido.ModPassive {
+	return &meido.ModPassive{
 		Mod:          m,
 		Name:         "forwarddms",
 		Description:  "IGNORE THIS | forwards all dms sent to channels found in config",
 		Enabled:      true,
-		AllowedTypes: meidov2.MessageTypeCreate,
+		AllowedTypes: meido.MessageTypeCreate,
 		Run:          m.forwardDmsPassive,
 	}
 }
-func (m *LoggerMod) forwardDmsPassive(msg *meidov2.DiscordMessage) {
+func (m *LoggerMod) forwardDmsPassive(msg *meido.DiscordMessage) {
 	if !msg.IsDM() {
 		return
 	}

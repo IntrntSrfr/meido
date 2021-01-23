@@ -3,27 +3,26 @@ package feedbackmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meido"
 	"sync"
 )
 
 type FeedbackMod struct {
 	sync.Mutex
-	name string
-	//cl              chan *meidov2.DiscordMessage
-	commands        map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
+	name            string
+	commands        map[string]*meido.ModCommand
 	bannedUsers     map[string]bool
 	feedbackChannel string
 	owners          []string
-	allowedTypes    meidov2.MessageType
+	allowedTypes    meido.MessageType
 	allowDMs        bool
 }
 
-func New(n string) meidov2.Mod {
+func New(n string) meido.Mod {
 	return &FeedbackMod{
 		name:         n,
-		commands:     make(map[string]*meidov2.ModCommand),
-		allowedTypes: meidov2.MessageTypeCreate,
+		commands:     make(map[string]*meido.ModCommand),
+		allowedTypes: meido.MessageTypeCreate,
 		allowDMs:     true,
 	}
 }
@@ -37,20 +36,19 @@ func (m *FeedbackMod) Save() error {
 func (m *FeedbackMod) Load() error {
 	return nil
 }
-func (m *FeedbackMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
+func (m *FeedbackMod) Passives() []*meido.ModPassive {
+	return []*meido.ModPassive{}
 }
-func (m *FeedbackMod) Commands() map[string]*meidov2.ModCommand {
+func (m *FeedbackMod) Commands() map[string]*meido.ModCommand {
 	return m.commands
 }
-func (m *FeedbackMod) AllowedTypes() meidov2.MessageType {
+func (m *FeedbackMod) AllowedTypes() meido.MessageType {
 	return m.allowedTypes
 }
 func (m *FeedbackMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *FeedbackMod) Hook(b *meidov2.Bot) error {
-	//m.cl = b.CommandLog
+func (m *FeedbackMod) Hook(b *meido.Bot) error {
 	m.owners = b.Config.OwnerIds
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
@@ -59,7 +57,7 @@ func (m *FeedbackMod) Hook(b *meidov2.Bot) error {
 
 	return nil
 }
-func (m *FeedbackMod) RegisterCommand(cmd *meidov2.ModCommand) {
+func (m *FeedbackMod) RegisterCommand(cmd *meido.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -68,7 +66,7 @@ func (m *FeedbackMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func (m *FeedbackMod) ToggleBan(msg *meidov2.DiscordMessage) {
+func (m *FeedbackMod) ToggleBan(msg *meido.DiscordMessage) {
 	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?togglefeedback" {
 		return
 	}
@@ -100,7 +98,7 @@ func (m *FeedbackMod) ToggleBan(msg *meidov2.DiscordMessage) {
 	}
 }
 
-func (m *FeedbackMod) LeaveFeedback(msg *meidov2.DiscordMessage) {
+func (m *FeedbackMod) LeaveFeedback(msg *meido.DiscordMessage) {
 	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?feedback" {
 		return
 	}

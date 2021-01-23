@@ -1,64 +1,110 @@
 package pingmod
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/intrntsrfr/meidov2"
+	"io/ioutil"
 	"math/rand"
+	"os"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido"
 )
 
+// PingMod represents the ping mod
 type PingMod struct {
 	sync.Mutex
-	name string
-	//cl           chan *meidov2.ExecutedCommand
-	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
-	allowedTypes meidov2.MessageType
+	name         string
+	commands     map[string]*meido.ModCommand
+	allowedTypes meido.MessageType
 	allowDMs     bool
+	Aquariums    map[string]*aquarium
+}
+type aquarium struct {
+	sync.Mutex
+	UserID string
+	Fish   map[string]int
 }
 
-func New(n string) meidov2.Mod {
+// New returns a new PingMod.
+func New(n string) meido.Mod {
 	return &PingMod{
 		name:         n,
-		commands:     make(map[string]*meidov2.ModCommand),
-		allowedTypes: meidov2.MessageTypeCreate,
+		commands:     make(map[string]*meido.ModCommand),
+		allowedTypes: meido.MessageTypeCreate,
 		allowDMs:     true,
+		Aquariums:    make(map[string]*aquarium),
 	}
 }
 
+// Name returns the name of the mod.
 func (m *PingMod) Name() string {
 	return m.name
 }
+
+// Save saves the mod state to a file.
 func (m *PingMod) Save() error {
-	return nil
+	data, err := json.Marshal(m.Aquariums)
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile("./data/fish", data, os.ModePerm)
 }
+
+// Load loads the mod state from a file.
 func (m *PingMod) Load() error {
-	return nil
+	if _, err := os.Stat("./data/fish"); err != nil {
+		return nil
+	}
+	data, err := ioutil.ReadFile("./data/fish")
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, &m.Aquariums)
 }
-func (m *PingMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
+
+// Passives returns the mod passives.
+func (m *PingMod) Passives() []*meido.ModPassive {
+	return []*meido.ModPassive{}
 }
-func (m *PingMod) Commands() map[string]*meidov2.ModCommand {
+
+// Commands returns the mod commands.
+func (m *PingMod) Commands() map[string]*meido.ModCommand {
 	return m.commands
 }
-func (m *PingMod) AllowedTypes() meidov2.MessageType {
+
+// AllowedTypes returns the allowed MessageTypes.
+func (m *PingMod) AllowedTypes() meido.MessageType {
 	return m.allowedTypes
 }
+
+// AllowDMs returns whether the mod allows DMs.
 func (m *PingMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *PingMod) Hook(b *meidov2.Bot) error {
-	//m.cl = b.CommandLog
+
+// Hook will hook the Mod into the Bot.
+func (m *PingMod) Hook(b *meido.Bot) error {
+	err := m.Load()
+	if err != nil {
+		return err
+	}
 
 	rand.Seed(time.Now().Unix())
 
 	m.RegisterCommand(NewPingCommand(m))
 	m.RegisterCommand(NewFishCommand(m))
+	m.RegisterCommand(NewAquariumCommand(m))
 	m.RegisterCommand(NewMonkeyCommand(m))
 
 	return nil
 }
-func (m *PingMod) RegisterCommand(cmd *meidov2.ModCommand) {
+
+// RegisterCommand registers a ModCommand to the Mod
+func (m *PingMod) RegisterCommand(cmd *meido.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -67,8 +113,9 @@ func (m *PingMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewPingCommand(m *PingMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+// NewPingCommand returns a new ping command.
+func NewPingCommand(m *PingMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "ping",
 		Description:   "Checks ping",
@@ -77,14 +124,14 @@ func NewPingCommand(m *PingMod) *meidov2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.pingCommand,
 	}
 }
 
-func (m *PingMod) pingCommand(msg *meidov2.DiscordMessage) {
+func (m *PingMod) pingCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -104,8 +151,9 @@ func (m *PingMod) pingCommand(msg *meidov2.DiscordMessage) {
 		fmt.Sprintf("Pong!\nDiscord delay: %s\nBot delay: %s", discordLatency, botLatency))
 }
 
-func NewFishCommand(m *PingMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+// NewFishCommand returns a new fish command.
+func NewFishCommand(m *PingMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "fish",
 		Description:   "Fish",
@@ -115,42 +163,124 @@ func NewFishCommand(m *PingMod) *meidov2.ModCommand {
 		CooldownUser:  true,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.fishCommand,
 	}
 }
 
-var fish = []string{
-	"You got a common - 🐟",
-	"You got an uncommon - 🐠",
-	"Ohhh, you got a rare! - 🐡",
-	"Woah! you got a super rare! - 🦈",
-	"YOO YOU GOT A LEGENDARY SAXOPHONE SHARK! - 🎷🦈",
+func (m *PingMod) fishCommand(msg *meido.DiscordMessage) {
+	fp := pickFish()
+
+	m.updateAquarium(msg.Author.ID, fp)
+
+	caption := fp.caption
+	if fp.mention {
+		caption = fmt.Sprintf("%v, %v", msg.Message.Author, fp.caption)
+	}
+	msg.Reply(caption)
 }
 
-func (m *PingMod) fishCommand(msg *meidov2.DiscordMessage) {
-	pick := rand.Intn(1000) + 1
+func (a *aquarium) updateUser(f fish) {
+	defer a.Unlock()
+	a.Lock()
 
-	var fp string
+	a.Fish[f.emoji]++
+}
+func (m *PingMod) updateAquarium(id string, f fish) {
+	defer m.Unlock()
+	m.Lock()
+
+	aq, ok := m.Aquariums[id]
+	if !ok {
+		aq = &aquarium{UserID: id, Fish: make(map[string]int)}
+		m.Aquariums[id] = aq
+	}
+	aq.updateUser(f)
+}
+
+type fish struct {
+	emoji   string
+	caption string
+	mention bool
+}
+
+var fishes = []fish{
+	{"🐟", "You got a common - 🐟", false},
+	{"🐠", "You got an uncommon - 🐠", false},
+	{"🐡", "Ohhh, you got a rare! - 🐡", false},
+	{"🦈", "Woah! you got a super rare! - 🦈", true},
+	{"🎷🦈", "YOO YOU GOT A LEGENDARY SAXOPHONE SHARK! - 🎷🦈", true},
+}
+
+func pickFish() fish {
+	pick := rand.Intn(1000) + 1
+	var fp fish
 	if pick <= 800 {
-		fp = fish[0]
+		fp = fishes[0]
 	} else if pick <= 940 {
-		fp = fish[1]
+		fp = fishes[1]
 	} else if pick <= 990 {
-		fp = fish[2]
+		fp = fishes[2]
 	} else if pick <= 999 {
-		fp = fmt.Sprintf("%v, %v", msg.Author.Mention(), fish[3])
+		fp = fishes[3]
 	} else {
-		fp = fmt.Sprintf("%v, %v", msg.Author.Mention(), fish[4])
+		fp = fishes[4]
+	}
+	return fp
+}
+
+// NewAquariumCommand returns a new aquarium command.
+func NewAquariumCommand(m *PingMod) *meido.ModCommand {
+	return &meido.ModCommand{
+		Mod:           m,
+		Name:          "aquarium",
+		Description:   "Shows your fish collection",
+		Triggers:      []string{"m?aquarium", "m?aq"},
+		Usage:         "m?aquarium",
+		Cooldown:      5,
+		CooldownUser:  true,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  meido.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.aquariumCommand,
+	}
+}
+
+func (m *PingMod) aquariumCommand(msg *meido.DiscordMessage) {
+
+	aq := m.Aquariums[msg.Author.ID]
+	if aq == nil {
+		msg.Reply("You have no fish.")
+		return
 	}
 
-	msg.Reply(fp)
+	var w []string
+	aq.Lock()
+	for _, f := range fishes {
+		w = append(w, fmt.Sprintf("%v: %v", f.emoji, aq.Fish[f.emoji]))
+	}
+	aq.Unlock()
+
+	embed := &discordgo.MessageEmbed{
+		Title:       "Your aquarium",
+		Description: strings.Join(w, " | "),
+		Color:       0x00bbe0,
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:    msg.Author.String(),
+			IconURL: msg.Author.AvatarURL("512"),
+		},
+	}
+
+	msg.ReplyEmbed(embed)
 }
 
-func NewMonkeyCommand(m *PingMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+// NewMonkeyCommand returns a new monkey command.
+func NewMonkeyCommand(m *PingMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "monkey",
 		Description:   "Monkey",
@@ -159,16 +289,16 @@ func NewMonkeyCommand(m *PingMod) *meidov2.ModCommand {
 		Cooldown:      0,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.monkeyCommand,
 	}
 }
 
-var monkeys = []string{"🐒", "🐒💨", "🔫🐒", "🎷🐒", "\U0001F9FB🖊️🐒", "🐒🚿", "🐒\n🚽"}
-
-func (m *PingMod) monkeyCommand(msg *meidov2.DiscordMessage) {
+func (m *PingMod) monkeyCommand(msg *meido.DiscordMessage) {
 	rand.Seed(time.Now().Unix())
 	msg.Reply(monkeys[rand.Intn(len(monkeys))])
 }
+
+var monkeys = []string{"🐒", "🐒💨", "🔫🐒", "🎷🐒", "\U0001F9FB🖊️🐒", "🐒🚿", "🐒\n🚽"}

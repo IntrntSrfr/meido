@@ -3,7 +3,7 @@ package searchmod
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/intrntsrfr/meidov2"
+	"github.com/intrntsrfr/meido"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -13,19 +13,18 @@ import (
 
 type SearchMod struct {
 	sync.Mutex
-	name string
-	//cl           chan *meidov2.DiscordMessage
-	commands     map[string]*meidov2.ModCommand // func(msg *meidov2.DiscordMessage)
+	name         string
+	commands     map[string]*meido.ModCommand
 	youtubeKey   string
-	allowedTypes meidov2.MessageType
+	allowedTypes meido.MessageType
 	allowDMs     bool
 }
 
-func New(n string) meidov2.Mod {
+func New(n string) meido.Mod {
 	return &SearchMod{
 		name:         n,
-		commands:     make(map[string]*meidov2.ModCommand),
-		allowedTypes: meidov2.MessageTypeCreate,
+		commands:     make(map[string]*meido.ModCommand),
+		allowedTypes: meido.MessageTypeCreate,
 		allowDMs:     true,
 	}
 }
@@ -40,27 +39,26 @@ func (m *SearchMod) Save() error {
 func (m *SearchMod) Load() error {
 	return nil
 }
-func (m *SearchMod) Passives() []*meidov2.ModPassive {
-	return []*meidov2.ModPassive{}
+func (m *SearchMod) Passives() []*meido.ModPassive {
+	return []*meido.ModPassive{}
 }
-func (m *SearchMod) Commands() map[string]*meidov2.ModCommand {
+func (m *SearchMod) Commands() map[string]*meido.ModCommand {
 	return m.commands
 }
-func (m *SearchMod) AllowedTypes() meidov2.MessageType {
+func (m *SearchMod) AllowedTypes() meido.MessageType {
 	return m.allowedTypes
 }
 func (m *SearchMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *SearchMod) Hook(b *meidov2.Bot) error {
-	//m.cl = b.CommandLog
+func (m *SearchMod) Hook(b *meido.Bot) error {
 	m.youtubeKey = b.Config.YouTubeKey
 
 	m.RegisterCommand(NewYouTubeCommand(m))
 
 	return nil
 }
-func (m *SearchMod) RegisterCommand(cmd *meidov2.ModCommand) {
+func (m *SearchMod) RegisterCommand(cmd *meido.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -69,8 +67,8 @@ func (m *SearchMod) RegisterCommand(cmd *meidov2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewYouTubeCommand(m *SearchMod) *meidov2.ModCommand {
-	return &meidov2.ModCommand{
+func NewYouTubeCommand(m *SearchMod) *meido.ModCommand {
+	return &meido.ModCommand{
 		Mod:           m,
 		Name:          "youtube",
 		Description:   "Search for a YouTube video",
@@ -79,13 +77,13 @@ func NewYouTubeCommand(m *SearchMod) *meidov2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  meidov2.MessageTypeCreate,
+		AllowedTypes:  meido.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.youtubeCommand,
 	}
 }
-func (m *SearchMod) youtubeCommand(msg *meidov2.DiscordMessage) {
+func (m *SearchMod) youtubeCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

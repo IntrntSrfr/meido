@@ -1,4 +1,4 @@
-package meidov2
+package meido
 
 import (
 	"strconv"
