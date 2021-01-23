@@ -1,10 +1,10 @@
-package meidov2
+package meido
 
 import (
 	"fmt"
 	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -59,6 +59,12 @@ func NewBot(config *Config) *Bot {
 
 	fmt.Println("new bot")
 
+	if _, err := os.Stat("./data"); err != nil {
+		if err := os.Mkdir("./data", os.ModePerm); err != nil {
+			panic(err)
+		}
+	}
+
 	return &Bot{
 		Discord:    d,
 		Config:     config,
@@ -100,6 +106,14 @@ func (b *Bot) Run() error {
 
 // Close attempts to stop the bot.
 func (b *Bot) Close() {
+
+	for _, mod := range b.Mods {
+		err := mod.Save()
+		if err != nil {
+			fmt.Println(fmt.Sprintf("Error saving %v: %v", mod.Name(), err))
+		}
+	}
+
 	b.Discord.Close()
 }
 
