@@ -159,7 +159,7 @@ func NewFishCommand(m *PingMod) *meido.ModCommand {
 		Description:   "Fish",
 		Triggers:      []string{"m?fish"},
 		Usage:         "m?fish",
-		Cooldown:      2,
+		Cooldown:      5,
 		CooldownUser:  true,
 		RequiredPerms: 0,
 		RequiresOwner: false,
