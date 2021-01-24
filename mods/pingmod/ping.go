@@ -177,7 +177,7 @@ func (m *PingMod) fishCommand(msg *meido.DiscordMessage) {
 
 	caption := fp.caption
 	if fp.mention {
-		caption = fmt.Sprintf("%v, %v", msg.Message.Author, fp.caption)
+		caption = fmt.Sprintf("%v, %v", msg.Message.Author.Mention(), fp.caption)
 	}
 	msg.Reply(caption)
 }
@@ -213,6 +213,8 @@ var fishes = []fish{
 	{"🦈", "Woah! you got a super rare! - 🦈", true},
 	{"🎷🦈", "YOO YOU GOT A LEGENDARY SAXOPHONE SHARK! - 🎷🦈", true},
 }
+
+//
 
 func pickFish() fish {
 	pick := rand.Intn(1000) + 1

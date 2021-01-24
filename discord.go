@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"log"
 	"net/http"
+	"runtime/debug"
 	"sort"
 	"time"
 )
@@ -96,12 +98,22 @@ func (d *Discord) Close() {
 	}
 }
 
+// BotRecover
+func BotRecover() {
+	if r := recover(); r != nil {
+		log.Println("Recovery:", r)
+		log.Println(string(debug.Stack()))
+	}
+}
+
 // onMessageCreate is the handler for the *discordgo.MessageCreate event.
 // It populates a DiscordMessage object and sends it to Discord.messageChan
 func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Author == nil || m.Message.Author.Bot {
 		return
 	}
+
+	defer BotRecover()
 
 	var author *discordgo.User
 	var member *discordgo.Member
@@ -131,6 +143,8 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 	if m.Author == nil || m.Message.Author.Bot {
 		return
 	}
+
+	defer BotRecover()
 
 	var author *discordgo.User
 	var member *discordgo.Member

@@ -16,7 +16,7 @@ const (
 	MessageTypeDelete
 )
 
-// PermMap is a map that simply converts specific permission ints to what they actually represent.
+// PermMap is a map that simply converts specific permission bits to the readable version of what they represent.
 var PermMap = map[int]string{
 	0:                                        "None",
 	discordgo.PermissionCreateInstantInvite:  "Create Instant Invite",

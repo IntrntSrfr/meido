@@ -99,12 +99,12 @@ func (b *Bot) Open() error {
 	return nil
 }
 
-// Run runs the bot
+// Run will start the sessions against Discord and runs it.
 func (b *Bot) Run() error {
 	return b.Discord.Run()
 }
 
-// Close attempts to stop the bot.
+// Close saves all mod states and closes the bot sessions.
 func (b *Bot) Close() {
 
 	for _, mod := range b.Mods {
@@ -117,7 +117,7 @@ func (b *Bot) Close() {
 	b.Discord.Close()
 }
 
-// RegisterMod takes in a Mod and registers it
+// RegisterMod takes in a Mod and registers it.
 func (b *Bot) RegisterMod(mod Mod) {
 	fmt.Println(fmt.Sprintf("registering mod '%s'", mod.Name()))
 	err := mod.Hook(b)
