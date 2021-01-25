@@ -113,7 +113,19 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 		return
 	}
 
-	defer BotRecover()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovery:", r)
+			log.Println()
+			log.Println(string(debug.Stack()))
+			log.Println()
+
+			if data, err := json.MarshalIndent(m, "", "\t"); err == nil {
+				log.Println(string(data))
+				log.Println()
+			}
+		}
+	}()
 
 	var author *discordgo.User
 	var member *discordgo.Member
@@ -144,7 +156,19 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 		return
 	}
 
-	defer BotRecover()
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("Recovery:", r)
+			log.Println()
+			log.Println(string(debug.Stack()))
+			log.Println()
+
+			if data, err := json.MarshalIndent(m, "", "\t"); err == nil {
+				log.Println(string(data))
+				log.Println()
+			}
+		}
+	}()
 
 	var author *discordgo.User
 	var member *discordgo.Member
