@@ -214,8 +214,6 @@ var fishes = []fish{
 	{"🎷🦈", "YOO YOU GOT A LEGENDARY SAXOPHONE SHARK! - 🎷🦈", true},
 }
 
-//
-
 func pickFish() fish {
 	pick := rand.Intn(1000) + 1
 	var fp fish
