@@ -299,7 +299,6 @@ func NewMonkeyCommand(m *PingMod) *meido.ModCommand {
 }
 
 func (m *PingMod) monkeyCommand(msg *meido.DiscordMessage) {
-	rand.Seed(time.Now().Unix())
 	msg.Reply(monkeys[rand.Intn(len(monkeys))])
 }
 
