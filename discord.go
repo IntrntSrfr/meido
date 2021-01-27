@@ -99,10 +99,13 @@ func (d *Discord) Close() {
 }
 
 // BotRecover
-func BotRecover() {
+func BotRecover(i interface{}) {
 	if r := recover(); r != nil {
 		log.Println("Recovery:", r)
 		log.Println(string(debug.Stack()))
+		if data, err := json.MarshalIndent(i, "", "\t"); err == nil {
+			log.Println(string(data))
+		}
 	}
 }
 
@@ -113,19 +116,7 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 		return
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Recovery:", r)
-			log.Println()
-			log.Println(string(debug.Stack()))
-			log.Println()
-
-			if data, err := json.MarshalIndent(m, "", "\t"); err == nil {
-				log.Println(string(data))
-				log.Println()
-			}
-		}
-	}()
+	defer BotRecover(m)
 
 	var author *discordgo.User
 	var member *discordgo.Member
@@ -133,6 +124,10 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 	author = m.Author
 
 	if m.GuildID != "" {
+		// for some reason the member field might still be nil and no one knows why
+		if m.Member == nil {
+			return
+		}
 		member = m.Member
 		member.User = author
 	}
@@ -156,19 +151,7 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 		return
 	}
 
-	defer func() {
-		if r := recover(); r != nil {
-			log.Println("Recovery:", r)
-			log.Println()
-			log.Println(string(debug.Stack()))
-			log.Println()
-
-			if data, err := json.MarshalIndent(m, "", "\t"); err == nil {
-				log.Println(string(data))
-				log.Println()
-			}
-		}
-	}()
+	defer BotRecover(m)
 
 	var author *discordgo.User
 	var member *discordgo.Member
@@ -176,6 +159,9 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 	author = m.Author
 
 	if m.GuildID != "" {
+		if m.Member == nil {
+			return
+		}
 		member = m.Member
 		member.User = author
 	}

@@ -303,4 +303,6 @@ func (m *PingMod) monkeyCommand(msg *meido.DiscordMessage) {
 	msg.Reply(monkeys[rand.Intn(len(monkeys))])
 }
 
-var monkeys = []string{"🐒", "🐒💨", "🔫🐒", "🎷🐒", "\U0001F9FB🖊️🐒", "🐒🚿", "🐒\n🚽"}
+var monkeys = []string{"🐒", "🐒💨", "🔫🐒", "🎷🐒", "\U0001F9FB🖊️🐒", "🐒🚿", "🐒\n🚽", "🍌🐒", "🥁🐒", "\U0001FA98🐒", "🏓🐒", "🏸🐒", "🏀🐒", "🔨🐒", "⛏️🐒", "\U0001FAA0🐒"}
+
+// 🍌:monkey: 🥁:monkey:  🪘:monkey:  🏓🐒  🏸🐒  🏀🐒  🔨🐒  ⛏️🐒  🪠🐒
