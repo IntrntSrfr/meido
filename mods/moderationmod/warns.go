@@ -345,35 +345,73 @@ func (m *ModerationMod) clearwarnCommand(msg *meido.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
+	/*
+		id := meido.UserIDRegex.FindStringSubmatch(msg.Args()[1])[0]
+		if len(id) < 1 {
+			return
+		}
+	*/
 
-	uid, err := strconv.Atoi(msg.Args()[1])
+	_, err := strconv.Atoi(msg.Args()[1])
 	if err != nil {
 		msg.Reply("no")
 		return
 	}
 
-	we := &WarnEntry{}
-	err = m.db.Get(we, "SELECT guild_id FROM warns WHERE uid=$1;", uid)
+	var entries []*WarnEntry
+	err = m.db.Select(&entries, "SELECT * FROM warns WHERE user_id=$1 AND guild_id=$2 AND is_valid", msg.Args()[1], msg.Message.GuildID)
 	if err != nil && err != sql.ErrNoRows {
+		fmt.Println(err)
 		msg.Reply("there was an error, please try again")
 		return
 	} else if err == sql.ErrNoRows {
-		msg.Reply("Warn does not exist")
+		msg.Reply("User has no warns.")
 		return
 	}
 
-	if msg.Message.GuildID != we.GuildID {
-		msg.Reply("Nice try")
+	if len(entries) == 0 {
+		msg.Reply("no warns")
 		return
 	}
 
-	_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3 AND is_valid", msg.Message.Author.ID, time.Now(), uid)
+	sb := strings.Builder{}
+	sb.WriteString("Which warn would you like to remove? [1-10]\n")
+	for i, entry := range entries {
+		sb.WriteString(fmt.Sprintf("`%2v.` | '%v' given %v\n", i+1, entry.Reason, humanize.Time(entry.GivenAt)))
+	}
+	menu, err := msg.Reply(sb.String())
+	if err != nil {
+		return
+	}
+
+	cb, err := m.bot.MakeCallback(msg.Message.ChannelID, msg.Author.ID)
+	if err != nil {
+		return
+	}
+
+	// this needs a timeout
+	var n int
+	for {
+		reply := <-cb
+
+		n, err = strconv.Atoi(reply.RawContent())
+		if err == nil && n-1 >= 0 && n-1 < len(entries) {
+			break
+		}
+	}
+	msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
+
+	m.bot.CloseCallback(msg.Message.ChannelID, msg.Author.ID)
+
+	selectedEntry := entries[n-1]
+
+	_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3 AND is_valid", msg.Message.Author.ID, time.Now(), selectedEntry.UID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
 	}
 
-	msg.Reply(fmt.Sprintf("Invalidated warn with ID: %v", uid))
+	msg.Reply(fmt.Sprintf("Invalidated warn with ID: %v", selectedEntry.UID))
 }
 
 func NewClearAllWarnsCommand(m *ModerationMod) *meido.ModCommand {

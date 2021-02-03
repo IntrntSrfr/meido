@@ -48,7 +48,6 @@ func (m *HelpMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *HelpMod) Hook(b *meido.Bot) error {
-	//m.cl = b.CommandLog
 	m.bot = b
 
 	m.RegisterCommand(NewHelpCommand(m))
@@ -104,6 +103,9 @@ func (m *HelpMod) helpCommand(msg *meido.DiscordMessage) {
 
 		for _, mod := range m.bot.Mods {
 			if mod.Name() == inp {
+				// this can maybe be replaced by making a helptext method for every mod so they have more control
+				// over what they want to display, if they even want to display anything.
+
 				list := strings.Builder{}
 
 				list.WriteString("\nPassives:\n")

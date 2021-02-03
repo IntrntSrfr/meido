@@ -2,6 +2,7 @@ package meido
 
 import (
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -27,7 +28,7 @@ type ModCommand struct {
 	Usage         string
 	Cooldown      int
 	CooldownUser  bool
-	RequiredPerms int
+	RequiredPerms int64
 	RequiresOwner bool
 	CheckBotPerms bool
 	AllowedTypes  MessageType
@@ -76,4 +77,12 @@ func IDToTimestamp(idStr string) time.Time {
 
 	id = ((id >> 22) + 1420070400000) / 1000
 	return time.Unix(id, 0)
+}
+
+func TrimUserID(id string) string {
+
+	id = strings.TrimPrefix(id, "<@!")
+	id = strings.TrimSuffix(id, ">")
+
+	return id
 }

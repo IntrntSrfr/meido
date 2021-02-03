@@ -84,18 +84,22 @@ func (m *UtilityMod) Hook(b *meido.Bot) error {
 						}
 					*/
 					s.UpdateStatusComplex(discordgo.UpdateStatusData{
-						Game: &discordgo.Game{
-							Name: fmt.Sprintf("over %v servers and %v members", srvCount, memCount),
-							Type: discordgo.GameTypeWatching,
+						Activities: []*discordgo.Activity{
+							{
+								Name: fmt.Sprintf("over %v servers and %v members", srvCount, memCount),
+								Type: 3,
+							},
 						},
 					})
 					oldMemCount = memCount
 					oldSrvCount = srvCount
 				} else {
 					s.UpdateStatusComplex(discordgo.UpdateStatusData{
-						Game: &discordgo.Game{
-							Name: fmt.Sprintf("m?help"),
-							Type: discordgo.GameTypeGame,
+						Activities: []*discordgo.Activity{
+							{
+								Name: fmt.Sprintf("m?help"),
+								Type: discordgo.ActivityTypeGame,
+							},
 						},
 					})
 				}
@@ -631,7 +635,7 @@ func (m *UtilityMod) userpermsCommand(msg *meido.DiscordMessage) {
 		targetUser = msg.Member
 	}
 
-	uPerms, err := msg.Discord.UserChannelPermissionsDirect(targetUser, msg.Message.ChannelID)
+	uPerms, err := msg.Sess.State.UserChannelPermissions(targetUser.User.ID, msg.Message.ChannelID)
 	if err != nil {
 		return
 	}

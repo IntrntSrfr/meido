@@ -1,5 +1,6 @@
 package userrolemod
 
+// Userrole represents a user role.
 type Userrole struct {
 	UID     int
 	GuildID string `db:"guild_id"`

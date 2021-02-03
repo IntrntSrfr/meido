@@ -2,12 +2,14 @@ package moderationmod
 
 import "time"
 
+// FilterEntry represents a filtered phrase that the bot should look out for
 type FilterEntry struct {
 	UID     int    `db:"uid"`
 	GuildID string `db:"guild_id"`
 	Phrase  string `db:"phrase"`
 }
 
+// DiscordGuild represents a servers settings.
 type DiscordGuild struct {
 	UID      int    `db:"uid"`
 	GuildID  string `db:"guild_id"`
@@ -18,6 +20,7 @@ type DiscordGuild struct {
 	WarnDuration int `db:"warn_duration"`
 }
 
+// WarnEntry represents a warning
 type WarnEntry struct {
 	UID         int        `db:"uid"`
 	GuildID     string     `db:"guild_id"`

@@ -17,7 +17,7 @@ const (
 )
 
 // PermMap is a map that simply converts specific permission bits to the readable version of what they represent.
-var PermMap = map[int]string{
+var PermMap = map[int64]string{
 	0:                                        "None",
 	discordgo.PermissionCreateInstantInvite:  "Create Instant Invite",
 	discordgo.PermissionKickMembers:          "Kick Members",
@@ -57,7 +57,7 @@ type DiscordMessage struct {
 	Discord *Discord
 	Message *discordgo.Message
 
-	// Partial guild member, use only for guild related stuff
+	// Partial guild member, use only for guild related stuff0
 	Author       *discordgo.User
 	Member       *discordgo.Member
 	Type         MessageType
@@ -76,6 +76,7 @@ func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.M
 }
 
 // Args returns the split content of a DiscordMessage in lowercase.
+
 func (m *DiscordMessage) Args() []string {
 	return strings.Fields(strings.ToLower(m.Message.Content))
 }
@@ -106,10 +107,15 @@ func (m *DiscordMessage) IsOwner() bool {
 }
 
 // HasPermissions returns if a member has certain permissions or not.
-func (m *DiscordMessage) HasPermissions(mem *discordgo.Member, channelID string, perm int) bool {
-	uPerms, err := m.Discord.UserChannelPermissionsDirect(mem, channelID)
+func (m *DiscordMessage) HasPermissions(perm int64) (bool, error) {
+	uPerms, err := m.Sess.State.MessagePermissions(m.Message)
+	//uPerms, err := m.Discord.UserChannelPermissionsDirect(mem, channelID)
 	if err != nil {
-		return false
+		return false, err
 	}
-	return uPerms&perm != 0 || uPerms&discordgo.PermissionAdministrator != 0
+	return uPerms&perm != 0 || uPerms&discordgo.PermissionAdministrator != 0, nil
+}
+
+func (m *DiscordMessage) ChannelID() string {
+	return m.Message.ChannelID
 }

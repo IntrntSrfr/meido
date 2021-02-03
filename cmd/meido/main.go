@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/intrntsrfr/meido"
+	"github.com/intrntsrfr/meido/mods/fishmod"
 	"github.com/intrntsrfr/meido/mods/googlemod"
 	"github.com/intrntsrfr/meido/mods/helpmod"
 	"github.com/intrntsrfr/meido/mods/loggermod"
@@ -42,6 +43,7 @@ func main() {
 	}
 
 	bot.RegisterMod(pingmod.New("pings"))
+	bot.RegisterMod(fishmod.New("fishing"))
 	bot.RegisterMod(loggermod.New("logs"))
 	bot.RegisterMod(utilitymod.New("utility"))
 	bot.RegisterMod(moderationmod.New("moderation"))

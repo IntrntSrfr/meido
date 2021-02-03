@@ -166,67 +166,14 @@ func (m *GoogleMod) googleCommand(msg *meido.DiscordMessage) {
 }
 
 func (m *GoogleMod) MessageReactionAddHandler(s *discordgo.Session, msg *discordgo.MessageReactionAdd) {
-	m.Lock()
-
-	search, ok := m.activeImgSearches[msg.MessageID]
-	if !ok {
-		m.Unlock()
-		return
-	}
-	m.Unlock()
-
-	if msg.UserID != search.AuthorMsg.Author.ID {
-		return
-	}
-	switch msg.Emoji.Name {
-	case "⬅":
-		search.rw.Lock()
-
-		emb := search.BotMsg.Embeds[0]
-
-		var index int
-
-		if search.CurrentImage-1 < 0 {
-			index = len(search.Images) - 1
-		} else {
-			index = search.CurrentImage - 1
-		}
-		emb.Image.URL = search.Images[index]
-		emb.Footer.Text = fmt.Sprintf("entry [ %v / %v ]", index, len(search.Images)-1)
-
-		s.ChannelMessageEditEmbed(msg.ChannelID, search.BotMsg.ID, emb)
-
-		search.CurrentImage = index
-		search.rw.Unlock()
-	case "➡":
-		search.rw.Lock()
-
-		emb := search.BotMsg.Embeds[0]
-
-		var index int
-
-		if search.CurrentImage+1 > len(search.Images)-1 {
-			index = 0
-		} else {
-			index = search.CurrentImage + 1
-		}
-
-		emb.Image.URL = search.Images[index]
-		emb.Footer.Text = fmt.Sprintf("entry [ %v / %v ]", index, len(search.Images)-1)
-
-		s.ChannelMessageEditEmbed(msg.ChannelID, search.BotMsg.ID, emb)
-
-		search.CurrentImage = index
-		search.rw.Unlock()
-
-	case "⏹":
-		s.ChannelMessageDelete(msg.ChannelID, search.BotMsg.ID)
-		s.ChannelMessageDelete(msg.ChannelID, search.AuthorMsg.ID)
-		m.deleteImgCh <- search.BotMsg.ID
-	}
+	m.reactionHandler(s, msg.MessageReaction)
 }
 
 func (m *GoogleMod) MessageReactionRemoveHandler(s *discordgo.Session, msg *discordgo.MessageReactionRemove) {
+	m.reactionHandler(s, msg.MessageReaction)
+}
+
+func (m *GoogleMod) reactionHandler(s *discordgo.Session, msg *discordgo.MessageReaction) {
 	m.Lock()
 	search, ok := m.activeImgSearches[msg.MessageID]
 	if !ok {

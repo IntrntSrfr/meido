@@ -244,16 +244,12 @@ func (m *ModerationMod) checkfilterPassive(msg *meido.DiscordMessage) {
 	isIllegal := false
 	trigger := ""
 
-	uPerms, err := msg.Discord.UserChannelPermissionsDirect(msg.Member, msg.Message.ChannelID)
-	if err != nil {
-		return
-	}
-	if uPerms&discordgo.PermissionManageMessages != 0 || uPerms&discordgo.PermissionAdministrator != 0 {
+	if perms, err := msg.HasPermissions(discordgo.PermissionManageMessages); err != nil || !perms {
 		return
 	}
 
 	var filterEntries []*FilterEntry
-	err = m.db.Select(&filterEntries, "SELECT phrase FROM filters WHERE guild_id=$1", msg.Message.GuildID)
+	err := m.db.Select(&filterEntries, "SELECT phrase FROM filters WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		return
 	}
@@ -300,7 +296,6 @@ func (m *ModerationMod) checkfilterPassive(msg *meido.DiscordMessage) {
 	_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
 		msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), true)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
 

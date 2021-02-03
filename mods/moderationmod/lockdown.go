@@ -67,9 +67,9 @@ func (m *ModerationMod) lockdownCommand(msg *meido.DiscordMessage) {
 		err := msg.Sess.ChannelPermissionSet(
 			ch.ID,
 			eRole.ID,
-			"role",
-			ePerms.Allow,
-			ePerms.Deny+discordgo.PermissionSendMessages,
+			discordgo.PermissionOverwriteTypeRole,
+			int(ePerms.Allow),
+			int(ePerms.Deny+discordgo.PermissionSendMessages),
 		)
 		if err != nil {
 			msg.Reply("Could not lock channel.")
@@ -81,9 +81,9 @@ func (m *ModerationMod) lockdownCommand(msg *meido.DiscordMessage) {
 		err := msg.Sess.ChannelPermissionSet(
 			ch.ID,
 			eRole.ID,
-			"role",
-			ePerms.Allow-discordgo.PermissionSendMessages,
-			ePerms.Deny+discordgo.PermissionSendMessages,
+			discordgo.PermissionOverwriteTypeRole,
+			int(ePerms.Allow-discordgo.PermissionSendMessages),
+			int(ePerms.Deny+discordgo.PermissionSendMessages),
 		)
 		if err != nil {
 			msg.Reply("Could not lock channel.")
@@ -164,9 +164,9 @@ func (m *ModerationMod) unlockCommand(msg *meido.DiscordMessage) {
 		err := msg.Sess.ChannelPermissionSet(
 			ch.ID,
 			eRole.ID,
-			"role",
-			ePerms.Allow,
-			ePerms.Deny-discordgo.PermissionSendMessages,
+			discordgo.PermissionOverwriteTypeRole,
+			int(ePerms.Allow),
+			int(ePerms.Deny-discordgo.PermissionSendMessages),
 		)
 		if err != nil {
 			msg.Reply("Could not unlock channel")

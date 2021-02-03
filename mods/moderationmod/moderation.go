@@ -20,6 +20,7 @@ type ModerationMod struct {
 	db           *sqlx.DB
 	allowedTypes meido.MessageType
 	allowDMs     bool
+	bot          *meido.Bot
 }
 
 func New(name string) meido.Mod {
@@ -53,6 +54,7 @@ func (m *ModerationMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *ModerationMod) Hook(b *meido.Bot) error {
+	m.bot = b
 	m.db = b.DB
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
