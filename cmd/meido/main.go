@@ -2,17 +2,16 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/intrntsrfr/meido"
-	"github.com/intrntsrfr/meido/mods/fishmod"
-	"github.com/intrntsrfr/meido/mods/googlemod"
-	"github.com/intrntsrfr/meido/mods/helpmod"
-	"github.com/intrntsrfr/meido/mods/loggermod"
-	"github.com/intrntsrfr/meido/mods/mediaconvertmod"
-	"github.com/intrntsrfr/meido/mods/moderationmod"
-	"github.com/intrntsrfr/meido/mods/pingmod"
-	"github.com/intrntsrfr/meido/mods/searchmod"
-	"github.com/intrntsrfr/meido/mods/userrolemod"
-	"github.com/intrntsrfr/meido/mods/utilitymod"
+	"github.com/intrntsrfr/meido/internal/base"
+	"github.com/intrntsrfr/meido/internal/mods/fishmod"
+	"github.com/intrntsrfr/meido/internal/mods/googlemod"
+	"github.com/intrntsrfr/meido/internal/mods/loggermod"
+	"github.com/intrntsrfr/meido/internal/mods/mediaconvertmod"
+	"github.com/intrntsrfr/meido/internal/mods/moderationmod"
+	"github.com/intrntsrfr/meido/internal/mods/pingmod"
+	"github.com/intrntsrfr/meido/internal/mods/searchmod"
+	"github.com/intrntsrfr/meido/internal/mods/userrolemod"
+	"github.com/intrntsrfr/meido/internal/mods/utilitymod"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -31,12 +30,12 @@ func main() {
 	if err != nil {
 		panic("config file not found")
 	}
-	var config *meido.Config
+	var config *base.Config
 	err = json.Unmarshal(file, &config)
 	if err != nil {
 		panic("mangled config file, fix it")
 	}
-	bot := meido.NewBot(config)
+	bot := base.NewBot(config)
 	err = bot.Open()
 	if err != nil {
 		panic(err)
@@ -50,9 +49,7 @@ func main() {
 	bot.RegisterMod(userrolemod.New("userrole"))
 	bot.RegisterMod(searchmod.New("search"))
 	bot.RegisterMod(googlemod.New("google"))
-	bot.RegisterMod(helpmod.New("assist"))
 	bot.RegisterMod(mediaconvertmod.New("mediaconvert"))
-	//bot.RegisterMod(autorolemod.New("autorole"))
 
 	bot.Run()
 	defer bot.Close()
