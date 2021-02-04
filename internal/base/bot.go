@@ -228,11 +228,9 @@ func (b *Bot) processMessage(m *DiscordMessage) {
 					return
 				}
 
-				if cmd.RequiresOwner {
-					if !m.IsOwner() {
-						m.Reply("owner only lol")
-						return
-					}
+				if cmd.RequiresOwner && !m.IsOwner() {
+					m.Reply("owner only lol")
+					return
 				}
 
 				// check if user can use command or not
