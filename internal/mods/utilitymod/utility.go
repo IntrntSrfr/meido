@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/internal/base"
+	"github.com/intrntsrfr/meido/internal/utils"
 	"github.com/jmoiron/sqlx"
 	"image"
 	"image/color"
@@ -248,7 +249,7 @@ func (m *UtilityMod) serverCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	ts := base.IDToTimestamp(g.ID)
+	ts := utils.IDToTimestamp(g.ID)
 	dur := time.Since(ts)
 
 	embed := discordgo.MessageEmbed{
@@ -704,7 +705,7 @@ func (m *UtilityMod) userinfoCommand(msg *base.DiscordMessage) {
 		targetUser = targetMember.User
 	}
 
-	createTs := base.IDToTimestamp(targetUser.ID)
+	createTs := utils.IDToTimestamp(targetUser.ID)
 	createDur := time.Since(createTs)
 
 	emb := &discordgo.MessageEmbed{

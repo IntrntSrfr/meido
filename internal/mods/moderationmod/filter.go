@@ -7,6 +7,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/base"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -199,7 +200,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *base.DiscordMessage) {
 				return
 			}
 
-			n = base.Clamp(0, 10, n)
+			n = utils.Clamp(0, 10, n)
 
 			_, err = m.db.Exec("UPDATE guilds SET max_warns=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
 			if err != nil {
@@ -214,7 +215,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *base.DiscordMessage) {
 				return
 			}
 
-			n = base.Clamp(0, 365, n)
+			n = utils.Clamp(0, 365, n)
 
 			_, err = m.db.Exec("UPDATE guilds SET warn_duration=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
 			if err != nil {

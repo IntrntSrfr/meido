@@ -7,6 +7,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/internal/base"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/utils"
 	"strconv"
 	"strings"
 	"time"
@@ -217,7 +218,7 @@ func (m *ModerationMod) warnlogCommand(msg *base.DiscordMessage) {
 			return
 		}
 
-		warns = warns[page*10 : base.Min(page*10+10, len(warns))]
+		warns = warns[page*10 : utils.Min(page*10+10, len(warns))]
 
 		userCache := make(map[string]*discordgo.User)
 
@@ -346,12 +347,6 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
-	/*
-		id := meido.UserIDRegex.FindStringSubmatch(msg.Args()[1])[0]
-		if len(id) < 1 {
-			return
-		}
-	*/
 
 	_, err := strconv.Atoi(msg.Args()[1])
 	if err != nil {
@@ -365,12 +360,7 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 		fmt.Println(err)
 		msg.Reply("there was an error, please try again")
 		return
-	} else if err == sql.ErrNoRows {
-		msg.Reply("User has active no warns")
-		return
-	}
-
-	if len(entries) == 0 {
+	} else if err == sql.ErrNoRows || len(entries) == 0 {
 		msg.Reply("User has active no warns")
 		return
 	}
@@ -389,11 +379,19 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 	if err != nil {
 		return
 	}
+	defer m.bot.CloseCallback(msg.Message.ChannelID, msg.Author.ID)
 
 	// this needs a timeout
 	var n int
+	var reply *base.DiscordMessage
 	for {
-		reply := <-cb
+		select {
+		case reply = <-cb:
+			break
+		case <-time.After(time.Second * 30):
+			msg.Reply("You spent too much time")
+			return
+		}
 
 		n, err = strconv.Atoi(reply.RawContent())
 		if err == nil && n-1 >= 0 && n-1 < len(entries) {
@@ -401,8 +399,6 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 		}
 	}
 	msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
-
-	m.bot.CloseCallback(msg.Message.ChannelID, msg.Author.ID)
 
 	selectedEntry := entries[n-1]
 
