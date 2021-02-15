@@ -100,18 +100,23 @@ func (m *SearchMod) youtubeCommand(msg *base.DiscordMessage) {
 
 	req, err := http.NewRequest("GET", URI.String(), nil)
 	if err != nil {
-		msg.Reply("something wrong happened")
 		return
 	}
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		msg.Reply("something wrong happened")
 		return
 	}
 	defer res.Body.Close()
 
-	body, _ := ioutil.ReadAll(res.Body)
+	if res.StatusCode != 200 {
+		return
+	}
+
+	body, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		return
+	}
 
 	result := YoutubeSearchResponse{}
 

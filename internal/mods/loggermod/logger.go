@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/base"
+	"github.com/intrntsrfr/meido/internal/utils"
 	"sync"
 )
 
@@ -12,19 +13,19 @@ type LoggerMod struct {
 	name          string
 	commands      map[string]*base.ModCommand
 	passives      []*base.ModPassive
-	dmLogChannels []string
 	allowedTypes  base.MessageType
 	allowDMs      bool
+	dmLogChannels []string
 }
 
 func New(name string) base.Mod {
 	return &LoggerMod{
 		name:          name,
-		dmLogChannels: []string{},
 		commands:      make(map[string]*base.ModCommand),
 		passives:      []*base.ModPassive{},
 		allowedTypes:  base.MessageTypeCreate,
 		allowDMs:      true,
+		dmLogChannels: []string{},
 	}
 }
 
@@ -59,12 +60,23 @@ func (m *LoggerMod) Hook(b *base.Bot) error {
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		b.Discord.Sess.RequestGuildMembers(g.ID, "", 0, false)
-		fmt.Println("loaded: ", g.Guild.Name, g.MemberCount, len(g.Members))
+		fmt.Println("loading: ", g.Guild.Name, g.MemberCount, len(g.Members))
+	})
+
+	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildMembersChunk) {
+		if g.ChunkIndex == g.ChunkCount-1 {
+			guild, err := b.Discord.Guild(g.GuildID)
+			if err != nil {
+				return
+			}
+			fmt.Println("finished loading " + guild.Name)
+		}
 	})
 
 	m.passives = append(m.passives, NewForwardDmsPassive(m))
 	return nil
 }
+
 func (m *LoggerMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
@@ -90,7 +102,7 @@ func (m *LoggerMod) forwardDmsPassive(msg *base.DiscordMessage) {
 	}
 
 	embed := &discordgo.MessageEmbed{
-		Color:       0xFEFEFE,
+		Color:       utils.ColorInfo,
 		Title:       fmt.Sprintf("Message from %v", msg.Message.Author.String()),
 		Description: msg.Message.Content,
 		Footer:      &discordgo.MessageEmbedFooter{Text: msg.Message.Author.ID},

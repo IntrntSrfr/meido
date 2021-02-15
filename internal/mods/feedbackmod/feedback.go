@@ -113,6 +113,6 @@ func (m *FeedbackMod) LeaveFeedback(msg *base.DiscordMessage) {
 		}
 	}
 
-	msg.Discord.Sess.ChannelMessageSend(m.feedbackChannel, fmt.Sprintf(`%v`, msg.Args()[1:]))
+	msg.Discord.Sess.ChannelMessageSend(m.feedbackChannel, fmt.Sprintf(`%v`, msg.RawArgs()[1:]))
 	msg.Reply("Feedback left")
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/base"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/utils"
 	"github.com/jmoiron/sqlx"
 	"strconv"
 	"strings"
@@ -212,9 +213,9 @@ func (m *ModerationMod) banCommand(msg *base.DiscordMessage) {
 		pruneDays, err = strconv.Atoi(msg.Args()[2])
 		if err != nil {
 			pruneDays = 0
-			reason = strings.Join(msg.Args()[2:], " ")
+			reason = strings.Join(msg.RawArgs()[2:], " ")
 		} else {
-			reason = strings.Join(msg.Args()[3:], " ")
+			reason = strings.Join(msg.RawArgs()[3:], " ")
 		}
 
 		//pruneDays = int(math.Max(float64(0), float64(pruneDays)))
@@ -279,7 +280,7 @@ func (m *ModerationMod) banCommand(msg *base.DiscordMessage) {
 
 	embed := &discordgo.MessageEmbed{
 		Title: "User banned",
-		Color: 0xC80000,
+		Color: utils.ColorCritical,
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "Username",
@@ -338,7 +339,7 @@ func (m *ModerationMod) unbanCommand(msg *base.DiscordMessage) {
 
 	embed := &discordgo.MessageEmbed{
 		Description: fmt.Sprintf("**Unbanned** %v - %v#%v (%v)", targetUser.Mention(), targetUser.Username, targetUser.Discriminator, targetUser.ID),
-		Color:       0x00C800,
+		Color:       utils.ColorGreen,
 	}
 
 	msg.ReplyEmbed(embed)
@@ -426,7 +427,7 @@ func (m *ModerationMod) kickCommand(msg *base.DiscordMessage) {
 
 	reason := ""
 	if msg.LenArgs() > 2 {
-		reason = strings.Join(msg.Args()[2:], " ")
+		reason = strings.Join(msg.RawArgs()[2:], " ")
 	}
 
 	if len(msg.Message.Mentions) >= 1 {
@@ -496,7 +497,7 @@ func (m *ModerationMod) kickCommand(msg *base.DiscordMessage) {
 				Inline: true,
 			},
 		},
-		Color: 0xC80000,
+		Color: utils.ColorCritical,
 	}
 
 	msg.ReplyEmbed(embed)

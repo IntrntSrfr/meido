@@ -161,7 +161,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *base.DiscordMessage) {
 
 		emb := &discordgo.MessageEmbed{
 			Title: "Moderation settings",
-			Color: 0xFEFEFE,
+			Color: utils.ColorInfo,
 			Fields: []*discordgo.MessageEmbedField{
 				{
 					Name:   "Warns enabled",

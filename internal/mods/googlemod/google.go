@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/base"
+	"github.com/intrntsrfr/meido/internal/utils"
 	"strings"
 	"sync"
 	"time"
@@ -129,7 +130,7 @@ func (m *GoogleMod) googleCommand(msg *base.DiscordMessage) {
 
 	reply, err := msg.ReplyEmbed(&discordgo.MessageEmbed{
 		Title: "google search",
-		Color: 0xfefefe,
+		Color: utils.ColorInfo,
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    msg.Message.Author.String(),
 			IconURL: msg.Message.Author.AvatarURL("512"),

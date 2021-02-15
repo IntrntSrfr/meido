@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/base"
+	"github.com/intrntsrfr/meido/internal/utils"
 	"io/ioutil"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,6 +22,7 @@ type FishMod struct {
 	commands     map[string]*base.ModCommand
 	allowedTypes base.MessageType
 	allowDMs     bool
+	bot          *base.Bot
 	Aquariums    map[string]*aquarium
 }
 type aquarium struct {
@@ -87,6 +90,7 @@ func (m *FishMod) AllowDMs() bool {
 
 // Hook will hook the Mod into the Bot.
 func (m *FishMod) Hook(b *base.Bot) error {
+	m.bot = b
 	err := m.Load()
 	if err != nil {
 		return err
@@ -132,7 +136,7 @@ func NewFishCommand(m *FishMod) *base.ModCommand {
 func (m *FishMod) fishCommand(msg *base.DiscordMessage) {
 	fp := pickFish()
 
-	m.updateAquarium(msg.Author.ID, fp, 1)
+	m.updateAquarium(msg.Author().ID, fp, 1)
 
 	caption := fp.caption
 	if fp.mention {
@@ -210,11 +214,34 @@ func NewAquariumCommand(m *FishMod) *base.ModCommand {
 	}
 }
 
+func (m *FishMod) getAquarium(id string) *aquarium {
+	m.Lock()
+	defer m.Unlock()
+	return m.Aquariums[id]
+}
+
 func (m *FishMod) aquariumCommand(msg *base.DiscordMessage) {
 
-	aq := m.Aquariums[msg.Author.ID]
+	targetUser := msg.Author()
+
+	id := msg.Author().ID
+	if msg.LenArgs() > 1 {
+		id = utils.TrimUserID(msg.Args()[1])
+		_, err := strconv.Atoi(id)
+		if err != nil {
+			return
+		}
+
+		if targetMember, err := msg.Discord.Member(msg.Message.GuildID, id); err == nil {
+			targetUser = targetMember.User
+		} else if targetUser, err = msg.Discord.Sess.User(id); err != nil {
+			return
+		}
+	}
+
+	aq := m.getAquarium(targetUser.ID)
 	if aq == nil {
-		msg.Reply("You have no fish.")
+		msg.Reply(fmt.Sprintf("%v has no fish", targetUser.String()))
 		return
 	}
 
@@ -226,14 +253,60 @@ func (m *FishMod) aquariumCommand(msg *base.DiscordMessage) {
 	aq.Unlock()
 
 	embed := &discordgo.MessageEmbed{
-		Title:       "Your aquarium",
+		Title:       fmt.Sprintf("%v's aquarium", targetUser.String()),
 		Description: strings.Join(w, " | "),
-		Color:       0x00bbe0,
+		Color:       utils.ColorLightBlue,
 		Author: &discordgo.MessageEmbedAuthor{
-			Name:    msg.Author.String(),
-			IconURL: msg.Author.AvatarURL("512"),
+			Name:    msg.Author().String(),
+			IconURL: msg.Author().AvatarURL("512"),
 		},
 	}
 
 	msg.ReplyEmbed(embed)
 }
+
+/*
+func (m *FishMod) NewFishTradeCommand() *base.ModCommand {
+	return &base.ModCommand{
+		Mod:           m,
+		Name:          "fishgive",
+		Description:   "Give someone a fish",
+		Triggers:      []string{"m?fishgive"},
+		Usage:         "m?fishgive [user]",
+		Cooldown:      5,
+		CooldownUser:  true,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		CheckBotPerms: false,
+		AllowedTypes:  base.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           nil,
+	}
+}
+
+func (m *FishMod) newFishGiveCommand(msg *base.DiscordMessage) {
+	if msg.LenArgs() < 2 {
+		return
+	}
+
+	id := msg.Author.ID
+	if msg.LenArgs() > 1 {
+		id = msg.Args()[1]
+		_, err := strconv.Atoi(id)
+		if err != nil {
+			return
+		}
+		targetUser, err = msg.Discord.Sess.User(id)
+		if err != nil {
+			return
+		}
+	}
+
+	cb, err := m.bot.MakeCallback(msg.ChannelID(), msg.Author.ID)
+	if err != nil {
+		return
+	}
+
+}
+*/

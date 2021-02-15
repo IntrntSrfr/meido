@@ -97,6 +97,10 @@ func (m *MediaConvertMod) jpglargeconvertPassive(msg *base.DiscordMessage) {
 			continue
 		}
 
+		if res.StatusCode != 200 {
+			continue
+		}
+
 		defer res.Body.Close()
 
 		files = append(files, &discordgo.File{
@@ -110,7 +114,7 @@ func (m *MediaConvertMod) jpglargeconvertPassive(msg *base.DiscordMessage) {
 	}
 
 	msg.Sess.ChannelMessageSendComplex(msg.Message.ChannelID, &discordgo.MessageSend{
-		Content: fmt.Sprintf("%v, I converted that to JPG for you", msg.Author.Mention()),
+		Content: fmt.Sprintf("%v, I converted that to JPG for you", msg.Author().Mention()),
 		Files:   files,
 	})
 }

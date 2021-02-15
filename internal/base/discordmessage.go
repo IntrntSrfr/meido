@@ -53,13 +53,11 @@ var PermMap = map[int64]string{
 // DiscordMessage represents a Discord message sent in a channel, and contains fields so that it is easy to
 // work with the data it gives.
 type DiscordMessage struct {
-	Sess    *discordgo.Session
-	Discord *Discord
+	Sess    *discordgo.Session `json:"-"`
+	Discord *Discord           `json:"-"`
 	Message *discordgo.Message
 
-	// Partial guild member, use only for guild related stuff0
-	Author       *discordgo.User
-	Member       *discordgo.Member
+	// Partial guild member, use only for guild related stuff
 	Type         MessageType
 	TimeReceived time.Time
 	Shard        int
@@ -101,11 +99,6 @@ func (m *DiscordMessage) IsDM() bool {
 	return m.Message.Type == discordgo.MessageTypeDefault && m.Message.GuildID == ""
 }
 
-// IsOwner returns whether the author of the message is a bot owner.
-func (m *DiscordMessage) IsOwner() bool {
-	return m.Discord.IsOwner(m)
-}
-
 // HasPermissions returns if a member has certain permissions or not.
 func (m *DiscordMessage) HasPermissions(perm int64) (bool, error) {
 	uPerms, err := m.Sess.State.MessagePermissions(m.Message)
@@ -114,6 +107,18 @@ func (m *DiscordMessage) HasPermissions(perm int64) (bool, error) {
 		return false, err
 	}
 	return uPerms&perm != 0 || uPerms&discordgo.PermissionAdministrator != 0, nil
+}
+
+func (m *DiscordMessage) Author() *discordgo.User {
+	return m.Message.Author
+}
+
+func (m *DiscordMessage) Member() *discordgo.Member {
+	return m.Message.Member
+}
+
+func (m *DiscordMessage) GuildID() string {
+	return m.Message.GuildID
 }
 
 func (m *DiscordMessage) ChannelID() string {

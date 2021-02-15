@@ -86,7 +86,7 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 	}
 
 	if msg.LenArgs() > 2 {
-		reason = strings.Join(msg.Args()[2:], " ")
+		reason = strings.Join(msg.RawArgs()[2:], " ")
 	}
 
 	warnCount := 0
@@ -125,6 +125,7 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 			msg.Reply(err.Error())
 			return
 		}
+
 		_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
 			msg.Sess.State.User.ID, time.Now(), g.ID, targetUser.User.ID)
 
@@ -370,26 +371,35 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 	for i, entry := range entries {
 		sb.WriteString(fmt.Sprintf("`%2v.` | '%v' given %v\n", i+1, entry.Reason, humanize.Time(entry.GivenAt)))
 	}
+	sb.WriteString("\nType `cancel` to exit")
 	menu, err := msg.Reply(sb.String())
 	if err != nil {
 		return
 	}
 
-	cb, err := m.bot.MakeCallback(msg.Message.ChannelID, msg.Author.ID)
+	cb, err := m.bot.MakeCallback(msg.Message.ChannelID, msg.Author().ID)
 	if err != nil {
 		return
 	}
-	defer m.bot.CloseCallback(msg.Message.ChannelID, msg.Author.ID)
 
-	// this needs a timeout
 	var n int
 	var reply *base.DiscordMessage
+	// this needs a timeout
 	for {
 		select {
 		case reply = <-cb:
-			break
 		case <-time.After(time.Second * 30):
 			msg.Reply("You spent too much time")
+			m.bot.CloseCallback(msg.Message.ChannelID, msg.Author().ID)
+			msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
+			return
+		}
+
+		if strings.ToLower(reply.RawContent()) == "cancel" {
+			m.bot.CloseCallback(msg.Message.ChannelID, msg.Author().ID)
+			msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
+			msg.Sess.ChannelMessageDelete(reply.Message.ChannelID, reply.Message.ID)
+
 			return
 		}
 
@@ -398,7 +408,10 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 			break
 		}
 	}
+
+	m.bot.CloseCallback(msg.Message.ChannelID, msg.Author().ID)
 	msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
+	msg.Sess.ChannelMessageDelete(reply.Message.ChannelID, reply.Message.ID)
 
 	selectedEntry := entries[n-1]
 

@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/base"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
 	"strconv"
@@ -239,19 +240,10 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 			return
 		}
 
-		if !msg.Discord.HasPermissions(msg.Message.ChannelID, discordgo.PermissionManageRoles) {
+		if allow, err := msg.Discord.HasPermissions(msg.Message.ChannelID, discordgo.PermissionManageRoles); err != nil || !allow {
+			msg.Reply("I am missing 'manage roles' permissions!")
 			return
 		}
-
-		/*
-			botPerms, err := msg.Discord.UserChannelPermissions(msg.Discord.Sess.State.User.ID, msg.Message.ChannelID)
-			if err != nil {
-				return
-			}
-			if botPerms&discordgo.PermissionManageRoles == 0 && botPerms&discordgo.PermissionAdministrator == 0 {
-				return
-			}
-		*/
 
 		ur := &database.Userrole{}
 		err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, msg.Message.Author.ID)
@@ -280,10 +272,10 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, newName, oldRole.Color, oldRole.Hoist, int(oldRole.Permissions), oldRole.Mentionable)
 			if err != nil {
 				if strings.Contains(err.Error(), strconv.Itoa(discordgo.ErrCodeMissingPermissions)) {
-					msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Missing permissions.", Color: 0xC80000})
+					msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Missing permissions.", Color: utils.ColorCritical})
 					return
 				}
-				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error() + "`.", Color: 0xC80000})
+				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error() + "`.", Color: utils.ColorCritical})
 				return
 			}
 
@@ -300,18 +292,14 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 			}
 
 			color, err := strconv.ParseInt(clr, 16, 64)
-			if err != nil {
-				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code.", Color: 0xC80000})
-				return
-			}
-			if color < 0 || color > 0xFFFFFF {
-				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code.", Color: 0xC80000})
+			if err != nil || color < 0 || color > 0xFFFFFF {
+				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code.", Color: utils.ColorCritical})
 				return
 			}
 
 			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, oldRole.Name, int(color), oldRole.Hoist, int(oldRole.Permissions), oldRole.Mentionable)
 			if err != nil {
-				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error(), Color: 0xC80000})
+				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error(), Color: utils.ColorCritical})
 				return
 			}
 
@@ -324,7 +312,7 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 		}
 		return
 	case la == 1:
-		target = msg.Member
+		target = msg.Member()
 	case la == 2:
 		if len(msg.Message.Mentions) >= 1 {
 			target, err = msg.Discord.Member(g.ID, msg.Message.Mentions[0].ID)

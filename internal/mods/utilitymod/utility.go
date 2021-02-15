@@ -181,7 +181,7 @@ func (m *UtilityMod) avatarCommand(msg *base.DiscordMessage) {
 
 	if targetUser.Avatar == "" {
 		msg.ReplyEmbed(&discordgo.MessageEmbed{
-			Color:       0xC80000,
+			Color:       utils.ColorCritical,
 			Description: fmt.Sprintf("%v has no avatar set.", targetUser.String()),
 		})
 	} else {
@@ -253,7 +253,7 @@ func (m *UtilityMod) serverCommand(msg *base.DiscordMessage) {
 	dur := time.Since(ts)
 
 	embed := discordgo.MessageEmbed{
-		Color: 0xFEFEFE,
+		Color: utils.ColorInfo,
 		Author: &discordgo.MessageEmbedAuthor{
 			Name: g.Name,
 		},
@@ -349,7 +349,7 @@ func (m *UtilityMod) aboutCommand(msg *base.DiscordMessage) {
 
 	msg.ReplyEmbed(&discordgo.MessageEmbed{
 		Title: "About",
-		Color: 0xFEFEFE,
+		Color: utils.ColorInfo,
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "Uptime",
@@ -425,7 +425,7 @@ func (m *UtilityMod) serverSplashCommand(msg *base.DiscordMessage) {
 
 	embed := &discordgo.MessageEmbed{
 		Title: g.Name,
-		Color: 0xFFFFFF,
+		Color: utils.ColorInfo,
 		Image: &discordgo.MessageEmbedImage{
 			URL: fmt.Sprintf("https://cdn.discordapp.com/splashes/%v/%v.png?size=2048", g.ID, g.Splash),
 		},
@@ -465,7 +465,7 @@ func (m *UtilityMod) serverIconCommand(msg *base.DiscordMessage) {
 
 	embed := &discordgo.MessageEmbed{
 		Title: g.Name,
-		Color: 0xFFFFFF,
+		Color: utils.ColorInfo,
 		Image: &discordgo.MessageEmbedImage{
 			URL: fmt.Sprintf("%v?size=2048", g.IconURL()),
 		},
@@ -506,7 +506,7 @@ func (m *UtilityMod) serverBannerCommand(msg *base.DiscordMessage) {
 
 	embed := &discordgo.MessageEmbed{
 		Title: g.Name,
-		Color: 0xFFFFFF,
+		Color: utils.ColorInfo,
 		Image: &discordgo.MessageEmbedImage{
 			URL: fmt.Sprintf("https://cdn.discordapp.com/banners/%v/%v.png?size=2048", g.ID, g.Banner),
 		},
@@ -631,7 +631,7 @@ func (m *UtilityMod) userpermsCommand(msg *base.DiscordMessage) {
 			}
 		}
 	} else {
-		targetUser = msg.Member
+		targetUser = msg.Member()
 	}
 
 	uPerms, err := msg.Sess.State.UserChannelPermissions(targetUser.User.ID, msg.Message.ChannelID)
@@ -701,8 +701,8 @@ func (m *UtilityMod) userinfoCommand(msg *base.DiscordMessage) {
 			}
 		}
 	} else {
-		targetMember = msg.Member
-		targetUser = targetMember.User
+		targetMember = msg.Member()
+		targetUser = msg.Author()
 	}
 
 	createTs := utils.IDToTimestamp(targetUser.ID)
@@ -782,7 +782,7 @@ func NewHelpCommand(m *UtilityMod) *base.ModCommand {
 func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 
 	emb := &discordgo.MessageEmbed{
-		Color: 0xFEFEFE,
+		Color: utils.ColorInfo,
 		Footer: &discordgo.MessageEmbedFooter{
 			Text: "use m?help followed by folder name to see commands for that folder\nuse m?help followed by command name to see specific command help",
 		},

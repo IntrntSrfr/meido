@@ -119,10 +119,9 @@ func (m *PingMod) pingCommand(msg *base.DiscordMessage) {
 
 	now := time.Now()
 	discordLatency := now.Sub(startTime)
-	botLatency := now.Sub(msg.TimeReceived)
 
 	msg.Sess.ChannelMessageEdit(msg.Message.ChannelID, first.ID,
-		fmt.Sprintf("Pong!\nDiscord delay: %s\nBot delay: %s", discordLatency, botLatency))
+		fmt.Sprintf("Pong!\nDelay: %s", discordLatency))
 }
 
 // NewMonkeyCommand returns a new monkey command.

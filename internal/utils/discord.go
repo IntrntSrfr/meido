@@ -18,8 +18,8 @@ func IDToTimestamp(idStr string) time.Time {
 }
 
 func TrimUserID(id string) string {
-
-	id = strings.TrimPrefix(id, "<@!")
+	id = strings.TrimPrefix(id, "<@")
+	id = strings.TrimPrefix(id, "!")
 	id = strings.TrimSuffix(id, ">")
 
 	return id

@@ -1,5 +1,7 @@
 package base
 
+import "strings"
+
 // Mod represents a collection of commands and passives.
 type Mod interface {
 	Name() string
@@ -39,4 +41,22 @@ type ModPassive struct {
 	AllowedTypes MessageType
 	Enabled      bool
 	Run          func(*DiscordMessage) `json:"-"`
+}
+
+func FindCommand(mod Mod, args []string) (*ModCommand, bool) {
+
+	for _, cmd := range mod.Commands() {
+		for _, trig := range cmd.Triggers {
+			splitTrig := strings.Split(trig, " ")
+
+			if len(args) < len(splitTrig) {
+				continue
+			}
+			if strings.Join(args[:len(splitTrig)], " ") == trig {
+				return cmd, true
+			}
+		}
+	}
+
+	return nil, false
 }

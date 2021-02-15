@@ -43,16 +43,6 @@ type CallbackCache struct {
 	ch map[string]chan *DiscordMessage
 }
 
-// PermissionCache is yet to be used.
-type PermissionCache struct {
-	sync.Mutex
-	m map[string][]*PermissionSetting
-}
-
-// PermissionSetting is yet to be used.
-type PermissionSetting struct {
-}
-
 // NewBot takes in a Config and returns a pointer to a new Bot
 func NewBot(config *Config) *Bot {
 	d := NewDiscord(config.Token)
@@ -155,15 +145,8 @@ func (b *Bot) CloseCallback(channelID, userID string) {
 func (b *Bot) listen(msg <-chan *DiscordMessage) {
 	for {
 		m := <-msg
-
 		go b.processMessage(m)
 		go b.deliverCallbacks(m)
-		/*
-			select {
-			case m := <-msg:
-				go b.processMessage(m)
-			}
-		*/
 	}
 }
 
@@ -198,91 +181,83 @@ func (b *Bot) processMessage(m *DiscordMessage) {
 			continue
 		}
 
-		for _, cmd := range mod.Commands() {
-
-			go func(cmd *ModCommand) {
-				if m.IsDM() && !cmd.AllowDMs {
-					return
-				}
-				if m.Type&cmd.AllowedTypes == 0 {
-					return
-				}
-
-				runCmd := false
-				for _, trig := range cmd.Triggers {
-					splitTrig := strings.Split(trig, " ")
-
-					if m.LenArgs() < len(splitTrig) {
-						break
-					}
-					if strings.Join(m.Args()[:len(splitTrig)], " ") == trig {
-						runCmd = true
-					}
-				}
-
-				if !runCmd {
-					return
-				}
-
-				if !cmd.Enabled {
-					return
-				}
-
-				if cmd.RequiresOwner && !m.IsOwner() {
-					m.Reply("owner only lol")
-					return
-				}
-
-				// check if user can use command or not
-				// may be based on user level, roles, channel etc..
-
-				// check if command for channel is on cooldown
-				key := ""
-				if cmd.CooldownUser {
-					key = fmt.Sprintf("%v:%v", m.Message.Author.ID, cmd.Name)
-				} else {
-					key = fmt.Sprintf("%v:%v", m.Message.ChannelID, cmd.Name)
-				}
-				if t, ok := b.isOnCooldown(key); ok {
-					// if on cooldown, we know its for this command so we can break out and go next
-					cdMsg, err := m.Reply(fmt.Sprintf("on cooldown for another %v", time.Until(t)))
-					if err != nil {
-						return
-					}
-					go func() {
-						time.AfterFunc(time.Second*2, func() {
-							m.Sess.ChannelMessageDelete(cdMsg.ChannelID, cdMsg.ID)
-						})
-					}()
-					return
-				}
-
-				//check for perms
-				if cmd.RequiredPerms != 0 {
-					if allow, err := m.HasPermissions(cmd.RequiredPerms); err != nil || !allow {
-						return
-					}
-					if cmd.CheckBotPerms {
-						if !m.Discord.HasPermissions(m.Message.ChannelID, cmd.RequiredPerms) {
-							return
-						}
-					}
-				}
-
-				// run cmd
-				go cmd.Run(m)
-				// log cmd
-				go b.logCommand(m, cmd)
-				// set cmd on cooldown
-				go b.setOnCooldown(key, time.Duration(cmd.Cooldown))
-			}(cmd)
+		cmd, found := FindCommand(mod, m.Args())
+		if !found {
+			continue
 		}
+
+		go b.executeCommand(cmd, m)
 	}
 }
 
-func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
+func (b *Bot) executeCommand(cmd *ModCommand, m *DiscordMessage) {
+	if !cmd.Enabled {
+		return
+	}
 
-	key := fmt.Sprintf("%v:%v", msg.ChannelID(), msg.Author.ID)
+	if m.IsDM() && !cmd.AllowDMs {
+		return
+	}
+
+	if m.Type&cmd.AllowedTypes == 0 {
+		return
+	}
+
+	if cmd.RequiresOwner && !m.Discord.IsOwner(m) {
+		m.Reply("owner only lol")
+		return
+	}
+
+	// check if user can use command or not
+	// may be based on user level, roles, channel etc..
+
+	// check if command for channel is on cooldown
+	key := ""
+	if cmd.CooldownUser {
+		key = fmt.Sprintf("%v:%v", m.Message.Author.ID, cmd.Name)
+	} else {
+		key = fmt.Sprintf("%v:%v", m.Message.ChannelID, cmd.Name)
+	}
+	if t, ok := b.isOnCooldown(key); ok {
+		// if on cooldown, we know its for this command so we can break out and go next
+		cdMsg, err := m.Reply(fmt.Sprintf("on cooldown for another %v", time.Until(t)))
+		if err != nil {
+			return
+		}
+		go func() {
+			time.AfterFunc(time.Second*2, func() {
+				m.Sess.ChannelMessageDelete(cdMsg.ChannelID, cdMsg.ID)
+			})
+		}()
+		return
+	}
+
+	//check for perms
+	if cmd.RequiredPerms != 0 {
+		if allow, err := m.HasPermissions(cmd.RequiredPerms); err != nil || !allow {
+			return
+		}
+		if cmd.CheckBotPerms {
+			if botAllow, err := m.Discord.HasPermissions(m.Message.ChannelID, cmd.RequiredPerms); err != nil || !botAllow {
+				return
+			}
+		}
+	}
+
+	// run cmd
+	go cmd.Run(m)
+	// log cmd
+	go b.logCommand(m, cmd)
+	// set cmd on cooldown
+	go b.setOnCooldown(key, time.Duration(cmd.Cooldown))
+}
+
+func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
+	if msg.Type&MessageTypeCreate == 0 {
+		return
+	}
+
+	key := fmt.Sprintf("%v:%v", msg.ChannelID(), msg.Author().ID)
 
 	b.Callbacks.Lock()
 	defer b.Callbacks.Unlock()
