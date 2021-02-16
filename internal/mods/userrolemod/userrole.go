@@ -8,7 +8,6 @@ import (
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/owo"
-	"github.com/jmoiron/sqlx"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,7 +18,7 @@ type UserRoleMod struct {
 	sync.Mutex
 	name         string
 	commands     map[string]*base.ModCommand
-	db           *sqlx.DB
+	db           *database.DB
 	owo          *owo.Client
 	allowedTypes base.MessageType
 	allowDMs     bool

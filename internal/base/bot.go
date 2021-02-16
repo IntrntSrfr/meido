@@ -3,6 +3,7 @@ package base
 import (
 	"errors"
 	"fmt"
+	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
 	"os"
@@ -26,7 +27,7 @@ type Bot struct {
 	Discord   *Discord
 	Config    *Config
 	Mods      map[string]Mod
-	DB        *sqlx.DB
+	DB        *database.DB
 	Owo       *owo.Client
 	Cooldowns *CooldownCache
 	Callbacks *CallbackCache
@@ -78,7 +79,13 @@ func (b *Bot) Open() error {
 	if err != nil {
 		panic(err)
 	}
-	b.DB = psql
+
+	//b.DB = psql
+	b.DB, err = database.New(psql)
+	if err != nil {
+		panic(err)
+	}
+
 	fmt.Println("psql connection established")
 
 	b.Owo = owo.NewClient(b.Config.OwoToken)

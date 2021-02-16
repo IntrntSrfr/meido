@@ -7,7 +7,6 @@ import (
 	"github.com/intrntsrfr/meido/internal/base"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/utils"
-	"github.com/jmoiron/sqlx"
 	"strconv"
 	"strings"
 	"sync"
@@ -19,7 +18,7 @@ type ModerationMod struct {
 	name         string
 	commands     map[string]*base.ModCommand
 	passives     []*base.ModPassive
-	db           *sqlx.DB
+	db           *database.DB
 	allowedTypes base.MessageType
 	allowDMs     bool
 	bot          *base.Bot

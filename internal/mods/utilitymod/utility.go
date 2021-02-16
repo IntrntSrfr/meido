@@ -6,8 +6,8 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/internal/base"
+	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/utils"
-	"github.com/jmoiron/sqlx"
 	"image"
 	"image/color"
 	"image/draw"
@@ -25,7 +25,7 @@ type UtilityMod struct {
 	name         string
 	commands     map[string]*base.ModCommand
 	startTime    time.Time
-	db           *sqlx.DB
+	db           *database.DB
 	allowedTypes base.MessageType
 	allowDMs     bool
 	bot          *base.Bot
@@ -322,8 +322,7 @@ func (m *UtilityMod) aboutCommand(msg *base.DiscordMessage) {
 		totalBots   int
 		totalHumans int
 
-		memory        runtime.MemStats
-		totalCommands int
+		memory runtime.MemStats
 	)
 	runtime.ReadMemStats(&memory)
 	guilds := msg.Discord.Guilds()
@@ -341,9 +340,8 @@ func (m *UtilityMod) aboutCommand(msg *base.DiscordMessage) {
 	}
 
 	uptime := time.Now().Sub(m.startTime)
-	err := m.db.Get(&totalCommands, "SELECT COUNT(*) FROM commandlog;")
+	count, err := m.db.CommandCount()
 	if err != nil {
-		msg.Reply("Error getting data")
 		return
 	}
 
@@ -358,7 +356,7 @@ func (m *UtilityMod) aboutCommand(msg *base.DiscordMessage) {
 			},
 			{
 				Name:   "Total commands ran",
-				Value:  strconv.Itoa(totalCommands),
+				Value:  strconv.Itoa(count),
 				Inline: true,
 			},
 			{
@@ -381,13 +379,6 @@ func (m *UtilityMod) aboutCommand(msg *base.DiscordMessage) {
 				Value:  humanize.Bytes(memory.TotalAlloc - memory.Alloc),
 				Inline: true,
 			},
-			/*
-				{
-					Name:   "Allocs | Frees",
-					Value:  fmt.Sprintf("%v | %v", memory.Mallocs, memory.Frees),
-					Inline: false,
-				},
-			*/
 		},
 	})
 }
