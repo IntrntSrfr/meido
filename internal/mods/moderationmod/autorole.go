@@ -34,7 +34,6 @@ func (m *ModerationMod) autoroleCommand(msg *base.DiscordMessage) {
 	} else {
 		g, err := msg.Discord.Guild(msg.Message.GuildID)
 		if err != nil {
-			fmt.Println(err)
 			msg.Reply("an error occurred, try again")
 			return
 		}
