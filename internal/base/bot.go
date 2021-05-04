@@ -309,3 +309,11 @@ func (b *Bot) setOnCooldown(key string, dur time.Duration) {
 		})
 	}()
 }
+func (b *Bot) IsOwner(msg *DiscordMessage) bool {
+	for _, id := range b.Config.OwnerIds {
+		if msg.Author().ID == id {
+			return true
+		}
+	}
+	return false
+}
