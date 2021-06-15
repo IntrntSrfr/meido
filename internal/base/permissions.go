@@ -11,6 +11,7 @@ type PermissionType int
 
 const (
 	PermissionTypeUser = 1 << iota
+	PermissionTypeRole
 	PermissionTypeChannel
 	PermissionTypeGuild
 )
@@ -27,6 +28,8 @@ type PermissionOverride struct {
 
 	// Allow  is whether this override should allow or disallow
 	Allow bool
+
+	Command string
 }
 
 type SortedByUID []*PermissionOverride
@@ -44,7 +47,7 @@ func (s SortedByUID) Swap(i, j int) {
 }
 
 func (p *PermissionOverride) Validate() error {
-	if p.UID == 0 || p.GuildID == "" || p.Type == 0 || p.TypeID == "" {
+	if p.UID == 0 || p.GuildID == "" || p.Type == 0 || p.TypeID == "" || p.Command == "" {
 		return errors.New("one or more fields are empty")
 	}
 	return nil
@@ -112,7 +115,33 @@ func (p *PermissionHandler) getOverrideIndex(id int) int {
 	return -1
 }
 
-func (p *PermissionHandler) Calculate() (bool, error) {
+func (p *PermissionHandler) Calculate(guildID, channelID, userID, command string, roleIDs []string, requiredPerms, perms int64) (bool, error) {
 
-	return false, nil
+	overrides := p.GetGuildOverrides(guildID)
+
+	for _, o := range overrides {
+		if o.Type == PermissionTypeUser {
+			if o.TypeID == userID && !o.Allow {
+				return false, nil
+			}
+
+		} else if o.Type == PermissionTypeRole {
+			for _, r := range roleIDs {
+				if o.TypeID == r && !o.Allow {
+					return false, nil
+				}
+			}
+		} else if o.Type == PermissionTypeChannel {
+			if o.TypeID == channelID && !o.Allow {
+				return false, nil
+			}
+
+		} else if o.Type == PermissionTypeGuild {
+			if !o.Allow {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
 }
