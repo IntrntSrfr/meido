@@ -3,12 +3,13 @@ package base
 import (
 	"errors"
 	"fmt"
-	"github.com/intrntsrfr/owo"
-	"github.com/jmoiron/sqlx"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/intrntsrfr/owo"
+	"github.com/jmoiron/sqlx"
 )
 
 // Config is the config struct for the bot.
@@ -30,6 +31,7 @@ type Bot struct {
 	Owo       *owo.Client
 	Cooldowns *CooldownCache
 	Callbacks *CallbackCache
+	Perms     *PermissionHandler
 }
 
 // CooldownCache is a collection of command cooldowns.
@@ -61,6 +63,7 @@ func NewBot(config *Config) *Bot {
 		Mods:      make(map[string]Mod),
 		Cooldowns: &CooldownCache{m: make(map[string]time.Time)},
 		Callbacks: &CallbackCache{ch: make(map[string]chan *DiscordMessage)},
+		Perms:     NewPermissionHandler(),
 	}
 }
 
@@ -186,11 +189,11 @@ func (b *Bot) processMessage(m *DiscordMessage) {
 			continue
 		}
 
-		go b.executeCommand(cmd, m)
+		go b.processCommand(cmd, m)
 	}
 }
 
-func (b *Bot) executeCommand(cmd *ModCommand, m *DiscordMessage) {
+func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 	if !cmd.Enabled {
 		return
 	}
@@ -210,6 +213,10 @@ func (b *Bot) executeCommand(cmd *ModCommand, m *DiscordMessage) {
 
 	// check if user can use command or not
 	// may be based on user level, roles, channel etc..
+
+	if m.GuildID() != "" && !b.Perms.Allow(cmd.Name, m.GuildID(), m.ChannelID(), m.Author().ID, m.Member().Roles) {
+		return
+	}
 
 	// check if command for channel is on cooldown
 	key := ""
@@ -250,6 +257,16 @@ func (b *Bot) executeCommand(cmd *ModCommand, m *DiscordMessage) {
 	go b.logCommand(m, cmd)
 	// set cmd on cooldown
 	go b.setOnCooldown(key, time.Duration(cmd.Cooldown))
+}
+
+func runSafe(f func(*DiscordMessage), m *DiscordMessage) {
+	defer func() {
+		if r := recover(); r != nil {
+			fmt.Println("lol")
+		}
+	}()
+
+	f(m)
 }
 
 func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
