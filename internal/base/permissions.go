@@ -18,6 +18,10 @@ const (
 
 var counter atomic.Value
 
+func init() {
+	counter.Store(1)
+}
+
 type PermissionOverride struct {
 	UID     int
 	GuildID string
@@ -115,33 +119,31 @@ func (p *PermissionHandler) getOverrideIndex(id int) int {
 	return -1
 }
 
-func (p *PermissionHandler) Calculate(guildID, channelID, userID, command string, roleIDs []string, requiredPerms, perms int64) (bool, error) {
+func (p *PermissionHandler) Allow(command, guildID, channelID, userID string, roleIDs []string) bool {
 
 	overrides := p.GetGuildOverrides(guildID)
 
 	for _, o := range overrides {
 		if o.Type == PermissionTypeUser {
-			if o.TypeID == userID && !o.Allow {
-				return false, nil
+			if o.TypeID == userID && !o.Allow && o.Command == command {
+				return false
 			}
-
 		} else if o.Type == PermissionTypeRole {
 			for _, r := range roleIDs {
-				if o.TypeID == r && !o.Allow {
-					return false, nil
+				if o.TypeID == r && !o.Allow && o.Command == command {
+					return false
 				}
 			}
 		} else if o.Type == PermissionTypeChannel {
-			if o.TypeID == channelID && !o.Allow {
-				return false, nil
+			if o.TypeID == channelID && !o.Allow && o.Command == command {
+				return false
 			}
-
-		} else if o.Type == PermissionTypeGuild {
+		} else if o.Type == PermissionTypeGuild && o.Command == command {
 			if !o.Allow {
-				return false, nil
+				return false
 			}
 		}
 	}
 
-	return true, nil
+	return true
 }
