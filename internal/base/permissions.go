@@ -4,6 +4,7 @@ import (
 	"errors"
 	"sort"
 	"sync/atomic"
+	"time"
 )
 
 // PermissionType represents what a permission override should look for
@@ -34,6 +35,9 @@ type PermissionOverride struct {
 	Allow bool
 
 	Command string
+
+	SetByID string
+	SetAt   time.Time
 }
 
 type SortedByUID []*PermissionOverride
