@@ -86,7 +86,9 @@ func recommendedShards(token string) (int, error) {
 // Run opens the Discord sessions.
 func (d *Discord) Run() error {
 	for _, sess := range d.Sessions {
-		sess.Open()
+		if err := sess.Open(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
