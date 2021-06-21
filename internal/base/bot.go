@@ -1,9 +1,11 @@
 package base
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/intrntsrfr/meido/internal/services/cooldowns"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -258,7 +260,20 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 func runCommand(f func(*DiscordMessage), m *DiscordMessage) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Println(r)
+			d, err := json.MarshalIndent(m, "", "\t")
+			if err != nil {
+				return
+			}
+
+			log.Println(string(d))
+			log.Println()
+			log.Println()
+
+			now := time.Now()
+
+			fmt.Println(fmt.Sprintf("!!! RECOVERY NEEDED !!!\ntime: %v\nreason: %v\n\n\n", now.String(), r))
+
+			m.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
 		}
 	}()
 
