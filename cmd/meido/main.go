@@ -5,18 +5,22 @@ import (
 	"github.com/intrntsrfr/meido/internal/base"
 	"github.com/intrntsrfr/meido/internal/mods/utilitymod"
 	"io/ioutil"
-	"net/http"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	_ "github.com/lib/pq"
-	_ "net/http/pprof"
 )
 
 func main() {
 
-	go http.ListenAndServe("localhost:8070", nil)
+	f, err := os.Create("./error_log.dat")
+	if err != nil {
+		panic("cannot create error log file")
+	}
+	defer f.Close()
+	log.SetOutput(f)
 
 	file, err := ioutil.ReadFile("./config.json")
 	if err != nil {

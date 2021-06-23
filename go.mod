@@ -6,6 +6,7 @@ require (
 	github.com/bwmarrin/discordgo v0.23.1
 	github.com/dgraph-io/badger/v3 v3.2011.1
 	github.com/dustin/go-humanize v1.0.0
+	github.com/google/uuid v1.2.0 // indirect
 	github.com/gorilla/websocket v1.4.1 // indirect
 	github.com/intrntsrfr/owo v0.0.0-20190908123752-c365293bebfd
 	github.com/jmoiron/sqlx v1.2.0

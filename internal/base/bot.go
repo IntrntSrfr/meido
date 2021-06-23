@@ -1,15 +1,18 @@
 package base
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/owo"
-	"github.com/jmoiron/sqlx"
+	"github.com/intrntsrfr/meido/internal/services/cooldowns"
+	"log"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/intrntsrfr/owo"
+	"github.com/jmoiron/sqlx"
 )
 
 // Config is the config struct for the bot.
@@ -27,16 +30,11 @@ type Bot struct {
 	Discord   *Discord
 	Config    *Config
 	Mods      map[string]Mod
-	DB        *database.DB
+	DB        *sqlx.DB
 	Owo       *owo.Client
-	Cooldowns *CooldownCache
+	Cooldowns *cooldowns.CooldownHandler
 	Callbacks *CallbackCache
-}
-
-// CooldownCache is a collection of command cooldowns.
-type CooldownCache struct {
-	sync.Mutex
-	m map[string]time.Time
+	Perms     *PermissionHandler
 }
 
 type CallbackCache struct {
@@ -60,8 +58,9 @@ func NewBot(config *Config) *Bot {
 		Discord:   d,
 		Config:    config,
 		Mods:      make(map[string]Mod),
-		Cooldowns: &CooldownCache{m: make(map[string]time.Time)},
+		Cooldowns: cooldowns.NewCooldownHandler(),
 		Callbacks: &CallbackCache{ch: make(map[string]chan *DiscordMessage)},
+		Perms:     NewPermissionHandler(),
 	}
 }
 
@@ -79,13 +78,7 @@ func (b *Bot) Open() error {
 	if err != nil {
 		panic(err)
 	}
-
-	//b.DB = psql
-	b.DB, err = database.New(psql)
-	if err != nil {
-		panic(err)
-	}
-
+	b.DB = psql
 	fmt.Println("psql connection established")
 
 	b.Owo = owo.NewClient(b.Config.OwoToken)
@@ -193,11 +186,11 @@ func (b *Bot) processMessage(m *DiscordMessage) {
 			continue
 		}
 
-		go b.executeCommand(cmd, m)
+		b.processCommand(cmd, m)
 	}
 }
 
-func (b *Bot) executeCommand(cmd *ModCommand, m *DiscordMessage) {
+func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 	if !cmd.Enabled {
 		return
 	}
@@ -218,6 +211,10 @@ func (b *Bot) executeCommand(cmd *ModCommand, m *DiscordMessage) {
 	// check if user can use command or not
 	// may be based on user level, roles, channel etc..
 
+	if m.GuildID() != "" && !b.Perms.Allow(cmd.Name, m.GuildID(), m.ChannelID(), m.Author().ID, m.Member().Roles) {
+		return
+	}
+
 	// check if command for channel is on cooldown
 	key := ""
 	if cmd.CooldownUser {
@@ -225,7 +222,7 @@ func (b *Bot) executeCommand(cmd *ModCommand, m *DiscordMessage) {
 	} else {
 		key = fmt.Sprintf("%v:%v", m.Message.ChannelID, cmd.Name)
 	}
-	if t, ok := b.isOnCooldown(key); ok {
+	if t, ok := b.Cooldowns.IsOnCooldown(key); ok {
 		// if on cooldown, we know its for this command so we can break out and go next
 		cdMsg, err := m.Reply(fmt.Sprintf("on cooldown for another %v", time.Until(t)))
 		if err != nil {
@@ -236,7 +233,6 @@ func (b *Bot) executeCommand(cmd *ModCommand, m *DiscordMessage) {
 				m.Sess.ChannelMessageDelete(cdMsg.ChannelID, cdMsg.ID)
 			})
 		}()
-		return
 	}
 
 	//check for perms
@@ -252,11 +248,36 @@ func (b *Bot) executeCommand(cmd *ModCommand, m *DiscordMessage) {
 	}
 
 	// run cmd
-	go cmd.Run(m)
+	go runCommand(cmd.Run, m)
+
+	//go cmd.Run(m)
 	// log cmd
 	go b.logCommand(m, cmd)
 	// set cmd on cooldown
-	go b.setOnCooldown(key, time.Duration(cmd.Cooldown))
+	go b.Cooldowns.SetOnCooldown(key, time.Duration(cmd.Cooldown))
+}
+
+func runCommand(f func(*DiscordMessage), m *DiscordMessage) {
+	defer func() {
+		if r := recover(); r != nil {
+			d, err := json.MarshalIndent(m, "", "\t")
+			if err != nil {
+				return
+			}
+
+			log.Println(string(d))
+			log.Println()
+			log.Println()
+
+			now := time.Now()
+
+			fmt.Println(fmt.Sprintf("!!! RECOVERY NEEDED !!!\ntime: %v\nreason: %v\n\n\n", now.String(), r))
+
+			m.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
+		}
+	}()
+
+	f(m)
 }
 
 func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
@@ -283,37 +304,4 @@ func (b *Bot) logCommand(msg *DiscordMessage, cmd *ModCommand) {
 		msg.Message.ChannelID, msg.Message.ID, time.Now())
 
 	fmt.Println(msg.Shard, msg.Message.Author.String(), msg.Message.Content, msg.TimeReceived.String())
-}
-
-// isOnCooldown checks whether a command is on cooldown.
-// Returns the value from the CooldownCache
-func (b *Bot) isOnCooldown(key string) (time.Time, bool) {
-	b.Cooldowns.Lock()
-	defer b.Cooldowns.Unlock()
-	t, ok := b.Cooldowns.m[key]
-	return t, ok
-}
-
-// setOnCooldown sets a command on cooldown, adding it to the CooldownCache.
-func (b *Bot) setOnCooldown(key string, dur time.Duration) {
-
-	b.Cooldowns.Lock()
-	b.Cooldowns.m[key] = time.Now().Add(time.Second * dur)
-	b.Cooldowns.Unlock()
-
-	go func() {
-		time.AfterFunc(time.Second*dur, func() {
-			b.Cooldowns.Lock()
-			delete(b.Cooldowns.m, key)
-			b.Cooldowns.Unlock()
-		})
-	}()
-}
-func (b *Bot) IsOwner(msg *DiscordMessage) bool {
-	for _, id := range b.Config.OwnerIds {
-		if msg.Author().ID == id {
-			return true
-		}
-	}
-	return false
 }
