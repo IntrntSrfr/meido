@@ -2,6 +2,7 @@ package base
 
 import (
 	"errors"
+	"github.com/jmoiron/sqlx"
 	"sort"
 	"sync/atomic"
 	"time"
@@ -24,20 +25,20 @@ func init() {
 }
 
 type PermissionOverride struct {
-	UID     int
-	GuildID string
-	Type    PermissionType
+	UID     int            `db:"uid"`
+	GuildID string         `db:"guild_id"`
+	Type    PermissionType `db:"type"`
 
 	// TypeID is for the ID for the type this permission belongs to
-	TypeID string
+	TypeID string `db:"type_id"`
 
 	// Allow  is whether this override should allow or disallow
-	Allow bool
+	Allow bool `db:"allow"`
 
-	Command string
+	Command string `db:"command"`
 
-	SetByID string
-	SetAt   time.Time
+	SetByID string    `db:"set_by_id"`
+	SetAt   time.Time `db:"set_at"`
 }
 
 type SortedByUID []*PermissionOverride
@@ -63,11 +64,13 @@ func (p *PermissionOverride) Validate() error {
 
 type PermissionHandler struct {
 	overrides []*PermissionOverride
+	db        *sqlx.DB
 }
 
-func NewPermissionHandler() *PermissionHandler {
+func NewPermissionHandler(db *sqlx.DB) *PermissionHandler {
 	return &PermissionHandler{
 		overrides: []*PermissionOverride{},
+		db:        db,
 	}
 }
 
