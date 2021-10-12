@@ -56,7 +56,7 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 	if len(msg.Message.Mentions) >= 1 {
 		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
 		if err != nil {
-			msg.Reply("that person isnt even here wtf :(")
+			msg.Reply("i could not find that member")
 			return
 		}
 	} else {
@@ -66,13 +66,17 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 		}
 		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
 		if err != nil {
-			msg.Reply("that person isnt even here wtf :(")
+			msg.Reply("i could not find that member")
 			return
 		}
 	}
 
-	if targetUser.User.ID == msg.Sess.State.User.ID || targetUser.User.Bot || targetUser.User.ID == msg.Message.Author.ID {
-		msg.Reply("no")
+	if targetUser.User.ID == msg.Sess.State.User.ID {
+		msg.Reply("no (i will not warn myself)")
+		return
+	}
+	if targetUser.User.ID == msg.Message.Author.ID {
+		msg.Reply("no (you can not warn yourself)")
 		return
 	}
 
@@ -81,7 +85,7 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
-		msg.Reply("no")
+		msg.Reply("no (you can only kick users who are below you and me in the role hierarchy)")
 		return
 	}
 
@@ -89,25 +93,21 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 		reason = strings.Join(msg.RawArgs()[2:], " ")
 	}
 
-	warnCount := 0
-
-	err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warns WHERE user_id=$1 AND guild_id=$2 AND is_valid",
-		targetUser.User.ID, msg.Message.GuildID)
+	warnCount, err := m.db.GetValidWarnCount(msg.GuildID(), targetUser.User.ID)
 	if err != nil {
-		msg.Reply("something wrong happened")
+		msg.Reply("something went wrong when trying to warn user, please try again")
 		return
 	}
 
 	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
-		msg.Reply("error occurred")
+		msg.Reply("something went wrong when trying to warn user, please try again")
 		return
 	}
 
-	_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
-		msg.Message.GuildID, targetUser.User.ID, reason, msg.Message.Author.ID, time.Now(), true)
+	err = m.db.InsertWarn(msg.GuildID(), targetUser.User.ID, reason, msg.Author().ID)
 	if err != nil {
-		msg.Reply("error giving strike, try again?")
+		msg.Reply("something went wrong when trying to warn user, please try again")
 		return
 	}
 
@@ -126,9 +126,7 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 			return
 		}
 
-		_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
-			msg.Sess.State.User.ID, time.Now(), g.ID, targetUser.User.ID)
-
+		m.db.ClearActiveWarns(msg.Sess.State.User.ID, g.ID, targetUser.User.ID)
 		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", targetUser.Mention()))
 
 	} else {
@@ -163,9 +161,10 @@ func (m *ModerationMod) warnlogCommand(msg *base.DiscordMessage) {
 	}
 
 	page := 0
+	var err error
 
 	if msg.LenArgs() > 2 {
-		page, err := strconv.Atoi(msg.Args()[2])
+		page, err = strconv.Atoi(msg.Args()[2])
 		if err != nil {
 			msg.Reply("Invalid page")
 			return
@@ -182,7 +181,7 @@ func (m *ModerationMod) warnlogCommand(msg *base.DiscordMessage) {
 	if len(msg.Message.Mentions) >= 1 {
 		targetUser = msg.Message.Mentions[0]
 	} else {
-		_, err := strconv.Atoi(msg.Args()[1])
+		_, err = strconv.Atoi(msg.Args()[1])
 		if err != nil {
 			return
 		}
@@ -196,8 +195,9 @@ func (m *ModerationMod) warnlogCommand(msg *base.DiscordMessage) {
 		return
 	}
 
+	// todo: make this a method
 	var warns []*database.WarnEntry
-	err := m.db.Select(&warns, "SELECT * FROM warns WHERE user_id=$1 AND guild_id=$2 ORDER BY given_at DESC;", targetUser.ID, msg.Message.GuildID)
+	err = m.db.Select(&warns, "SELECT * FROM warns WHERE user_id=$1 AND guild_id=$2 ORDER BY given_at DESC;", targetUser.ID, msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return

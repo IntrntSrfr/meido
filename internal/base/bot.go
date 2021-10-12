@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/services/cooldowns"
 	"log"
 	"os"
@@ -30,7 +31,7 @@ type Bot struct {
 	Discord   *Discord
 	Config    *Config
 	Mods      map[string]Mod
-	DB        *sqlx.DB
+	DB        *database.DB
 	Owo       *owo.Client
 	Cooldowns *cooldowns.CooldownHandler
 	Callbacks *CallbackCache
@@ -60,7 +61,6 @@ func NewBot(config *Config) *Bot {
 		Mods:      make(map[string]Mod),
 		Cooldowns: cooldowns.NewCooldownHandler(),
 		Callbacks: &CallbackCache{ch: make(map[string]chan *DiscordMessage)},
-		Perms:     NewPermissionHandler(),
 	}
 }
 
@@ -78,11 +78,13 @@ func (b *Bot) Open() error {
 	if err != nil {
 		panic(err)
 	}
-	b.DB = psql
+	b.DB = database.New(psql)
 	fmt.Println("psql connection established")
 
 	b.Owo = owo.NewClient(b.Config.OwoToken)
 	fmt.Println("owo client created")
+
+	b.Perms = NewPermissionHandler(psql)
 
 	go b.listen(msgChan)
 	return nil
@@ -210,10 +212,11 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 
 	// check if user can use command or not
 	// may be based on user level, roles, channel etc..
-
-	if m.GuildID() != "" && !b.Perms.Allow(cmd.Name, m.GuildID(), m.ChannelID(), m.Author().ID, m.Member().Roles) {
-		return
-	}
+	/*
+		if m.GuildID() != "" && !b.Perms.Allow(cmd.Name, m.GuildID(), m.ChannelID(), m.Author().ID, m.Member().Roles) {
+			return
+		}
+	*/
 
 	// check if command for channel is on cooldown
 	key := ""

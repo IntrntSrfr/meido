@@ -41,3 +41,7 @@ type WarnEntry struct {
 	ClearedByID *string    `db:"cleared_by_id"`
 	ClearedAt   *time.Time `db:"cleared_at"`
 }
+
+type Aquarium struct {
+	UserID string `db:"user_id"`
+}

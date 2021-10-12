@@ -160,7 +160,7 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 	m.RegisterCommand(NewLockdownChannelCommand(m))
 	m.RegisterCommand(NewUnlockChannelCommand(m))
 
-	m.RegisterCommand(NewAutoRoleCommand(m))
+	//m.RegisterCommand(NewAutoRoleCommand(m))
 
 	return nil
 }
@@ -235,11 +235,11 @@ func (m *ModerationMod) banCommand(msg *base.DiscordMessage) {
 	}
 
 	if targetUser.ID == msg.Sess.State.User.ID {
-		msg.Reply("no")
+		msg.Reply("no (i can not ban myself)")
 		return
 	}
 	if targetUser.ID == msg.Message.Author.ID {
-		msg.Reply("no")
+		msg.Reply("no (you can not ban yourself)")
 		return
 	}
 
@@ -248,7 +248,7 @@ func (m *ModerationMod) banCommand(msg *base.DiscordMessage) {
 	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
-		msg.Reply("no")
+		msg.Reply("no (you can only ban users who are below you and me in the role hierarchy)")
 		return
 	}
 
@@ -432,23 +432,23 @@ func (m *ModerationMod) kickCommand(msg *base.DiscordMessage) {
 	if len(msg.Message.Mentions) >= 1 {
 		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
 		if err != nil {
-			msg.Reply("that person isnt even here wtf :(")
+			msg.Reply("i could not find that member")
 			return
 		}
 	} else {
 		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
 		if err != nil {
-			msg.Reply("that person isnt even here wtf :(")
+			msg.Reply("i could not find that member")
 			return
 		}
 	}
 
 	if targetUser.User.ID == msg.Sess.State.User.ID {
-		msg.Reply("no")
+		msg.Reply("no (i can not ban myself)")
 		return
 	}
 	if targetUser.User.ID == msg.Message.Author.ID {
-		msg.Reply("no")
+		msg.Reply("no (you can not ban yourself)")
 		return
 	}
 
@@ -457,7 +457,7 @@ func (m *ModerationMod) kickCommand(msg *base.DiscordMessage) {
 	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
-		msg.Reply("no")
+		msg.Reply("no (you can only kick users who are below you and me in the role hierarchy)")
 		return
 	}
 
@@ -478,7 +478,7 @@ func (m *ModerationMod) kickCommand(msg *base.DiscordMessage) {
 
 	err = msg.Sess.GuildMemberDeleteWithReason(g.ID, targetUser.User.ID, fmt.Sprintf("%v - %v", msg.Message.Author.String(), reason))
 	if err != nil {
-		msg.Reply("failed to kick user")
+		msg.Reply("something went wrong when trying to kick user, please try again")
 		return
 	}
 

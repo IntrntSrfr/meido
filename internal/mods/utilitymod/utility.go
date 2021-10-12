@@ -844,13 +844,15 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 
 				emb.Title = fmt.Sprintf("Command - %v", cmd.Name)
 
+				dmText := map[bool]string{true: "This works in Meido DMs", false: "This does not work in Meido DMs"}
+
 				info := strings.Builder{}
 				info.WriteString(fmt.Sprintf("\n\nDescription:\n%v", cmd.Description))
 				info.WriteString(fmt.Sprintf("\n\nTriggers:\n%v", strings.Join(cmd.Triggers, ", ")))
 				info.WriteString(fmt.Sprintf("\n\nUsage:\n%v", cmd.Usage))
 				info.WriteString(fmt.Sprintf("\n\nCooldown:\n%v seconds", cmd.Cooldown))
 				info.WriteString(fmt.Sprintf("\n\nRequired permissions:\n%v", base.PermMap[cmd.RequiredPerms]))
-				info.WriteString(fmt.Sprintf("\n\nWorks in DMs?:\n%v", cmd.AllowDMs))
+				info.WriteString(fmt.Sprintf("\n\n%v", dmText[cmd.AllowDMs]))
 				emb.Description = info.String()
 
 				msg.ReplyEmbed(emb)

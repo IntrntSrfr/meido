@@ -36,9 +36,10 @@ func (m *ModerationMod) filterwordCommand(msg *base.DiscordMessage) {
 
 	phrase := strings.Join(msg.Args()[1:], " ")
 
-	fe := &database.FilterEntry{}
-
-	err := m.db.Get(fe, "SELECT phrase FROM filters WHERE phrase = $1 AND guild_id = $2;", phrase, msg.Message.GuildID)
+	// this can be changed to just one statement probably
+	// or it can use a function instead
+	// it looks so shit ugly
+	_, err := m.db.GetFilter(msg.GuildID(), phrase)
 	switch err {
 	case nil:
 		m.db.Exec("DELETE FROM filters WHERE guild_id=$1 AND phrase=$2;", msg.Message.GuildID, phrase)
@@ -72,19 +73,19 @@ func (m *ModerationMod) filterwordlistCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	var fel []*database.FilterEntry
-	err := m.db.Select(&fel, "SELECT * FROM filters WHERE guild_id=$1;", msg.Message.GuildID)
+	filterEntries, err := m.db.GetGuildFilters(msg.GuildID())
 	if err != nil {
-		fmt.Println(err)
+		msg.Reply("something went wrong, please try again")
 		return
 	}
-	if len(fel) < 1 {
+	if len(filterEntries) == 0 {
 		msg.Reply("filter is empty")
 		return
 	}
+
 	filterListBuilder := strings.Builder{}
 	filterListBuilder.WriteString("```\nList of currently filtered phrases\n")
-	for _, fe := range fel {
+	for _, fe := range filterEntries {
 		filterListBuilder.WriteString(fmt.Sprintf("- %s\n", fe.Phrase))
 	}
 	filterListBuilder.WriteString("```")
@@ -92,7 +93,6 @@ func (m *ModerationMod) filterwordlistCommand(msg *base.DiscordMessage) {
 	if len(filterListBuilder.String()) > 1000 {
 		buf := &bytes.Buffer{}
 		buf.WriteString(filterListBuilder.String())
-
 		msg.Sess.ChannelFileSend(msg.Message.ChannelID, "filter.txt", buf)
 	} else {
 		msg.Reply(filterListBuilder.String())
@@ -121,12 +121,11 @@ func (m *ModerationMod) clearfilterCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	_, err := m.db.Exec("DELETE FROM filters WHERE guild_id=$1", msg.Message.GuildID)
-	if err != nil {
-		msg.Reply("there was an error")
-		return
-	}
+	// TODO: ADD A CONFIRMATION DIALOG HERE
 
+	m.db.DeleteGuildFilters(msg.GuildID())
+
+	// filter was (hopefully) cleared
 	msg.Reply("Filter was cleared")
 }
 
