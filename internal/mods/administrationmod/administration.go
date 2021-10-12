@@ -112,7 +112,7 @@ func (m *AdministrationMod) toggleCommandCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	if !m.bot.IsOwner(msg) {
+	if !msg.Discord.IsOwner(msg) {
 		return
 	}
 
