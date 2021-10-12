@@ -152,7 +152,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *base.DiscordMessage) {
 
 	switch msg.LenArgs() {
 	case 2:
-		dge := &database.DiscordGuild{}
+		dge := &database.Guild{}
 		err := m.db.Get(dge, "SELECT * FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
 		if err != nil {
 			return
@@ -249,7 +249,7 @@ func (m *ModerationMod) checkfilterPassive(msg *base.DiscordMessage) {
 		return
 	}
 
-	var filterEntries []*database.FilterEntry
+	var filterEntries []*database.Filter
 	err := m.db.Select(&filterEntries, "SELECT phrase FROM filters WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		return
@@ -269,7 +269,7 @@ func (m *ModerationMod) checkfilterPassive(msg *base.DiscordMessage) {
 
 	msg.Sess.ChannelMessageDelete(msg.Message.ChannelID, msg.Message.ID)
 
-	dge := &database.DiscordGuild{}
+	dge := &database.Guild{}
 	err = m.db.Get(dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		return

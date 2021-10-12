@@ -59,7 +59,7 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 	m.db = b.DB
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
-		dbg := &database.DiscordGuild{}
+		dbg := &database.Guild{}
 		err := m.db.Get(dbg, "SELECT guild_id FROM guilds WHERE guild_id = $1;", g.Guild.ID)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
@@ -78,7 +78,7 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 					if g.Unavailable {
 						continue
 					}
-					dge := &database.DiscordGuild{}
+					dge := &database.Guild{}
 					err := b.DB.Get(dge, "SELECT * FROM guilds WHERE guild_id=$1", g.ID)
 					if err != nil {
 						continue
@@ -88,7 +88,7 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 						continue
 					}
 
-					var warns []*database.WarnEntry
+					var warns []*database.Warn
 					err = b.DB.Select(&warns, "SELECT * FROM warns WHERE guild_id=$1 AND is_valid", g.ID)
 					if err != nil {
 						continue
@@ -108,7 +108,7 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
 
-		a := &database.DiscordGuild{}
+		a := &database.Guild{}
 		err := m.db.Get(a, "SELECT * FROM guilds WHERE guild_id=$1", g.GuildID)
 		if err != nil {
 			return

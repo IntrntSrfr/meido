@@ -2,23 +2,23 @@ package database
 
 import "time"
 
-// Userrole represents a user role.
-type Userrole struct {
+// UserRole represents a user role.
+type UserRole struct {
 	UID     int
 	GuildID string `db:"guild_id"`
 	RoleID  string `db:"role_id"`
 	UserID  string `db:"user_id"`
 }
 
-// FilterEntry represents a filtered phrase that the bot should look out for
-type FilterEntry struct {
+// Filter represents a filtered phrase that the bot should look out for
+type Filter struct {
 	UID     int    `db:"uid"`
 	GuildID string `db:"guild_id"`
 	Phrase  string `db:"phrase"`
 }
 
-// DiscordGuild represents a servers settings.
-type DiscordGuild struct {
+// Guild represents a servers settings.
+type Guild struct {
 	UID      int    `db:"uid"`
 	GuildID  string `db:"guild_id"`
 	UseWarns bool   `db:"use_warns"`
@@ -29,8 +29,8 @@ type DiscordGuild struct {
 	AutoRole     string `db:"autorole"`
 }
 
-// WarnEntry represents a warning
-type WarnEntry struct {
+// Warn represents a warning
+type Warn struct {
 	UID         int        `db:"uid"`
 	GuildID     string     `db:"guild_id"`
 	UserID      string     `db:"user_id"`

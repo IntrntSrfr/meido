@@ -71,7 +71,7 @@ func (m *UserRoleMod) Hook(b *base.Bot) error {
 						continue
 					}
 
-					var userRoles []*database.Userrole
+					var userRoles []*database.UserRole
 
 					err := b.DB.Get(&userRoles, "SELECT * FROM userroles WHERE guild_id=$1", g.ID)
 					if err != nil {
@@ -178,7 +178,7 @@ func (m *UserRoleMod) setuserroleCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	userRole := &database.Userrole{}
+	userRole := &database.UserRole{}
 
 	err = m.db.Get(userRole, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, targetUser.User.ID)
 	switch err {
@@ -244,7 +244,7 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 			return
 		}
 
-		ur := &database.Userrole{}
+		ur := &database.UserRole{}
 		err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, msg.Message.Author.ID)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
@@ -336,7 +336,7 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	ur := &database.Userrole{}
+	ur := &database.UserRole{}
 	err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, target.User.ID)
 	if err != nil && err != sql.ErrNoRows {
 		msg.Reply("there was an error, please try again")
@@ -403,7 +403,7 @@ func (m *UserRoleMod) listuserrolesCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	var userRoles []*database.Userrole
+	var userRoles []*database.UserRole
 
 	err := m.db.Select(&userRoles, "SELECT role_id, user_id FROM userroles WHERE guild_id=$1;", msg.Message.GuildID)
 	if err != nil {

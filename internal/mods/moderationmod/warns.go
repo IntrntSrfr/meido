@@ -36,7 +36,7 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	dge := &database.DiscordGuild{}
+	dge := &database.Guild{}
 	err := m.db.Get(dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id = $1;", msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
@@ -196,7 +196,7 @@ func (m *ModerationMod) warnlogCommand(msg *base.DiscordMessage) {
 	}
 
 	// todo: make this a method
-	var warns []*database.WarnEntry
+	var warns []*database.Warn
 	err = m.db.Select(&warns, "SELECT * FROM warns WHERE user_id=$1 AND guild_id=$2 ORDER BY given_at DESC;", targetUser.ID, msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
@@ -289,7 +289,7 @@ func (m *ModerationMod) warncountCommand(msg *base.DiscordMessage) {
 		targetUser *discordgo.User
 	)
 
-	dge := &database.DiscordGuild{}
+	dge := &database.Guild{}
 	err = m.db.Get(&dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		return
@@ -355,7 +355,7 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	var entries []*database.WarnEntry
+	var entries []*database.Warn
 	err = m.db.Select(&entries, "SELECT * FROM warns WHERE user_id=$1 AND guild_id=$2 AND is_valid", msg.Args()[1], msg.Message.GuildID)
 	if err != nil && err != sql.ErrNoRows {
 		fmt.Println(err)

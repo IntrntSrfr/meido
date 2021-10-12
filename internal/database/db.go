@@ -18,14 +18,14 @@ func (db *DB) Populate() {
 	// as well as migrations I suppose
 }
 
-func (db *DB) Guild(guildID string) (*DiscordGuild, error) {
-	var guild *DiscordGuild
+func (db *DB) Guild(guildID string) (*Guild, error) {
+	var guild *Guild
 	err := db.Get(&guild, "SELECT * FROM guild WHERE guild_id=$1", guildID)
 	return guild, err
 }
 
-func (db *DB) UserRole(guildID, userID string) (*Userrole, error) {
-	var ur *Userrole
+func (db *DB) UserRole(guildID, userID string) (*UserRole, error) {
+	var ur *UserRole
 	err := db.Get(ur, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", guildID, userID)
 	return ur, err
 }
@@ -42,14 +42,14 @@ func (db *DB) CommandCount() (int, error) {
 	return count, err
 }
 
-func (db *DB) GetFilter(guildID, phrase string) (*FilterEntry, error) {
-	var f *FilterEntry
+func (db *DB) GetFilter(guildID, phrase string) (*Filter, error) {
+	var f *Filter
 	err := db.Get(f, "SELECT * FROM filter WHERE guild_id = $1 AND phrase = $2", guildID, phrase)
 	return f, err
 }
 
-func (db *DB) GetGuildFilters(guildID string) ([]*FilterEntry, error) {
-	var filters []*FilterEntry
+func (db *DB) GetGuildFilters(guildID string) ([]*Filter, error) {
+	var filters []*Filter
 	err := db.Select(&filters, "SELECT * FROM filter WHERE guild_id=$1", guildID)
 	return filters, err
 }
