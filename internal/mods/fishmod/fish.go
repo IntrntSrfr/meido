@@ -1,14 +1,12 @@
 package fishmod
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/base"
+	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/utils"
-	"io/ioutil"
 	"math/rand"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -20,15 +18,16 @@ type FishMod struct {
 	sync.Mutex
 	name         string
 	commands     map[string]*base.ModCommand
+	db           *database.DB
 	allowedTypes base.MessageType
 	allowDMs     bool
 	bot          *base.Bot
-	Aquariums    map[string]*aquarium
 }
-type aquarium struct {
-	sync.Mutex
-	UserID string
-	Fish   map[string]int
+
+type Aquarium struct {
+	UserID string `db:"user_id"`
+	Fish1  int    `db:"fish_1"`
+	Fish2  int    `db:"fish_2"`
 }
 
 // New returns a new PingMod.
@@ -38,7 +37,6 @@ func New(n string) base.Mod {
 		commands:     make(map[string]*base.ModCommand),
 		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     true,
-		Aquariums:    make(map[string]*aquarium),
 	}
 }
 
@@ -49,23 +47,12 @@ func (m *FishMod) Name() string {
 
 // Save saves the mod state to a file.
 func (m *FishMod) Save() error {
-	data, err := json.Marshal(m.Aquariums)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile("./data/fish", data, os.ModePerm)
+	return nil
 }
 
 // Load loads the mod state from a file.
 func (m *FishMod) Load() error {
-	if _, err := os.Stat("./data/fish"); err != nil {
-		return nil
-	}
-	data, err := ioutil.ReadFile("./data/fish")
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(data, &m.Aquariums)
+	return nil
 }
 
 // Passives returns the mod passives.
@@ -91,6 +78,7 @@ func (m *FishMod) AllowDMs() bool {
 // Hook will hook the Mod into the Bot.
 func (m *FishMod) Hook(b *base.Bot) error {
 	m.bot = b
+	m.db = b.DB
 	err := m.Load()
 	if err != nil {
 		return err
@@ -145,23 +133,28 @@ func (m *FishMod) fishCommand(msg *base.DiscordMessage) {
 	msg.Reply(caption)
 }
 
-func (a *aquarium) updateUser(f fish, d int) {
-	defer a.Unlock()
-	a.Lock()
+// take in updated aquarium?
 
-	a.Fish[f.emoji] += d
+func (m *FishMod) updateUser(aq *Aquarium, f fish, d int) error {
+	return nil
 }
 
-func (m *FishMod) updateAquarium(id string, f fish, d int) {
-	defer m.Unlock()
-	m.Lock()
+func (m *FishMod) updateAquarium(id string, f fish, d int) error {
 
-	aq, ok := m.Aquariums[id]
-	if !ok {
-		aq = &aquarium{UserID: id, Fish: make(map[string]int)}
-		m.Aquariums[id] = aq
+	aq := &Aquarium{}
+	err := m.db.Get(aq, "SELECT * FROM aquarium WHERE user_id=$1", id)
+	if err != nil {
+		// if no aquarium found, make one
+
+		aq = &Aquarium{UserID: id}
+		_, err2 := m.db.Exec("INSERT INTO aquarium VALUES ($1)", id)
+		if err2 != nil {
+			return err2
+		}
 	}
-	aq.updateUser(f, d)
+
+	//m.updateUser(aq)
+	return nil
 }
 
 type fish struct {
@@ -195,14 +188,14 @@ func pickFish() fish {
 	return fp
 }
 
-// NewAquariumCommand returns a new aquarium command.
+// NewAquariumCommand returns a new Aquarium command.
 func NewAquariumCommand(m *FishMod) *base.ModCommand {
 	return &base.ModCommand{
 		Mod:           m,
-		Name:          "aquarium",
+		Name:          "Aquarium",
 		Description:   "Shows your fish collection",
-		Triggers:      []string{"m?aquarium", "m?aq"},
-		Usage:         "m?aquarium",
+		Triggers:      []string{"m?Aquarium", "m?aq"},
+		Usage:         "m?Aquarium",
 		Cooldown:      5,
 		CooldownUser:  true,
 		RequiredPerms: 0,
@@ -214,10 +207,14 @@ func NewAquariumCommand(m *FishMod) *base.ModCommand {
 	}
 }
 
-func (m *FishMod) getAquarium(id string) *aquarium {
-	m.Lock()
-	defer m.Unlock()
-	return m.Aquariums[id]
+func (m *FishMod) getAquarium(id string) (*Aquarium, error) {
+
+	aq := &Aquarium{}
+	err := m.db.Get(aq, "SELECT * FROM Aquarium WHERE user_id=$1", id)
+	if err != nil {
+		return nil, err
+	}
+	return aq, nil
 }
 
 func (m *FishMod) aquariumCommand(msg *base.DiscordMessage) {
@@ -239,21 +236,19 @@ func (m *FishMod) aquariumCommand(msg *base.DiscordMessage) {
 		}
 	}
 
-	aq := m.getAquarium(targetUser.ID)
-	if aq == nil {
+	aq, err := m.getAquarium(targetUser.ID)
+	if err != nil {
 		msg.Reply(fmt.Sprintf("%v has no fish", targetUser.String()))
 		return
 	}
 
+	// do this but for each field instead
 	var w []string
-	aq.Lock()
-	for _, f := range fishes {
-		w = append(w, fmt.Sprintf("%v: %v", f.emoji, aq.Fish[f.emoji]))
-	}
-	aq.Unlock()
+	w = append(w, fmt.Sprintf("first fish: %v", aq.Fish1))
+	w = append(w, fmt.Sprintf("second fish: %v", aq.Fish2))
 
 	embed := &discordgo.MessageEmbed{
-		Title:       fmt.Sprintf("%v's aquarium", targetUser.String()),
+		Title:       fmt.Sprintf("%v's Aquarium", targetUser.String()),
 		Description: strings.Join(w, " | "),
 		Color:       utils.ColorLightBlue,
 		Author: &discordgo.MessageEmbedAuthor{
