@@ -2,15 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/mods/pingmod"
+	"github.com/intrntsrfr/meido/mods/utilitymod"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"github.com/intrntsrfr/meido/internal/base"
-	"github.com/intrntsrfr/meido/internal/mods/pingmod"
-	"github.com/intrntsrfr/meido/internal/mods/utilitymod"
 
 	_ "github.com/lib/pq"
 )
