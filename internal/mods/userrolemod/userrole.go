@@ -3,15 +3,16 @@ package userrolemod
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/base"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/owo"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
 )
 
 type UserRoleMod struct {
@@ -56,11 +57,11 @@ func (m *UserRoleMod) AllowDMs() bool {
 func (m *UserRoleMod) Hook(b *base.Bot) error {
 	m.db = b.DB
 	m.owo = b.Owo
-
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.GuildRoleDelete) {
-		m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND role_id=$2", r.GuildID, r.RoleID)
-	})
-
+	/*
+		b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.GuildRoleDelete) {
+			m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND role_id=$2", r.GuildID, r.RoleID)
+		})
+	*/
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		refreshTicker := time.NewTicker(time.Hour)
 
@@ -84,6 +85,7 @@ func (m *UserRoleMod) Hook(b *base.Bot) error {
 						for _, r := range g.Roles {
 							if r.ID == ur.RoleID {
 								hasRole = true
+								break
 							}
 						}
 

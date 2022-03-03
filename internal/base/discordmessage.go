@@ -94,7 +94,7 @@ func (m *DiscordMessage) LenArgs() int {
 	return len(m.Args())
 }
 
-// IsDM returns whether or not the message is a direct message.
+// IsDM returns whether the message is a direct message.
 func (m *DiscordMessage) IsDM() bool {
 	return m.Message.Type == discordgo.MessageTypeDefault && m.Message.GuildID == ""
 }
@@ -115,6 +115,10 @@ func (m *DiscordMessage) Author() *discordgo.User {
 
 func (m *DiscordMessage) Member() *discordgo.Member {
 	return m.Message.Member
+}
+
+func (m *DiscordMessage) AuthorID() string {
+	return m.Message.Author.ID
 }
 
 func (m *DiscordMessage) GuildID() string {

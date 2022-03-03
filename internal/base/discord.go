@@ -350,7 +350,7 @@ func (d *Discord) IsOwner(msg *DiscordMessage) bool {
 	return false
 }
 
-// StartTyping makes the bot show as 'typing..' in a channel.
+// StartTyping makes the bot show as 'typing...' in a channel.
 func (d *Discord) StartTyping(channelID string) error {
 	return d.Sess.ChannelTyping(channelID)
 }

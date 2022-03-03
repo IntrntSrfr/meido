@@ -42,10 +42,10 @@ func (m *ModerationMod) filterwordCommand(msg *base.DiscordMessage) {
 	_, err := m.db.GetFilter(msg.GuildID(), phrase)
 	switch err {
 	case nil:
-		m.db.Exec("DELETE FROM filters WHERE guild_id=$1 AND phrase=$2;", msg.Message.GuildID, phrase)
+		m.db.Exec("DELETE FROM filter WHERE guild_id=$1 AND phrase=$2;", msg.Message.GuildID, phrase)
 		msg.Reply(fmt.Sprintf("Removed `%v` from the filter.", phrase))
 	case sql.ErrNoRows:
-		m.db.Exec("INSERT INTO filters (guild_id, phrase) VALUES ($1,$2);", msg.Message.GuildID, phrase)
+		m.db.Exec("INSERT INTO filter (guild_id, phrase) VALUES ($1,$2);", msg.Message.GuildID, phrase)
 		msg.Reply(fmt.Sprintf("Added `%v` to the filter.", phrase))
 	default:
 		msg.Reply("there was an error, please try again")
@@ -153,7 +153,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *base.DiscordMessage) {
 	switch msg.LenArgs() {
 	case 2:
 		dge := &database.Guild{}
-		err := m.db.Get(dge, "SELECT * FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
+		err := m.db.Get(dge, "SELECT * FROM guild WHERE guild_id=$1", msg.Message.GuildID)
 		if err != nil {
 			return
 		}
@@ -185,11 +185,11 @@ func (m *ModerationMod) moderationsettingsCommand(msg *base.DiscordMessage) {
 		switch msg.Args()[2] {
 		case "warns":
 			if msg.Args()[3] == "enable" {
-				m.db.Exec("UPDATE guilds SET use_warns=true WHERE guild_id=$1 AND NOT use_warns", msg.Message.GuildID)
+				m.db.Exec("UPDATE guild SET use_warns=true WHERE guild_id=$1 AND NOT use_warns", msg.Message.GuildID)
 				msg.Reply("Strike system is now ENABLED")
 
 			} else if msg.Args()[3] == "disable" {
-				m.db.Exec("UPDATE guilds SET use_warns=false WHERE guild_id=$1 AND use_warns", msg.Message.GuildID)
+				m.db.Exec("UPDATE guild SET use_warns=false WHERE guild_id=$1 AND use_warns", msg.Message.GuildID)
 				msg.Reply("Strike system is now DISABLED")
 			}
 		case "maxwarns":
@@ -201,7 +201,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *base.DiscordMessage) {
 
 			n = utils.Clamp(0, 10, n)
 
-			_, err = m.db.Exec("UPDATE guilds SET max_warns=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
+			_, err = m.db.Exec("UPDATE guild SET max_warns=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
 			if err != nil {
 				msg.Reply("error setting max warns")
 				return
@@ -216,7 +216,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *base.DiscordMessage) {
 
 			n = utils.Clamp(0, 365, n)
 
-			_, err = m.db.Exec("UPDATE guilds SET warn_duration=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
+			_, err = m.db.Exec("UPDATE guild SET warn_duration=$1 WHERE guild_id=$2", n, msg.Message.GuildID)
 			if err != nil {
 				msg.Reply("error setting warn duration")
 				return
@@ -250,7 +250,7 @@ func (m *ModerationMod) checkfilterPassive(msg *base.DiscordMessage) {
 	}
 
 	var filterEntries []*database.Filter
-	err := m.db.Select(&filterEntries, "SELECT phrase FROM filters WHERE guild_id=$1", msg.Message.GuildID)
+	err := m.db.Select(&filterEntries, "SELECT phrase FROM filter WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		return
 	}
@@ -270,7 +270,7 @@ func (m *ModerationMod) checkfilterPassive(msg *base.DiscordMessage) {
 	msg.Sess.ChannelMessageDelete(msg.Message.ChannelID, msg.Message.ID)
 
 	dge := &database.Guild{}
-	err = m.db.Get(dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
+	err = m.db.Get(dge, "SELECT use_warns, max_warns FROM guild WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		return
 	}
@@ -282,7 +282,7 @@ func (m *ModerationMod) checkfilterPassive(msg *base.DiscordMessage) {
 	reason := "Triggering filter: " + trigger
 	warnCount := 0
 
-	err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warns WHERE user_id=$1 AND guild_id=$2 AND is_valid",
+	err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warn WHERE user_id=$1 AND guild_id=$2 AND is_valid",
 		msg.Message.Author.ID, msg.Message.GuildID)
 	if err != nil {
 		return
@@ -294,7 +294,7 @@ func (m *ModerationMod) checkfilterPassive(msg *base.DiscordMessage) {
 	}
 	cu := msg.Discord.Sess.State.User
 
-	_, err = m.db.Exec("INSERT INTO warns VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
+	_, err = m.db.Exec("INSERT INTO warn VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
 		msg.Message.GuildID, msg.Message.Author.ID, reason, cu.ID, time.Now(), true)
 	if err != nil {
 		return
@@ -314,7 +314,7 @@ func (m *ModerationMod) checkfilterPassive(msg *base.DiscordMessage) {
 			return
 		}
 
-		_, _ = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
+		_, _ = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
 			cu.ID, time.Now(), g.ID, msg.Message.Author.ID)
 
 		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", msg.Message.Author.Mention()))

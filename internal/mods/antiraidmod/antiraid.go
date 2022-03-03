@@ -123,7 +123,7 @@ func (m *AntiRaidMod) runBanListener(s *discordgo.Session) {
 		select {
 		case ban := <-m.banChan:
 			//fmt.Println("time to ban: ", ban)
-			s.GuildBanCreateWithReason(ban[0], ban[1], "Meido AntiRaid", 7)
+			s.GuildBanCreateWithReason(ban[0], ban[1], "Raid prevention", 7)
 		}
 	}
 }

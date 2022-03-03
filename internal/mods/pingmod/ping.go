@@ -72,7 +72,7 @@ func (m *PingMod) Hook(b *base.Bot) error {
 	rand.Seed(time.Now().Unix())
 
 	m.RegisterCommand(NewPingCommand(m))
-	m.RegisterCommand(NewMonkeyCommand(m))
+	//m.RegisterCommand(NewMonkeyCommand(m))
 
 	return nil
 }

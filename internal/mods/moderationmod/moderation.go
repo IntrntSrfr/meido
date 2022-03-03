@@ -60,11 +60,11 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		dbg := &database.Guild{}
-		err := m.db.Get(dbg, "SELECT guild_id FROM guilds WHERE guild_id = $1;", g.Guild.ID)
+		err := m.db.Get(dbg, "SELECT guild_id FROM guild WHERE guild_id = $1;", g.Guild.ID)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
 		} else if err == sql.ErrNoRows {
-			m.db.Exec("INSERT INTO guilds(guild_id, use_warns, max_warns) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
+			m.db.Exec("INSERT INTO guild(guild_id, use_warns, max_warns) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
 			fmt.Println(fmt.Sprintf("Inserted new guild: %v [%v]", g.Guild.Name, g.Guild.ID))
 		}
 	})
@@ -79,7 +79,7 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 						continue
 					}
 					dge := &database.Guild{}
-					err := b.DB.Get(dge, "SELECT * FROM guilds WHERE guild_id=$1", g.ID)
+					err := b.DB.Get(dge, "SELECT * FROM guild WHERE guild_id=$1", g.ID)
 					if err != nil {
 						continue
 					}
@@ -89,7 +89,7 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 					}
 
 					var warns []*database.Warn
-					err = b.DB.Select(&warns, "SELECT * FROM warns WHERE guild_id=$1 AND is_valid", g.ID)
+					err = b.DB.Select(&warns, "SELECT * FROM warn WHERE guild_id=$1 AND is_valid", g.ID)
 					if err != nil {
 						continue
 					}
@@ -97,7 +97,7 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 					dur := time.Duration(dge.WarnDuration)
 					for _, warn := range warns {
 						if warn.GivenAt.Unix() < time.Now().Add(-1*time.Hour*24*dur).Unix() {
-							b.DB.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3",
+							b.DB.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE id=$3",
 								b.Discord.Sess.State.User.ID, time.Now(), warn.UID)
 						}
 					}
@@ -108,13 +108,13 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
 
-		a := &database.Guild{}
-		err := m.db.Get(a, "SELECT * FROM guilds WHERE guild_id=$1", g.GuildID)
+		a := &database.AutoRole{}
+		err := m.db.Get(a, "SELECT * FROM guild WHERE guild_id=$1", g.GuildID)
 		if err != nil {
 			return
 		}
 
-		if a.AutoRole == "" {
+		if a.RoleID == "" {
 			return
 		}
 
@@ -126,16 +126,17 @@ func (m *ModerationMod) Hook(b *base.Bot) error {
 
 		found := false
 		for _, r := range guild.Roles {
-			if r.ID == a.AutoRole {
+			if r.ID == a.RoleID {
 				found = true
 			}
 		}
 
 		if !found {
+			// if its not found, the role should probably get set to be empty
 			return
 		}
 
-		s.GuildMemberRoleAdd(g.GuildID, g.User.ID, a.AutoRole)
+		s.GuildMemberRoleAdd(g.GuildID, g.User.ID, a.RoleID)
 	})
 
 	m.passives = append(m.passives, NewCheckFilterPassive(m))
@@ -274,7 +275,8 @@ func (m *ModerationMod) banCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
+	// clear all active warns
+	_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
 		msg.Sess.State.User.ID, time.Now(), msg.Message.GuildID, targetUser.ID)
 
 	embed := &discordgo.MessageEmbed{

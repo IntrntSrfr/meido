@@ -1,6 +1,9 @@
 package base
 
-import "strings"
+import (
+	"strings"
+	"sync"
+)
 
 // Mod represents a collection of commands and passives.
 type Mod interface {
@@ -13,6 +16,14 @@ type Mod interface {
 	AllowDMs() bool
 	Hook(*Bot) error
 	RegisterCommand(*ModCommand)
+}
+
+type ModBase struct {
+	sync.Mutex
+	name         string
+	commands     map[string]*ModCommand
+	allowedTypes MessageType
+	allowDMs     bool
 }
 
 // ModCommand represents a command for a Mod.

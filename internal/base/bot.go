@@ -2,15 +2,15 @@ package base
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/internal/services/cooldowns"
 	"log"
 	"os"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/services/callbacks"
+	"github.com/intrntsrfr/meido/internal/services/cooldowns"
 
 	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
@@ -26,6 +26,15 @@ type Config struct {
 	YouTubeKey       string   `json:"youtube_key"`
 }
 
+type LogLevel int
+
+const (
+	LogLevelVerbose = iota
+	LogLevelInfo
+	LogLevelWarning
+	LogLevelError
+)
+
 // Bot is the main bot struct.
 type Bot struct {
 	Discord   *Discord
@@ -33,14 +42,10 @@ type Bot struct {
 	Mods      map[string]Mod
 	DB        *database.DB
 	Owo       *owo.Client
-	Cooldowns *cooldowns.CooldownHandler
-	Callbacks *CallbackCache
+	Cooldowns cooldowns.CooldownService
+	Callbacks callbacks.CallbackService
 	Perms     *PermissionHandler
-}
-
-type CallbackCache struct {
-	sync.Mutex
-	ch map[string]chan *DiscordMessage
+	LogLevel  LogLevel
 }
 
 // NewBot takes in a Config and returns a pointer to a new Bot
@@ -50,8 +55,8 @@ func NewBot(config *Config) *Bot {
 	fmt.Println("new bot")
 
 	if _, err := os.Stat("./data"); err != nil {
-		if err := os.Mkdir("./data", os.ModePerm); err != nil {
-			panic(err)
+		if err = os.Mkdir("./data", os.ModePerm); err != nil {
+			log.Fatal(err)
 		}
 	}
 
@@ -60,7 +65,7 @@ func NewBot(config *Config) *Bot {
 		Config:    config,
 		Mods:      make(map[string]Mod),
 		Cooldowns: cooldowns.NewCooldownHandler(),
-		Callbacks: &CallbackCache{ch: make(map[string]chan *DiscordMessage)},
+		Callbacks: callbacks.NewCallbackHandler(),
 	}
 }
 
@@ -78,13 +83,23 @@ func (b *Bot) Open() error {
 	if err != nil {
 		panic(err)
 	}
+
 	b.DB = database.New(psql)
 	fmt.Println("psql connection established")
 
 	b.Owo = owo.NewClient(b.Config.OwoToken)
 	fmt.Println("owo client created")
 
-	b.Perms = NewPermissionHandler(psql)
+	// add some proper base logging to the bot, PLEASE
+
+	// log bot specific events, such as
+	// - bot joins server, leaves server
+	// - shutdown / startup?
+	// -
+
+	// b.startLogs()
+
+	//b.Perms = NewPermissionHandler(psql)
 
 	go b.listen(msgChan)
 	return nil
@@ -97,7 +112,6 @@ func (b *Bot) Run() error {
 
 // Close saves all mod states and closes the bot sessions.
 func (b *Bot) Close() {
-
 	for _, mod := range b.Mods {
 		err := mod.Save()
 		if err != nil {
@@ -118,37 +132,12 @@ func (b *Bot) RegisterMod(mod Mod) {
 	b.Mods[mod.Name()] = mod
 }
 
-// MakeCallback returns a channel for future messages and stores it using channel and user id
-func (b *Bot) MakeCallback(channelID, userID string) (chan *DiscordMessage, error) {
-	key := fmt.Sprintf("%v:%v", channelID, userID)
-
-	ch := make(chan *DiscordMessage)
-	b.Callbacks.Lock()
-	defer b.Callbacks.Unlock()
-	if _, ok := b.Callbacks.ch[key]; ok {
-		return nil, errors.New("a menu already exists")
-	}
-
-	b.Callbacks.ch[key] = ch
-	return ch, nil
-}
-
-// CloseCallback closes a callback
-func (b *Bot) CloseCallback(channelID, userID string) {
-	key := fmt.Sprintf("%v:%v", channelID, userID)
-
-	b.Callbacks.Lock()
-	defer b.Callbacks.Unlock()
-	close(b.Callbacks.ch[key])
-	delete(b.Callbacks.ch, key)
-}
-
 // listen is the main command handler. It will listen for messages and execute commands accordingly.
 func (b *Bot) listen(msg <-chan *DiscordMessage) {
 	for {
 		m := <-msg
-		go b.processMessage(m)
 		go b.deliverCallbacks(m)
+		go b.processMessage(m)
 	}
 }
 
@@ -206,7 +195,7 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 	}
 
 	if cmd.RequiresOwner && !m.Discord.IsOwner(m) {
-		m.Reply("owner only lol")
+		_, _ = m.Reply("owner only lol")
 		return
 	}
 
@@ -225,15 +214,16 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 	} else {
 		key = fmt.Sprintf("%v:%v", m.Message.ChannelID, cmd.Name)
 	}
-	if t, ok := b.Cooldowns.IsOnCooldown(key); ok {
-		// if on cooldown, we know its for this command so we can break out and go next
-		cdMsg, err := m.Reply(fmt.Sprintf("on cooldown for another %v", time.Until(t)))
+	if t, ok := b.Cooldowns.Check(key); ok {
+		// if on cooldown, we know it's for this command, so we can break out and go next
+		cdMsg, err := m.Reply(fmt.Sprintf("on cooldown for another %v", t))
 		if err != nil {
+			log.Println(err)
 			return
 		}
 		go func() {
 			time.AfterFunc(time.Second*2, func() {
-				m.Sess.ChannelMessageDelete(cdMsg.ChannelID, cdMsg.ID)
+				_ = m.Sess.ChannelMessageDelete(cdMsg.ChannelID, cdMsg.ID)
 			})
 		}()
 	}
@@ -252,12 +242,10 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 
 	// run cmd
 	go runCommand(cmd.Run, m)
-
-	//go cmd.Run(m)
 	// log cmd
 	go b.logCommand(m, cmd)
 	// set cmd on cooldown
-	go b.Cooldowns.SetOnCooldown(key, time.Duration(cmd.Cooldown))
+	go b.Cooldowns.Set(key, time.Duration(cmd.Cooldown))
 }
 
 func runCommand(f func(*DiscordMessage), m *DiscordMessage) {
@@ -276,7 +264,7 @@ func runCommand(f func(*DiscordMessage), m *DiscordMessage) {
 
 			fmt.Println(fmt.Sprintf("!!! RECOVERY NEEDED !!!\ntime: %v\nreason: %v\n\n\n", now.String(), r))
 
-			m.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
+			_, _ = m.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
 		}
 	}()
 
@@ -288,21 +276,16 @@ func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
 		return
 	}
 
-	key := fmt.Sprintf("%v:%v", msg.ChannelID(), msg.Author().ID)
-
-	b.Callbacks.Lock()
-	defer b.Callbacks.Unlock()
-	ch, ok := b.Callbacks.ch[key]
-	if !ok {
+	ch, err := b.Callbacks.Get(msg.ChannelID(), msg.AuthorID())
+	if err != nil {
 		return
 	}
-
 	ch <- msg
 }
 
 // logCommand logs an executed command
 func (b *Bot) logCommand(msg *DiscordMessage, cmd *ModCommand) {
-	b.DB.Exec("INSERT INTO commandlog VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
+	b.DB.Exec("INSERT INTO command_log VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
 		cmd.Name, strings.Join(msg.Args(), " "), msg.Message.Author.ID, msg.Message.GuildID,
 		msg.Message.ChannelID, msg.Message.ID, time.Now())
 

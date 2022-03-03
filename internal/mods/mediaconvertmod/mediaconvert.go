@@ -3,14 +3,15 @@ package mediaconvertmod
 import (
 	"bytes"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/internal/base"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os/exec"
 	"path/filepath"
 	"sync"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/internal/base"
 )
 
 type MediaConvertMod struct {
@@ -188,7 +189,7 @@ func (m *MediaConvertMod) mediaconvertCommand(msg *base.DiscordMessage) {
 	stdout, _ := cmd.StdoutPipe()
 	cmd.Start()
 
-	go func() {
+	func() {
 		defer stdin.Close()
 		io.Copy(stdin, inp)
 	}()

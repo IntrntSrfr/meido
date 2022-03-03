@@ -37,7 +37,7 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 	}
 
 	dge := &database.Guild{}
-	err := m.db.Get(dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id = $1;", msg.Message.GuildID)
+	err := m.db.Get(dge, "SELECT use_warns, max_warns FROM guild WHERE guild_id = $1;", msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
@@ -93,7 +93,7 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 		reason = strings.Join(msg.RawArgs()[2:], " ")
 	}
 
-	warnCount, err := m.db.GetValidWarnCount(msg.GuildID(), targetUser.User.ID)
+	warnCount, err := m.db.GetValidUserWarnCount(msg.GuildID(), targetUser.User.ID)
 	if err != nil {
 		msg.Reply("something went wrong when trying to warn user, please try again")
 		return
@@ -126,7 +126,7 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 			return
 		}
 
-		m.db.ClearActiveWarns(msg.Sess.State.User.ID, g.ID, targetUser.User.ID)
+		m.db.ClearActiveUserWarns(msg.Sess.State.User.ID, g.ID, targetUser.User.ID)
 		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", targetUser.Mention()))
 
 	} else {
@@ -197,7 +197,7 @@ func (m *ModerationMod) warnlogCommand(msg *base.DiscordMessage) {
 
 	// todo: make this a method
 	var warns []*database.Warn
-	err = m.db.Select(&warns, "SELECT * FROM warns WHERE user_id=$1 AND guild_id=$2 ORDER BY given_at DESC;", targetUser.ID, msg.Message.GuildID)
+	err = m.db.Select(&warns, "SELECT * FROM warn WHERE user_id=$1 AND guild_id=$2 ORDER BY given_at DESC;", targetUser.ID, msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
@@ -290,7 +290,7 @@ func (m *ModerationMod) warncountCommand(msg *base.DiscordMessage) {
 	)
 
 	dge := &database.Guild{}
-	err = m.db.Get(&dge, "SELECT use_warns, max_warns FROM guilds WHERE guild_id=$1", msg.Message.GuildID)
+	err = m.db.Get(&dge, "SELECT use_warns, max_warns FROM guild WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		return
 	}
@@ -319,7 +319,7 @@ func (m *ModerationMod) warncountCommand(msg *base.DiscordMessage) {
 
 	warnCount := 0
 
-	err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warns WHERE guild_id=$1 AND user_id=$2 AND is_valid", msg.Message.GuildID, targetUser.ID)
+	err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warn WHERE guild_id=$1 AND user_id=$2 AND is_valid", msg.Message.GuildID, targetUser.ID)
 	if err != nil {
 		return
 	}
@@ -356,7 +356,7 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 	}
 
 	var entries []*database.Warn
-	err = m.db.Select(&entries, "SELECT * FROM warns WHERE user_id=$1 AND guild_id=$2 AND is_valid", msg.Args()[1], msg.Message.GuildID)
+	err = m.db.Select(&entries, "SELECT * FROM warn WHERE user_id=$1 AND guild_id=$2 AND is_valid", msg.Args()[1], msg.Message.GuildID)
 	if err != nil && err != sql.ErrNoRows {
 		fmt.Println(err)
 		msg.Reply("there was an error, please try again")
@@ -377,7 +377,7 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	cb, err := m.bot.MakeCallback(msg.Message.ChannelID, msg.Author().ID)
+	cb, err := m.bot.Callbacks.Make(msg.ChannelID(), msg.AuthorID())
 	if err != nil {
 		return
 	}
@@ -389,14 +389,14 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 		select {
 		case reply = <-cb:
 		case <-time.After(time.Second * 30):
-			msg.Reply("You spent too much time")
-			m.bot.CloseCallback(msg.Message.ChannelID, msg.Author().ID)
+			//msg.Reply("You spent too much time")
+			m.bot.Callbacks.Delete(msg.ChannelID(), msg.AuthorID())
 			msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
 			return
 		}
 
 		if strings.ToLower(reply.RawContent()) == "cancel" {
-			m.bot.CloseCallback(msg.Message.ChannelID, msg.Author().ID)
+			m.bot.Callbacks.Delete(msg.ChannelID(), msg.AuthorID())
 			msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
 			msg.Sess.ChannelMessageDelete(reply.Message.ChannelID, reply.Message.ID)
 
@@ -409,13 +409,13 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 		}
 	}
 
-	m.bot.CloseCallback(msg.Message.ChannelID, msg.Author().ID)
+	m.bot.Callbacks.Delete(msg.ChannelID(), msg.AuthorID())
 	msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
 	msg.Sess.ChannelMessageDelete(reply.Message.ChannelID, reply.Message.ID)
 
 	selectedEntry := entries[n-1]
 
-	_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3 AND is_valid", msg.Message.Author.ID, time.Now(), selectedEntry.UID)
+	_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE id=$3 AND is_valid", msg.Message.Author.ID, time.Now(), selectedEntry.UID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
@@ -463,7 +463,7 @@ func (m *ModerationMod) clearallwarnsCommand(msg *base.DiscordMessage) {
 		}
 	}
 
-	_, err = m.db.Exec("UPDATE warns SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE user_id=$3 AND guild_id=$4 AND is_valid",
+	_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE user_id=$3 AND guild_id=$4 AND is_valid",
 		msg.Message.Author.ID, time.Now(), targetUser.ID, msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")

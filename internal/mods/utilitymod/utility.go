@@ -317,16 +317,13 @@ func (m *UtilityMod) aboutCommand(msg *base.DiscordMessage) {
 	}
 
 	var (
-		totalUsers int
-
+		totalUsers  int
 		totalBots   int
 		totalHumans int
-
-		memory runtime.MemStats
+		memory      runtime.MemStats
 	)
 	runtime.ReadMemStats(&memory)
 	guilds := msg.Discord.Guilds()
-
 	for _, guild := range guilds {
 		for _, mem := range guild.Members {
 			if mem.User.Bot {
@@ -340,7 +337,7 @@ func (m *UtilityMod) aboutCommand(msg *base.DiscordMessage) {
 	}
 
 	uptime := time.Now().Sub(m.startTime)
-	count, err := m.db.CommandCount()
+	count, err := m.db.GetCommandCount()
 	if err != nil {
 		return
 	}
@@ -533,11 +530,7 @@ func (m *UtilityMod) colorCommand(msg *base.DiscordMessage) {
 	}
 
 	clr, err := strconv.ParseInt(clrStr, 16, 32)
-	if err != nil {
-		msg.Reply("invalid color")
-		return
-	}
-	if clr < 0 || clr > 0xffffff {
+	if err != nil || clr < 0 || clr > 0xffffff {
 		msg.Reply("invalid color")
 		return
 	}
@@ -550,14 +543,14 @@ func (m *UtilityMod) colorCommand(msg *base.DiscordMessage) {
 
 	draw.Draw(img, img.Bounds(), &image.Uniform{C: color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255}}, image.Point{}, draw.Src)
 
-	buf := &bytes.Buffer{}
+	buf := bytes.Buffer{}
 
-	err = png.Encode(buf, img)
+	err = png.Encode(&buf, img)
 	if err != nil {
 		return
 	}
 
-	msg.Sess.ChannelFileSend(msg.Message.ChannelID, "color.png", buf)
+	msg.Sess.ChannelFileSend(msg.Message.ChannelID, "color.png", &buf)
 }
 
 func NewInviteCommand(m *UtilityMod) *base.ModCommand {
@@ -577,76 +570,9 @@ func NewInviteCommand(m *UtilityMod) *base.ModCommand {
 	}
 }
 func (m *UtilityMod) inviteCommand(msg *base.DiscordMessage) {
-	botLink := "<https://discordapp.com/oauth2/authorize?client_id=394162399348785152&scope=bot>"
+	botLink := "<https://discordapp.com/oauth2/authorize?client_id=" + m.bot.Discord.Sess.State.User.ID + "&scope=bot>"
 	serverLink := "https://discord.gg/KgMEGK3"
 	msg.Reply(fmt.Sprintf("Invite me to your server: %v\nSupport server: %v", botLink, serverLink))
-}
-
-func NewUserPermsCommand(m *UtilityMod) *base.ModCommand {
-	return &base.ModCommand{
-		Mod:           m,
-		Name:          "userperms",
-		Description:   "Displays what permissions a user has in the current channel",
-		Triggers:      []string{"m?userperms"},
-		Usage:         "m?userperms | m?userperms @user",
-		Cooldown:      2,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
-		AllowDMs:      false,
-		Enabled:       true,
-		Run:           m.userpermsCommand,
-	}
-}
-
-func (m *UtilityMod) userpermsCommand(msg *base.DiscordMessage) {
-
-	var (
-		err        error
-		targetUser *discordgo.Member
-	)
-
-	if msg.LenArgs() > 1 {
-		if len(msg.Message.Mentions) > 0 {
-			targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
-			if err != nil {
-				return
-			}
-		} else {
-			if _, err := strconv.Atoi(msg.Args()[1]); err != nil {
-				return
-			}
-			targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
-			if err != nil {
-				return
-			}
-		}
-	} else {
-		targetUser = msg.Member()
-	}
-
-	uPerms, err := msg.Sess.State.UserChannelPermissions(targetUser.User.ID, msg.Message.ChannelID)
-	if err != nil {
-		return
-	}
-
-	sb := strings.Builder{}
-	sb.WriteString("```\n")
-	sb.WriteString(fmt.Sprintf("perm binary: %032b\n\n", uPerms))
-	for k, v := range base.PermMap {
-		if k == 0 {
-			continue
-		}
-
-		if uPerms&k != 0 {
-			sb.WriteString(fmt.Sprintf("%v - true\n", v))
-		} else {
-			sb.WriteString(fmt.Sprintf("%v - false\n", v))
-		}
-	}
-	sb.WriteString("```")
-
-	msg.Reply(sb.String())
 }
 
 func NewUserInfoCommand(m *UtilityMod) *base.ModCommand {
@@ -860,7 +786,6 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 				return
 			}
 		}
-
 	default:
 		return
 	}

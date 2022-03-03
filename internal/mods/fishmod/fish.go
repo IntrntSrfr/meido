@@ -1,6 +1,7 @@
 package fishmod
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/base"
@@ -22,12 +23,6 @@ type FishMod struct {
 	allowedTypes base.MessageType
 	allowDMs     bool
 	bot          *base.Bot
-}
-
-type Aquarium struct {
-	UserID string `db:"user_id"`
-	Fish1  int    `db:"fish_1"`
-	Fish2  int    `db:"fish_2"`
 }
 
 // New returns a new PingMod.
@@ -122,54 +117,86 @@ func NewFishCommand(m *FishMod) *base.ModCommand {
 }
 
 func (m *FishMod) fishCommand(msg *base.DiscordMessage) {
+
+	// if msg is sent in guild, check if its sent in the fishing channel
+	if !msg.IsDM() && m.db.GetGuildFishingChannel(msg.GuildID()) != msg.ChannelID() {
+		fmt.Println("first")
+		return
+	}
+
 	fp := pickFish()
 
-	m.updateAquarium(msg.Author().ID, fp, 1)
+	err := m.updateAquarium(msg.Author().ID, fp, 1)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("second")
+		return
+	}
 
 	caption := fp.caption
 	if fp.mention {
-		caption = fmt.Sprintf("%v, %v", msg.Message.Author.Mention(), fp.caption)
+		caption = msg.Message.Author.Mention() + ", " + fp.caption
 	}
 	msg.Reply(caption)
 }
 
-// take in updated aquarium?
-
-func (m *FishMod) updateUser(aq *Aquarium, f fish, d int) error {
-	return nil
-}
-
-func (m *FishMod) updateAquarium(id string, f fish, d int) error {
-
-	aq := &Aquarium{}
-	err := m.db.Get(aq, "SELECT * FROM aquarium WHERE user_id=$1", id)
-	if err != nil {
+func (m *FishMod) updateAquarium(userID string, f fish, d int) error {
+	aq, err := m.db.GetAquarium(userID)
+	if err != nil && err == sql.ErrNoRows {
 		// if no aquarium found, make one
-
-		aq = &Aquarium{UserID: id}
-		_, err2 := m.db.Exec("INSERT INTO aquarium VALUES ($1)", id)
-		if err2 != nil {
-			return err2
+		aq, err = m.db.InsertNewAquarium(userID)
+		if err != nil {
+			return err
 		}
+	} else if err != nil {
+		// everything else we just return
+		return err
 	}
 
-	//m.updateUser(aq)
+	switch f.level {
+	case common:
+		aq.Common += d
+	case uncommon:
+		aq.Uncommon += d
+	case rare:
+		aq.Rare += d
+	case superRare:
+		aq.SuperRare += d
+	case legendary:
+		aq.Legendary += d
+	}
+
+	err = m.db.UpdateAquarium(aq)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 type fish struct {
-	emoji   string
+	level   fishLevel
 	caption string
 	mention bool
 }
 
 var fishes = []fish{
-	{"🐟", "You got a common - 🐟", false},
-	{"🐠", "You got an uncommon - 🐠", false},
-	{"🐡", "Ohhh, you got a rare! - 🐡", false},
-	{"🦈", "Woah! you got a super rare! - 🦈", true},
-	{"🎷🦈", "YOO YOU GOT A LEGENDARY SAXOPHONE SHARK! - 🎷🦈", true},
+	{common, "You got a common - 🐟", false},
+	{uncommon, "You got an uncommon - 🐠", false},
+	{rare, "Ohhh, you got a rare! - 🐡", false},
+	{superRare, "Woah! you got a super rare! - 🦈", true},
+	{legendary, "No way, you got a LEGENDARY!! - 🎷🦈", true},
 }
+
+type fishLevel int
+
+const (
+	common fishLevel = iota + 1
+	uncommon
+	rare
+	superRare
+	legendary
+)
 
 func pickFish() fish {
 	pick := rand.Intn(1000) + 1
@@ -193,7 +220,7 @@ func NewAquariumCommand(m *FishMod) *base.ModCommand {
 	return &base.ModCommand{
 		Mod:           m,
 		Name:          "Aquarium",
-		Description:   "Shows your fish collection",
+		Description:   "Displays your aquarium",
 		Triggers:      []string{"m?Aquarium", "m?aq"},
 		Usage:         "m?Aquarium",
 		Cooldown:      5,
@@ -205,16 +232,6 @@ func NewAquariumCommand(m *FishMod) *base.ModCommand {
 		Enabled:       true,
 		Run:           m.aquariumCommand,
 	}
-}
-
-func (m *FishMod) getAquarium(id string) (*Aquarium, error) {
-
-	aq := &Aquarium{}
-	err := m.db.Get(aq, "SELECT * FROM Aquarium WHERE user_id=$1", id)
-	if err != nil {
-		return nil, err
-	}
-	return aq, nil
 }
 
 func (m *FishMod) aquariumCommand(msg *base.DiscordMessage) {
@@ -236,16 +253,21 @@ func (m *FishMod) aquariumCommand(msg *base.DiscordMessage) {
 		}
 	}
 
-	aq, err := m.getAquarium(targetUser.ID)
-	if err != nil {
+	aq, err := m.db.GetAquarium(targetUser.ID)
+	if err != nil && err == sql.ErrNoRows {
 		msg.Reply(fmt.Sprintf("%v has no fish", targetUser.String()))
+		return
+	} else if err != nil {
 		return
 	}
 
 	// do this but for each field instead
 	var w []string
-	w = append(w, fmt.Sprintf("first fish: %v", aq.Fish1))
-	w = append(w, fmt.Sprintf("second fish: %v", aq.Fish2))
+	w = append(w, fmt.Sprintf("🐟: %v", aq.Common))
+	w = append(w, fmt.Sprintf("🐠: %v", aq.Uncommon))
+	w = append(w, fmt.Sprintf("🐡: %v", aq.Rare))
+	w = append(w, fmt.Sprintf("🦈: %v", aq.SuperRare))
+	w = append(w, fmt.Sprintf("🎷🦈: %v", aq.Legendary))
 
 	embed := &discordgo.MessageEmbed{
 		Title:       fmt.Sprintf("%v's Aquarium", targetUser.String()),

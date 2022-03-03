@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-var reg = regexp.MustCompile(`"(http)s?://([^"])*\.(gif|png|jpg)"`)
+var reg = regexp.MustCompile(`"(http)s?://([^"])*\.(gif|png|jpg)",`)
 
 func scrape(query string) (links []string) {
 
@@ -38,9 +38,9 @@ func scrape(query string) (links []string) {
 	for _, m := range matches {
 		ma := string(m)
 		ma = strings.TrimPrefix(ma, `"`)
-		ma = strings.TrimSuffix(ma, `"`)
+		ma = strings.TrimSuffix(ma, `",`)
 
-		if strings.Contains(strings.ToLower(ma), "https://www.google.com/logos/doodles") {
+		if strings.Contains(strings.ToLower(ma), "https://www.google.com/logos/doodles") || strings.Contains(strings.ToLower(ma), "https://www.gstatic.com") {
 			continue
 		}
 

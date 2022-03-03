@@ -25,7 +25,7 @@ func NewAutoRoleCommand(m *ModerationMod) *base.ModCommand {
 }
 func (m *ModerationMod) autoroleCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() == 1 {
-		_, err := m.db.Exec("UPDATE guilds SET autorole=$1 WHERE guild_id=$2", "", msg.Message.GuildID)
+		_, err := m.db.Exec("UPDATE auto_role SET role_id=$1 WHERE guild_id=$2", "", msg.Message.GuildID)
 		if err != nil {
 			return
 		}
@@ -52,7 +52,7 @@ func (m *ModerationMod) autoroleCommand(msg *base.DiscordMessage) {
 			return
 		}
 
-		_, err = m.db.Exec("UPDATE guilds SET autorole=$1 WHERE guild_id=$2", role.ID, msg.Message.GuildID)
+		_, err = m.db.Exec("UPDATE auto_role SET role_id=$1 WHERE guild_id=$2", role.ID, msg.Message.GuildID)
 		if err != nil {
 			return
 		}

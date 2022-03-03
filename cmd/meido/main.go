@@ -2,13 +2,15 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/intrntsrfr/meido/internal/base"
-	"github.com/intrntsrfr/meido/internal/mods/utilitymod"
 	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/intrntsrfr/meido/internal/base"
+	"github.com/intrntsrfr/meido/internal/mods/pingmod"
+	"github.com/intrntsrfr/meido/internal/mods/utilitymod"
 
 	_ "github.com/lib/pq"
 )
@@ -37,13 +39,13 @@ func main() {
 		panic(err)
 	}
 
-	//bot.RegisterMod(pingmod.New("pings"))
+	bot.RegisterMod(pingmod.New("pings"))
 	//bot.RegisterMod(fishmod.New("fishing"))
 	//bot.RegisterMod(loggermod.New("logs"))
 	bot.RegisterMod(utilitymod.New("utility"))
 	//bot.RegisterMod(moderationmod.New("moderation"))
 	//bot.RegisterMod(userrolemod.New("userrole"))
-	//.RegisterMod(searchmod.New("search"))
+	//bot.RegisterMod(searchmod.New("search"))
 	//bot.RegisterMod(googlemod.New("google"))
 	//bot.RegisterMod(mediaconvertmod.New("mediaconvert"))
 
