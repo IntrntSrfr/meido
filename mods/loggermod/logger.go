@@ -106,7 +106,7 @@ func (m *LoggerMod) forwardDmsPassive(msg *base2.DiscordMessage) {
 		Title:       fmt.Sprintf("Message from %v", msg.Message.Author.String()),
 		Description: msg.Message.Content,
 		Footer:      &discordgo.MessageEmbedFooter{Text: msg.Message.Author.ID},
-		Timestamp:   string(msg.Message.Timestamp),
+		Timestamp:   msg.Message.Timestamp.String(),
 	}
 	if len(msg.Message.Attachments) > 0 {
 		embed.Image = &discordgo.MessageEmbedImage{URL: msg.Message.Attachments[0].URL}

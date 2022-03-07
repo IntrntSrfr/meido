@@ -270,7 +270,7 @@ func (m *UserRoleMod) myroleCommand(msg *base2.DiscordMessage) {
 		if msg.Args()[1] == "name" {
 			newName := strings.Join(msg.RawArgs()[2:], " ")
 
-			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, newName, oldRole.Color, oldRole.Hoist, int(oldRole.Permissions), oldRole.Mentionable)
+			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, newName, oldRole.Color, oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
 			if err != nil {
 				if strings.Contains(err.Error(), strconv.Itoa(discordgo.ErrCodeMissingPermissions)) {
 					msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Missing permissions.", Color: utils.ColorCritical})
@@ -298,7 +298,7 @@ func (m *UserRoleMod) myroleCommand(msg *base2.DiscordMessage) {
 				return
 			}
 
-			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, oldRole.Name, int(color), oldRole.Hoist, int(oldRole.Permissions), oldRole.Mentionable)
+			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, oldRole.Name, int(color), oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
 			if err != nil {
 				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error(), Color: utils.ColorCritical})
 				return

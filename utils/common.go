@@ -4,7 +4,7 @@ package utils
 var (
 	ColorCritical = 0xc80000
 	ColorGreen    = 0x00c800
-	//ColorBlue      = 0x0000c8
+	// ColorBlue      = 0x0000c8
 	ColorLightBlue = 0x00bbe0
 	ColorInfo      = 0xFEFEFE
 )

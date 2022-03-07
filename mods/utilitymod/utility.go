@@ -645,12 +645,7 @@ func (m *UtilityMod) userinfoCommand(msg *base2.DiscordMessage) {
 	}
 
 	if targetMember != nil {
-
-		joinTs, err := targetMember.JoinedAt.Parse()
-		if err != nil {
-			msg.Reply("something terrible happened")
-			return
-		}
+		joinTs := targetMember.JoinedAt
 		joinDur := time.Since(joinTs)
 
 		nick := targetMember.Nick

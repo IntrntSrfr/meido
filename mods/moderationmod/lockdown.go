@@ -68,8 +68,8 @@ func (m *ModerationMod) lockdownCommand(msg *base2.DiscordMessage) {
 			ch.ID,
 			eRole.ID,
 			discordgo.PermissionOverwriteTypeRole,
-			int(ePerms.Allow),
-			int(ePerms.Deny+discordgo.PermissionSendMessages),
+			ePerms.Allow,
+			ePerms.Deny+discordgo.PermissionSendMessages,
 		)
 		if err != nil {
 			msg.Reply("Could not lock channel.")
@@ -82,8 +82,8 @@ func (m *ModerationMod) lockdownCommand(msg *base2.DiscordMessage) {
 			ch.ID,
 			eRole.ID,
 			discordgo.PermissionOverwriteTypeRole,
-			int(ePerms.Allow-discordgo.PermissionSendMessages),
-			int(ePerms.Deny+discordgo.PermissionSendMessages),
+			ePerms.Allow-discordgo.PermissionSendMessages,
+			ePerms.Deny+discordgo.PermissionSendMessages,
 		)
 		if err != nil {
 			msg.Reply("Could not lock channel.")
@@ -165,8 +165,8 @@ func (m *ModerationMod) unlockCommand(msg *base2.DiscordMessage) {
 			ch.ID,
 			eRole.ID,
 			discordgo.PermissionOverwriteTypeRole,
-			int(ePerms.Allow),
-			int(ePerms.Deny-discordgo.PermissionSendMessages),
+			ePerms.Allow,
+			ePerms.Deny-discordgo.PermissionSendMessages,
 		)
 		if err != nil {
 			msg.Reply("Could not unlock channel")
