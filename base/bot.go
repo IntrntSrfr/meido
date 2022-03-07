@@ -7,7 +7,6 @@ import (
 	"github.com/intrntsrfr/meido/services/callbacks"
 	"github.com/intrntsrfr/meido/services/cooldowns"
 	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -49,45 +48,32 @@ type Bot struct {
 
 // NewBot takes in a Config and returns a pointer to a new Bot
 func NewBot(config *Config) *Bot {
-	d := NewDiscord(config.Token)
-
-	fmt.Println("new bot")
-
-	if _, err := os.Stat("./data"); err != nil {
-		if err = os.Mkdir("./data", os.ModePerm); err != nil {
-			log.Fatal(err)
-		}
-	}
-
+	log.Println("new bot")
 	return &Bot{
-		Discord:   d,
+		Discord:   NewDiscord(config.Token),
 		Config:    config,
 		Mods:      make(map[string]Mod),
 		Cooldowns: cooldowns.NewCooldownHandler(),
 		Callbacks: callbacks.NewCallbackHandler(),
+		Owo:       owo.NewClient(config.OwoToken),
 	}
 }
 
 // Open sets up the required things the bot needs to run.
 // establishes a PSQL connection and starts listening for commands.
 func (b *Bot) Open() error {
+	log.Println("open and run")
 	msgChan, err := b.Discord.Open()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Println("open and run")
-
 	psql, err := sqlx.Connect("postgres", b.Config.ConnectionString)
 	if err != nil {
 		panic(err)
 	}
-
 	b.DB = database.New(psql)
-	fmt.Println("psql connection established")
-
-	b.Owo = owo.NewClient(b.Config.OwoToken)
-	fmt.Println("owo client created")
+	log.Println("psql connection established")
 
 	// add some proper base logging to the bot, PLEASE
 
@@ -111,19 +97,12 @@ func (b *Bot) Run() error {
 
 // Close saves all mod states and closes the bot sessions.
 func (b *Bot) Close() {
-	for _, mod := range b.Mods {
-		err := mod.Save()
-		if err != nil {
-			fmt.Println(fmt.Sprintf("Error saving %v: %v", mod.Name(), err))
-		}
-	}
-
 	b.Discord.Close()
 }
 
 // RegisterMod takes in a Mod and registers it.
 func (b *Bot) RegisterMod(mod Mod) {
-	fmt.Println(fmt.Sprintf("registering mod '%s'", mod.Name()))
+	log.Println(fmt.Sprintf("registering mod '%s'", mod.Name()))
 	err := mod.Hook(b)
 	if err != nil {
 		panic(err)
@@ -247,6 +226,7 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 	go b.Cooldowns.Set(key, time.Duration(cmd.Cooldown))
 }
 
+// if a command causes panic, this will surely keep everything from crashing
 func runCommand(f func(*DiscordMessage), m *DiscordMessage) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -275,7 +255,8 @@ func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
 		return
 	}
 
-	ch, err := b.Callbacks.Get(msg.ChannelID(), msg.AuthorID())
+	key := fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID())
+	ch, err := b.Callbacks.Get(key)
 	if err != nil {
 		return
 	}

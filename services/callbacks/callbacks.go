@@ -2,15 +2,14 @@ package callbacks
 
 import (
 	"errors"
-	"fmt"
 	"github.com/intrntsrfr/meido/base"
 	"sync"
 )
 
 type CallbackService interface {
-	Make(channelID, userID string) (chan *base.DiscordMessage, error)
-	Get(channelID, userID string) (chan *base.DiscordMessage, error)
-	Delete(channelID, userID string)
+	Make(key string) (chan *base.DiscordMessage, error)
+	Get(key string) (chan *base.DiscordMessage, error)
+	Delete(key string)
 }
 
 var (
@@ -30,9 +29,7 @@ func NewCallbackHandler() *BotCallbackService {
 }
 
 // Make makes a channel for future communication with a running command
-func (c *BotCallbackService) Make(channelID, userID string) (chan *base.DiscordMessage, error) {
-	key := fmt.Sprintf("%v:%v", channelID, userID)
-
+func (c *BotCallbackService) Make(key string) (chan *base.DiscordMessage, error) {
 	ch := make(chan *base.DiscordMessage)
 	c.Lock()
 	defer c.Unlock()
@@ -44,9 +41,7 @@ func (c *BotCallbackService) Make(channelID, userID string) (chan *base.DiscordM
 }
 
 // Get gets a channel for communication with a running command
-func (c *BotCallbackService) Get(channelID, userID string) (chan *base.DiscordMessage, error) {
-	key := fmt.Sprintf("%v:%v", channelID, userID)
-
+func (c *BotCallbackService) Get(key string) (chan *base.DiscordMessage, error) {
 	c.Lock()
 	defer c.Unlock()
 	ch, ok := c.ch[key]
@@ -57,9 +52,7 @@ func (c *BotCallbackService) Get(channelID, userID string) (chan *base.DiscordMe
 }
 
 // Delete removes a channel for communication with a running command
-func (c *BotCallbackService) Delete(channelID, userID string) {
-	key := fmt.Sprintf("%v:%v", channelID, userID)
-
+func (c *BotCallbackService) Delete(key string) {
 	c.Lock()
 	defer c.Unlock()
 	close(c.ch[key])

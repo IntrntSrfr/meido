@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/bwmarrin/discordgo v0.24.0
-	github.com/dgraph-io/badger/v3 v3.2011.1
 	github.com/dustin/go-humanize v1.0.0
 	github.com/intrntsrfr/owo v0.0.0-20190908123752-c365293bebfd
 	github.com/jmoiron/sqlx v1.2.0

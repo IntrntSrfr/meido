@@ -377,7 +377,8 @@ func (m *ModerationMod) clearwarnCommand(msg *base2.DiscordMessage) {
 		return
 	}
 
-	cb, err := m.bot.Callbacks.Make(msg.ChannelID(), msg.AuthorID())
+	key := fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID())
+	cb, err := m.bot.Callbacks.Make(key)
 	if err != nil {
 		return
 	}
@@ -390,13 +391,13 @@ func (m *ModerationMod) clearwarnCommand(msg *base2.DiscordMessage) {
 		case reply = <-cb:
 		case <-time.After(time.Second * 30):
 			//msg.Reply("You spent too much time")
-			m.bot.Callbacks.Delete(msg.ChannelID(), msg.AuthorID())
+			m.bot.Callbacks.Delete(key)
 			msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
 			return
 		}
 
 		if strings.ToLower(reply.RawContent()) == "cancel" {
-			m.bot.Callbacks.Delete(msg.ChannelID(), msg.AuthorID())
+			m.bot.Callbacks.Delete(key)
 			msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
 			msg.Sess.ChannelMessageDelete(reply.Message.ChannelID, reply.Message.ID)
 
@@ -409,7 +410,7 @@ func (m *ModerationMod) clearwarnCommand(msg *base2.DiscordMessage) {
 		}
 	}
 
-	m.bot.Callbacks.Delete(msg.ChannelID(), msg.AuthorID())
+	m.bot.Callbacks.Delete(key)
 	msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
 	msg.Sess.ChannelMessageDelete(reply.Message.ChannelID, reply.Message.ID)
 

@@ -8,8 +8,6 @@ import (
 // Mod represents a collection of commands and passives.
 type Mod interface {
 	Name() string
-	Save() error
-	Load() error
 	Passives() []*ModPassive
 	Commands() map[string]*ModCommand
 	AllowedTypes() MessageType
