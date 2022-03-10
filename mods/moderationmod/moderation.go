@@ -503,11 +503,3 @@ func (m *ModerationMod) kickCommand(msg *base2.DiscordMessage) {
 
 	msg.ReplyEmbed(embed)
 }
-
-func (m *ModerationMod) NewMuteCommand() *base2.ModCommand {
-	return &base2.ModCommand{}
-}
-
-func (m *ModerationMod) muteCommand(msg *base2.DiscordMessage) {
-
-}

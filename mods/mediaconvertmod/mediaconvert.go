@@ -89,25 +89,27 @@ func (m *MediaConvertMod) jpglargeconvertPassive(msg *base2.DiscordMessage) {
 	var files []*discordgo.File
 
 	for _, att := range msg.Message.Attachments {
-		if filepath.Ext(att.URL) != ".jpglarge" {
-			continue
-		}
+		func() {
+			if filepath.Ext(att.URL) != ".jpglarge" {
+				return
+			}
 
-		res, err := http.Get(att.URL)
-		if err != nil {
-			continue
-		}
+			res, err := http.Get(att.URL)
+			if err != nil {
+				return
+			}
 
-		if res.StatusCode != 200 {
-			continue
-		}
+			if res.StatusCode != 200 {
+				return
+			}
 
-		defer res.Body.Close()
+			defer res.Body.Close()
 
-		files = append(files, &discordgo.File{
-			Name:   "converted.jpg",
-			Reader: res.Body,
-		})
+			files = append(files, &discordgo.File{
+				Name:   "converted.jpg",
+				Reader: res.Body,
+			})
+		}()
 	}
 
 	if len(files) < 1 {

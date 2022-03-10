@@ -22,7 +22,7 @@ func NewCooldownHandler() *BotCooldownService {
 	}
 }
 
-// SetOnCooldown sets a command on cooldown, adding it to the CooldownCache.
+// Set sets a command on cooldown, adding it to the map.
 func (c *BotCooldownService) Set(key string, dur time.Duration) {
 	if dur == 0 {
 		return
