@@ -161,6 +161,9 @@ func (m *ModerationMod) Hook(b *base2.Bot) error {
 	m.RegisterCommand(NewLockdownChannelCommand(m))
 	m.RegisterCommand(NewUnlockChannelCommand(m))
 
+	m.RegisterCommand(NewMuteCommand(m))
+	m.RegisterCommand(NewUnmuteCommand(m))
+
 	//m.RegisterCommand(NewAutoRoleCommand(m))
 
 	return nil
