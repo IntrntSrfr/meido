@@ -82,10 +82,10 @@ func (m *ModerationMod) muteCommand(msg *base.DiscordMessage) {
 func NewUnmuteCommand(m *ModerationMod) *base.ModCommand {
 	return &base.ModCommand{
 		Mod:           m,
-		Name:          "mute",
-		Description:   "unmutes a member",
+		Name:          "unmute",
+		Description:   "Unmutes a member",
 		Triggers:      []string{"m?unmute"},
-		Usage:         "m?mute <user>",
+		Usage:         "m?unmute <user>",
 		Cooldown:      1,
 		CooldownUser:  false,
 		RequiredPerms: discordgo.PermissionModerateMembers,
