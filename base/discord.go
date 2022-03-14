@@ -274,6 +274,12 @@ func (a RoleByPos) Len() int           { return len(a) }
 func (a RoleByPos) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a RoleByPos) Less(i, j int) bool { return a[i].Position > a[j].Position }
 
+func (d *Discord) RegisterHandler(h interface{}) {
+	for _, s := range d.Sessions {
+		s.AddHandler(h)
+	}
+}
+
 // Guilds returns all the guild objects the bot has in its sessions.
 func (d *Discord) Guilds() []*discordgo.Guild {
 	var guilds []*discordgo.Guild

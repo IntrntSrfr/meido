@@ -32,12 +32,6 @@ func New(name string) base2.Mod {
 func (m *LoggerMod) Name() string {
 	return m.name
 }
-func (m *LoggerMod) Save() error {
-	return nil
-}
-func (m *LoggerMod) Load() error {
-	return nil
-}
 func (m *LoggerMod) Passives() []*base2.ModPassive {
 	return m.passives
 }
@@ -52,27 +46,6 @@ func (m *LoggerMod) AllowDMs() bool {
 }
 func (m *LoggerMod) Hook(b *base2.Bot) error {
 	m.dmLogChannels = b.Config.DmLogChannels
-
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		fmt.Println("user:", r.User.String())
-		fmt.Println("servers:", len(r.Guilds))
-	})
-
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
-		b.Discord.Sess.RequestGuildMembers(g.ID, "", 0, false)
-		fmt.Println("loading: ", g.Guild.Name, g.MemberCount, len(g.Members))
-	})
-
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildMembersChunk) {
-		if g.ChunkIndex == g.ChunkCount-1 {
-			guild, err := b.Discord.Guild(g.GuildID)
-			if err != nil {
-				return
-			}
-			fmt.Println("finished loading " + guild.Name)
-		}
-	})
-
 	m.passives = append(m.passives, NewForwardDmsPassive(m))
 	return nil
 }
@@ -90,7 +63,7 @@ func NewForwardDmsPassive(m *LoggerMod) *base2.ModPassive {
 	return &base2.ModPassive{
 		Mod:          m,
 		Name:         "forwarddms",
-		Description:  "IGNORE THIS | forwards all dms sent to channels found in config",
+		Description:  "Forwards all dms received to a few specific channels specified by the bot owner",
 		Enabled:      true,
 		AllowedTypes: base2.MessageTypeCreate,
 		Run:          m.forwardDmsPassive,

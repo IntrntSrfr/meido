@@ -6,7 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	base2 "github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
-	utils2 "github.com/intrntsrfr/meido/utils"
+	"github.com/intrntsrfr/meido/utils"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -40,16 +40,6 @@ func (m *FishMod) Name() string {
 	return m.name
 }
 
-// Save saves the mod state to a file.
-func (m *FishMod) Save() error {
-	return nil
-}
-
-// Load loads the mod state from a file.
-func (m *FishMod) Load() error {
-	return nil
-}
-
 // Passives returns the mod passives.
 func (m *FishMod) Passives() []*base2.ModPassive {
 	return []*base2.ModPassive{}
@@ -74,10 +64,6 @@ func (m *FishMod) AllowDMs() bool {
 func (m *FishMod) Hook(b *base2.Bot) error {
 	m.bot = b
 	m.db = b.DB
-	err := m.Load()
-	if err != nil {
-		return err
-	}
 
 	rand.Seed(time.Now().Unix())
 
@@ -240,7 +226,7 @@ func (m *FishMod) aquariumCommand(msg *base2.DiscordMessage) {
 
 	id := msg.Author().ID
 	if msg.LenArgs() > 1 {
-		id = utils2.TrimUserID(msg.Args()[1])
+		id = utils.TrimUserID(msg.Args()[1])
 		_, err := strconv.Atoi(id)
 		if err != nil {
 			return
@@ -272,7 +258,7 @@ func (m *FishMod) aquariumCommand(msg *base2.DiscordMessage) {
 	embed := &discordgo.MessageEmbed{
 		Title:       fmt.Sprintf("%v's Aquarium", targetUser.String()),
 		Description: strings.Join(w, " | "),
-		Color:       utils2.ColorLightBlue,
+		Color:       utils.ColorLightBlue,
 		Author: &discordgo.MessageEmbedAuthor{
 			Name:    msg.Author().String(),
 			IconURL: msg.Author().AvatarURL("512"),

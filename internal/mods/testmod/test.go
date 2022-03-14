@@ -1,4 +1,4 @@
-package pingmod
+package testmod
 
 import (
 	"fmt"
@@ -71,7 +71,7 @@ func (m *PingMod) Hook(b *base2.Bot) error {
 
 	rand.Seed(time.Now().Unix())
 
-	m.RegisterCommand(NewPingCommand(m))
+	m.RegisterCommand(NewTestCommand(m))
 	//m.RegisterCommand(NewMonkeyCommand(m))
 
 	return nil
@@ -87,41 +87,26 @@ func (m *PingMod) RegisterCommand(cmd *base2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-// NewPingCommand returns a new ping command.
-func NewPingCommand(m *PingMod) *base2.ModCommand {
+// NewTestCommand returns a new ping command.
+func NewTestCommand(m *PingMod) *base2.ModCommand {
 	return &base2.ModCommand{
 		Mod:           m,
-		Name:          "ping",
-		Description:   "Checks ping",
-		Triggers:      []string{"m?ping"},
-		Usage:         "m?ping",
+		Name:          "test",
+		Description:   "This is an incredible test command",
+		Triggers:      []string{"m?test"},
+		Usage:         "m?testing",
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
 		AllowedTypes:  base2.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
-		Run:           m.pingCommand,
+		Run:           m.testCommand,
 	}
 }
 
-func (m *PingMod) pingCommand(msg *base2.DiscordMessage) {
-	if msg.LenArgs() < 1 {
-		return
-	}
-
-	startTime := time.Now()
-
-	first, err := msg.Reply("Ping")
-	if err != nil {
-		return
-	}
-
-	now := time.Now()
-	discordLatency := now.Sub(startTime)
-
-	msg.Sess.ChannelMessageEdit(msg.Message.ChannelID, first.ID,
-		fmt.Sprintf("Pong!\nDelay: %s", discordLatency))
+func (m *PingMod) testCommand(msg *base2.DiscordMessage) {
+	_, _ = msg.Reply("test")
 }
 
 // NewMonkeyCommand returns a new monkey command.

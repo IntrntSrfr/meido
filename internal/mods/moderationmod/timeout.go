@@ -1,11 +1,11 @@
 package moderationmod
 
 import (
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/base"
-	"strconv"
-	"strings"
+	"github.com/intrntsrfr/meido/utils"
 	"time"
 )
 
@@ -50,7 +50,7 @@ func (m *ModerationMod) muteCommand(msg *base.DiscordMessage) {
 
 	// get the target member
 	//targetMember, err := msg.GetMember(1)
-	targetMember, err := getMember(msg, 1)
+	targetMember, err := getMemberAtArg(msg, 1)
 	if err != nil {
 		return
 	}
@@ -74,7 +74,7 @@ func (m *ModerationMod) muteCommand(msg *base.DiscordMessage) {
 	// just unmute 4head
 	err = msg.Discord.Sess.GuildMemberTimeout(msg.GuildID(), msg.AuthorID(), &until)
 	if err != nil {
-		_, _ = msg.Reply("I was not able to mute that member")
+		_, _ = msg.Reply("I was unable to mute that member")
 	}
 	_, _ = msg.Reply(fmt.Sprintf("muted %v for %v", targetMember.User, duration))
 }
@@ -105,7 +105,7 @@ func (m *ModerationMod) unmuteCommand(msg *base.DiscordMessage) {
 
 	// get the target member
 	//targetMember, err := msg.GetMember(1)
-	targetMember, err := getMember(msg, 1)
+	targetMember, err := getMemberAtArg(msg, 1)
 	if err != nil {
 		return
 	}
@@ -121,7 +121,6 @@ func (m *ModerationMod) unmuteCommand(msg *base.DiscordMessage) {
 	}
 
 	// check if command hierarchy is valid
-
 	topUserRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Message.Author.ID)
 	topTargetRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, targetMember.User.ID)
 	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
@@ -134,19 +133,39 @@ func (m *ModerationMod) unmuteCommand(msg *base.DiscordMessage) {
 	// just unmute 4head
 	err = msg.Discord.Sess.GuildMemberTimeout(msg.GuildID(), msg.AuthorID(), nil)
 	if err != nil {
-		_, _ = msg.Reply("I was not able to unmute that member")
+		_, _ = msg.Reply("I was unable to unmute that member")
 	}
 	_, _ = msg.Reply(fmt.Sprintf("unmuted %v", targetMember.User))
 }
 
-func getMember(msg *base.DiscordMessage, index int) (*discordgo.Member, error) {
+func getMemberAtArg(msg *base.DiscordMessage, index int) (*discordgo.Member, error) {
+	if len(msg.Args()) >= index {
+		return nil, errors.New("index out of range")
+	}
 	str := msg.Args()[index]
-	str = strings.TrimPrefix(str, "<@")
-	str = strings.TrimPrefix(str, "!")
-	str = strings.TrimSuffix(str, ">")
-	_, err := strconv.Atoi(str)
-	if err != nil {
-		return nil, err
+	userID := utils.TrimUserID(str)
+	if !utils.IsNumber(userID) {
+		return nil, errors.New(fmt.Sprintf("%s could not be parsed as a number", userID))
 	}
 	return msg.Discord.Member(msg.GuildID(), str)
+}
+
+func getUserAtArg(msg *base.DiscordMessage, index int) (*discordgo.User, error) {
+	if len(msg.Args()) >= index {
+		return nil, errors.New("index out of range")
+	}
+	str := msg.Args()[index]
+	userID := utils.TrimUserID(str)
+	if !utils.IsNumber(userID) {
+		return nil, errors.New(fmt.Sprintf("%s could not be parsed as a number", userID))
+	}
+	return msg.Sess.User(str)
+}
+
+func getMemberOrUserAtArg(msg *base.DiscordMessage, index int) (*discordgo.User, error) {
+	member, err := getMemberAtArg(msg, index)
+	if err != nil {
+		return getUserAtArg(msg, index)
+	}
+	return member.User, nil
 }

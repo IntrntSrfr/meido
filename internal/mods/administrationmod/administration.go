@@ -33,16 +33,6 @@ func (m *AdministrationMod) Name() string {
 	return m.name
 }
 
-// Save saves the mod state to a file.
-func (m *AdministrationMod) Save() error {
-	return nil
-}
-
-// Load loads the mod state from a file.
-func (m *AdministrationMod) Load() error {
-	return nil
-}
-
 // Passives returns the mod passives.
 func (m *AdministrationMod) Passives() []*base2.ModPassive {
 	return []*base2.ModPassive{}
@@ -66,11 +56,6 @@ func (m *AdministrationMod) AllowDMs() bool {
 // Hook will hook the Mod into the Bot.
 func (m *AdministrationMod) Hook(b *base2.Bot) error {
 	m.bot = b
-
-	err := m.Load()
-	if err != nil {
-		return err
-	}
 
 	rand.Seed(time.Now().Unix())
 

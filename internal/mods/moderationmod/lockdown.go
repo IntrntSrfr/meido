@@ -72,10 +72,10 @@ func (m *ModerationMod) lockdownCommand(msg *base2.DiscordMessage) {
 			ePerms.Deny+discordgo.PermissionSendMessages,
 		)
 		if err != nil {
-			msg.Reply("Could not lock channel.")
+			_, _ = msg.Reply("Could not lock channel.")
 			return
 		}
-		msg.Reply("Channel locked.")
+		_, _ = msg.Reply("Channel locked.")
 	} else if ePerms.Allow&discordgo.PermissionSendMessages != 0 && ePerms.Deny&discordgo.PermissionSendMessages == 0 {
 		// IS ALLOWED
 		err := msg.Sess.ChannelPermissionSet(
@@ -86,13 +86,13 @@ func (m *ModerationMod) lockdownCommand(msg *base2.DiscordMessage) {
 			ePerms.Deny+discordgo.PermissionSendMessages,
 		)
 		if err != nil {
-			msg.Reply("Could not lock channel.")
+			_, _ = msg.Reply("Could not lock channel.")
 			return
 		}
-		msg.Reply("Channel locked")
+		_, _ = msg.Reply("Channel locked")
 	} else if ePerms.Allow&discordgo.PermissionSendMessages == 0 && ePerms.Deny&discordgo.PermissionSendMessages != 0 {
 		// IS DENIED
-		msg.Reply("Channel already locked")
+		_, _ = msg.Reply("Channel already locked")
 	}
 }
 
@@ -155,10 +155,10 @@ func (m *ModerationMod) unlockCommand(msg *base2.DiscordMessage) {
 
 	if ePerms.Allow&discordgo.PermissionSendMessages == 0 && ePerms.Deny&discordgo.PermissionSendMessages == 0 {
 		// DEFAULT
-		msg.Reply("Channel is already unlocked.")
+		_, _ = msg.Reply("Channel is already unlocked.")
 	} else if ePerms.Allow&discordgo.PermissionSendMessages != 0 && ePerms.Deny&discordgo.PermissionSendMessages == 0 {
 		// IS ALLOWED
-		msg.Reply("Channel is already unlocked.")
+		_, _ = msg.Reply("Channel is already unlocked.")
 	} else if ePerms.Allow&discordgo.PermissionSendMessages == 0 && ePerms.Deny&discordgo.PermissionSendMessages != 0 {
 		// IS DENIED
 		err := msg.Sess.ChannelPermissionSet(
@@ -169,9 +169,9 @@ func (m *ModerationMod) unlockCommand(msg *base2.DiscordMessage) {
 			ePerms.Deny-discordgo.PermissionSendMessages,
 		)
 		if err != nil {
-			msg.Reply("Could not unlock channel")
+			_, _ = msg.Reply("Could not unlock channel")
 			return
 		}
-		msg.Reply("Channel unlocked")
+		_, _ = msg.Reply("Channel unlocked")
 	}
 }

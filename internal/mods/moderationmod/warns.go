@@ -127,7 +127,7 @@ func (m *ModerationMod) warnCommand(msg *base2.DiscordMessage) {
 		}
 
 		m.db.ClearActiveUserWarns(msg.Sess.State.User.ID, g.ID, targetUser.User.ID)
-		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", targetUser.Mention()))
+		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns", targetUser.Mention()))
 
 	} else {
 		if userChError == nil {
@@ -374,6 +374,7 @@ func (m *ModerationMod) clearwarnCommand(msg *base2.DiscordMessage) {
 	sb.WriteString("\nType `cancel` to exit")
 	menu, err := msg.Reply(sb.String())
 	if err != nil {
+		msg.Reply("Something went wrong, please try again!")
 		return
 	}
 

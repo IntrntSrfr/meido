@@ -105,6 +105,7 @@ func (m *UtilityMod) Hook(b *base2.Bot) error {
 		}()
 	})
 
+	m.RegisterCommand(NewPingCommand(m))
 	m.RegisterCommand(NewAvatarCommand(m))
 	m.RegisterCommand(NewAboutCommand(m))
 	m.RegisterCommand(NewServerCommand(m))
@@ -127,6 +128,43 @@ func (m *UtilityMod) RegisterCommand(cmd *base2.ModCommand) {
 		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.name))
 	}
 	m.commands[cmd.Name] = cmd
+}
+
+// NewPingCommand returns a new ping command.
+func NewPingCommand(m *UtilityMod) *base2.ModCommand {
+	return &base2.ModCommand{
+		Mod:           m,
+		Name:          "ping",
+		Description:   "Checks the bot ping against Discord",
+		Triggers:      []string{"m?ping"},
+		Usage:         "m?ping",
+		Cooldown:      2,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  base2.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.pingCommand,
+	}
+}
+
+func (m *UtilityMod) pingCommand(msg *base2.DiscordMessage) {
+	if msg.LenArgs() < 1 {
+		return
+	}
+
+	startTime := time.Now()
+
+	first, err := msg.Reply("Ping")
+	if err != nil {
+		return
+	}
+
+	now := time.Now()
+	discordLatency := now.Sub(startTime)
+
+	msg.Sess.ChannelMessageEdit(msg.Message.ChannelID, first.ID,
+		fmt.Sprintf("Pong!\nDelay: %s", discordLatency))
 }
 
 func NewAvatarCommand(m *UtilityMod) *base2.ModCommand {
@@ -235,8 +273,8 @@ func (m *UtilityMod) serverCommand(msg *base2.DiscordMessage) {
 	users := 0
 	bots := 0
 
-	for _, m := range g.Members {
-		if m.User.Bot {
+	for _, mem := range g.Members {
+		if mem.User.Bot {
 			bots++
 		} else {
 			users++

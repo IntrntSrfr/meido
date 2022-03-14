@@ -35,6 +35,7 @@ func (m *ModerationMod) filterwordCommand(msg *base2.DiscordMessage) {
 	}
 
 	phrase := strings.Join(msg.Args()[1:], " ")
+	phrase = strings.ToLower(phrase)
 
 	// this can be changed to just one statement probably
 	// or it can use a function instead

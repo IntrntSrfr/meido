@@ -1,5 +1,7 @@
 package utils
 
+import "strconv"
+
 // Color codes
 var (
 	ColorCritical = 0xc80000
@@ -28,4 +30,11 @@ func Max(a, b int) int {
 // Clamp clamps a number between a lower and upper limit.
 func Clamp(lower, upper, n int) int {
 	return Max(lower, Min(upper, n))
+}
+
+func IsNumber(str string) bool {
+	if _, err := strconv.Atoi(str); err != nil {
+		return false
+	}
+	return true
 }

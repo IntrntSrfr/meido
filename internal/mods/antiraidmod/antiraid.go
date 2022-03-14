@@ -1,14 +1,11 @@
 package antiraidmod
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	base2 "github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/owo"
 	"golang.org/x/time/rate"
-	"io/ioutil"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,6 +19,7 @@ type AntiRaidMod struct {
 	commands     map[string]*base2.ModCommand
 	allowedTypes base2.MessageType
 	allowDMs     bool
+	bot          *base2.Bot
 	owo          *owo.Client
 
 	servers *serverMap
@@ -43,27 +41,6 @@ func New(n string) base2.Mod {
 // Name returns the name of the mod.
 func (m *AntiRaidMod) Name() string {
 	return m.name
-}
-
-// Save saves the mod state to a file.
-func (m *AntiRaidMod) Save() error {
-	data, err := json.Marshal(m.servers)
-	if err != nil {
-		return err
-	}
-	return ioutil.WriteFile("./data/fish", data, os.ModePerm)
-}
-
-// Load loads the mod state from a file.
-func (m *AntiRaidMod) Load() error {
-	if _, err := os.Stat("./data/fish"); err != nil {
-		return nil
-	}
-	data, err := ioutil.ReadFile("./data/fish")
-	if err != nil {
-		return err
-	}
-	return json.Unmarshal(data, &m.servers)
 }
 
 // Passives returns the mod passives.
@@ -88,22 +65,18 @@ func (m *AntiRaidMod) AllowDMs() bool {
 
 // Hook will hook the Mod into the Bot.
 func (m *AntiRaidMod) Hook(b *base2.Bot) error {
+	m.bot = b
 	m.owo = b.Owo
 
-	err := m.Load()
-	if err != nil {
-		return err
-	}
-
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
+	b.Discord.RegisterHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		m.servers.Add(g.ID)
 	})
 
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildDelete) {
+	b.Discord.RegisterHandler(func(s *discordgo.Session, g *discordgo.GuildDelete) {
 		m.servers.Remove(g.ID)
 	})
 
-	go m.runBanListener(b.Discord.Sess)
+	go m.runBanListener()
 
 	return nil
 }
@@ -118,12 +91,12 @@ func (m *AntiRaidMod) RegisterCommand(cmd *base2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func (m *AntiRaidMod) runBanListener(s *discordgo.Session) {
+func (m *AntiRaidMod) runBanListener() {
 	for {
 		select {
 		case ban := <-m.banChan:
 			//fmt.Println("time to ban: ", ban)
-			s.GuildBanCreateWithReason(ban[0], ban[1], "Raid prevention", 7)
+			m.bot.Discord.Sess.GuildBanCreateWithReason(ban[0], ban[1], "Raid prevention", 7)
 		}
 	}
 }

@@ -36,12 +36,6 @@ func New(name string) base2.Mod {
 func (m *ModerationMod) Name() string {
 	return m.name
 }
-func (m *ModerationMod) Save() error {
-	return nil
-}
-func (m *ModerationMod) Load() error {
-	return nil
-}
 func (m *ModerationMod) Passives() []*base2.ModPassive {
 	return m.passives
 }
@@ -105,40 +99,40 @@ func (m *ModerationMod) Hook(b *base2.Bot) error {
 			}
 		}()
 	})
+	/*
+		b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
 
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
-
-		a := &database2.AutoRole{}
-		err := m.db.Get(a, "SELECT * FROM guild WHERE guild_id=$1", g.GuildID)
-		if err != nil {
-			return
-		}
-
-		if a.RoleID == "" {
-			return
-		}
-
-		guild, err := b.Discord.Guild(g.GuildID)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		found := false
-		for _, r := range guild.Roles {
-			if r.ID == a.RoleID {
-				found = true
+			a := &database2.AutoRole{}
+			err := m.db.Get(a, "SELECT * FROM guild WHERE guild_id=$1", g.GuildID)
+			if err != nil {
+				return
 			}
-		}
 
-		if !found {
-			// if its not found, the role should probably get set to be empty
-			return
-		}
+			if a.RoleID == "" {
+				return
+			}
 
-		s.GuildMemberRoleAdd(g.GuildID, g.User.ID, a.RoleID)
-	})
+			guild, err := b.Discord.Guild(g.GuildID)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
 
+			found := false
+			for _, r := range guild.Roles {
+				if r.ID == a.RoleID {
+					found = true
+				}
+			}
+
+			if !found {
+				// if its not found, the role should probably get set to be empty
+				return
+			}
+
+			s.GuildMemberRoleAdd(g.GuildID, g.User.ID, a.RoleID)
+		})
+	*/
 	m.passives = append(m.passives, NewCheckFilterPassive(m))
 
 	m.RegisterCommand(NewBanCommand(m))

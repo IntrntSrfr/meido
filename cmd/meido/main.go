@@ -3,8 +3,14 @@ package main
 import (
 	"encoding/json"
 	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/mods/pingmod"
-	"github.com/intrntsrfr/meido/mods/utilitymod"
+	"github.com/intrntsrfr/meido/internal/mods/googlemod"
+	"github.com/intrntsrfr/meido/internal/mods/loggermod"
+	"github.com/intrntsrfr/meido/internal/mods/mediaconvertmod"
+	"github.com/intrntsrfr/meido/internal/mods/moderationmod"
+	"github.com/intrntsrfr/meido/internal/mods/searchmod"
+	"github.com/intrntsrfr/meido/internal/mods/testmod"
+	"github.com/intrntsrfr/meido/internal/mods/userrolemod"
+	"github.com/intrntsrfr/meido/internal/mods/utilitymod"
 	"io/ioutil"
 	"log"
 	"os"
@@ -38,15 +44,15 @@ func main() {
 		panic(err)
 	}
 
-	bot.RegisterMod(pingmod.New("pings"))
+	bot.RegisterMod(testmod.New("pings"))
 	//bot.RegisterMod(fishmod.New("fishing"))
-	//bot.RegisterMod(loggermod.New("logs"))
+	bot.RegisterMod(loggermod.New("logs"))
 	bot.RegisterMod(utilitymod.New("utility"))
-	//bot.RegisterMod(moderationmod.New("moderation"))
-	//bot.RegisterMod(userrolemod.New("userrole"))
-	//bot.RegisterMod(searchmod.New("search"))
-	//bot.RegisterMod(googlemod.New("google"))
-	//bot.RegisterMod(mediaconvertmod.New("mediaconvert"))
+	bot.RegisterMod(moderationmod.New("moderation"))
+	bot.RegisterMod(userrolemod.New("userrole"))
+	bot.RegisterMod(searchmod.New("search"))
+	bot.RegisterMod(googlemod.New("google"))
+	bot.RegisterMod(mediaconvertmod.New("mediaconvert"))
 
 	bot.Run()
 	defer bot.Close()

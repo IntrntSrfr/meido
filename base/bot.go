@@ -3,9 +3,9 @@ package base
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/intrntsrfr/meido/base/services/callbacks"
+	"github.com/intrntsrfr/meido/base/services/cooldowns"
 	"github.com/intrntsrfr/meido/database"
-	"github.com/intrntsrfr/meido/services/callbacks"
-	"github.com/intrntsrfr/meido/services/cooldowns"
 	"log"
 	"strings"
 	"time"
@@ -63,6 +63,7 @@ func NewBot(config *Config) *Bot {
 // establishes a PSQL connection and starts listening for commands.
 func (b *Bot) Open() error {
 	log.Println("open and run")
+	RegisterEvents(b.Discord)
 	msgChan, err := b.Discord.Open()
 	if err != nil {
 		panic(err)
