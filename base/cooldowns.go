@@ -1,4 +1,4 @@
-package cooldowns
+package base
 
 import (
 	"sync"

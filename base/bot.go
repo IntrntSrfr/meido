@@ -3,8 +3,6 @@ package base
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/intrntsrfr/meido/base/services/callbacks"
-	"github.com/intrntsrfr/meido/base/services/cooldowns"
 	"github.com/intrntsrfr/meido/database"
 	"log"
 	"strings"
@@ -40,8 +38,8 @@ type Bot struct {
 	Mods      map[string]Mod
 	DB        *database.DB
 	Owo       *owo.Client
-	Cooldowns cooldowns.CooldownService
-	Callbacks callbacks.CallbackService
+	Cooldowns CooldownService
+	Callbacks CallbackService
 	Perms     *PermissionHandler
 	LogLevel  LogLevel
 }
@@ -53,8 +51,8 @@ func NewBot(config *Config) *Bot {
 		Discord:   NewDiscord(config.Token),
 		Config:    config,
 		Mods:      make(map[string]Mod),
-		Cooldowns: cooldowns.NewCooldownHandler(),
-		Callbacks: callbacks.NewCallbackHandler(),
+		Cooldowns: NewCooldownHandler(),
+		Callbacks: NewCallbackHandler(),
 		Owo:       owo.NewClient(config.OwoToken),
 	}
 }
@@ -63,11 +61,12 @@ func NewBot(config *Config) *Bot {
 // establishes a PSQL connection and starts listening for commands.
 func (b *Bot) Open() error {
 	log.Println("open and run")
-	RegisterEvents(b.Discord)
 	msgChan, err := b.Discord.Open()
 	if err != nil {
 		panic(err)
 	}
+
+	RegisterEvents(b.Discord)
 
 	psql, err := sqlx.Connect("postgres", b.Config.ConnectionString)
 	if err != nil {

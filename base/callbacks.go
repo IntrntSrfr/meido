@@ -1,14 +1,13 @@
-package callbacks
+package base
 
 import (
 	"errors"
-	"github.com/intrntsrfr/meido/base"
 	"sync"
 )
 
 type CallbackService interface {
-	Make(key string) (chan *base.DiscordMessage, error)
-	Get(key string) (chan *base.DiscordMessage, error)
+	Make(key string) (chan *DiscordMessage, error)
+	Get(key string) (chan *DiscordMessage, error)
 	Delete(key string)
 }
 
@@ -19,18 +18,18 @@ var (
 
 type BotCallbackService struct {
 	sync.Mutex
-	ch map[string]chan *base.DiscordMessage
+	ch map[string]chan *DiscordMessage
 }
 
 func NewCallbackHandler() *BotCallbackService {
 	return &BotCallbackService{
-		ch: make(map[string]chan *base.DiscordMessage),
+		ch: make(map[string]chan *DiscordMessage),
 	}
 }
 
 // Make makes a channel for future communication with a running command
-func (c *BotCallbackService) Make(key string) (chan *base.DiscordMessage, error) {
-	ch := make(chan *base.DiscordMessage)
+func (c *BotCallbackService) Make(key string) (chan *DiscordMessage, error) {
+	ch := make(chan *DiscordMessage)
 	c.Lock()
 	defer c.Unlock()
 	if _, ok := c.ch[key]; ok {
@@ -41,7 +40,7 @@ func (c *BotCallbackService) Make(key string) (chan *base.DiscordMessage, error)
 }
 
 // Get gets a channel for communication with a running command
-func (c *BotCallbackService) Get(key string) (chan *base.DiscordMessage, error) {
+func (c *BotCallbackService) Get(key string) (chan *DiscordMessage, error) {
 	c.Lock()
 	defer c.Unlock()
 	ch, ok := c.ch[key]
