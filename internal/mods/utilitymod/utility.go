@@ -68,8 +68,6 @@ func (m *UtilityMod) Hook(b *base2.Bot) error {
 
 	statusTimer := time.NewTicker(time.Second * 15)
 	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		oldMemCount := 0
-		oldSrvCount := 0
 		display := true
 		go func() {
 			for range statusTimer.C {
@@ -88,8 +86,6 @@ func (m *UtilityMod) Hook(b *base2.Bot) error {
 							},
 						},
 					})
-					oldMemCount = memCount
-					oldSrvCount = srvCount
 				} else {
 					s.UpdateStatusComplex(discordgo.UpdateStatusData{
 						Activities: []*discordgo.Activity{
