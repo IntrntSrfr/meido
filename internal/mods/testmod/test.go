@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-// PingMod represents the ping mod
-type PingMod struct {
+// TestMod represents the ping mod
+type TestMod struct {
 	sync.Mutex
 	name         string
 	commands     map[string]*base2.ModCommand
@@ -17,9 +17,9 @@ type PingMod struct {
 	allowDMs     bool
 }
 
-// New returns a new PingMod.
+// New returns a new TestMod.
 func New(n string) base2.Mod {
-	return &PingMod{
+	return &TestMod{
 		name:         n,
 		commands:     make(map[string]*base2.ModCommand),
 		allowedTypes: base2.MessageTypeCreate,
@@ -28,42 +28,42 @@ func New(n string) base2.Mod {
 }
 
 // Name returns the name of the mod.
-func (m *PingMod) Name() string {
+func (m *TestMod) Name() string {
 	return m.name
 }
 
 // Save saves the mod state to a file.
-func (m *PingMod) Save() error {
+func (m *TestMod) Save() error {
 	return nil
 }
 
 // Load loads the mod state from a file.
-func (m *PingMod) Load() error {
+func (m *TestMod) Load() error {
 	return nil
 }
 
 // Passives returns the mod passives.
-func (m *PingMod) Passives() []*base2.ModPassive {
+func (m *TestMod) Passives() []*base2.ModPassive {
 	return []*base2.ModPassive{}
 }
 
 // Commands returns the mod commands.
-func (m *PingMod) Commands() map[string]*base2.ModCommand {
+func (m *TestMod) Commands() map[string]*base2.ModCommand {
 	return m.commands
 }
 
 // AllowedTypes returns the allowed MessageTypes.
-func (m *PingMod) AllowedTypes() base2.MessageType {
+func (m *TestMod) AllowedTypes() base2.MessageType {
 	return m.allowedTypes
 }
 
 // AllowDMs returns whether the mod allows DMs.
-func (m *PingMod) AllowDMs() bool {
+func (m *TestMod) AllowDMs() bool {
 	return m.allowDMs
 }
 
 // Hook will hook the Mod into the Bot.
-func (m *PingMod) Hook(b *base2.Bot) error {
+func (m *TestMod) Hook(b *base2.Bot) error {
 	err := m.Load()
 	if err != nil {
 		return err
@@ -78,7 +78,7 @@ func (m *PingMod) Hook(b *base2.Bot) error {
 }
 
 // RegisterCommand registers a ModCommand to the Mod
-func (m *PingMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *TestMod) RegisterCommand(cmd *base2.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -88,7 +88,7 @@ func (m *PingMod) RegisterCommand(cmd *base2.ModCommand) {
 }
 
 // NewTestCommand returns a new ping command.
-func NewTestCommand(m *PingMod) *base2.ModCommand {
+func NewTestCommand(m *TestMod) *base2.ModCommand {
 	return &base2.ModCommand{
 		Mod:           m,
 		Name:          "test",
@@ -105,12 +105,12 @@ func NewTestCommand(m *PingMod) *base2.ModCommand {
 	}
 }
 
-func (m *PingMod) testCommand(msg *base2.DiscordMessage) {
+func (m *TestMod) testCommand(msg *base2.DiscordMessage) {
 	_, _ = msg.Reply("test")
 }
 
 // NewMonkeyCommand returns a new monkey command.
-func NewMonkeyCommand(m *PingMod) *base2.ModCommand {
+func NewMonkeyCommand(m *TestMod) *base2.ModCommand {
 	return &base2.ModCommand{
 		Mod:           m,
 		Name:          "monkey",
@@ -127,7 +127,7 @@ func NewMonkeyCommand(m *PingMod) *base2.ModCommand {
 	}
 }
 
-func (m *PingMod) monkeyCommand(msg *base2.DiscordMessage) {
+func (m *TestMod) monkeyCommand(msg *base2.DiscordMessage) {
 	msg.Reply(monkeys[rand.Intn(len(monkeys))])
 }
 
