@@ -1,7 +1,10 @@
 package base
 
 import (
+	"errors"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/utils"
 	"strings"
 	"time"
 )
@@ -149,4 +152,37 @@ func (m *DiscordMessage) GuildID() string {
 
 func (m *DiscordMessage) ChannelID() string {
 	return m.Message.ChannelID
+}
+
+func (m *DiscordMessage) GetMemberAtArg(index int) (*discordgo.Member, error) {
+	fmt.Println(len(m.Args()), index)
+	if len(m.Args()) <= index {
+		return nil, errors.New("index out of range")
+	}
+	str := m.Args()[index]
+	userID := utils.TrimUserID(str)
+	if !utils.IsNumber(userID) {
+		return nil, errors.New(fmt.Sprintf("%s could not be parsed as a number", userID))
+	}
+	return m.Discord.Member(m.GuildID(), userID)
+}
+
+func (m *DiscordMessage) GetUserAtArg(index int) (*discordgo.User, error) {
+	if len(m.Args()) <= index {
+		return nil, errors.New("index out of range")
+	}
+	str := m.Args()[index]
+	userID := utils.TrimUserID(str)
+	if !utils.IsNumber(userID) {
+		return nil, errors.New(fmt.Sprintf("%s could not be parsed as a number", userID))
+	}
+	return m.Sess.User(userID)
+}
+
+func (m *DiscordMessage) GetMemberOrUserAtArg(index int) (*discordgo.User, error) {
+	member, err := m.GetMemberAtArg(index)
+	if err != nil {
+		return m.GetUserAtArg(index)
+	}
+	return member.User, nil
 }

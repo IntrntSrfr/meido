@@ -40,12 +40,6 @@ func New(b *base.Bot, db *database.DB, owo *owo.Client) base.Mod {
 func (m *UserRoleMod) Name() string {
 	return m.name
 }
-func (m *UserRoleMod) Save() error {
-	return nil
-}
-func (m *UserRoleMod) Load() error {
-	return nil
-}
 func (m *UserRoleMod) Passives() []*base.ModPassive {
 	return []*base.ModPassive{}
 }
@@ -79,8 +73,8 @@ func (m *UserRoleMod) Hook() error {
 					for _, ur := range userRoles {
 						hasRole := false
 
-						for _, r := range g.Roles {
-							if r.ID == ur.RoleID {
+						for _, gr := range g.Roles {
+							if gr.ID == ur.RoleID {
 								hasRole = true
 								break
 							}
@@ -98,9 +92,9 @@ func (m *UserRoleMod) Hook() error {
 	m.RegisterCommand(NewSetUserRoleCommand(m))
 	m.RegisterCommand(NewMyRoleCommand(m))
 	m.RegisterCommand(NewListUserRolesCommand(m))
-
 	return nil
 }
+
 func (m *UserRoleMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
@@ -132,26 +126,13 @@ func (m *UserRoleMod) setuserroleCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	var (
-		targetUser   *discordgo.Member
-		selectedRole *discordgo.Role
-		err          error
-	)
-
-	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
-		if err != nil {
-			//s.ChannelMessageSend(ch.ID, err.Error())
-			return
-		}
-	} else {
-		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
-		if err != nil {
-			//s.ChannelMessageSend(ch.ID, err.Error())
-			return
-		}
+	targetMember, err := msg.GetMemberAtArg(1)
+	if err != nil {
+		msg.Reply("could not find that user")
+		return
 	}
-	if targetUser.User.Bot {
+
+	if targetMember.User.Bot {
 		msg.Reply("Bots dont get to join the fun")
 		return
 	}
@@ -162,9 +143,8 @@ func (m *UserRoleMod) setuserroleCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	for i := range g.Roles {
-		role := g.Roles[i]
-
+	var selectedRole *discordgo.Role
+	for _, role := range g.Roles {
 		if role.ID == msg.Args()[2] {
 			selectedRole = role
 		} else if strings.ToLower(role.Name) == strings.ToLower(strings.Join(msg.Args()[2:], " ")) {
@@ -173,25 +153,24 @@ func (m *UserRoleMod) setuserroleCommand(msg *base.DiscordMessage) {
 	}
 
 	if selectedRole == nil {
-		msg.Reply("role not found")
+		msg.Reply("Could not find that role!")
 		return
 	}
 
 	userRole := &database.UserRole{}
-
-	err = m.db.Get(userRole, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, targetUser.User.ID)
+	err = m.db.Get(userRole, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, targetMember.User.ID)
 	switch err {
 	case nil:
 		if selectedRole.ID == userRole.RoleID {
-			m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetUser.User.ID, selectedRole.ID)
-			msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetUser.User.String()))
+			m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetMember.User.ID, selectedRole.ID)
+			msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetMember.User.String()))
 		} else {
-			m.db.Exec("UPDATE userroles SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetUser.User.ID)
-			msg.Reply(fmt.Sprintf("Updated userrole for **%v** to **%v**", targetUser.User.String(), selectedRole.Name))
+			m.db.Exec("UPDATE userroles SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetMember.User.ID)
+			msg.Reply(fmt.Sprintf("Updated userrole for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
 		}
 	case sql.ErrNoRows:
-		m.db.Exec("INSERT INTO userroles(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetUser.User.ID, selectedRole.ID)
-		msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetUser.User.String()))
+		m.db.Exec("INSERT INTO userroles(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
+		msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
 	default:
 		fmt.Println(err)
 		msg.Reply("there was an error, please try again")
@@ -204,7 +183,7 @@ func NewMyRoleCommand(m *UserRoleMod) *base.ModCommand {
 		Name:          "myrole",
 		Description:   "Displays a users bound role, or lets the user change the name or color of their bound role",
 		Triggers:      []string{"m?myrole"},
-		Usage:         "m?myrole\nm?myrole 123123123123\nm?myrole color c0ffee\nm?myrole name jeff",
+		Usage:         "m?myrole | m?myrole 123123123123 | m?myrole color c0ffee | m?myrole name jeff",
 		Cooldown:      3,
 		RequiredPerms: 0,
 		RequiresOwner: false,
@@ -259,6 +238,7 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 				oldRole = role
 			}
 		}
+
 		if oldRole == nil {
 			msg.Reply("couldnt find role")
 			return
@@ -312,21 +292,12 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 	case la == 1:
 		target = msg.Member()
 	case la == 2:
-		if len(msg.Message.Mentions) >= 1 {
-			target, err = msg.Discord.Member(g.ID, msg.Message.Mentions[0].ID)
-			if err != nil {
-				//s.ChannelMessageSend(ch.ID, err.Error())
-				fmt.Println(err)
-				return
-			}
-		} else {
-			target, err = msg.Discord.Member(g.ID, msg.Args()[1])
-			if err != nil {
-				//s.ChannelMessageSend(ch.ID, err.Error())
-				fmt.Println(err)
-				return
-			}
+		target, err = msg.GetMemberAtArg(1)
+		if err != nil {
+			msg.Reply("Could not find that user")
+			return
 		}
+
 	default:
 		return
 	}

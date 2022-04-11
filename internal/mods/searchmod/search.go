@@ -33,13 +33,6 @@ func New(ytToken string) base.Mod {
 func (m *SearchMod) Name() string {
 	return m.name
 }
-
-func (m *SearchMod) Save() error {
-	return nil
-}
-func (m *SearchMod) Load() error {
-	return nil
-}
 func (m *SearchMod) Passives() []*base.ModPassive {
 	return []*base.ModPassive{}
 }
@@ -121,11 +114,12 @@ func (m *SearchMod) youtubeCommand(msg *base.DiscordMessage) {
 	json.Unmarshal(body, &result)
 
 	if len(result.Items) < 1 {
-		msg.Reply("couldnt find anything :(")
-	} else {
-		id := result.Items[0].ID.VideoID
-		msg.Reply("https://youtube.com/watch?v=" + id)
+		msg.Reply("I got no results for that :(")
+		return
 	}
+
+	id := result.Items[0].ID.VideoID
+	msg.Reply("https://youtube.com/watch?v=" + id)
 }
 
 type YoutubeSearchResponse struct {

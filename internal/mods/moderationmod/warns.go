@@ -8,6 +8,7 @@ import (
 	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/utils"
+	"go.uber.org/zap"
 	"strconv"
 	"strings"
 	"time"
@@ -270,9 +271,9 @@ func NewWarnCountCommand(m *ModerationMod) *base.ModCommand {
 	return &base.ModCommand{
 		Mod:           m,
 		Name:          "warncount",
-		Description:   "Displays how many warns a user has",
+		Description:   "Displays how many warns a user has. User can be specified. Message author will be used if no user is provided.",
 		Triggers:      []string{"m?warncount"},
-		Usage:         "m?warncount | m?warncount @user",
+		Usage:         "m?warncount <user>",
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
@@ -285,13 +286,8 @@ func NewWarnCountCommand(m *ModerationMod) *base.ModCommand {
 
 func (m *ModerationMod) warncountCommand(msg *base.DiscordMessage) {
 
-	var (
-		err        error
-		targetUser *discordgo.User
-	)
-
 	dge := &database.Guild{}
-	err = m.db.Get(&dge, "SELECT use_warns, max_warns FROM guild WHERE guild_id=$1", msg.Message.GuildID)
+	err := m.db.Get(&dge, "SELECT use_warns, max_warns FROM guild WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		return
 	}
@@ -301,25 +297,16 @@ func (m *ModerationMod) warncountCommand(msg *base.DiscordMessage) {
 		return
 	}
 
+	targetUser := msg.Author()
 	if msg.LenArgs() > 1 {
-		if len(msg.Message.Mentions) >= 1 {
-			targetUser = msg.Message.Mentions[0]
-		} else {
-			_, err := strconv.Atoi(msg.Args()[1])
-			if err != nil {
-				return
-			}
-			targetUser, err = msg.Sess.User(msg.Args()[1])
-			if err != nil {
-				return
-			}
+		targetUser, err = msg.GetMemberOrUserAtArg(1)
+		if err != nil {
+			_, _ = msg.Reply("Could not find that user!")
+			return
 		}
-	} else {
-		targetUser = msg.Message.Author
 	}
 
-	warnCount := 0
-
+	var warnCount int
 	err = m.db.Get(&warnCount, "SELECT COUNT(*) FROM warn WHERE guild_id=$1 AND user_id=$2 AND is_valid", msg.Message.GuildID, targetUser.ID)
 	if err != nil {
 		return
@@ -331,10 +318,10 @@ func (m *ModerationMod) warncountCommand(msg *base.DiscordMessage) {
 func NewClearWarnCommand(m *ModerationMod) *base.ModCommand {
 	return &base.ModCommand{
 		Mod:           m,
-		Name:          "clearwarn",
-		Description:   "Clears a warn from a user using a warnID. Use warnlog to get warnIDs",
-		Triggers:      []string{"m?clearwarn"},
-		Usage:         "m?clearwarn 123",
+		Name:          "pardon",
+		Description:   "Pardons a user. Opens a menu to clear a warn belonging to them.",
+		Triggers:      []string{"m?pardon"},
+		Usage:         "m?pardon <user>",
 		Cooldown:      3,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
@@ -350,16 +337,15 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	_, err := strconv.Atoi(msg.Args()[1])
+	targetMember, err := msg.GetMemberAtArg(1)
 	if err != nil {
-		msg.Reply("no")
 		return
 	}
 
 	var entries []*database.Warn
-	err = m.db.Select(&entries, "SELECT * FROM warn WHERE user_id=$1 AND guild_id=$2 AND is_valid", msg.Args()[1], msg.Message.GuildID)
+	err = m.db.Select(&entries, "SELECT * FROM warn WHERE user_id=$1 AND guild_id=$2 AND is_valid", targetMember.User.ID, msg.Message.GuildID)
 	if err != nil && err != sql.ErrNoRows {
-		fmt.Println(err)
+		m.log.Error("could not get valid warns", zap.Error(err))
 		msg.Reply("there was an error, please try again")
 		return
 	} else if err == sql.ErrNoRows || len(entries) == 0 {
@@ -402,7 +388,6 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 			m.bot.Callbacks.Delete(key)
 			msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
 			msg.Sess.ChannelMessageDelete(reply.Message.ChannelID, reply.Message.ID)
-
 			return
 		}
 
@@ -430,10 +415,10 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 func NewClearAllWarnsCommand(m *ModerationMod) *base.ModCommand {
 	return &base.ModCommand{
 		Mod:           m,
-		Name:          "clearallwarns",
-		Description:   "Clears all active warns for a member",
-		Triggers:      []string{"m?clearallwarns"},
-		Usage:         "m?clearallwarns 163454407999094786",
+		Name:          "pardonall",
+		Description:   "Pardons all active warns for a member",
+		Triggers:      []string{"m?pardonall"},
+		Usage:         "m?pardonall <user>",
 		Cooldown:      5,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
@@ -448,30 +433,20 @@ func (m *ModerationMod) clearallwarnsCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	var (
-		err        error
-		targetUser *discordgo.User
-	)
-
-	if len(msg.Message.Mentions) >= 1 {
-		targetUser = msg.Message.Mentions[0]
-	} else {
-		_, err := strconv.Atoi(msg.Args()[1])
-		if err != nil {
-			return
-		}
-		targetUser, err = msg.Discord.Sess.User(msg.Args()[1])
-		if err != nil {
-			return
-		}
+	targetMember, err := msg.GetMemberAtArg(1)
+	if err != nil {
+		msg.Reply("Could not find that member")
+		return
 	}
 
+	// TODO: add confirmation menu
+
 	_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE user_id=$3 AND guild_id=$4 AND is_valid",
-		msg.Message.Author.ID, time.Now(), targetUser.ID, msg.Message.GuildID)
+		msg.Message.Author.ID, time.Now(), targetMember.User.ID, msg.Message.GuildID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
 	}
 
-	msg.Reply(fmt.Sprintf("Cleared all active warns issued to %v", targetUser.Mention()))
+	msg.Reply(fmt.Sprintf("Cleared all active warns issued to %v", targetMember.Mention()))
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/utils"
+	"go.uber.org/zap"
 	"strconv"
 	"strings"
 	"sync"
@@ -18,13 +19,14 @@ type ModerationMod struct {
 	name         string
 	commands     map[string]*base.ModCommand
 	passives     []*base.ModPassive
-	db           *database.DB
 	allowedTypes base.MessageType
 	allowDMs     bool
 	bot          *base.Bot
+	db           *database.DB
+	log          *zap.Logger
 }
 
-func New(b *base.Bot, db *database.DB) base.Mod {
+func New(b *base.Bot, db *database.DB, log *zap.Logger) base.Mod {
 	return &ModerationMod{
 		name:         "Moderation",
 		commands:     make(map[string]*base.ModCommand),
@@ -32,6 +34,7 @@ func New(b *base.Bot, db *database.DB) base.Mod {
 		allowDMs:     false,
 		bot:          b,
 		db:           db,
+		log:          log,
 	}
 }
 
@@ -194,50 +197,35 @@ func (m *ModerationMod) banCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	var (
-		targetUser *discordgo.User
-		reason     string
-		pruneDays  int
-		err        error
-	)
+	reason := ""
+	pruneDays := 0
 
-	switch la := msg.LenArgs(); {
-	case la == 2:
-		pruneDays = 0
-		reason = ""
-	case la >= 3:
-		pruneDays, err = strconv.Atoi(msg.Args()[2])
-		if err != nil {
-			pruneDays = 0
-			reason = strings.Join(msg.RawArgs()[2:], " ")
-		} else {
-			reason = strings.Join(msg.RawArgs()[3:], " ")
-		}
-
-		//pruneDays = int(math.Max(float64(0), float64(pruneDays)))
-		if pruneDays > 7 {
-			pruneDays = 7
-		} else if pruneDays < 0 {
-			pruneDays = 0
-		}
-	}
-
-	if len(msg.Message.Mentions) > 0 {
-		targetUser = msg.Message.Mentions[0]
-	} else {
-		targetUser, err = msg.Discord.Sess.User(msg.Args()[1])
-		if err != nil {
-			return
-		}
+	targetUser, err := msg.GetUserAtArg(1)
+	if err != nil {
+		msg.Reply("Could not find that user!")
+		return
 	}
 
 	if targetUser.ID == msg.Sess.State.User.ID {
 		msg.Reply("no (i can not ban myself)")
 		return
 	}
-	if targetUser.ID == msg.Message.Author.ID {
+	if targetUser.ID == msg.AuthorID() {
 		msg.Reply("no (you can not ban yourself)")
 		return
+	}
+
+	if msg.LenArgs() > 2 {
+		reason = strings.Join(msg.RawArgs()[2:], " ")
+		pruneDays, err = strconv.Atoi(msg.Args()[2])
+		if err == nil {
+			reason = strings.Join(msg.RawArgs()[3:], " ")
+			if pruneDays > 7 {
+				pruneDays = 7
+			} else if pruneDays < 0 {
+				pruneDays = 0
+			}
+		}
 	}
 
 	topUserRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Message.Author.ID)
@@ -249,6 +237,7 @@ func (m *ModerationMod) banCommand(msg *base.DiscordMessage) {
 		return
 	}
 
+	// if user is in the server
 	if topTargetRole > 0 {
 		userChannel, userChErr := msg.Discord.Sess.UserChannelCreate(targetUser.ID)
 		if userChErr == nil {
@@ -267,7 +256,7 @@ func (m *ModerationMod) banCommand(msg *base.DiscordMessage) {
 
 	err = msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, targetUser.ID, fmt.Sprintf("%v - %v", msg.Message.Author.String(), reason), pruneDays)
 	if err != nil {
-		msg.Reply(err.Error())
+		msg.Reply("I could not ban that user!")
 		return
 	}
 
@@ -314,12 +303,11 @@ func NewUnbanCommand(m *ModerationMod) *base.ModCommand {
 }
 
 func (m *ModerationMod) unbanCommand(msg *base.DiscordMessage) {
-
 	if msg.LenArgs() < 2 {
 		return
 	}
 
-	_, err := strconv.ParseUint(msg.Args()[1], 10, 64)
+	_, err := strconv.Atoi(msg.Args()[1])
 	if err != nil {
 		return
 	}
@@ -329,7 +317,7 @@ func (m *ModerationMod) unbanCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	targetUser, err := msg.Discord.Sess.User(msg.Args()[1])
+	targetUser, err := msg.GetUserAtArg(1)
 	if err != nil {
 		return
 	}
@@ -348,7 +336,7 @@ func NewHackbanCommand(m *ModerationMod) *base.ModCommand {
 		Name:          "hackban",
 		Description:   "Hackbans one or several users. Prunes 7 days.",
 		Triggers:      []string{"m?hackban", "m?hb"},
-		Usage:         "m?hb 123 123 12 31 23 123",
+		Usage:         "m?hb [userID] <userID>...",
 		Cooldown:      3,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
@@ -417,37 +405,25 @@ func (m *ModerationMod) kickCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	var (
-		err        error
-		targetUser *discordgo.Member
-	)
+	targetUser, err := msg.GetMemberAtArg(1)
+	if err != nil {
+		msg.Reply("Could not find that user!")
+		return
+	}
+
+	if targetUser.User.ID == msg.Sess.State.User.ID {
+		msg.Reply("no (i can not kick myself)")
+		return
+	}
+
+	if targetUser.User.ID == msg.AuthorID() {
+		msg.Reply("no (you can not kick yourself)")
+		return
+	}
 
 	reason := ""
 	if msg.LenArgs() > 2 {
 		reason = strings.Join(msg.RawArgs()[2:], " ")
-	}
-
-	if len(msg.Message.Mentions) >= 1 {
-		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
-		if err != nil {
-			msg.Reply("i could not find that member")
-			return
-		}
-	} else {
-		targetUser, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
-		if err != nil {
-			msg.Reply("i could not find that member")
-			return
-		}
-	}
-
-	if targetUser.User.ID == msg.Sess.State.User.ID {
-		msg.Reply("no (i can not ban myself)")
-		return
-	}
-	if targetUser.User.ID == msg.Message.Author.ID {
-		msg.Reply("no (you can not ban yourself)")
-		return
 	}
 
 	topUserRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Message.Author.ID)
@@ -465,7 +441,6 @@ func (m *ModerationMod) kickCommand(msg *base.DiscordMessage) {
 	}
 
 	userCh, userChErr := msg.Sess.UserChannelCreate(targetUser.User.ID)
-
 	if userChErr == nil {
 		if reason == "" {
 			msg.Sess.ChannelMessageSend(userCh.ID, fmt.Sprintf("You have been kicked from %v.", g.Name))
@@ -476,7 +451,7 @@ func (m *ModerationMod) kickCommand(msg *base.DiscordMessage) {
 
 	err = msg.Sess.GuildMemberDeleteWithReason(g.ID, targetUser.User.ID, fmt.Sprintf("%v - %v", msg.Message.Author.String(), reason))
 	if err != nil {
-		msg.Reply("something went wrong when trying to kick user, please try again")
+		msg.Reply("Something went wrong when trying to kick that user, please try again!")
 		return
 	}
 
