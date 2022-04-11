@@ -59,40 +59,7 @@ func (m *UtilityMod) AllowDMs() bool {
 	return m.allowDMs
 }
 func (m *UtilityMod) Hook() error {
-	statusTimer := time.NewTicker(time.Second * 15)
-	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		display := true
-		go func() {
-			for range statusTimer.C {
-				if display {
-					memCount := 0
-					srvCount := 0
-					for _, g := range m.bot.Discord.Guilds() {
-						srvCount++
-						memCount += g.MemberCount
-					}
-					s.UpdateStatusComplex(discordgo.UpdateStatusData{
-						Activities: []*discordgo.Activity{
-							{
-								Name: fmt.Sprintf("over %v servers and %v members", srvCount, memCount),
-								Type: 3,
-							},
-						},
-					})
-				} else {
-					s.UpdateStatusComplex(discordgo.UpdateStatusData{
-						Activities: []*discordgo.Activity{
-							{
-								Name: fmt.Sprintf("m?help"),
-								Type: discordgo.ActivityTypeGame,
-							},
-						},
-					})
-				}
-				display = !display
-			}
-		}()
-	})
+	m.bot.Discord.AddEventHandler(m.StatusLoop())
 
 	m.RegisterCommand(NewPingCommand(m))
 	m.RegisterCommand(NewAvatarCommand(m))
@@ -514,8 +481,8 @@ func (m *UtilityMod) serverBannerCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	if g.Splash == "" {
-		msg.Reply("this server has no banner")
+	hash := g.BannerURL()
+	if hash == "" {
 		return
 	}
 

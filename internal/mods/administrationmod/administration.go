@@ -91,7 +91,7 @@ func (m *AdministrationMod) toggleCommandCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	if !msg.Discord.IsOwner(msg) {
+	if !msg.Discord.IsBotOwner(msg) {
 		return
 	}
 

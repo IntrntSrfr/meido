@@ -177,6 +177,10 @@ func (d *Discord) onMessageDelete(s *discordgo.Session, m *discordgo.MessageDele
 	}
 }
 
+func (d *Discord) BotUser() *discordgo.User {
+	return d.Sess.State.User
+}
+
 // UserChannelPermissions finds member permissions the usual way, using just the IDs.
 func (d *Discord) UserChannelPermissions(userID, channelID string) (int64, error) {
 	var (
@@ -274,7 +278,8 @@ func (a RoleByPos) Len() int           { return len(a) }
 func (a RoleByPos) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
 func (a RoleByPos) Less(i, j int) bool { return a[i].Position > a[j].Position }
 
-func (d *Discord) RegisterHandler(h interface{}) {
+// AddEventHandler adds an event handler to each discord session the bot holds
+func (d *Discord) AddEventHandler(h interface{}) {
 	for _, s := range d.Sessions {
 		s.AddHandler(h)
 	}
@@ -345,9 +350,9 @@ func (d *Discord) Role(guildID, roleID string) (*discordgo.Role, error) {
 	return nil, err
 }
 
-// IsOwner returns whether the author of a DiscordMessage is a bot owner by checking
+// IsBotOwner returns whether the author of a DiscordMessage is a bot owner by checking
 // the IDs in the ownerIDs in the Discord struct.
-func (d *Discord) IsOwner(msg *DiscordMessage) bool {
+func (d *Discord) IsBotOwner(msg *DiscordMessage) bool {
 	for _, id := range d.ownerIds {
 		if msg.Author().ID == id {
 			return true

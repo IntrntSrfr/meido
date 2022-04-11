@@ -66,6 +66,20 @@ func (m *DiscordMessage) Reply(data string) (*discordgo.Message, error) {
 	return m.Sess.ChannelMessageSend(m.Message.ChannelID, data)
 }
 
+// ReplyAndDelete sends a message to a channel, then deletes it after a duration d
+func (m *DiscordMessage) ReplyAndDelete(data string, d time.Duration) (*discordgo.Message, error) {
+	r, err := m.Sess.ChannelMessageSend(m.Message.ChannelID, data)
+	if err != nil {
+		return nil, err
+	}
+	go func() {
+		time.AfterFunc(d, func() {
+			_ = m.Sess.ChannelMessageDelete(m.Message.ChannelID, r.ID)
+		})
+	}()
+	return r, nil
+}
+
 // ReplyEmbed replies directly to a DiscordMessage with an embed.
 func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
 	return m.Sess.ChannelMessageSendEmbed(m.Message.ChannelID, embed)

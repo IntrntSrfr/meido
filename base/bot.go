@@ -144,7 +144,7 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 		return
 	}
 
-	if cmd.RequiresOwner && !m.Discord.IsOwner(m) {
+	if cmd.RequiresOwner && !m.Discord.IsBotOwner(m) {
 		_, _ = m.Reply("owner only lol")
 		return
 	}
@@ -157,25 +157,15 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 		}
 	*/
 
-	// check if command for channel is on cooldown
-	key := ""
+	// check if cooldown is for user or channel
+	key := fmt.Sprintf("%v:%v", m.Message.ChannelID, cmd.Name)
 	if cmd.CooldownUser {
 		key = fmt.Sprintf("%v:%v", m.Message.Author.ID, cmd.Name)
-	} else {
-		key = fmt.Sprintf("%v:%v", m.Message.ChannelID, cmd.Name)
 	}
 	if t, ok := b.Cooldowns.Check(key); ok {
 		// if on cooldown, we know it's for this command, so we can break out and go next
-		cdMsg, err := m.Reply(fmt.Sprintf("on cooldown for another %v", t))
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		go func() {
-			time.AfterFunc(time.Second*2, func() {
-				_ = m.Sess.ChannelMessageDelete(cdMsg.ChannelID, cdMsg.ID)
-			})
-		}()
+		_, _ = m.ReplyAndDelete(fmt.Sprintf("This command is on cooldown for another %v", t), time.Second*2)
+		return
 	}
 
 	//check for perms
@@ -191,16 +181,16 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 		}
 	}
 
-	// run cmd
-	go runCommand(cmd.Run, m)
 	// log cmd
-	go b.logCommand(m, cmd)
+	b.logCommand(m, cmd)
 	// set cmd on cooldown
-	go b.Cooldowns.Set(key, time.Duration(cmd.Cooldown))
+	b.Cooldowns.Set(key, time.Duration(cmd.Cooldown))
+	// run cmd
+	b.runCommand(cmd, m)
 }
 
 // if a command causes panic, this will surely keep everything from crashing
-func runCommand(f func(*DiscordMessage), m *DiscordMessage) {
+func (b *Bot) runCommand(cmd *ModCommand, m *DiscordMessage) {
 	defer func() {
 		if r := recover(); r != nil {
 			d, err := json.MarshalIndent(m, "", "\t")
@@ -220,7 +210,7 @@ func runCommand(f func(*DiscordMessage), m *DiscordMessage) {
 		}
 	}()
 
-	f(m)
+	cmd.Run(m)
 }
 
 func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
@@ -238,9 +228,12 @@ func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
 
 // logCommand logs an executed command
 func (b *Bot) logCommand(msg *DiscordMessage, cmd *ModCommand) {
-	b.DB.Exec("INSERT INTO command_log VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
+	_, err := b.DB.Exec("INSERT INTO command_log VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
 		cmd.Name, strings.Join(msg.Args(), " "), msg.Message.Author.ID, msg.Message.GuildID,
 		msg.Message.ChannelID, msg.Message.ID, time.Now())
+	if err != nil {
+		b.Log.Error("error logging command", zap.Error(err))
+	}
 
 	fmt.Println(msg.Shard, msg.Message.Author.String(), msg.Message.Content, msg.TimeReceived.String())
 }

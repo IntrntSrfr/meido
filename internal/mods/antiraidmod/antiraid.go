@@ -67,11 +67,11 @@ func (m *AntiRaidMod) AllowDMs() bool {
 
 // Hook will hook the Mod into the Bot.
 func (m *AntiRaidMod) Hook() error {
-	m.bot.Discord.RegisterHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
+	m.bot.Discord.AddEventHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		m.servers.Add(g.ID)
 	})
 
-	m.bot.Discord.RegisterHandler(func(s *discordgo.Session, g *discordgo.GuildDelete) {
+	m.bot.Discord.AddEventHandler(func(s *discordgo.Session, g *discordgo.GuildDelete) {
 		m.servers.Remove(g.ID)
 	})
 

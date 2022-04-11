@@ -57,7 +57,7 @@ func (m *ModerationMod) Hook() error {
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
 		} else if err == sql.ErrNoRows {
-			m.db.Exec("INSERT INTO guild(guild_id, use_warns, max_warns) VALUES($1, $2, $3)", g.Guild.ID, false, 3)
+			m.db.Exec("INSERT INTO guild VALUES($1)", g.Guild.ID)
 			fmt.Println(fmt.Sprintf("Inserted new guild: %v [%v]", g.Guild.Name, g.Guild.ID))
 		}
 	})

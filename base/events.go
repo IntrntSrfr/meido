@@ -6,10 +6,10 @@ import (
 )
 
 func registerEvents(d *Discord) {
-	d.RegisterHandler(ready)
-	d.RegisterHandler(guildJoin)
-	d.RegisterHandler(guildLeave)
-	d.RegisterHandler(memberChunk)
+	d.AddEventHandler(ready)
+	d.AddEventHandler(guildJoin)
+	d.AddEventHandler(guildLeave)
+	d.AddEventHandler(memberChunk)
 }
 
 func ready(s *discordgo.Session, r *discordgo.Ready) {
