@@ -3,8 +3,8 @@ package userrolemod
 import (
 	"database/sql"
 	"fmt"
-	base2 "github.com/intrntsrfr/meido/base"
-	database2 "github.com/intrntsrfr/meido/database"
+	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/utils"
 	"strconv"
 	"strings"
@@ -18,19 +18,23 @@ import (
 type UserRoleMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base2.ModCommand
-	db           *database2.DB
-	owo          *owo.Client
-	allowedTypes base2.MessageType
+	commands     map[string]*base.ModCommand
+	allowedTypes base.MessageType
 	allowDMs     bool
+	bot          *base.Bot
+	db           *database.DB
+	owo          *owo.Client
 }
 
-func New(name string) base2.Mod {
+func New(b *base.Bot, db *database.DB, owo *owo.Client) base.Mod {
 	return &UserRoleMod{
-		name:         name,
-		commands:     make(map[string]*base2.ModCommand),
-		allowedTypes: base2.MessageTypeCreate,
+		name:         "UserRole",
+		commands:     make(map[string]*base.ModCommand),
+		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     false,
+		bot:          b,
+		db:           db,
+		owo:          owo,
 	}
 }
 func (m *UserRoleMod) Name() string {
@@ -42,39 +46,32 @@ func (m *UserRoleMod) Save() error {
 func (m *UserRoleMod) Load() error {
 	return nil
 }
-func (m *UserRoleMod) Passives() []*base2.ModPassive {
-	return []*base2.ModPassive{}
+func (m *UserRoleMod) Passives() []*base.ModPassive {
+	return []*base.ModPassive{}
 }
-func (m *UserRoleMod) Commands() map[string]*base2.ModCommand {
+func (m *UserRoleMod) Commands() map[string]*base.ModCommand {
 	return m.commands
 }
-func (m *UserRoleMod) AllowedTypes() base2.MessageType {
+func (m *UserRoleMod) AllowedTypes() base.MessageType {
 	return m.allowedTypes
 }
 func (m *UserRoleMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *UserRoleMod) Hook(b *base2.Bot) error {
-	m.db = b.DB
-	m.owo = b.Owo
-	/*
-		b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.GuildRoleDelete) {
-			m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND role_id=$2", r.GuildID, r.RoleID)
-		})
-	*/
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+func (m *UserRoleMod) Hook() error {
+	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		refreshTicker := time.NewTicker(time.Hour)
 
 		go func() {
 			for range refreshTicker.C {
-				for _, g := range b.Discord.Guilds() {
+				for _, g := range m.bot.Discord.Guilds() {
 					if g.Unavailable {
 						continue
 					}
 
-					var userRoles []*database2.UserRole
+					var userRoles []*database.UserRole
 
-					err := b.DB.Get(&userRoles, "SELECT * FROM userroles WHERE guild_id=$1", g.ID)
+					err := m.db.Get(&userRoles, "SELECT * FROM userroles WHERE guild_id=$1", g.ID)
 					if err != nil {
 						continue
 					}
@@ -90,7 +87,7 @@ func (m *UserRoleMod) Hook(b *base2.Bot) error {
 						}
 
 						if !hasRole {
-							b.DB.Exec("DELETE FROM userroles WHERE uid=$1", ur.UID)
+							m.db.Exec("DELETE FROM userroles WHERE uid=$1", ur.UID)
 						}
 					}
 				}
@@ -104,7 +101,7 @@ func (m *UserRoleMod) Hook(b *base2.Bot) error {
 
 	return nil
 }
-func (m *UserRoleMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *UserRoleMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -113,8 +110,8 @@ func (m *UserRoleMod) RegisterCommand(cmd *base2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewSetUserRoleCommand(m *UserRoleMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewSetUserRoleCommand(m *UserRoleMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "setuserrole",
 		Description:   "Binds, unbinds or changes a userrole bind to a user",
@@ -123,14 +120,14 @@ func NewSetUserRoleCommand(m *UserRoleMod) *base2.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: discordgo.PermissionManageRoles,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.setuserroleCommand,
 	}
 }
 
-func (m *UserRoleMod) setuserroleCommand(msg *base2.DiscordMessage) {
+func (m *UserRoleMod) setuserroleCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 3 {
 		return
 	}
@@ -180,7 +177,7 @@ func (m *UserRoleMod) setuserroleCommand(msg *base2.DiscordMessage) {
 		return
 	}
 
-	userRole := &database2.UserRole{}
+	userRole := &database.UserRole{}
 
 	err = m.db.Get(userRole, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, targetUser.User.ID)
 	switch err {
@@ -201,8 +198,8 @@ func (m *UserRoleMod) setuserroleCommand(msg *base2.DiscordMessage) {
 	}
 }
 
-func NewMyRoleCommand(m *UserRoleMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewMyRoleCommand(m *UserRoleMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "myrole",
 		Description:   "Displays a users bound role, or lets the user change the name or color of their bound role",
@@ -211,14 +208,14 @@ func NewMyRoleCommand(m *UserRoleMod) *base2.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.myroleCommand,
 	}
 }
 
-func (m *UserRoleMod) myroleCommand(msg *base2.DiscordMessage) {
+func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -246,7 +243,7 @@ func (m *UserRoleMod) myroleCommand(msg *base2.DiscordMessage) {
 			return
 		}
 
-		ur := &database2.UserRole{}
+		ur := &database.UserRole{}
 		err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, msg.Message.Author.ID)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
@@ -338,7 +335,7 @@ func (m *UserRoleMod) myroleCommand(msg *base2.DiscordMessage) {
 		return
 	}
 
-	ur := &database2.UserRole{}
+	ur := &database.UserRole{}
 	err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, target.User.ID)
 	if err != nil && err != sql.ErrNoRows {
 		msg.Reply("there was an error, please try again")
@@ -383,8 +380,8 @@ func (m *UserRoleMod) myroleCommand(msg *base2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewListUserRolesCommand(m *UserRoleMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewListUserRolesCommand(m *UserRoleMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "listuserroles",
 		Description:   "Returns a list of the user roles that are in the server, displays if some users still are in the server or not",
@@ -393,19 +390,19 @@ func NewListUserRolesCommand(m *UserRoleMod) *base2.ModCommand {
 		Cooldown:      30,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.listuserrolesCommand,
 	}
 }
 
-func (m *UserRoleMod) listuserrolesCommand(msg *base2.DiscordMessage) {
+func (m *UserRoleMod) listuserrolesCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() != 1 {
 		return
 	}
 
-	var userRoles []*database2.UserRole
+	var userRoles []*database.UserRole
 
 	err := m.db.Select(&userRoles, "SELECT role_id, user_id FROM userroles WHERE guild_id=$1;", msg.Message.GuildID)
 	if err != nil {

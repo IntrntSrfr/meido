@@ -5,7 +5,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func RegisterEvents(d *Discord) {
+func registerEvents(d *Discord) {
 	d.RegisterHandler(ready)
 	d.RegisterHandler(guildJoin)
 	d.RegisterHandler(guildLeave)

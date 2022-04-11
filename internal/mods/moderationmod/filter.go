@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/utils"
 	"strconv"
@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-func NewFilterWordCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewFilterWordCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "filterword",
 		Description:   "Adds or removes a word or phrase to the server filter.",
@@ -23,13 +23,13 @@ func NewFilterWordCommand(m *ModerationMod) *base2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionManageMessages,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.filterwordCommand,
 	}
 }
-func (m *ModerationMod) filterwordCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) filterwordCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -53,8 +53,8 @@ func (m *ModerationMod) filterwordCommand(msg *base2.DiscordMessage) {
 	}
 }
 
-func NewFilterWordListCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewFilterWordListCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "filterwordlist",
 		Description:   "Lists of all filtered phrases for this server",
@@ -63,13 +63,13 @@ func NewFilterWordListCommand(m *ModerationMod) *base2.ModCommand {
 		Cooldown:      10,
 		RequiredPerms: discordgo.PermissionManageMessages,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.filterwordlistCommand,
 	}
 }
-func (m *ModerationMod) filterwordlistCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) filterwordlistCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -100,8 +100,8 @@ func (m *ModerationMod) filterwordlistCommand(msg *base2.DiscordMessage) {
 	}
 }
 
-func NewClearFilterCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewClearFilterCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "clearfilter",
 		Description:   "Removes all phrases from the server filter",
@@ -110,14 +110,14 @@ func NewClearFilterCommand(m *ModerationMod) *base2.ModCommand {
 		Cooldown:      10,
 		RequiredPerms: discordgo.PermissionAdministrator,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.clearfilterCommand,
 	}
 }
 
-func (m *ModerationMod) clearfilterCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) clearfilterCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -130,8 +130,8 @@ func (m *ModerationMod) clearfilterCommand(msg *base2.DiscordMessage) {
 	msg.Reply("Filter was cleared")
 }
 
-func NewModerationSettingsCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewModerationSettingsCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "moderationsettings",
 		Description:   "Moderation settings:\n- Toggle warn system [enable/disable]\n- Set max warns [0-10]\n- Set warn duration [0(infinite)-365]",
@@ -140,13 +140,13 @@ func NewModerationSettingsCommand(m *ModerationMod) *base2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionAdministrator,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.moderationsettingsCommand,
 	}
 }
-func (m *ModerationMod) moderationsettingsCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) moderationsettingsCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -227,18 +227,18 @@ func (m *ModerationMod) moderationsettingsCommand(msg *base2.DiscordMessage) {
 	}
 }
 
-func NewCheckFilterPassive(m *ModerationMod) *base2.ModPassive {
-	return &base2.ModPassive{
+func NewCheckFilterPassive(m *ModerationMod) *base.ModPassive {
+	return &base.ModPassive{
 		Mod:          m,
 		Name:         "checkfilter",
 		Description:  "checks if messages contain phrases found in the server filter",
 		Enabled:      true,
-		AllowedTypes: base2.MessageTypeCreate | base2.MessageTypeUpdate,
+		AllowedTypes: base.MessageTypeCreate | base.MessageTypeUpdate,
 		Run:          m.checkfilterPassive,
 	}
 }
 
-func (m *ModerationMod) checkfilterPassive(msg *base2.DiscordMessage) {
+func (m *ModerationMod) checkfilterPassive(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}

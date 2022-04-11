@@ -4,32 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/intrntsrfr/meido/database"
+	"go.uber.org/zap"
 	"log"
+	"math/rand"
 	"strings"
 	"time"
-
-	"github.com/intrntsrfr/owo"
-	"github.com/jmoiron/sqlx"
 )
 
 // Config is the config struct for the bot.
 type Config struct {
 	Token            string   `json:"token"`
-	OwoToken         string   `json:"owo_token"`
 	ConnectionString string   `json:"connection_string"`
-	DmLogChannels    []string `json:"dm_log_channels"`
 	OwnerIds         []string `json:"owner_ids"`
-	YouTubeKey       string   `json:"youtube_key"`
+	DmLogChannels    []string `json:"dm_log_channels"`
+	OwoToken         string   `json:"owo_token"`
+	YouTubeToken     string   `json:"youtube_key"`
 }
-
-type LogLevel int
-
-const (
-	LogLevelVerbose = iota
-	LogLevelInfo
-	LogLevelWarning
-	LogLevelError
-)
 
 // Bot is the main bot struct.
 type Bot struct {
@@ -37,23 +27,23 @@ type Bot struct {
 	Config    *Config
 	Mods      map[string]Mod
 	DB        *database.DB
-	Owo       *owo.Client
 	Cooldowns CooldownService
 	Callbacks CallbackService
-	Perms     *PermissionHandler
-	LogLevel  LogLevel
+	Log       *zap.Logger
 }
 
 // NewBot takes in a Config and returns a pointer to a new Bot
-func NewBot(config *Config) *Bot {
-	log.Println("new bot")
+func NewBot(config *Config, db *database.DB, log *zap.Logger) *Bot {
+	rand.Seed(time.Now().Unix())
+	log.Info("new bot")
 	return &Bot{
 		Discord:   NewDiscord(config.Token),
 		Config:    config,
 		Mods:      make(map[string]Mod),
+		DB:        db,
 		Cooldowns: NewCooldownHandler(),
 		Callbacks: NewCallbackHandler(),
-		Owo:       owo.NewClient(config.OwoToken),
+		Log:       log,
 	}
 }
 
@@ -66,25 +56,7 @@ func (b *Bot) Open() error {
 		panic(err)
 	}
 
-	RegisterEvents(b.Discord)
-
-	psql, err := sqlx.Connect("postgres", b.Config.ConnectionString)
-	if err != nil {
-		panic(err)
-	}
-	b.DB = database.New(psql)
-	log.Println("psql connection established")
-
-	// add some proper base logging to the bot, PLEASE
-
-	// log bot specific events, such as
-	// - bot joins server, leaves server
-	// - shutdown / startup?
-	// -
-
-	// b.startLogs()
-
-	//b.Perms = NewPermissionHandler(psql)
+	registerEvents(b.Discord)
 
 	go b.listen(msgChan)
 	return nil
@@ -103,7 +75,7 @@ func (b *Bot) Close() {
 // RegisterMod takes in a Mod and registers it.
 func (b *Bot) RegisterMod(mod Mod) {
 	log.Println(fmt.Sprintf("registering mod '%s'", mod.Name()))
-	err := mod.Hook(b)
+	err := mod.Hook()
 	if err != nil {
 		panic(err)
 	}
@@ -211,6 +183,7 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 		if allow, err := m.HasPermissions(cmd.RequiredPerms); err != nil || !allow {
 			return
 		}
+
 		if cmd.CheckBotPerms {
 			if botAllow, err := m.Discord.HasPermissions(m.Message.ChannelID, cmd.RequiredPerms); err != nil || !botAllow {
 				return

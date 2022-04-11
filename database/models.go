@@ -19,7 +19,6 @@ type Filter struct {
 
 // Guild represents a server and its information.
 type Guild struct {
-	UID      int    `db:"uid"`
 	GuildID  string `db:"guild_id"`
 	UseWarns bool   `db:"use_warns"`
 	MaxWarns int    `db:"max_warns"`
@@ -28,8 +27,8 @@ type Guild struct {
 	WarnDuration int `db:"warn_duration"`
 	//AutoRole     string `db:"autorole"`
 
-	AutomodLogChannel string `db:"automod_log_channel"`
-	FishingChannel    string `db:"fishing_channel"`
+	AutomodLogChannelID string `db:"automod_log_channel_id"`
+	FishingChannelID    string `db:"fishing_channel_id"`
 }
 
 // Warn represents a warning

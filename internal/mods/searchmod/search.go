@@ -3,7 +3,7 @@ package searchmod
 import (
 	"encoding/json"
 	"fmt"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -14,18 +14,19 @@ import (
 type SearchMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base2.ModCommand
-	youtubeKey   string
-	allowedTypes base2.MessageType
+	commands     map[string]*base.ModCommand
+	allowedTypes base.MessageType
 	allowDMs     bool
+	youtubeToken string
 }
 
-func New(n string) base2.Mod {
+func New(ytToken string) base.Mod {
 	return &SearchMod{
-		name:         n,
-		commands:     make(map[string]*base2.ModCommand),
-		allowedTypes: base2.MessageTypeCreate,
+		name:         "Search",
+		commands:     make(map[string]*base.ModCommand),
+		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     true,
+		youtubeToken: ytToken,
 	}
 }
 
@@ -39,26 +40,23 @@ func (m *SearchMod) Save() error {
 func (m *SearchMod) Load() error {
 	return nil
 }
-func (m *SearchMod) Passives() []*base2.ModPassive {
-	return []*base2.ModPassive{}
+func (m *SearchMod) Passives() []*base.ModPassive {
+	return []*base.ModPassive{}
 }
-func (m *SearchMod) Commands() map[string]*base2.ModCommand {
+func (m *SearchMod) Commands() map[string]*base.ModCommand {
 	return m.commands
 }
-func (m *SearchMod) AllowedTypes() base2.MessageType {
+func (m *SearchMod) AllowedTypes() base.MessageType {
 	return m.allowedTypes
 }
 func (m *SearchMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *SearchMod) Hook(b *base2.Bot) error {
-	m.youtubeKey = b.Config.YouTubeKey
-
+func (m *SearchMod) Hook() error {
 	m.RegisterCommand(NewYouTubeCommand(m))
-
 	return nil
 }
-func (m *SearchMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *SearchMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -67,8 +65,8 @@ func (m *SearchMod) RegisterCommand(cmd *base2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewYouTubeCommand(m *SearchMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewYouTubeCommand(m *SearchMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "youtube",
 		Description:   "Search for a YouTube video",
@@ -77,13 +75,13 @@ func NewYouTubeCommand(m *SearchMod) *base2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.youtubeCommand,
 	}
 }
-func (m *SearchMod) youtubeCommand(msg *base2.DiscordMessage) {
+func (m *SearchMod) youtubeCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -92,7 +90,7 @@ func (m *SearchMod) youtubeCommand(msg *base2.DiscordMessage) {
 	URI, _ := url.Parse("https://www.googleapis.com/youtube/v3/search")
 
 	params := url.Values{}
-	params.Add("key", m.youtubeKey)
+	params.Add("key", m.youtubeToken)
 	params.Add("q", query)
 	params.Add("type", "video")
 	params.Add("part", "snippet")

@@ -3,7 +3,7 @@ package googlemod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/utils"
 	"strings"
 	"sync"
@@ -13,11 +13,12 @@ import (
 type GoogleMod struct {
 	sync.Mutex
 	name              string
-	commands          map[string]*base2.ModCommand
+	commands          map[string]*base.ModCommand
+	allowedTypes      base.MessageType
+	allowDMs          bool
+	bot               *base.Bot
 	activeImgSearches map[string]*ImageSearch
 	deleteImgCh       chan string
-	allowedTypes      base2.MessageType
-	allowDMs          bool
 }
 
 type ImageSearch struct {
@@ -28,39 +29,34 @@ type ImageSearch struct {
 	CurrentImage int
 }
 
-func New(n string) base2.Mod {
+func New(b *base.Bot) base.Mod {
 	return &GoogleMod{
-		name:              n,
-		commands:          make(map[string]*base2.ModCommand),
+		name:              "Google",
+		commands:          make(map[string]*base.ModCommand),
+		allowedTypes:      base.MessageTypeCreate,
+		allowDMs:          true,
+		bot:               b,
 		activeImgSearches: make(map[string]*ImageSearch),
 		deleteImgCh:       make(chan string),
-		allowedTypes:      base2.MessageTypeCreate,
-		allowDMs:          true,
 	}
 }
 
 func (m *GoogleMod) Name() string {
 	return m.name
 }
-func (m *GoogleMod) Save() error {
-	return nil
+func (m *GoogleMod) Passives() []*base.ModPassive {
+	return []*base.ModPassive{}
 }
-func (m *GoogleMod) Load() error {
-	return nil
-}
-func (m *GoogleMod) Passives() []*base2.ModPassive {
-	return []*base2.ModPassive{}
-}
-func (m *GoogleMod) Commands() map[string]*base2.ModCommand {
+func (m *GoogleMod) Commands() map[string]*base.ModCommand {
 	return m.commands
 }
-func (m *GoogleMod) AllowedTypes() base2.MessageType {
+func (m *GoogleMod) AllowedTypes() base.MessageType {
 	return m.allowedTypes
 }
 func (m *GoogleMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *GoogleMod) Hook(b *base2.Bot) error {
+func (m *GoogleMod) Hook() error {
 
 	go func() {
 		for {
@@ -73,14 +69,13 @@ func (m *GoogleMod) Hook(b *base2.Bot) error {
 		}
 	}()
 
-	b.Discord.Sess.AddHandler(m.MessageReactionAddHandler)
-	b.Discord.Sess.AddHandler(m.MessageReactionRemoveHandler)
+	m.bot.Discord.Sess.AddHandler(m.MessageReactionAddHandler)
+	m.bot.Discord.Sess.AddHandler(m.MessageReactionRemoveHandler)
 
 	m.RegisterCommand(NewImageCommand(m))
-
 	return nil
 }
-func (m *GoogleMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *GoogleMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -89,8 +84,8 @@ func (m *GoogleMod) RegisterCommand(cmd *base2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func (m *GoogleMod) Message(msg *base2.DiscordMessage) {
-	if msg.Type() != base2.MessageTypeCreate {
+func (m *GoogleMod) Message(msg *base.DiscordMessage) {
+	if msg.Type() != base.MessageTypeCreate {
 		return
 	}
 	for _, c := range m.commands {
@@ -98,8 +93,8 @@ func (m *GoogleMod) Message(msg *base2.DiscordMessage) {
 	}
 }
 
-func NewImageCommand(m *GoogleMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewImageCommand(m *GoogleMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "image",
 		Description:   "Search for an image",
@@ -108,14 +103,14 @@ func NewImageCommand(m *GoogleMod) *base2.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.googleCommand,
 	}
 }
 
-func (m *GoogleMod) googleCommand(msg *base2.DiscordMessage) {
+func (m *GoogleMod) googleCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

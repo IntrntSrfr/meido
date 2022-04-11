@@ -3,7 +3,7 @@ package antiraidmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/owo"
 	"golang.org/x/time/rate"
 	"strconv"
@@ -16,10 +16,10 @@ import (
 type AntiRaidMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base2.ModCommand
-	allowedTypes base2.MessageType
+	commands     map[string]*base.ModCommand
+	allowedTypes base.MessageType
 	allowDMs     bool
-	bot          *base2.Bot
+	bot          *base.Bot
 	owo          *owo.Client
 
 	servers *serverMap
@@ -27,12 +27,14 @@ type AntiRaidMod struct {
 }
 
 // New returns a new AntiRaidMod.
-func New(n string) base2.Mod {
+func New(b *base.Bot, o *owo.Client) base.Mod {
 	return &AntiRaidMod{
-		name:         n,
-		commands:     make(map[string]*base2.ModCommand),
-		allowedTypes: base2.MessageTypeCreate,
+		name:         "AntiRaid",
+		commands:     make(map[string]*base.ModCommand),
+		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     true,
+		bot:          b,
+		owo:          o,
 		servers:      &serverMap{Servers: make(map[string]*server)},
 		banChan:      make(chan [2]string, 1024),
 	}
@@ -44,17 +46,17 @@ func (m *AntiRaidMod) Name() string {
 }
 
 // Passives returns the mod passives.
-func (m *AntiRaidMod) Passives() []*base2.ModPassive {
-	return []*base2.ModPassive{}
+func (m *AntiRaidMod) Passives() []*base.ModPassive {
+	return []*base.ModPassive{}
 }
 
 // Commands returns the mod commands.
-func (m *AntiRaidMod) Commands() map[string]*base2.ModCommand {
+func (m *AntiRaidMod) Commands() map[string]*base.ModCommand {
 	return m.commands
 }
 
 // AllowedTypes returns the allowed MessageTypes.
-func (m *AntiRaidMod) AllowedTypes() base2.MessageType {
+func (m *AntiRaidMod) AllowedTypes() base.MessageType {
 	return m.allowedTypes
 }
 
@@ -64,15 +66,12 @@ func (m *AntiRaidMod) AllowDMs() bool {
 }
 
 // Hook will hook the Mod into the Bot.
-func (m *AntiRaidMod) Hook(b *base2.Bot) error {
-	m.bot = b
-	m.owo = b.Owo
-
-	b.Discord.RegisterHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
+func (m *AntiRaidMod) Hook() error {
+	m.bot.Discord.RegisterHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		m.servers.Add(g.ID)
 	})
 
-	b.Discord.RegisterHandler(func(s *discordgo.Session, g *discordgo.GuildDelete) {
+	m.bot.Discord.RegisterHandler(func(s *discordgo.Session, g *discordgo.GuildDelete) {
 		m.servers.Remove(g.ID)
 	})
 
@@ -82,7 +81,7 @@ func (m *AntiRaidMod) Hook(b *base2.Bot) error {
 }
 
 // RegisterCommand registers a ModCommand to the Mod
-func (m *AntiRaidMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *AntiRaidMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {

@@ -3,12 +3,12 @@ package moderationmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"strings"
 )
 
-func NewAutoRoleCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewAutoRoleCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "autorolesettings",
 		Description:   "Sets the autorole to a supplied role name. If no role is supplied, it will be reset.",
@@ -17,13 +17,13 @@ func NewAutoRoleCommand(m *ModerationMod) *base2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionAdministrator,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.autoroleCommand,
 	}
 }
-func (m *ModerationMod) autoroleCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) autoroleCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() == 1 {
 		_, err := m.db.Exec("UPDATE auto_role SET role_id=$1 WHERE guild_id=$2", "", msg.Message.GuildID)
 		if err != nil {

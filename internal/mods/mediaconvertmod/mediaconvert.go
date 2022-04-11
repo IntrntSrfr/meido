@@ -3,7 +3,7 @@ package mediaconvertmod
 import (
 	"bytes"
 	"fmt"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -17,18 +17,18 @@ import (
 type MediaConvertMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base2.ModCommand
-	passives     []*base2.ModPassive
-	allowedTypes base2.MessageType
+	commands     map[string]*base.ModCommand
+	passives     []*base.ModPassive
+	allowedTypes base.MessageType
 	allowDMs     bool
 }
 
-func New(n string) base2.Mod {
+func New() base.Mod {
 	return &MediaConvertMod{
-		name:         n,
-		commands:     make(map[string]*base2.ModCommand),
-		passives:     []*base2.ModPassive{},
-		allowedTypes: base2.MessageTypeCreate,
+		name:         "Media",
+		commands:     make(map[string]*base.ModCommand),
+		passives:     []*base.ModPassive{},
+		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     true,
 	}
 }
@@ -36,32 +36,23 @@ func New(n string) base2.Mod {
 func (m *MediaConvertMod) Name() string {
 	return m.name
 }
-func (m *MediaConvertMod) Save() error {
-	return nil
-}
-func (m *MediaConvertMod) Load() error {
-	return nil
-}
-func (m *MediaConvertMod) Passives() []*base2.ModPassive {
+func (m *MediaConvertMod) Passives() []*base.ModPassive {
 	return m.passives
 }
-func (m *MediaConvertMod) Commands() map[string]*base2.ModCommand {
+func (m *MediaConvertMod) Commands() map[string]*base.ModCommand {
 	return m.commands
 }
-func (m *MediaConvertMod) AllowedTypes() base2.MessageType {
+func (m *MediaConvertMod) AllowedTypes() base.MessageType {
 	return m.allowedTypes
 }
 func (m *MediaConvertMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *MediaConvertMod) Hook(b *base2.Bot) error {
-
-	//m.RegisterCommand(NewMediaConvertCommand(m))
+func (m *MediaConvertMod) Hook() error {
 	m.passives = append(m.passives, NewJpgLargeConvertPassive(m))
-
 	return nil
 }
-func (m *MediaConvertMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *MediaConvertMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -70,18 +61,18 @@ func (m *MediaConvertMod) RegisterCommand(cmd *base2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewJpgLargeConvertPassive(m *MediaConvertMod) *base2.ModPassive {
-	return &base2.ModPassive{
+func NewJpgLargeConvertPassive(m *MediaConvertMod) *base.ModPassive {
+	return &base.ModPassive{
 		Mod:          m,
 		Name:         "jpglargeconvert",
 		Description:  "Automatically converts jpglarge files to jpg",
-		AllowedTypes: base2.MessageTypeCreate,
+		AllowedTypes: base.MessageTypeCreate,
 		Enabled:      true,
 		Run:          m.jpglargeconvertPassive,
 	}
 }
 
-func (m *MediaConvertMod) jpglargeconvertPassive(msg *base2.DiscordMessage) {
+func (m *MediaConvertMod) jpglargeconvertPassive(msg *base.DiscordMessage) {
 	if len(msg.Message.Attachments) < 1 {
 		return
 	}
@@ -122,8 +113,8 @@ func (m *MediaConvertMod) jpglargeconvertPassive(msg *base2.DiscordMessage) {
 	})
 }
 
-func NewMediaConvertCommand(m *MediaConvertMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewMediaConvertCommand(m *MediaConvertMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "mediaconvert",
 		Description:   "Converts some media files from one format to another",
@@ -132,14 +123,14 @@ func NewMediaConvertCommand(m *MediaConvertMod) *base2.ModCommand {
 		Cooldown:      30,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.mediaconvertCommand,
 	}
 }
 
-func (m *MediaConvertMod) mediaconvertCommand(msg *base2.DiscordMessage) {
+func (m *MediaConvertMod) mediaconvertCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 3 {
 		return
 	}

@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	base2 "github.com/intrntsrfr/meido/base"
-	database2 "github.com/intrntsrfr/meido/database"
+	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/utils"
 	"strconv"
 	"strings"
@@ -16,44 +16,43 @@ import (
 type ModerationMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base2.ModCommand
-	passives     []*base2.ModPassive
-	db           *database2.DB
-	allowedTypes base2.MessageType
+	commands     map[string]*base.ModCommand
+	passives     []*base.ModPassive
+	db           *database.DB
+	allowedTypes base.MessageType
 	allowDMs     bool
-	bot          *base2.Bot
+	bot          *base.Bot
 }
 
-func New(name string) base2.Mod {
+func New(b *base.Bot, db *database.DB) base.Mod {
 	return &ModerationMod{
-		name:         name,
-		commands:     make(map[string]*base2.ModCommand),
-		allowedTypes: base2.MessageTypeCreate | base2.MessageTypeUpdate,
+		name:         "Moderation",
+		commands:     make(map[string]*base.ModCommand),
+		allowedTypes: base.MessageTypeCreate | base.MessageTypeUpdate,
 		allowDMs:     false,
+		bot:          b,
+		db:           db,
 	}
 }
 
 func (m *ModerationMod) Name() string {
 	return m.name
 }
-func (m *ModerationMod) Passives() []*base2.ModPassive {
+func (m *ModerationMod) Passives() []*base.ModPassive {
 	return m.passives
 }
-func (m *ModerationMod) Commands() map[string]*base2.ModCommand {
+func (m *ModerationMod) Commands() map[string]*base.ModCommand {
 	return m.commands
 }
-func (m *ModerationMod) AllowedTypes() base2.MessageType {
+func (m *ModerationMod) AllowedTypes() base.MessageType {
 	return m.allowedTypes
 }
 func (m *ModerationMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *ModerationMod) Hook(b *base2.Bot) error {
-	m.bot = b
-	m.db = b.DB
-
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
-		dbg := &database2.Guild{}
+func (m *ModerationMod) Hook() error {
+	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
+		dbg := &database.Guild{}
 		err := m.db.Get(dbg, "SELECT guild_id FROM guild WHERE guild_id = $1;", g.Guild.ID)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
@@ -63,17 +62,17 @@ func (m *ModerationMod) Hook(b *base2.Bot) error {
 		}
 	})
 
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		refreshTicker := time.NewTicker(time.Hour)
 
 		go func() {
 			for range refreshTicker.C {
-				for _, g := range b.Discord.Guilds() {
+				for _, g := range m.bot.Discord.Guilds() {
 					if g.Unavailable {
 						continue
 					}
-					dge := &database2.Guild{}
-					err := b.DB.Get(dge, "SELECT * FROM guild WHERE guild_id=$1", g.ID)
+					dge := &database.Guild{}
+					err := m.db.Get(dge, "SELECT * FROM guild WHERE guild_id=$1", g.ID)
 					if err != nil {
 						continue
 					}
@@ -82,8 +81,8 @@ func (m *ModerationMod) Hook(b *base2.Bot) error {
 						continue
 					}
 
-					var warns []*database2.Warn
-					err = b.DB.Select(&warns, "SELECT * FROM warn WHERE guild_id=$1 AND is_valid", g.ID)
+					var warns []*database.Warn
+					err = m.db.Select(&warns, "SELECT * FROM warn WHERE guild_id=$1 AND is_valid", g.ID)
 					if err != nil {
 						continue
 					}
@@ -91,8 +90,8 @@ func (m *ModerationMod) Hook(b *base2.Bot) error {
 					dur := time.Duration(dge.WarnDuration)
 					for _, warn := range warns {
 						if warn.GivenAt.Unix() < time.Now().Add(-1*time.Hour*24*dur).Unix() {
-							b.DB.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE id=$3",
-								b.Discord.Sess.State.User.ID, time.Now(), warn.UID)
+							m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3",
+								m.bot.Discord.Sess.State.User.ID, time.Now(), warn.UID)
 						}
 					}
 				}
@@ -102,7 +101,7 @@ func (m *ModerationMod) Hook(b *base2.Bot) error {
 	/*
 		b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
 
-			a := &database2.AutoRole{}
+			a := &database.AutoRole{}
 			err := m.db.Get(a, "SELECT * FROM guild WHERE guild_id=$1", g.GuildID)
 			if err != nil {
 				return
@@ -163,7 +162,7 @@ func (m *ModerationMod) Hook(b *base2.Bot) error {
 	return nil
 }
 
-func (m *ModerationMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *ModerationMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -172,8 +171,8 @@ func (m *ModerationMod) RegisterCommand(cmd *base2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewBanCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewBanCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "ban",
 		Description:   "Bans a user. Days of messages to be deleted and reason is optional",
@@ -183,14 +182,14 @@ func NewBanCommand(m *ModerationMod) *base2.ModCommand {
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.banCommand,
 	}
 }
 
-func (m *ModerationMod) banCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) banCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -296,8 +295,8 @@ func (m *ModerationMod) banCommand(msg *base2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewUnbanCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewUnbanCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "unban",
 		Description:   "Unbans a user",
@@ -307,14 +306,14 @@ func NewUnbanCommand(m *ModerationMod) *base2.ModCommand {
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.unbanCommand,
 	}
 }
 
-func (m *ModerationMod) unbanCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) unbanCommand(msg *base.DiscordMessage) {
 
 	if msg.LenArgs() < 2 {
 		return
@@ -343,8 +342,8 @@ func (m *ModerationMod) unbanCommand(msg *base2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewHackbanCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewHackbanCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "hackban",
 		Description:   "Hackbans one or several users. Prunes 7 days.",
@@ -354,14 +353,14 @@ func NewHackbanCommand(m *ModerationMod) *base2.ModCommand {
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.hackbanCommand,
 	}
 }
 
-func (m *ModerationMod) hackbanCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) hackbanCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -395,8 +394,8 @@ func (m *ModerationMod) hackbanCommand(msg *base2.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
 }
 
-func NewKickCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewKickCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "kick",
 		Description:   "Kicks a user. Reason is optional",
@@ -406,14 +405,14 @@ func NewKickCommand(m *ModerationMod) *base2.ModCommand {
 		RequiredPerms: discordgo.PermissionKickMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.kickCommand,
 	}
 }
 
-func (m *ModerationMod) kickCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) kickCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

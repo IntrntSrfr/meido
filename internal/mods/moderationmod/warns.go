@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/utils"
 	"strconv"
@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-func NewWarnCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewWarnCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "warn",
 		Description:   "Warns a user. Does not work if warn system is disabled.",
@@ -24,14 +24,14 @@ func NewWarnCommand(m *ModerationMod) *base2.ModCommand {
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.warnCommand,
 	}
 }
 
-func (m *ModerationMod) warnCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -138,8 +138,8 @@ func (m *ModerationMod) warnCommand(msg *base2.DiscordMessage) {
 	}
 }
 
-func NewWarnLogCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewWarnLogCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "warnlog",
 		Description:   "Displays a users warns",
@@ -148,14 +148,14 @@ func NewWarnLogCommand(m *ModerationMod) *base2.ModCommand {
 		Cooldown:      5,
 		RequiredPerms: discordgo.PermissionManageMessages,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.warnlogCommand,
 	}
 }
 
-func (m *ModerationMod) warnlogCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) warnlogCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -199,6 +199,7 @@ func (m *ModerationMod) warnlogCommand(msg *base2.DiscordMessage) {
 	var warns []*database.Warn
 	err = m.db.Select(&warns, "SELECT * FROM warn WHERE user_id=$1 AND guild_id=$2 ORDER BY given_at DESC;", targetUser.ID, msg.Message.GuildID)
 	if err != nil {
+		fmt.Println(err)
 		msg.Reply("there was an error, please try again")
 		return
 	}
@@ -265,8 +266,8 @@ func (m *ModerationMod) warnlogCommand(msg *base2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewWarnCountCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewWarnCountCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "warncount",
 		Description:   "Displays how many warns a user has",
@@ -275,14 +276,14 @@ func NewWarnCountCommand(m *ModerationMod) *base2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.warncountCommand,
 	}
 }
 
-func (m *ModerationMod) warncountCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) warncountCommand(msg *base.DiscordMessage) {
 
 	var (
 		err        error
@@ -327,8 +328,8 @@ func (m *ModerationMod) warncountCommand(msg *base2.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("%v is at %v/%v warns", targetUser.String(), warnCount, dge.MaxWarns))
 }
 
-func NewClearWarnCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewClearWarnCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "clearwarn",
 		Description:   "Clears a warn from a user using a warnID. Use warnlog to get warnIDs",
@@ -337,14 +338,14 @@ func NewClearWarnCommand(m *ModerationMod) *base2.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.clearwarnCommand,
 	}
 }
 
-func (m *ModerationMod) clearwarnCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -385,7 +386,7 @@ func (m *ModerationMod) clearwarnCommand(msg *base2.DiscordMessage) {
 	}
 
 	var n int
-	var reply *base2.DiscordMessage
+	var reply *base.DiscordMessage
 	// this needs a timeout
 	for {
 		select {
@@ -417,7 +418,7 @@ func (m *ModerationMod) clearwarnCommand(msg *base2.DiscordMessage) {
 
 	selectedEntry := entries[n-1]
 
-	_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE id=$3 AND is_valid", msg.Message.Author.ID, time.Now(), selectedEntry.UID)
+	_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3 AND is_valid", msg.Message.Author.ID, time.Now(), selectedEntry.UID)
 	if err != nil {
 		msg.Reply("there was an error, please try again")
 		return
@@ -426,8 +427,8 @@ func (m *ModerationMod) clearwarnCommand(msg *base2.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("Invalidated warn with ID: %v", selectedEntry.UID))
 }
 
-func NewClearAllWarnsCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewClearAllWarnsCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "clearallwarns",
 		Description:   "Clears all active warns for a member",
@@ -436,13 +437,13 @@ func NewClearAllWarnsCommand(m *ModerationMod) *base2.ModCommand {
 		Cooldown:      5,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.clearallwarnsCommand,
 	}
 }
-func (m *ModerationMod) clearallwarnsCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) clearallwarnsCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

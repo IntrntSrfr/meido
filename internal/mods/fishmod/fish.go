@@ -4,34 +4,35 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/utils"
 	"math/rand"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 )
 
 // FishMod represents the ping mod
 type FishMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base2.ModCommand
-	db           *database.DB
-	allowedTypes base2.MessageType
+	commands     map[string]*base.ModCommand
+	allowedTypes base.MessageType
 	allowDMs     bool
-	bot          *base2.Bot
+	bot          *base.Bot
+	db           *database.DB
 }
 
 // New returns a new PingMod.
-func New(n string) base2.Mod {
+func New(b *base.Bot, db *database.DB) base.Mod {
 	return &FishMod{
-		name:         n,
-		commands:     make(map[string]*base2.ModCommand),
-		allowedTypes: base2.MessageTypeCreate,
+		name:         "Fish",
+		commands:     make(map[string]*base.ModCommand),
+		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     true,
+		bot:          b,
+		db:           db,
 	}
 }
 
@@ -41,17 +42,17 @@ func (m *FishMod) Name() string {
 }
 
 // Passives returns the mod passives.
-func (m *FishMod) Passives() []*base2.ModPassive {
-	return []*base2.ModPassive{}
+func (m *FishMod) Passives() []*base.ModPassive {
+	return []*base.ModPassive{}
 }
 
 // Commands returns the mod commands.
-func (m *FishMod) Commands() map[string]*base2.ModCommand {
+func (m *FishMod) Commands() map[string]*base.ModCommand {
 	return m.commands
 }
 
 // AllowedTypes returns the allowed MessageTypes.
-func (m *FishMod) AllowedTypes() base2.MessageType {
+func (m *FishMod) AllowedTypes() base.MessageType {
 	return m.allowedTypes
 }
 
@@ -61,20 +62,14 @@ func (m *FishMod) AllowDMs() bool {
 }
 
 // Hook will hook the Mod into the Bot.
-func (m *FishMod) Hook(b *base2.Bot) error {
-	m.bot = b
-	m.db = b.DB
-
-	rand.Seed(time.Now().Unix())
-
+func (m *FishMod) Hook() error {
 	m.RegisterCommand(NewFishCommand(m))
 	m.RegisterCommand(NewAquariumCommand(m))
-
 	return nil
 }
 
 // RegisterCommand registers a ModCommand to the Mod
-func (m *FishMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *FishMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -84,8 +79,8 @@ func (m *FishMod) RegisterCommand(cmd *base2.ModCommand) {
 }
 
 // NewFishCommand returns a new fish command.
-func NewFishCommand(m *FishMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewFishCommand(m *FishMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "fish",
 		Description:   "Fish",
@@ -95,14 +90,14 @@ func NewFishCommand(m *FishMod) *base2.ModCommand {
 		CooldownUser:  true,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.fishCommand,
 	}
 }
 
-func (m *FishMod) fishCommand(msg *base2.DiscordMessage) {
+func (m *FishMod) fishCommand(msg *base.DiscordMessage) {
 
 	// if msg is sent in guild, check if its sent in the fishing channel
 	if !msg.IsDM() && m.db.GetGuildFishingChannel(msg.GuildID()) != msg.ChannelID() {
@@ -202,8 +197,8 @@ func pickFish() fish {
 }
 
 // NewAquariumCommand returns a new Aquarium command.
-func NewAquariumCommand(m *FishMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewAquariumCommand(m *FishMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "Aquarium",
 		Description:   "Displays your aquarium",
@@ -213,14 +208,14 @@ func NewAquariumCommand(m *FishMod) *base2.ModCommand {
 		CooldownUser:  true,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.aquariumCommand,
 	}
 }
 
-func (m *FishMod) aquariumCommand(msg *base2.DiscordMessage) {
+func (m *FishMod) aquariumCommand(msg *base.DiscordMessage) {
 
 	targetUser := msg.Author()
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
 	utils2 "github.com/intrntsrfr/meido/utils"
 	"image"
@@ -23,58 +23,51 @@ import (
 type UtilityMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base2.ModCommand
+	commands     map[string]*base.ModCommand
+	allowedTypes base.MessageType
+	allowDMs     bool
+	bot          *base.Bot
 	startTime    time.Time
 	db           *database.DB
-	allowedTypes base2.MessageType
-	allowDMs     bool
-	bot          *base2.Bot
 }
 
-func New(name string) base2.Mod {
+func New(b *base.Bot, db *database.DB) base.Mod {
 	return &UtilityMod{
 		startTime:    time.Now(),
-		name:         name,
-		commands:     make(map[string]*base2.ModCommand),
-		allowedTypes: base2.MessageTypeCreate,
+		name:         "Utility",
+		commands:     make(map[string]*base.ModCommand),
+		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     true,
+		bot:          b,
+		db:           db,
 	}
 }
 
 func (m *UtilityMod) Name() string {
 	return m.name
 }
-func (m *UtilityMod) Save() error {
-	return nil
+func (m *UtilityMod) Passives() []*base.ModPassive {
+	return []*base.ModPassive{}
 }
-func (m *UtilityMod) Load() error {
-	return nil
-}
-func (m *UtilityMod) Passives() []*base2.ModPassive {
-	return []*base2.ModPassive{}
-}
-func (m *UtilityMod) Commands() map[string]*base2.ModCommand {
+func (m *UtilityMod) Commands() map[string]*base.ModCommand {
 	return m.commands
 }
-func (m *UtilityMod) AllowedTypes() base2.MessageType {
+func (m *UtilityMod) AllowedTypes() base.MessageType {
 	return m.allowedTypes
 }
 func (m *UtilityMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *UtilityMod) Hook(b *base2.Bot) error {
-	m.bot = b
-	m.db = b.DB
-
+func (m *UtilityMod) Hook() error {
 	statusTimer := time.NewTicker(time.Second * 15)
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		display := true
 		go func() {
 			for range statusTimer.C {
 				if display {
 					memCount := 0
 					srvCount := 0
-					for _, g := range b.Discord.Guilds() {
+					for _, g := range m.bot.Discord.Guilds() {
 						srvCount++
 						memCount += g.MemberCount
 					}
@@ -117,7 +110,7 @@ func (m *UtilityMod) Hook(b *base2.Bot) error {
 
 	return nil
 }
-func (m *UtilityMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *UtilityMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -127,8 +120,8 @@ func (m *UtilityMod) RegisterCommand(cmd *base2.ModCommand) {
 }
 
 // NewPingCommand returns a new ping command.
-func NewPingCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewPingCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "ping",
 		Description:   "Checks the bot ping against Discord",
@@ -137,14 +130,14 @@ func NewPingCommand(m *UtilityMod) *base2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.pingCommand,
 	}
 }
 
-func (m *UtilityMod) pingCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) pingCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -163,8 +156,8 @@ func (m *UtilityMod) pingCommand(msg *base2.DiscordMessage) {
 		fmt.Sprintf("Pong!\nDelay: %s", discordLatency))
 }
 
-func NewAvatarCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewAvatarCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "avatar",
 		Description:   "Displays profile picture of user or mentioned user",
@@ -173,14 +166,14 @@ func NewAvatarCommand(m *UtilityMod) *base2.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.avatarCommand,
 	}
 }
 
-func (m *UtilityMod) avatarCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) avatarCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -227,8 +220,8 @@ func (m *UtilityMod) avatarCommand(msg *base2.DiscordMessage) {
 	}
 }
 
-func NewServerCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewServerCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "server",
 		Description:   "Displays information about the server",
@@ -237,14 +230,14 @@ func NewServerCommand(m *UtilityMod) *base2.ModCommand {
 		Cooldown:      10,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.serverCommand,
 	}
 }
 
-func (m *UtilityMod) serverCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) serverCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -328,8 +321,8 @@ func (m *UtilityMod) serverCommand(msg *base2.DiscordMessage) {
 	msg.ReplyEmbed(&embed)
 }
 
-func NewAboutCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewAboutCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "about",
 		Description:   "Displays Meido statistics",
@@ -339,13 +332,13 @@ func NewAboutCommand(m *UtilityMod) *base2.ModCommand {
 		RequiredPerms: 0,
 		RequiresOwner: false,
 		AllowDMs:      true,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		Enabled:       true,
 		Run:           m.aboutCommand,
 	}
 }
 
-func (m *UtilityMod) aboutCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) aboutCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -414,8 +407,8 @@ func (m *UtilityMod) aboutCommand(msg *base2.DiscordMessage) {
 	})
 }
 
-func NewServerSplashCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewServerSplashCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "serversplash",
 		Description:   "Displays server splash if one exists",
@@ -424,13 +417,13 @@ func NewServerSplashCommand(m *UtilityMod) *base2.ModCommand {
 		Cooldown:      5,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.serverSplashCommand,
 	}
 }
-func (m *UtilityMod) serverSplashCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) serverSplashCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -454,8 +447,8 @@ func (m *UtilityMod) serverSplashCommand(msg *base2.DiscordMessage) {
 	}
 	msg.ReplyEmbed(embed)
 }
-func NewServerAvatarCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewServerAvatarCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "serveravatar",
 		Description:   "Displays server avatar if one exists",
@@ -464,13 +457,13 @@ func NewServerAvatarCommand(m *UtilityMod) *base2.ModCommand {
 		Cooldown:      5,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.serverIconCommand,
 	}
 }
-func (m *UtilityMod) serverIconCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) serverIconCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -495,8 +488,8 @@ func (m *UtilityMod) serverIconCommand(msg *base2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewServerBannerCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewServerBannerCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "serverbanner",
 		Description:   "Displays server banner if one exists",
@@ -505,13 +498,13 @@ func NewServerBannerCommand(m *UtilityMod) *base2.ModCommand {
 		Cooldown:      5,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.serverBannerCommand,
 	}
 }
-func (m *UtilityMod) serverBannerCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) serverBannerCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -536,8 +529,8 @@ func (m *UtilityMod) serverBannerCommand(msg *base2.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewColorCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewColorCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "color",
 		Description:   "Displays a hex color",
@@ -546,13 +539,13 @@ func NewColorCommand(m *UtilityMod) *base2.ModCommand {
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.colorCommand,
 	}
 }
-func (m *UtilityMod) colorCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) colorCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -587,8 +580,8 @@ func (m *UtilityMod) colorCommand(msg *base2.DiscordMessage) {
 	msg.Sess.ChannelFileSend(msg.Message.ChannelID, "color.png", &buf)
 }
 
-func NewInviteCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewInviteCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "invite",
 		Description:   "Sends an invite link for Meido, as well as support server",
@@ -597,20 +590,20 @@ func NewInviteCommand(m *UtilityMod) *base2.ModCommand {
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.inviteCommand,
 	}
 }
-func (m *UtilityMod) inviteCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) inviteCommand(msg *base.DiscordMessage) {
 	botLink := "<https://discordapp.com/oauth2/authorize?client_id=" + m.bot.Discord.Sess.State.User.ID + "&scope=bot>"
 	serverLink := "https://discord.gg/KgMEGK3"
 	msg.Reply(fmt.Sprintf("Invite me to your server: %v\nSupport server: %v", botLink, serverLink))
 }
 
-func NewUserInfoCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewUserInfoCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "userinfo",
 		Description:   "Displays information about a user",
@@ -619,13 +612,13 @@ func NewUserInfoCommand(m *UtilityMod) *base2.ModCommand {
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.userinfoCommand,
 	}
 }
-func (m *UtilityMod) userinfoCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) userinfoCommand(msg *base.DiscordMessage) {
 
 	var (
 		targetUser   *discordgo.User
@@ -708,8 +701,8 @@ func (m *UtilityMod) userinfoCommand(msg *base2.DiscordMessage) {
 	msg.ReplyEmbed(emb)
 }
 
-func NewHelpCommand(m *UtilityMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewHelpCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "help",
 		Description:   "Displays helpful things",
@@ -718,14 +711,14 @@ func NewHelpCommand(m *UtilityMod) *base2.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.helpCommand,
 	}
 }
 
-func (m *UtilityMod) helpCommand(msg *base2.DiscordMessage) {
+func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 
 	emb := &discordgo.MessageEmbed{
 		Color: utils2.ColorInfo,
@@ -806,7 +799,7 @@ func (m *UtilityMod) helpCommand(msg *base2.DiscordMessage) {
 				info.WriteString(fmt.Sprintf("\n\nTriggers:\n%v", strings.Join(cmd.Triggers, ", ")))
 				info.WriteString(fmt.Sprintf("\n\nUsage:\n%v", cmd.Usage))
 				info.WriteString(fmt.Sprintf("\n\nCooldown:\n%v seconds", cmd.Cooldown))
-				info.WriteString(fmt.Sprintf("\n\nRequired permissions:\n%v", base2.PermMap[cmd.RequiredPerms]))
+				info.WriteString(fmt.Sprintf("\n\nRequired permissions:\n%v", base.PermMap[cmd.RequiredPerms]))
 				info.WriteString(fmt.Sprintf("\n\n%v", dmText[cmd.AllowDMs]))
 				emb.Description = info.String()
 

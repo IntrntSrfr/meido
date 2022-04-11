@@ -12,7 +12,7 @@ type Mod interface {
 	Commands() map[string]*ModCommand
 	AllowedTypes() MessageType
 	AllowDMs() bool
-	Hook(*Bot) error
+	Hook() error
 	RegisterCommand(*ModCommand)
 }
 

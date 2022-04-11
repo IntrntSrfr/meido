@@ -3,7 +3,7 @@ package loggermod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/utils"
 	"sync"
 )
@@ -11,46 +11,45 @@ import (
 type LoggerMod struct {
 	sync.Mutex
 	name          string
-	commands      map[string]*base2.ModCommand
-	passives      []*base2.ModPassive
-	allowedTypes  base2.MessageType
+	commands      map[string]*base.ModCommand
+	passives      []*base.ModPassive
+	allowedTypes  base.MessageType
 	allowDMs      bool
 	dmLogChannels []string
 }
 
-func New(name string) base2.Mod {
+func New(logChs []string) base.Mod {
 	return &LoggerMod{
-		name:          name,
-		commands:      make(map[string]*base2.ModCommand),
-		passives:      []*base2.ModPassive{},
-		allowedTypes:  base2.MessageTypeCreate,
+		name:          "Log",
+		commands:      make(map[string]*base.ModCommand),
+		passives:      []*base.ModPassive{},
+		allowedTypes:  base.MessageTypeCreate,
 		allowDMs:      true,
-		dmLogChannels: []string{},
+		dmLogChannels: logChs,
 	}
 }
 
 func (m *LoggerMod) Name() string {
 	return m.name
 }
-func (m *LoggerMod) Passives() []*base2.ModPassive {
+func (m *LoggerMod) Passives() []*base.ModPassive {
 	return m.passives
 }
-func (m *LoggerMod) Commands() map[string]*base2.ModCommand {
+func (m *LoggerMod) Commands() map[string]*base.ModCommand {
 	return m.commands
 }
-func (m *LoggerMod) AllowedTypes() base2.MessageType {
+func (m *LoggerMod) AllowedTypes() base.MessageType {
 	return m.allowedTypes
 }
 func (m *LoggerMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *LoggerMod) Hook(b *base2.Bot) error {
-	m.dmLogChannels = b.Config.DmLogChannels
+func (m *LoggerMod) Hook() error {
 	m.passives = append(m.passives, NewForwardDmsPassive(m))
 	return nil
 }
 
-func (m *LoggerMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *LoggerMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -59,17 +58,17 @@ func (m *LoggerMod) RegisterCommand(cmd *base2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewForwardDmsPassive(m *LoggerMod) *base2.ModPassive {
-	return &base2.ModPassive{
+func NewForwardDmsPassive(m *LoggerMod) *base.ModPassive {
+	return &base.ModPassive{
 		Mod:          m,
 		Name:         "forwarddms",
 		Description:  "Forwards all dms received to a few specific channels specified by the bot owner",
 		Enabled:      true,
-		AllowedTypes: base2.MessageTypeCreate,
+		AllowedTypes: base.MessageTypeCreate,
 		Run:          m.forwardDmsPassive,
 	}
 }
-func (m *LoggerMod) forwardDmsPassive(msg *base2.DiscordMessage) {
+func (m *LoggerMod) forwardDmsPassive(msg *base.DiscordMessage) {
 	if !msg.IsDM() {
 		return
 	}

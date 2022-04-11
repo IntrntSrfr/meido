@@ -2,11 +2,11 @@ package moderationmod
 
 import (
 	"github.com/bwmarrin/discordgo"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 )
 
-func NewLockdownChannelCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewLockdownChannelCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "lockdown",
 		Description:   "Locks the current channel.",
@@ -16,14 +16,14 @@ func NewLockdownChannelCommand(m *ModerationMod) *base2.ModCommand {
 		RequiredPerms: discordgo.PermissionManageRoles,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.lockdownCommand,
 	}
 }
 
-func (m *ModerationMod) lockdownCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) lockdownCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -96,8 +96,8 @@ func (m *ModerationMod) lockdownCommand(msg *base2.DiscordMessage) {
 	}
 }
 
-func NewUnlockChannelCommand(m *ModerationMod) *base2.ModCommand {
-	return &base2.ModCommand{
+func NewUnlockChannelCommand(m *ModerationMod) *base.ModCommand {
+	return &base.ModCommand{
 		Mod:           m,
 		Name:          "unlock",
 		Description:   "Unlocks a previously locked channel.",
@@ -107,14 +107,14 @@ func NewUnlockChannelCommand(m *ModerationMod) *base2.ModCommand {
 		RequiredPerms: discordgo.PermissionManageRoles,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  base2.MessageTypeCreate,
+		AllowedTypes:  base.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.unlockCommand,
 	}
 }
 
-func (m *ModerationMod) unlockCommand(msg *base2.DiscordMessage) {
+func (m *ModerationMod) unlockCommand(msg *base.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}

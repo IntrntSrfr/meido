@@ -3,61 +3,56 @@ package feedbackmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	base2 "github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/base"
 	"sync"
 )
 
 type FeedbackMod struct {
 	sync.Mutex
 	name            string
-	commands        map[string]*base2.ModCommand
+	commands        map[string]*base.ModCommand
+	allowedTypes    base.MessageType
+	allowDMs        bool
+	bot             *base.Bot
 	bannedUsers     map[string]bool
 	feedbackChannel string
 	owners          []string
-	allowedTypes    base2.MessageType
-	allowDMs        bool
 }
 
-func New(n string) base2.Mod {
+func New(b *base.Bot, ownerIds []string) base.Mod {
 	return &FeedbackMod{
-		name:         n,
-		commands:     make(map[string]*base2.ModCommand),
-		allowedTypes: base2.MessageTypeCreate,
+		name:         "Feedback",
+		commands:     make(map[string]*base.ModCommand),
+		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     true,
+		bot:          b,
+		owners:       ownerIds,
 	}
 }
 
 func (m *FeedbackMod) Name() string {
 	return m.name
 }
-func (m *FeedbackMod) Save() error {
-	return nil
+func (m *FeedbackMod) Passives() []*base.ModPassive {
+	return []*base.ModPassive{}
 }
-func (m *FeedbackMod) Load() error {
-	return nil
-}
-func (m *FeedbackMod) Passives() []*base2.ModPassive {
-	return []*base2.ModPassive{}
-}
-func (m *FeedbackMod) Commands() map[string]*base2.ModCommand {
+func (m *FeedbackMod) Commands() map[string]*base.ModCommand {
 	return m.commands
 }
-func (m *FeedbackMod) AllowedTypes() base2.MessageType {
+func (m *FeedbackMod) AllowedTypes() base.MessageType {
 	return m.allowedTypes
 }
 func (m *FeedbackMod) AllowDMs() bool {
 	return m.allowDMs
 }
-func (m *FeedbackMod) Hook(b *base2.Bot) error {
-	m.owners = b.Config.OwnerIds
-
-	b.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+func (m *FeedbackMod) Hook() error {
+	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		fmt.Println(r.User.String())
 	})
 
 	return nil
 }
-func (m *FeedbackMod) RegisterCommand(cmd *base2.ModCommand) {
+func (m *FeedbackMod) RegisterCommand(cmd *base.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -66,7 +61,7 @@ func (m *FeedbackMod) RegisterCommand(cmd *base2.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func (m *FeedbackMod) ToggleBan(msg *base2.DiscordMessage) {
+func (m *FeedbackMod) ToggleBan(msg *base.DiscordMessage) {
 	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?togglefeedback" {
 		return
 	}
@@ -98,7 +93,7 @@ func (m *FeedbackMod) ToggleBan(msg *base2.DiscordMessage) {
 	}
 }
 
-func (m *FeedbackMod) LeaveFeedback(msg *base2.DiscordMessage) {
+func (m *FeedbackMod) LeaveFeedback(msg *base.DiscordMessage) {
 	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?feedback" {
 		return
 	}

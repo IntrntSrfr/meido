@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/internal/mods/googlemod"
 	"github.com/intrntsrfr/meido/internal/mods/loggermod"
 	"github.com/intrntsrfr/meido/internal/mods/mediaconvertmod"
@@ -11,6 +12,9 @@ import (
 	"github.com/intrntsrfr/meido/internal/mods/testmod"
 	"github.com/intrntsrfr/meido/internal/mods/userrolemod"
 	"github.com/intrntsrfr/meido/internal/mods/utilitymod"
+	"github.com/intrntsrfr/owo"
+	"github.com/jmoiron/sqlx"
+	"go.uber.org/zap"
 	"io/ioutil"
 	"log"
 	"os"
@@ -21,6 +25,8 @@ import (
 )
 
 func main() {
+
+	logger, _ := zap.NewProduction()
 
 	f, err := os.Create("./error_log.dat")
 	if err != nil {
@@ -38,21 +44,30 @@ func main() {
 	if err != nil {
 		panic("mangled config file, fix it")
 	}
-	bot := base.NewBot(config)
+
+	psql, err := sqlx.Connect("postgres", config.ConnectionString)
+	if err != nil {
+		panic(err)
+	}
+
+	db := database.New(psql)
+	owoClient := owo.NewClient(config.OwoToken)
+
+	bot := base.NewBot(config, db, logger.Named("meido"))
 	err = bot.Open()
 	if err != nil {
 		panic(err)
 	}
 
-	bot.RegisterMod(testmod.New("pings"))
-	//bot.RegisterMod(fishmod.New("fishing"))
-	bot.RegisterMod(loggermod.New("logs"))
-	bot.RegisterMod(utilitymod.New("utility"))
-	bot.RegisterMod(moderationmod.New("moderation"))
-	bot.RegisterMod(userrolemod.New("userrole"))
-	bot.RegisterMod(searchmod.New("search"))
-	bot.RegisterMod(googlemod.New("google"))
-	bot.RegisterMod(mediaconvertmod.New("mediaconvert"))
+	bot.RegisterMod(testmod.New())
+	//bot.RegisterMod(fishmod.New())
+	bot.RegisterMod(loggermod.New(config.DmLogChannels))
+	bot.RegisterMod(utilitymod.New(bot, db))
+	bot.RegisterMod(moderationmod.New(bot, db))
+	bot.RegisterMod(userrolemod.New(bot, db, owoClient))
+	bot.RegisterMod(searchmod.New(config.YouTubeToken))
+	bot.RegisterMod(googlemod.New(bot))
+	bot.RegisterMod(mediaconvertmod.New())
 
 	bot.Run()
 	defer bot.Close()
