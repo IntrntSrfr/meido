@@ -3,3 +3,5 @@
 *.iml
 .idea
 data/
+cmd/randtests/
+*.dat
