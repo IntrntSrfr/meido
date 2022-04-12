@@ -67,8 +67,6 @@ func (m *ModerationMod) muteCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	fmt.Println(msg.GuildID(), msg.AuthorID(), until)
-
 	// just unmute 4head
 	err = msg.Discord.Sess.GuildMemberTimeout(msg.GuildID(), targetMember.User.ID, &until)
 	if err != nil {
