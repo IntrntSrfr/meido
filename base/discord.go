@@ -126,6 +126,7 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 			return
 		}
 		m.Member.User = m.Author
+		m.Member.GuildID = m.GuildID
 	}
 
 	d.messageChan <- &DiscordMessage{
@@ -152,6 +153,7 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 			return
 		}
 		m.Member.User = m.Author
+		m.Member.GuildID = m.GuildID
 	}
 
 	d.messageChan <- &DiscordMessage{

@@ -7,7 +7,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
-	utils2 "github.com/intrntsrfr/meido/utils"
+	"github.com/intrntsrfr/meido/utils"
 	"image"
 	"image/color"
 	"image/draw"
@@ -63,6 +63,7 @@ func (m *UtilityMod) Hook() error {
 
 	m.RegisterCommand(NewPingCommand(m))
 	m.RegisterCommand(NewAvatarCommand(m))
+	m.RegisterCommand(NewMemberAvatarCommand(m))
 	m.RegisterCommand(NewAboutCommand(m))
 	m.RegisterCommand(NewServerCommand(m))
 	m.RegisterCommand(NewServerAvatarCommand(m))
@@ -123,70 +124,6 @@ func (m *UtilityMod) pingCommand(msg *base.DiscordMessage) {
 		fmt.Sprintf("Pong!\nDelay: %s", discordLatency))
 }
 
-func NewAvatarCommand(m *UtilityMod) *base.ModCommand {
-	return &base.ModCommand{
-		Mod:           m,
-		Name:          "avatar",
-		Description:   "Displays profile picture of user or mentioned user",
-		Triggers:      []string{"m?avatar", "m?av", ">av"},
-		Usage:         ">av | >av 123123123123",
-		Cooldown:      2,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
-		AllowDMs:      true,
-		Enabled:       true,
-		Run:           m.avatarCommand,
-	}
-}
-
-func (m *UtilityMod) avatarCommand(msg *base.DiscordMessage) {
-	if msg.LenArgs() < 1 {
-		return
-	}
-
-	var targetUser *discordgo.User
-	var err error
-
-	if msg.LenArgs() > 1 {
-		if len(msg.Message.Mentions) >= 1 {
-			targetUser = msg.Message.Mentions[0]
-		} else {
-			if _, err = strconv.Atoi(msg.Args()[1]); err != nil {
-				return
-			}
-			tm, err := msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
-			if err != nil {
-				targetUser, err = msg.Sess.User(msg.Args()[1])
-				if err != nil {
-					return
-				}
-			} else {
-				targetUser = tm.User
-			}
-		}
-	} else {
-		targetUser = msg.Message.Author
-	}
-
-	if targetUser == nil {
-		return
-	}
-
-	if targetUser.Avatar == "" {
-		msg.ReplyEmbed(&discordgo.MessageEmbed{
-			Color:       utils2.ColorCritical,
-			Description: fmt.Sprintf("%v has no avatar set.", targetUser.String()),
-		})
-	} else {
-		msg.ReplyEmbed(&discordgo.MessageEmbed{
-			Color: msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID),
-			Title: targetUser.String(),
-			Image: &discordgo.MessageEmbedImage{URL: targetUser.AvatarURL("1024")},
-		})
-	}
-}
-
 func NewServerCommand(m *UtilityMod) *base.ModCommand {
 	return &base.ModCommand{
 		Mod:           m,
@@ -243,11 +180,11 @@ func (m *UtilityMod) serverCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	ts := utils2.IDToTimestamp(g.ID)
+	ts := utils.IDToTimestamp(g.ID)
 	dur := time.Since(ts)
 
 	embed := discordgo.MessageEmbed{
-		Color: utils2.ColorInfo,
+		Color: utils.ColorInfo,
 		Author: &discordgo.MessageEmbedAuthor{
 			Name: g.Name,
 		},
@@ -338,7 +275,7 @@ func (m *UtilityMod) aboutCommand(msg *base.DiscordMessage) {
 
 	msg.ReplyEmbed(&discordgo.MessageEmbed{
 		Title: "About",
-		Color: utils2.ColorInfo,
+		Color: utils.ColorInfo,
 		Fields: []*discordgo.MessageEmbedField{
 			{
 				Name:   "Uptime",
@@ -401,13 +338,13 @@ func (m *UtilityMod) serverSplashCommand(msg *base.DiscordMessage) {
 	}
 
 	if g.Splash == "" {
-		msg.Reply("this server has no splash")
+		msg.Reply("This server doesn't have a splash!")
 		return
 	}
 
 	embed := &discordgo.MessageEmbed{
 		Title: g.Name,
-		Color: utils2.ColorInfo,
+		Color: utils.ColorInfo,
 		Image: &discordgo.MessageEmbedImage{
 			URL: fmt.Sprintf("https://cdn.discordapp.com/splashes/%v/%v.png?size=2048", g.ID, g.Splash),
 		},
@@ -419,7 +356,7 @@ func NewServerAvatarCommand(m *UtilityMod) *base.ModCommand {
 		Mod:           m,
 		Name:          "serveravatar",
 		Description:   "Displays server avatar if one exists",
-		Triggers:      []string{"m?serveravatar", "m?servericon"},
+		Triggers:      []string{"m?serveravatar", "m?servericon", "m?sav"},
 		Usage:         "m?servericon",
 		Cooldown:      5,
 		RequiredPerms: 0,
@@ -441,13 +378,13 @@ func (m *UtilityMod) serverIconCommand(msg *base.DiscordMessage) {
 	}
 
 	if g.Icon == "" {
-		msg.Reply("this server has no avatar")
+		msg.Reply("This server doesn't have an icon!")
 		return
 	}
 
 	embed := &discordgo.MessageEmbed{
 		Title: g.Name,
-		Color: utils2.ColorInfo,
+		Color: utils.ColorInfo,
 		Image: &discordgo.MessageEmbedImage{
 			URL: fmt.Sprintf("%v?size=2048", g.IconURL()),
 		},
@@ -483,12 +420,13 @@ func (m *UtilityMod) serverBannerCommand(msg *base.DiscordMessage) {
 
 	hash := g.BannerURL()
 	if hash == "" {
+		msg.Reply("This server doesn't have a banner!")
 		return
 	}
 
 	embed := &discordgo.MessageEmbed{
 		Title: g.Name,
-		Color: utils2.ColorInfo,
+		Color: utils.ColorInfo,
 		Image: &discordgo.MessageEmbedImage{
 			URL: fmt.Sprintf("https://cdn.discordapp.com/banners/%v/%v.png?size=2048", g.ID, g.Banner),
 		},
@@ -569,105 +507,6 @@ func (m *UtilityMod) inviteCommand(msg *base.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("Invite me to your server: %v\nSupport server: %v", botLink, serverLink))
 }
 
-func NewUserInfoCommand(m *UtilityMod) *base.ModCommand {
-	return &base.ModCommand{
-		Mod:           m,
-		Name:          "userinfo",
-		Description:   "Displays information about a user",
-		Triggers:      []string{"m?userinfo"},
-		Usage:         "m?userinfo | m?userinfo @user",
-		Cooldown:      1,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
-		AllowDMs:      false,
-		Enabled:       true,
-		Run:           m.userinfoCommand,
-	}
-}
-func (m *UtilityMod) userinfoCommand(msg *base.DiscordMessage) {
-
-	var (
-		targetUser   *discordgo.User
-		targetMember *discordgo.Member
-	)
-
-	if msg.LenArgs() > 1 {
-		if len(msg.Message.Mentions) >= 1 {
-			targetUser = msg.Message.Mentions[0]
-			targetMember, _ = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
-		} else {
-			_, err := strconv.Atoi(msg.Args()[1])
-			if err != nil {
-				return
-			}
-			targetMember, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
-			if err != nil {
-				targetUser, err = msg.Sess.User(msg.Args()[1])
-				if err != nil {
-					return
-				}
-			} else {
-				targetUser = targetMember.User
-			}
-		}
-	} else {
-		targetMember = msg.Member()
-		targetUser = msg.Author()
-	}
-
-	createTs := utils2.IDToTimestamp(targetUser.ID)
-	createDur := time.Since(createTs)
-
-	emb := &discordgo.MessageEmbed{
-		Title: fmt.Sprintf("User info | %v", targetUser.String()),
-		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: targetUser.AvatarURL("512"),
-		},
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "ID | Mention",
-				Value:  fmt.Sprintf("%v | <@!%v>", targetUser.ID, targetUser.ID),
-				Inline: false,
-			},
-			{
-				Name:   "Creation date",
-				Value:  fmt.Sprintf("%v | %v day(s) ago", createTs.Format(time.RFC1123), math.Floor(createDur.Hours()/24.0)),
-				Inline: false,
-			},
-		},
-	}
-
-	if targetMember != nil {
-		joinTs := targetMember.JoinedAt
-		joinDur := time.Since(joinTs)
-
-		nick := targetMember.Nick
-		if nick == "" {
-			nick = "None"
-		}
-
-		emb.Color = msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID)
-		emb.Fields = append(emb.Fields, &discordgo.MessageEmbedField{
-			Name:   "Join date",
-			Value:  fmt.Sprintf("%v | %v day(s) ago", joinTs.Format(time.RFC1123), math.Floor(joinDur.Hours()/24.0)),
-			Inline: false,
-		})
-		emb.Fields = append(emb.Fields, &discordgo.MessageEmbedField{
-			Name:   "Roles",
-			Value:  strconv.Itoa(len(targetMember.Roles)),
-			Inline: true,
-		})
-		emb.Fields = append(emb.Fields, &discordgo.MessageEmbedField{
-			Name:   "Nickname",
-			Value:  nick,
-			Inline: true,
-		})
-
-	}
-	msg.ReplyEmbed(emb)
-}
-
 func NewHelpCommand(m *UtilityMod) *base.ModCommand {
 	return &base.ModCommand{
 		Mod:           m,
@@ -688,7 +527,7 @@ func NewHelpCommand(m *UtilityMod) *base.ModCommand {
 func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 
 	emb := &discordgo.MessageEmbed{
-		Color: utils2.ColorInfo,
+		Color: utils.ColorInfo,
 		Footer: &discordgo.MessageEmbedFooter{
 			Text: "use m?help followed by folder name to see commands for that folder\nuse m?help followed by command name to see specific command help",
 		},
