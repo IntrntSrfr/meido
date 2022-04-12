@@ -49,7 +49,7 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 		s.State.TrackPresences = false
 		s.ShardCount = shardCount
 		s.ShardID = i
-		s.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers)
+		s.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers | discordgo.IntentMessageContent)
 
 		s.AddHandler(d.onMessageCreate)
 		s.AddHandler(d.onMessageUpdate)

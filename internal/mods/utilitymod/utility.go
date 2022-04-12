@@ -356,7 +356,7 @@ func NewServerAvatarCommand(m *UtilityMod) *base.ModCommand {
 		Mod:           m,
 		Name:          "serveravatar",
 		Description:   "Displays server avatar if one exists",
-		Triggers:      []string{"m?serveravatar", "m?servericon", "m?sav"},
+		Triggers:      []string{"m?serveravatar", "m?servericon", "m?sav", ">sav"},
 		Usage:         "m?servericon",
 		Cooldown:      5,
 		RequiredPerms: 0,
