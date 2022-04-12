@@ -6,6 +6,7 @@ import (
 	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/utils"
+	"go.uber.org/zap"
 	"strconv"
 	"strings"
 	"sync"
@@ -24,9 +25,10 @@ type UserRoleMod struct {
 	bot          *base.Bot
 	db           *database.DB
 	owo          *owo.Client
+	log          *zap.Logger
 }
 
-func New(b *base.Bot, db *database.DB, owo *owo.Client) base.Mod {
+func New(b *base.Bot, db *database.DB, owo *owo.Client, log *zap.Logger) base.Mod {
 	return &UserRoleMod{
 		name:         "UserRole",
 		commands:     make(map[string]*base.ModCommand),
@@ -35,6 +37,7 @@ func New(b *base.Bot, db *database.DB, owo *owo.Client) base.Mod {
 		bot:          b,
 		db:           db,
 		owo:          owo,
+		log:          log,
 	}
 }
 func (m *UserRoleMod) Name() string {

@@ -64,7 +64,7 @@ func main() {
 	bot.RegisterMod(loggermod.New(config.DmLogChannels))
 	bot.RegisterMod(utilitymod.New(bot, db))
 	bot.RegisterMod(moderationmod.New(bot, db, logger.Named("moderation")))
-	bot.RegisterMod(userrolemod.New(bot, db, owoClient))
+	bot.RegisterMod(userrolemod.New(bot, db, owoClient, logger.Named("userrole")))
 	bot.RegisterMod(searchmod.New(config.YouTubeToken))
 	bot.RegisterMod(googlemod.New(bot))
 	bot.RegisterMod(mediaconvertmod.New())

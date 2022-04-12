@@ -286,7 +286,7 @@ func NewWarnCountCommand(m *ModerationMod) *base.ModCommand {
 
 func (m *ModerationMod) warncountCommand(msg *base.DiscordMessage) {
 
-	dge := &database.Guild{}
+	dge := database.Guild{}
 	err := m.db.Get(&dge, "SELECT use_warns, max_warns FROM guild WHERE guild_id=$1", msg.Message.GuildID)
 	if err != nil {
 		return
