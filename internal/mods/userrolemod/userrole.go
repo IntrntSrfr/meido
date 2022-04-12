@@ -94,7 +94,7 @@ func (m *UserRoleMod) Hook() error {
 
 	m.RegisterCommand(NewSetUserRoleCommand(m))
 	m.RegisterCommand(NewMyRoleCommand(m))
-	m.RegisterCommand(NewListUserRolesCommand(m))
+	//m.RegisterCommand(NewListUserRolesCommand(m))
 	return nil
 }
 
@@ -352,6 +352,7 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
+/*
 func NewListUserRolesCommand(m *UserRoleMod) *base.ModCommand {
 	return &base.ModCommand{
 		Mod:           m,
@@ -412,3 +413,4 @@ func (m *UserRoleMod) listuserrolesCommand(msg *base.DiscordMessage) {
 	}
 	msg.Reply(fmt.Sprintf("User roles in %v\n%v", g.Name, link))
 }
+*/
