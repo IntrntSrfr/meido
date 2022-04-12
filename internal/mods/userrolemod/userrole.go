@@ -225,10 +225,9 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 			return
 		}
 
-		ur := &database.UserRole{}
-		err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, msg.Message.Author.ID)
+		ur, err := m.db.GetUserRole(msg.GuildID(), msg.AuthorID())
 		if err != nil && err != sql.ErrNoRows {
-			fmt.Println(err)
+			m.log.Error("error fetching user role", zap.Error(err))
 			msg.Reply("there was an error, please try again")
 			return
 		} else if err == sql.ErrNoRows {
@@ -309,11 +308,10 @@ func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	ur := &database.UserRole{}
-	err = m.db.Get(ur, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, target.User.ID)
+	ur, err := m.db.GetUserRole(msg.GuildID(), target.User.ID)
 	if err != nil && err != sql.ErrNoRows {
 		msg.Reply("there was an error, please try again")
-		fmt.Println(err)
+		m.log.Error("error fetching user role", zap.Error(err))
 		return
 	} else if err == sql.ErrNoRows {
 		msg.Reply("No custom role set.")
