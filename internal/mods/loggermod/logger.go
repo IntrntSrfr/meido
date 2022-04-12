@@ -6,6 +6,7 @@ import (
 	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/utils"
 	"sync"
+	"time"
 )
 
 type LoggerMod struct {
@@ -78,13 +79,13 @@ func (m *LoggerMod) forwardDmsPassive(msg *base.DiscordMessage) {
 		Title:       fmt.Sprintf("Message from %v", msg.Message.Author.String()),
 		Description: msg.Message.Content,
 		Footer:      &discordgo.MessageEmbedFooter{Text: msg.Message.Author.ID},
-		Timestamp:   msg.Message.Timestamp.String(),
+		Timestamp:   msg.Message.Timestamp.Format(time.RFC3339),
 	}
 	if len(msg.Message.Attachments) > 0 {
 		embed.Image = &discordgo.MessageEmbedImage{URL: msg.Message.Attachments[0].URL}
 	}
 
 	for _, id := range m.dmLogChannels {
-		msg.Sess.ChannelMessageSendEmbed(id, embed)
+		_, _ = msg.Sess.ChannelMessageSendEmbed(id, embed)
 	}
 }
