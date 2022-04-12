@@ -127,7 +127,7 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 			return
 		}
 
-		m.db.ClearActiveUserWarns(msg.Sess.State.User.ID, g.ID, targetUser.User.ID)
+		m.db.ClearActiveUserWarns(msg.GuildID(), targetUser.User.ID, msg.Sess.State.User.ID)
 		msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns", targetUser.Mention()))
 
 	} else {

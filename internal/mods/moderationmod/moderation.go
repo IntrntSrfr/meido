@@ -261,8 +261,13 @@ func (m *ModerationMod) banCommand(msg *base.DiscordMessage) {
 	}
 
 	// clear all active warns
-	_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
-		msg.Sess.State.User.ID, time.Now(), msg.Message.GuildID, targetUser.ID)
+	err = m.db.ClearActiveUserWarns(msg.GuildID(), targetUser.ID, msg.AuthorID())
+	if err != nil {
+		m.log.Error("could not clear user warns", zap.Error(err))
+	}
+
+	//_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
+	//	msg.Sess.State.User.ID, time.Now(), msg.Message.GuildID, targetUser.ID)
 
 	embed := &discordgo.MessageEmbed{
 		Title: "User banned",

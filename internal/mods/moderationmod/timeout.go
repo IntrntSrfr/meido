@@ -1,11 +1,9 @@
 package moderationmod
 
 import (
-	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/utils"
 	"time"
 )
 
@@ -49,8 +47,7 @@ func (m *ModerationMod) muteCommand(msg *base.DiscordMessage) {
 	until := time.Now().Add(duration)
 
 	// get the target member
-	//targetMember, err := msg.GetMember(1)
-	targetMember, err := getMemberAtArg(msg, 1)
+	targetMember, err := msg.GetMemberAtArg(1)
 	if err != nil {
 		return
 	}
@@ -106,8 +103,7 @@ func (m *ModerationMod) unmuteCommand(msg *base.DiscordMessage) {
 	}
 
 	// get the target member
-	//targetMember, err := msg.GetMember(1)
-	targetMember, err := getMemberAtArg(msg, 1)
+	targetMember, err := msg.GetMemberAtArg(1)
 	if err != nil {
 		return
 	}
@@ -139,37 +135,4 @@ func (m *ModerationMod) unmuteCommand(msg *base.DiscordMessage) {
 		return
 	}
 	_, _ = msg.Reply(fmt.Sprintf("unmuted %v", targetMember.User))
-}
-
-func getMemberAtArg(msg *base.DiscordMessage, index int) (*discordgo.Member, error) {
-	fmt.Println(len(msg.Args()), index)
-	if len(msg.Args()) <= index {
-		return nil, errors.New("index out of range")
-	}
-	str := msg.Args()[index]
-	userID := utils.TrimUserID(str)
-	if !utils.IsNumber(userID) {
-		return nil, errors.New(fmt.Sprintf("%s could not be parsed as a number", userID))
-	}
-	return msg.Discord.Member(msg.GuildID(), userID)
-}
-
-func getUserAtArg(msg *base.DiscordMessage, index int) (*discordgo.User, error) {
-	if len(msg.Args()) <= index {
-		return nil, errors.New("index out of range")
-	}
-	str := msg.Args()[index]
-	userID := utils.TrimUserID(str)
-	if !utils.IsNumber(userID) {
-		return nil, errors.New(fmt.Sprintf("%s could not be parsed as a number", userID))
-	}
-	return msg.Sess.User(userID)
-}
-
-func getMemberOrUserAtArg(msg *base.DiscordMessage, index int) (*discordgo.User, error) {
-	member, err := getMemberAtArg(msg, index)
-	if err != nil {
-		return getUserAtArg(msg, index)
-	}
-	return member.User, nil
 }

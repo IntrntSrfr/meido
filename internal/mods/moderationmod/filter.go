@@ -246,7 +246,7 @@ func (m *ModerationMod) checkfilterPassive(msg *base.DiscordMessage) {
 	isIllegal := false
 	trigger := ""
 
-	if perms, err := msg.HasPermissions(discordgo.PermissionManageMessages); err != nil || !perms {
+	if perms, err := msg.HasPermissions(discordgo.PermissionManageMessages); err != nil || perms {
 		return
 	}
 

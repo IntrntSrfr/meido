@@ -29,6 +29,7 @@ Features include:
   * Ban / Unban
   * Filter and warns
   * Lockdowns
+  * Timeouts
 * Userroles
 * Youtube and Google image search
 * Utilities
@@ -36,8 +37,8 @@ Features include:
   * Server info
   * User info
   * Color lookup
-* Media conversion
-* Fishing for the boomer inside you
+* Automatic media conversion
+* Fishing for the boomer inside you (currently on a break)
 
 The feature list will increase as time goes.
 Some ideas for more features include:
@@ -47,6 +48,5 @@ Some ideas for more features include:
 * Gambling
 * XP and level system (maybe, as there are already tons of other bots with this feature)
 * Autoroles
-* Logging
 
 Ideas for other features are more than welcome!
