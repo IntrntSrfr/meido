@@ -155,7 +155,6 @@ func (m *DiscordMessage) ChannelID() string {
 }
 
 func (m *DiscordMessage) GetMemberAtArg(index int) (*discordgo.Member, error) {
-	fmt.Println(len(m.Args()), index)
 	if len(m.Args()) <= index {
 		return nil, errors.New("index out of range")
 	}
