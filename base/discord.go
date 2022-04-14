@@ -352,6 +352,19 @@ func (d *Discord) Role(guildID, roleID string) (*discordgo.Role, error) {
 	return nil, err
 }
 
+func (d *Discord) GuildRoleByName(guildID, roleName string) (*discordgo.Role, error) {
+	g, err := d.Guild(guildID)
+	if err != nil {
+		return nil, err
+	}
+	for _, role := range g.Roles {
+		if role.Name == roleName {
+			return role, nil
+		}
+	}
+	return nil, discordgo.ErrStateNotFound
+}
+
 // IsBotOwner returns whether the author of a DiscordMessage is a bot owner by checking
 // the IDs in the ownerIDs in the Discord struct.
 func (d *Discord) IsBotOwner(msg *DiscordMessage) bool {
