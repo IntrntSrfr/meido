@@ -1,12 +1,9 @@
 package searchmod
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/intrntsrfr/meido/base"
-	"io/ioutil"
-	"net/http"
-	"net/url"
+	"github.com/intrntsrfr/meido/internal/services"
 	"strings"
 	"sync"
 )
@@ -17,16 +14,16 @@ type SearchMod struct {
 	commands     map[string]*base.ModCommand
 	allowedTypes base.MessageType
 	allowDMs     bool
-	youtubeToken string
+	search       *services.SearchService
 }
 
-func New(ytToken string) base.Mod {
+func New(s *services.SearchService) base.Mod {
 	return &SearchMod{
 		name:         "Search",
 		commands:     make(map[string]*base.ModCommand),
 		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     true,
-		youtubeToken: ytToken,
+		search:       s,
 	}
 }
 
@@ -80,52 +77,15 @@ func (m *SearchMod) youtubeCommand(msg *base.DiscordMessage) {
 	}
 
 	query := strings.Join(msg.Args()[1:], " ")
-	URI, _ := url.Parse("https://www.googleapis.com/youtube/v3/search")
-
-	params := url.Values{}
-	params.Add("key", m.youtubeToken)
-	params.Add("q", query)
-	params.Add("type", "video")
-	params.Add("part", "snippet")
-	URI.RawQuery = params.Encode()
-
-	req, err := http.NewRequest("GET", URI.String(), nil)
+	ids, err := m.search.SearchGoogleImages(query)
 	if err != nil {
-		return
+		msg.Reply("Could not fetch images :(")
 	}
 
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		return
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return
-	}
-
-	result := YoutubeSearchResponse{}
-
-	json.Unmarshal(body, &result)
-
-	if len(result.Items) < 1 {
+	if len(ids) < 1 {
 		msg.Reply("I got no results for that :(")
 		return
 	}
 
-	id := result.Items[0].ID.VideoID
-	msg.Reply("https://youtube.com/watch?v=" + id)
-}
-
-type YoutubeSearchResponse struct {
-	Items []struct {
-		ID struct {
-			VideoID string `json:"videoId"`
-		} `json:"id"`
-	} `json:"items"`
+	msg.Reply("https://youtube.com/watch?v=" + ids[0])
 }
