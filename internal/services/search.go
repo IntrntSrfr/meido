@@ -70,7 +70,7 @@ func (s *SearchService) SearchGoogleImages(query string) ([]string, error) {
 	return links, nil
 }
 
-func (s *SearchService) SearchYoutube(query string) ([]string, error) {
+func (s *SearchService) SearchYouTube(query string) ([]string, error) {
 	URI, _ := url.Parse("https://www.googleapis.com/youtube/v3/search")
 	params := url.Values{}
 	params.Add("key", s.youtubeToken)

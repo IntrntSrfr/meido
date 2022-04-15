@@ -89,7 +89,7 @@ func (m *SearchMod) youtubeCommand(msg *base.DiscordMessage) {
 	}
 
 	query := strings.Join(msg.Args()[1:], " ")
-	ids, err := m.search.SearchGoogleImages(query)
+	ids, err := m.search.SearchYouTube(query)
 	if err != nil {
 		msg.Reply("There was an issue, please try again!")
 	}
