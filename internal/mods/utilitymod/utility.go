@@ -547,7 +547,7 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 
 		for _, mod := range m.bot.Mods {
 			if mod.Name() == inp {
-				// this can maybe be replaced by making a helptext method for every mod so they have more control
+				// this can maybe be replaced by making a helptext method for every mod, so they have more control
 				// over what they want to display, if they even want to display anything.
 
 				list := strings.Builder{}

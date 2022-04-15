@@ -32,23 +32,11 @@ func (m *ModerationMod) autoroleCommand(msg *base.DiscordMessage) {
 		msg.Reply("Cleared autorole")
 		return
 	} else {
-		g, err := msg.Discord.Guild(msg.Message.GuildID)
-		if err != nil {
-			msg.Reply("an error occurred, try again")
-			return
-		}
-
 		query := strings.Join(msg.Args()[1:], " ")
 
-		var role *discordgo.Role
-		for _, gRole := range g.Roles {
-			if gRole.Name == query {
-				role = gRole
-			}
-		}
-
-		if role == nil {
-			msg.Reply("Could not find that role")
+		role, err := msg.Discord.GuildRoleByName(msg.GuildID(), query)
+		if err != nil {
+			msg.Reply("Couldn't find that role!")
 			return
 		}
 

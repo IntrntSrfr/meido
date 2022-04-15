@@ -228,9 +228,15 @@ func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
 
 // logCommand logs an executed command
 func (b *Bot) logCommand(msg *DiscordMessage, cmd *ModCommand) {
+	var gid *string
+	gidStr := msg.GuildID()
+	if gidStr != "" {
+		gid = &gidStr
+	}
+
 	_, err := b.DB.Exec("INSERT INTO command_log VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
-		cmd.Name, strings.Join(msg.Args(), " "), msg.Message.Author.ID, msg.Message.GuildID,
-		msg.Message.ChannelID, msg.Message.ID, time.Now())
+		cmd.Name, strings.Join(msg.Args(), " "), msg.AuthorID(), gid,
+		msg.ChannelID(), msg.Message.ID, time.Now())
 	if err != nil {
 		b.Log.Error("error logging command", zap.Error(err))
 	}

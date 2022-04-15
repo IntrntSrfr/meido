@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
-	"github.com/intrntsrfr/meido/internal/mods/googlemod"
 	"github.com/intrntsrfr/meido/internal/mods/loggermod"
 	"github.com/intrntsrfr/meido/internal/mods/mediaconvertmod"
 	"github.com/intrntsrfr/meido/internal/mods/moderationmod"
@@ -12,6 +11,7 @@ import (
 	"github.com/intrntsrfr/meido/internal/mods/testmod"
 	"github.com/intrntsrfr/meido/internal/mods/userrolemod"
 	"github.com/intrntsrfr/meido/internal/mods/utilitymod"
+	"github.com/intrntsrfr/meido/internal/services"
 	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
 	"go.uber.org/zap"
@@ -52,6 +52,7 @@ func main() {
 
 	db := database.New(psql)
 	owoClient := owo.NewClient(config.OwoToken)
+	searchService := services.NewSearchService(config.YouTubeToken)
 
 	bot := base.NewBot(config, db, logger.Named("meido"))
 	err = bot.Open()
@@ -65,11 +66,13 @@ func main() {
 	bot.RegisterMod(utilitymod.New(bot, db))
 	bot.RegisterMod(moderationmod.New(bot, db, logger.Named("moderation")))
 	bot.RegisterMod(userrolemod.New(bot, db, owoClient, logger.Named("userrole")))
-	bot.RegisterMod(searchmod.New(config.YouTubeToken))
-	bot.RegisterMod(googlemod.New(bot))
+	bot.RegisterMod(searchmod.New(bot, searchService))
 	bot.RegisterMod(mediaconvertmod.New())
 
-	bot.Run()
+	err = bot.Run()
+	if err != nil {
+		panic(err)
+	}
 	defer bot.Close()
 
 	sc := make(chan os.Signal, 1)

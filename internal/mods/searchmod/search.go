@@ -1,14 +1,14 @@
 package searchmod
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/base"
-	"io/ioutil"
-	"net/http"
-	"net/url"
+	"github.com/intrntsrfr/meido/internal/services"
+	"github.com/intrntsrfr/meido/utils"
 	"strings"
 	"sync"
+	"time"
 )
 
 type SearchMod struct {
@@ -17,16 +17,20 @@ type SearchMod struct {
 	commands     map[string]*base.ModCommand
 	allowedTypes base.MessageType
 	allowDMs     bool
-	youtubeToken string
+	bot          *base.Bot
+	search       *services.SearchService
+	imageCache   *services.ImageSearchCache
 }
 
-func New(ytToken string) base.Mod {
+func New(b *base.Bot, s *services.SearchService) base.Mod {
 	return &SearchMod{
 		name:         "Search",
 		commands:     make(map[string]*base.ModCommand),
 		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     true,
-		youtubeToken: ytToken,
+		bot:          b,
+		search:       s,
+		imageCache:   services.NewImageSearchCache(),
 	}
 }
 
@@ -47,6 +51,11 @@ func (m *SearchMod) AllowDMs() bool {
 }
 func (m *SearchMod) Hook() error {
 	m.RegisterCommand(NewYouTubeCommand(m))
+	m.RegisterCommand(NewImageCommand(m))
+
+	m.bot.Discord.AddEventHandler(m.MessageReactionAddHandler)
+	m.bot.Discord.AddEventHandler(m.MessageReactionRemoveHandler)
+
 	return nil
 }
 func (m *SearchMod) RegisterCommand(cmd *base.ModCommand) {
@@ -64,7 +73,7 @@ func NewYouTubeCommand(m *SearchMod) *base.ModCommand {
 		Name:          "youtube",
 		Description:   "Search for a YouTube video",
 		Triggers:      []string{"m?youtube", "m?yt"},
-		Usage:         "m?yt deez nuts",
+		Usage:         "m?yt [query]",
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
@@ -80,52 +89,111 @@ func (m *SearchMod) youtubeCommand(msg *base.DiscordMessage) {
 	}
 
 	query := strings.Join(msg.Args()[1:], " ")
-	URI, _ := url.Parse("https://www.googleapis.com/youtube/v3/search")
-
-	params := url.Values{}
-	params.Add("key", m.youtubeToken)
-	params.Add("q", query)
-	params.Add("type", "video")
-	params.Add("part", "snippet")
-	URI.RawQuery = params.Encode()
-
-	req, err := http.NewRequest("GET", URI.String(), nil)
+	ids, err := m.search.SearchGoogleImages(query)
 	if err != nil {
-		return
+		msg.Reply("There was an issue, please try again!")
 	}
 
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != 200 {
-		return
-	}
-
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		return
-	}
-
-	result := YoutubeSearchResponse{}
-
-	json.Unmarshal(body, &result)
-
-	if len(result.Items) < 1 {
+	if len(ids) < 1 {
 		msg.Reply("I got no results for that :(")
 		return
 	}
 
-	id := result.Items[0].ID.VideoID
-	msg.Reply("https://youtube.com/watch?v=" + id)
+	msg.Reply("https://youtube.com/watch?v=" + ids[0])
 }
 
-type YoutubeSearchResponse struct {
-	Items []struct {
-		ID struct {
-			VideoID string `json:"videoId"`
-		} `json:"id"`
-	} `json:"items"`
+func NewImageCommand(m *SearchMod) *base.ModCommand {
+	return &base.ModCommand{
+		Mod:           m,
+		Name:          "image",
+		Description:   "Search for an image",
+		Triggers:      []string{"m?image", "m?img", "m?im"},
+		Usage:         "m?img [query]",
+		Cooldown:      2,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  base.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.googleCommand,
+	}
+}
+
+func (m *SearchMod) googleCommand(msg *base.DiscordMessage) {
+	if msg.LenArgs() < 2 {
+		return
+	}
+
+	query := strings.Join(msg.Args()[1:], " ")
+	links, err := m.search.SearchGoogleImages(query)
+	if err != nil {
+		msg.Reply("There was an issue, please try again!")
+		return
+	}
+
+	if len(links) < 1 {
+		msg.Reply("I got no results for that :(")
+		return
+	}
+
+	reply, err := msg.ReplyEmbed(&discordgo.MessageEmbed{
+		Title: "google search",
+		Color: utils.ColorInfo,
+		Author: &discordgo.MessageEmbedAuthor{
+			Name:    msg.Message.Author.String(),
+			IconURL: msg.Message.Author.AvatarURL("512"),
+		},
+		Image: &discordgo.MessageEmbedImage{
+			URL: links[0],
+		},
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: fmt.Sprintf("entry [ %v / %v ]", 0, len(links)-1),
+		},
+	})
+	if err != nil {
+		return
+	}
+
+	_ = msg.Sess.MessageReactionAdd(msg.Message.ChannelID, reply.ID, "⬅")
+	_ = msg.Sess.MessageReactionAdd(msg.Message.ChannelID, reply.ID, "➡")
+	_ = msg.Sess.MessageReactionAdd(msg.Message.ChannelID, reply.ID, "⏹")
+
+	m.imageCache.Set(services.NewImageSearch(msg.Message, reply, links))
+
+	go time.AfterFunc(time.Second*30, func() {
+		msg.Sess.MessageReactionsRemoveAll(msg.Message.ChannelID, reply.ID)
+		m.imageCache.Delete(reply.ID)
+	})
+}
+
+func (m *SearchMod) MessageReactionAddHandler(s *discordgo.Session, msg *discordgo.MessageReactionAdd) {
+	m.reactionHandler(s, msg.MessageReaction)
+}
+
+func (m *SearchMod) MessageReactionRemoveHandler(s *discordgo.Session, msg *discordgo.MessageReactionRemove) {
+	m.reactionHandler(s, msg.MessageReaction)
+}
+
+func (m *SearchMod) reactionHandler(s *discordgo.Session, msg *discordgo.MessageReaction) {
+	search, ok := m.imageCache.Get(msg.MessageID)
+	if !ok {
+		return
+	}
+
+	if msg.UserID != search.AuthorID() {
+		return
+	}
+
+	switch msg.Emoji.Name {
+	case "⬅":
+		emb := search.UpdateEmbed(-1)
+		s.ChannelMessageEditEmbed(msg.ChannelID, search.BotMsgID(), emb)
+	case "➡":
+		emb := search.UpdateEmbed(1)
+		s.ChannelMessageEditEmbed(msg.ChannelID, search.BotMsgID(), emb)
+	case "⏹":
+		s.ChannelMessageDelete(msg.ChannelID, search.BotMsgID())
+		s.ChannelMessageDelete(msg.ChannelID, search.AuthorMsgID())
+		m.imageCache.Delete(search.BotMsgID())
+	}
 }

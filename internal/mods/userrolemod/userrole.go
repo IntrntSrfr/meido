@@ -68,7 +68,7 @@ func (m *UserRoleMod) Hook() error {
 
 					var userRoles []*database.UserRole
 
-					err := m.db.Get(&userRoles, "SELECT * FROM userroles WHERE guild_id=$1", g.ID)
+					err := m.db.Get(&userRoles, "SELECT * FROM user_role WHERE guild_id=$1", g.ID)
 					if err != nil {
 						continue
 					}
@@ -84,7 +84,7 @@ func (m *UserRoleMod) Hook() error {
 						}
 
 						if !hasRole {
-							m.db.Exec("DELETE FROM userroles WHERE uid=$1", ur.UID)
+							m.db.Exec("DELETE FROM user_role WHERE uid=$1", ur.UID)
 						}
 					}
 				}
@@ -161,18 +161,18 @@ func (m *UserRoleMod) setuserroleCommand(msg *base.DiscordMessage) {
 	}
 
 	userRole := &database.UserRole{}
-	err = m.db.Get(userRole, "SELECT * FROM userroles WHERE guild_id=$1 AND user_id=$2", g.ID, targetMember.User.ID)
+	err = m.db.Get(userRole, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", g.ID, targetMember.User.ID)
 	switch err {
 	case nil:
 		if selectedRole.ID == userRole.RoleID {
-			m.db.Exec("DELETE FROM userroles WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetMember.User.ID, selectedRole.ID)
+			m.db.Exec("DELETE FROM user_role WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetMember.User.ID, selectedRole.ID)
 			msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetMember.User.String()))
 		} else {
-			m.db.Exec("UPDATE userroles SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetMember.User.ID)
+			m.db.Exec("UPDATE user_role SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetMember.User.ID)
 			msg.Reply(fmt.Sprintf("Updated userrole for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
 		}
 	case sql.ErrNoRows:
-		m.db.Exec("INSERT INTO userroles(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
+		m.db.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
 		msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
 	default:
 		fmt.Println(err)
