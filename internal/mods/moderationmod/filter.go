@@ -37,9 +37,9 @@ func (m *ModerationMod) filterwordCommand(msg *base.DiscordMessage) {
 	phrase := strings.Join(msg.Args()[1:], " ")
 	phrase = strings.ToLower(phrase)
 
-	// this can be changed to just one statement probably
+	// this can be changed to just one statement probably,
 	// or it can use a function instead
-	// it looks so shit ugly
+	// it looks so ugly
 	_, err := m.db.GetFilter(msg.GuildID(), phrase)
 	switch err {
 	case nil:

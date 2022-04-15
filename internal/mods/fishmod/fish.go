@@ -99,7 +99,7 @@ func NewFishCommand(m *FishMod) *base.ModCommand {
 
 func (m *FishMod) fishCommand(msg *base.DiscordMessage) {
 
-	// if msg is sent in guild, check if its sent in the fishing channel
+	// if msg is sent in guild, check if it's sent in the fishing channel
 	if !msg.IsDM() && m.db.GetGuildFishingChannel(msg.GuildID()) != msg.ChannelID() {
 		fmt.Println("first")
 		return

@@ -3,11 +3,14 @@ package services
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 var imageReg = regexp.MustCompile(`"(http)s?://([^"])*\.(gif|png|jpg)",`)
@@ -105,4 +108,82 @@ type youtubeSearchResponse struct {
 			VideoID string `json:"videoId"`
 		} `json:"id"`
 	} `json:"items"`
+}
+
+type ImageSearchCache struct {
+	sync.Mutex
+	images map[string]*ImageSearch
+}
+
+func NewImageSearchCache() *ImageSearchCache {
+	return &ImageSearchCache{images: make(map[string]*ImageSearch)}
+}
+
+func (c *ImageSearchCache) Set(i *ImageSearch) {
+	c.Lock()
+	defer c.Unlock()
+	c.images[i.BotMsgID()] = i
+}
+func (c *ImageSearchCache) Get(id string) (*ImageSearch, bool) {
+	c.Lock()
+	defer c.Unlock()
+	if img, ok := c.images[id]; ok {
+		return img, true
+	}
+	return nil, false
+}
+func (c *ImageSearchCache) Delete(id string) {
+	c.Lock()
+	defer c.Unlock()
+	delete(c.images, id)
+}
+
+type ImageSearch struct {
+	sync.Mutex
+	AuthorMsg  *discordgo.Message
+	BotMsg     *discordgo.Message
+	ImageLinks []string
+	ImageIndex int
+}
+
+func NewImageSearch(a, b *discordgo.Message, links []string) *ImageSearch {
+	return &ImageSearch{
+		AuthorMsg:  a,
+		BotMsg:     b,
+		ImageLinks: links,
+		ImageIndex: 0,
+	}
+}
+
+func (i *ImageSearch) AuthorID() string {
+	if i.AuthorMsg == nil || i.AuthorMsg.Author == nil {
+		return ""
+	}
+	return i.AuthorMsg.Author.ID
+}
+func (i *ImageSearch) AuthorMsgID() string {
+	if i.AuthorMsg == nil {
+		return ""
+	}
+	return i.AuthorMsg.ID
+}
+func (i *ImageSearch) BotMsgID() string {
+	if i.BotMsg == nil {
+		return ""
+	}
+	return i.BotMsg.ID
+}
+
+func (i *ImageSearch) UpdateEmbed(delta int) *discordgo.MessageEmbed {
+	newIndex := i.ImageIndex + delta
+	if newIndex > len(i.ImageLinks)-1 {
+		newIndex = 0
+	} else if newIndex < 0 {
+		newIndex = len(i.ImageLinks) - 1
+	}
+	emb := i.BotMsg.Embeds[0]
+	emb.Image.URL = i.ImageLinks[newIndex]
+	emb.Footer.Text = fmt.Sprintf("Image [ %v / %v ]", newIndex+1, len(i.ImageLinks))
+	i.ImageIndex = newIndex
+	return emb
 }

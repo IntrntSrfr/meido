@@ -5,7 +5,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/intrntsrfr/meido)](https://goreportcard.com/report/github.com/intrntsrfr/meido)
 [![Go Reference](https://pkg.go.dev/badge/github.com/intrntsrfr/meido.svg)](https://pkg.go.dev/github.com/intrntsrfr/meido)
 
-A multi-purpose Discord bot written in Golang, using [DiscordGo](https://github.com/bwmarrin/discordgo/).
+A multipurpose Discord bot written in Golang, using [DiscordGo](https://github.com/bwmarrin/discordgo/).
 
 [Invite Meido to your server!](https://discordapp.com/oauth2/authorize?client_id=394162399348785152&scope=bot)
 
@@ -13,7 +13,7 @@ A multi-purpose Discord bot written in Golang, using [DiscordGo](https://github.
 
 ## Introduction
 
-Meido (メイド), is a multi-purpose Discord bot written in Golang, using [DiscordGo](https://github.com/bwmarrin/discordgo/).
+Meido (メイド), is a multipurpose Discord bot written in Golang, using [DiscordGo](https://github.com/bwmarrin/discordgo/).
 Meido's main focus is to be a useful, helpful and fun bot for servers of all sizes. Meido provides simple yet effective
 ways to help control a server. It has several commands used for moderation, such as a word filter, warning system,
 autoroles and userroles. Simplicity and a good user experience is what I would like for Meido to aim for, and so I
@@ -31,7 +31,7 @@ Features include:
   * Lockdowns
   * Timeouts
 * Userroles
-* Youtube and Google image search
+* YouTube and Google image search
 * Utilities
   * Avatar
   * Server info
