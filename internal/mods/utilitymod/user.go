@@ -94,7 +94,7 @@ func (m *UtilityMod) bannerCommand(msg *base.DiscordMessage) {
 	}
 
 	if targetUser.Banner == "" {
-		msg.Reply(fmt.Sprintf("**%v** doesn't have a server avatar!", targetUser.String()))
+		msg.Reply(fmt.Sprintf("**%v** doesn't have a banner!", targetUser.String()))
 		return
 	}
 
