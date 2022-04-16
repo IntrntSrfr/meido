@@ -216,11 +216,11 @@ func (m *UtilityMod) serverCommand(msg *base.DiscordMessage) {
 			},
 		},
 	}
-	if g.Icon != "" {
+	if hash := g.IconURL(); hash != "" {
 		embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-			URL: fmt.Sprintf("https://cdn.discordapp.com/icons/%v/%v.png", g.ID, g.Icon),
+			URL: fmt.Sprintf("%v?size=1024", hash),
 		}
-		embed.Author.IconURL = fmt.Sprintf("https://cdn.discordapp.com/icons/%v/%v.png", g.ID, g.Icon)
+		embed.Author.IconURL = fmt.Sprintf("%v?size=256", hash)
 	}
 
 	msg.ReplyEmbed(&embed)
@@ -347,7 +347,7 @@ func (m *UtilityMod) serverSplashCommand(msg *base.DiscordMessage) {
 		Title: g.Name,
 		Color: utils.ColorInfo,
 		Image: &discordgo.MessageEmbedImage{
-			URL: fmt.Sprintf("https://cdn.discordapp.com/splashes/%v/%v.png?size=2048", g.ID, g.Splash),
+			URL: fmt.Sprintf("%v?size=2048", discordgo.EndpointGuildSplash(g.ID, g.Splash)),
 		},
 	}
 	msg.ReplyEmbed(embed)
@@ -429,7 +429,7 @@ func (m *UtilityMod) serverBannerCommand(msg *base.DiscordMessage) {
 		Title: g.Name,
 		Color: utils.ColorInfo,
 		Image: &discordgo.MessageEmbedImage{
-			URL: fmt.Sprintf("https://cdn.discordapp.com/banners/%v/%v.png?size=2048", g.ID, g.Banner),
+			URL: fmt.Sprintf("%v?size=2048", hash),
 		},
 	}
 	msg.ReplyEmbed(embed)
