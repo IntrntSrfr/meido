@@ -63,6 +63,7 @@ func (m *UtilityMod) Hook() error {
 
 	m.RegisterCommand(NewPingCommand(m))
 	m.RegisterCommand(NewAvatarCommand(m))
+	m.RegisterCommand(NewBannerCommand(m))
 	m.RegisterCommand(NewMemberAvatarCommand(m))
 	m.RegisterCommand(NewAboutCommand(m))
 	m.RegisterCommand(NewServerCommand(m))

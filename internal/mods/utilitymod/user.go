@@ -53,6 +53,58 @@ func (m *UtilityMod) avatarCommand(msg *base.DiscordMessage) {
 	})
 }
 
+func NewBannerCommand(m *UtilityMod) *base.ModCommand {
+	return &base.ModCommand{
+		Mod:           m,
+		Name:          "banner",
+		Description:   "Displays a users banner. User can be specified. Author is default.",
+		Triggers:      []string{"m?banner", ">banner"},
+		Usage:         ">banner <user>",
+		Cooldown:      1,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		AllowedTypes:  base.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run:           m.bannerCommand,
+	}
+}
+
+func (m *UtilityMod) bannerCommand(msg *base.DiscordMessage) {
+	if msg.LenArgs() < 1 {
+		return
+	}
+
+	targetUserID := msg.AuthorID()
+
+	if msg.LenArgs() > 1 {
+		targetUserID = msg.Args()[1]
+	}
+
+	targetUserID = utils.TrimUserID(targetUserID)
+	if !utils.IsNumber(targetUserID) {
+		fmt.Println("thing isnt number")
+		return
+	}
+
+	targetUser, err := msg.Sess.User(targetUserID)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if targetUser.Banner == "" {
+		msg.Reply(fmt.Sprintf("**%v** doesn't have a server avatar!", targetUser.String()))
+		return
+	}
+
+	msg.ReplyEmbed(&discordgo.MessageEmbed{
+		Color: msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID),
+		Title: targetUser.String(),
+		Image: &discordgo.MessageEmbedImage{URL: targetUser.BannerURL("1024")},
+	})
+}
+
 func NewMemberAvatarCommand(m *UtilityMod) *base.ModCommand {
 	return &base.ModCommand{
 		Mod:           m,
