@@ -3,11 +3,6 @@ package utilitymod
 import (
 	"bytes"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/dustin/go-humanize"
-	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/database"
-	"github.com/intrntsrfr/meido/utils"
 	"image"
 	"image/color"
 	"image/draw"
@@ -18,6 +13,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/dustin/go-humanize"
+	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/database"
+	"github.com/intrntsrfr/meido/utils"
 )
 
 type UtilityMod struct {
@@ -132,7 +133,7 @@ func NewServerCommand(m *UtilityMod) *base.ModCommand {
 		Description:   "Displays information about the server",
 		Triggers:      []string{"m?server"},
 		Usage:         "m?server",
-		Cooldown:      10,
+		Cooldown:      5,
 		RequiredPerms: 0,
 		RequiresOwner: false,
 		AllowedTypes:  base.MessageTypeCreate,
@@ -233,7 +234,7 @@ func NewAboutCommand(m *UtilityMod) *base.ModCommand {
 		Description:   "Displays Meido statistics",
 		Triggers:      []string{"m?about"},
 		Usage:         "m?about",
-		Cooldown:      10,
+		Cooldown:      5,
 		RequiredPerms: 0,
 		RequiresOwner: false,
 		AllowDMs:      true,
@@ -441,7 +442,7 @@ func NewColorCommand(m *UtilityMod) *base.ModCommand {
 		Name:          "color",
 		Description:   "Displays a hex color",
 		Triggers:      []string{"m?color"},
-		Usage:         "m?color #c0ffee\nm?color c0ffee",
+		Usage:         "m?color [hex color]",
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
@@ -515,7 +516,7 @@ func NewHelpCommand(m *UtilityMod) *base.ModCommand {
 		Description:   "Displays helpful things",
 		Triggers:      []string{"m?help", "m?h"},
 		Usage:         "m?help | m?help about",
-		Cooldown:      3,
+		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
 		AllowedTypes:  base.MessageTypeCreate,
@@ -530,7 +531,7 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 	emb := &discordgo.MessageEmbed{
 		Color: utils.ColorInfo,
 		Footer: &discordgo.MessageEmbedFooter{
-			Text: "use m?help followed by folder name to see commands for that folder\nuse m?help followed by command name to see specific command help",
+			Text: "Use m?help [plugin] to see plugin commands.\nUse m?help [command] to see command info.",
 		},
 	}
 	switch msg.LenArgs() {
@@ -539,7 +540,7 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 		for _, mod := range m.bot.Mods {
 			desc.WriteString(fmt.Sprintf("- %v\n", mod.Name()))
 		}
-		emb.Title = "Meido folders"
+		emb.Title = "Meido plugins"
 		emb.Description = desc.String()
 		msg.ReplyEmbed(emb)
 	case 2:
@@ -547,7 +548,7 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 		inp := strings.ToLower(msg.Args()[1])
 
 		for _, mod := range m.bot.Mods {
-			if mod.Name() == inp {
+			if strings.ToLower(mod.Name()) == strings.ToLower(inp) {
 				// this can maybe be replaced by making a helptext method for every mod, so they have more control
 				// over what they want to display, if they even want to display anything.
 
@@ -562,9 +563,13 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 				for _, cmd := range mod.Commands() {
 					list.WriteString(fmt.Sprintf("- %v\n", cmd.Name))
 				}
-				list.WriteString(fmt.Sprintf("\n\nWorks in DMs?: %v", mod.AllowDMs()))
+				dms := "Does not work in DMs."
+				if mod.AllowDMs() {
+					dms = "Works in DMs."
+				}
+				list.WriteString(dms)
 
-				emb.Title = fmt.Sprintf("commands in %v folder", mod.Name())
+				emb.Title = fmt.Sprintf("Commands for %v plugin", mod.Name())
 				emb.Description = list.String()
 
 				msg.ReplyEmbed(emb)
@@ -572,10 +577,10 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 			}
 
 			for _, pas := range mod.Passives() {
-				if pas.Name == inp {
+				if strings.ToLower(pas.Name) == strings.ToLower(inp) {
 
 					emb.Title = fmt.Sprintf("Passive - %v", pas.Name)
-					emb.Description = "Description:\n" + pas.Description + "\n"
+					emb.Description = pas.Description + "\n"
 					msg.ReplyEmbed(emb)
 
 					return
@@ -583,12 +588,12 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 			}
 			for _, cmd := range mod.Commands() {
 				isCmd := false
-				if cmd.Name == inp {
+				if strings.ToLower(cmd.Name) == strings.ToLower(inp) {
 					isCmd = true
 				}
 
 				for _, trig := range cmd.Triggers {
-					if trig == inp {
+					if strings.ToLower(trig) == strings.ToLower(inp) {
 						isCmd = true
 					}
 				}
@@ -599,14 +604,14 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 
 				emb.Title = fmt.Sprintf("Command - %v", cmd.Name)
 
-				dmText := map[bool]string{true: "This works in Meido DMs", false: "This does not work in Meido DMs"}
+				dmText := map[bool]string{true: "This works in DMs", false: "This does not work in DMs"}
 
 				info := strings.Builder{}
-				info.WriteString(fmt.Sprintf("\n\nDescription:\n%v", cmd.Description))
-				info.WriteString(fmt.Sprintf("\n\nTriggers:\n%v", strings.Join(cmd.Triggers, ", ")))
-				info.WriteString(fmt.Sprintf("\n\nUsage:\n%v", cmd.Usage))
-				info.WriteString(fmt.Sprintf("\n\nCooldown:\n%v seconds", cmd.Cooldown))
-				info.WriteString(fmt.Sprintf("\n\nRequired permissions:\n%v", base.PermMap[cmd.RequiredPerms]))
+				info.WriteString(fmt.Sprintf("\n\n%v", cmd.Description))
+				info.WriteString(fmt.Sprintf("\n\nAliases: %v", strings.Join(cmd.Triggers, ", ")))
+				info.WriteString(fmt.Sprintf("\n\nUsage: %v", cmd.Usage))
+				info.WriteString(fmt.Sprintf("\n\nCooldown: %v second(s)", cmd.Cooldown))
+				info.WriteString(fmt.Sprintf("\n\nRequired permissions: %v", base.PermMap[cmd.RequiredPerms]))
 				info.WriteString(fmt.Sprintf("\n\n%v", dmText[cmd.AllowDMs]))
 				emb.Description = info.String()
 

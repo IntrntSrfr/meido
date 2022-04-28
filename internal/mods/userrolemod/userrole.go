@@ -3,14 +3,15 @@ package userrolemod
 import (
 	"database/sql"
 	"fmt"
-	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/database"
-	"github.com/intrntsrfr/meido/utils"
-	"go.uber.org/zap"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/database"
+	"github.com/intrntsrfr/meido/utils"
+	"go.uber.org/zap"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/owo"
@@ -30,7 +31,7 @@ type UserRoleMod struct {
 
 func New(b *base.Bot, db *database.DB, owo *owo.Client, log *zap.Logger) base.Mod {
 	return &UserRoleMod{
-		name:         "UserRole",
+		name:         "UserRoles",
 		commands:     make(map[string]*base.ModCommand),
 		allowedTypes: base.MessageTypeCreate,
 		allowDMs:     false,
