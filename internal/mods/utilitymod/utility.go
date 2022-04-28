@@ -580,7 +580,7 @@ func (m *UtilityMod) helpCommand(msg *base.DiscordMessage) {
 				if strings.ToLower(pas.Name) == strings.ToLower(inp) {
 
 					emb.Title = fmt.Sprintf("Passive - %v", pas.Name)
-					emb.Description = "Description:\n" + pas.Description + "\n"
+					emb.Description = pas.Description + "\n"
 					msg.ReplyEmbed(emb)
 
 					return
