@@ -3,12 +3,13 @@ package base
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/intrntsrfr/meido/database"
-	"go.uber.org/zap"
 	"log"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/intrntsrfr/meido/database"
+	"go.uber.org/zap"
 )
 
 // Config is the config struct for the bot.
@@ -19,6 +20,8 @@ type Config struct {
 	DmLogChannels    []string `json:"dm_log_channels"`
 	OwoToken         string   `json:"owo_token"`
 	YouTubeToken     string   `json:"youtube_key"`
+	OpenAIToken      string   `json:"open_ai_token"`
+	GPT3Engine       string   `json:"gpt3_engine"`
 }
 
 // Bot is the main bot struct.

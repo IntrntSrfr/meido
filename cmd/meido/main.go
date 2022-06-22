@@ -2,8 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/database"
+	"github.com/intrntsrfr/meido/internal/mods/aimod"
 	"github.com/intrntsrfr/meido/internal/mods/loggermod"
 	"github.com/intrntsrfr/meido/internal/mods/mediaconvertmod"
 	"github.com/intrntsrfr/meido/internal/mods/moderationmod"
@@ -14,12 +21,8 @@ import (
 	"github.com/intrntsrfr/meido/internal/services"
 	"github.com/intrntsrfr/owo"
 	"github.com/jmoiron/sqlx"
+	gogpt "github.com/sashabaranov/go-gpt3"
 	"go.uber.org/zap"
-	"io/ioutil"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
 
 	_ "github.com/lib/pq"
 )
@@ -53,6 +56,7 @@ func main() {
 	db := database.New(psql)
 	owoClient := owo.NewClient(config.OwoToken)
 	searchService := services.NewSearchService(config.YouTubeToken)
+	gptClient := gogpt.NewClient(config.OpenAIToken)
 
 	bot := base.NewBot(config, db, logger.Named("meido"))
 	err = bot.Open()
@@ -68,6 +72,7 @@ func main() {
 	bot.RegisterMod(userrolemod.New(bot, db, owoClient, logger.Named("userrole")))
 	bot.RegisterMod(searchmod.New(bot, searchService))
 	bot.RegisterMod(mediaconvertmod.New())
+	bot.RegisterMod(aimod.New(gptClient, config.GPT3Engine))
 
 	err = bot.Run()
 	if err != nil {
