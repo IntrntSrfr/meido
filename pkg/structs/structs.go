@@ -1,6 +1,17 @@
-package database
+package structs
 
 import "time"
+
+type CommandLogEntry struct {
+	UID       int
+	Command   string
+	Args      string
+	UserID    string
+	GuildID   string
+	ChannelID string
+	MessageID string
+	SentAt    time.Time
+}
 
 // UserRole represents a user role.
 type UserRole struct {

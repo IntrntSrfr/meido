@@ -6,7 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/database"
+	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/utils"
 	"go.uber.org/zap"
 	"strconv"

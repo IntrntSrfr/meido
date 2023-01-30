@@ -3,13 +3,13 @@ package userrolemod
 import (
 	"database/sql"
 	"fmt"
+	database2 "github.com/intrntsrfr/meido/internal/database"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/utils"
 	"go.uber.org/zap"
 
@@ -24,12 +24,12 @@ type UserRoleMod struct {
 	allowedTypes base.MessageType
 	allowDMs     bool
 	bot          *base.Bot
-	db           *database.DB
+	db           *database2.PsqlDB
 	owo          *owo.Client
 	log          *zap.Logger
 }
 
-func New(b *base.Bot, db *database.DB, owo *owo.Client, log *zap.Logger) base.Mod {
+func New(b *base.Bot, db *database2.PsqlDB, owo *owo.Client, log *zap.Logger) base.Mod {
 	return &UserRoleMod{
 		name:         "UserRoles",
 		commands:     make(map[string]*base.ModCommand),
@@ -67,7 +67,7 @@ func (m *UserRoleMod) Hook() error {
 						continue
 					}
 
-					var userRoles []*database.UserRole
+					var userRoles []*database2.UserRole
 
 					err := m.db.Get(&userRoles, "SELECT * FROM user_role WHERE guild_id=$1", g.ID)
 					if err != nil {
@@ -161,7 +161,7 @@ func (m *UserRoleMod) setuserroleCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	userRole := &database.UserRole{}
+	userRole := &database2.UserRole{}
 	err = m.db.Get(userRole, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", g.ID, targetMember.User.ID)
 	switch err {
 	case nil:

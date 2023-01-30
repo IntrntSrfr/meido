@@ -3,6 +3,7 @@ package utilitymod
 import (
 	"bytes"
 	"fmt"
+	"github.com/intrntsrfr/meido/internal/database"
 	"image"
 	"image/color"
 	"image/draw"
@@ -17,7 +18,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/utils"
 )
 
@@ -29,10 +29,10 @@ type UtilityMod struct {
 	allowDMs     bool
 	bot          *base.Bot
 	startTime    time.Time
-	db           *database.DB
+	db           *database.PsqlDB
 }
 
-func New(b *base.Bot, db *database.DB) base.Mod {
+func New(b *base.Bot, db *database.PsqlDB) base.Mod {
 	return &UtilityMod{
 		startTime:    time.Now(),
 		name:         "Utility",

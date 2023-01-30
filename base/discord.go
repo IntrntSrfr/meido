@@ -31,7 +31,6 @@ func NewDiscord(token string) *Discord {
 
 // Open populates the Discord object with Sessions and returns a DiscordMessage channel.
 func (d *Discord) Open() (<-chan *DiscordMessage, error) {
-
 	shardCount, err := recommendedShards(d.token)
 	if err != nil {
 		panic(err)
@@ -117,7 +116,6 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 	if m.Author == nil || m.Message.Author.Bot {
 		return
 	}
-
 	defer BotRecover(m)
 
 	if m.GuildID != "" {
@@ -145,7 +143,6 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 	if m.Author == nil || m.Message.Author.Bot {
 		return
 	}
-
 	defer BotRecover(m)
 
 	if m.GuildID != "" {
@@ -209,7 +206,6 @@ func (d *Discord) HasPermissions(channelID string, perm int64) (bool, error) {
 
 // HighestRole finds the highest role a user has in the guild hierarchy.
 func (d *Discord) HighestRole(gid, uid string) *discordgo.Role {
-
 	g, err := d.Guild(gid)
 	if err != nil {
 		return nil
@@ -220,9 +216,7 @@ func (d *Discord) HighestRole(gid, uid string) *discordgo.Role {
 	}
 
 	gRoles := g.Roles
-
 	sort.Sort(RoleByPos(gRoles))
-
 	for _, gr := range gRoles {
 		for _, r := range mem.Roles {
 			if r == gr.ID {
@@ -230,7 +224,6 @@ func (d *Discord) HighestRole(gid, uid string) *discordgo.Role {
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -245,7 +238,6 @@ func (d *Discord) HighestRolePosition(gid, uid string) int {
 
 // HighestColor finds the role color for the top-most role where the color is non-zero.
 func (d *Discord) HighestColor(gid, uid string) int {
-
 	g, err := d.Guild(gid)
 	if err != nil {
 		return 0
@@ -257,9 +249,7 @@ func (d *Discord) HighestColor(gid, uid string) int {
 	}
 
 	gRoles := g.Roles
-
 	sort.Sort(RoleByPos(gRoles))
-
 	for _, gr := range gRoles {
 		for _, r := range mem.Roles {
 			if r == gr.ID {
@@ -269,7 +259,6 @@ func (d *Discord) HighestColor(gid, uid string) int {
 			}
 		}
 	}
-
 	return 0
 }
 

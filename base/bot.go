@@ -3,12 +3,13 @@ package base
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/pkg/structs"
 	"log"
 	"math/rand"
 	"strings"
 	"time"
 
-	"github.com/intrntsrfr/meido/database"
 	"go.uber.org/zap"
 )
 
@@ -29,14 +30,14 @@ type Bot struct {
 	Discord   *Discord
 	Config    *Config
 	Mods      map[string]Mod
-	DB        *database.DB
+	DB        database.DB
 	Cooldowns CooldownService
 	Callbacks CallbackService
 	Log       *zap.Logger
 }
 
 // NewBot takes in a Config and returns a pointer to a new Bot
-func NewBot(config *Config, db *database.DB, log *zap.Logger) *Bot {
+func NewBot(config *Config, db *database.PsqlDB, log *zap.Logger) *Bot {
 	rand.Seed(time.Now().Unix())
 	log.Info("new bot")
 	return &Bot{
@@ -231,18 +232,18 @@ func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
 
 // logCommand logs an executed command
 func (b *Bot) logCommand(msg *DiscordMessage, cmd *ModCommand) {
-	var gid *string
-	gidStr := msg.GuildID()
-	if gidStr != "" {
-		gid = &gidStr
-	}
+	b.Log.Info("new command", zap.String("author", fmt.Sprintf("%v | %v", msg.Author(), msg.AuthorID())), zap.String("content", msg.RawContent()))
+	// fmt.Println(msg.Shard, msg.Message.Author, msg.Message.Content, msg.TimeReceived.String())
 
-	_, err := b.DB.Exec("INSERT INTO command_log VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
-		cmd.Name, strings.Join(msg.Args(), " "), msg.AuthorID(), gid,
-		msg.ChannelID(), msg.Message.ID, time.Now())
-	if err != nil {
+	if err := b.DB.CreateCommandLogEntry(&structs.CommandLogEntry{
+		Command:   cmd.Name,
+		Args:      strings.Join(msg.Args(), " "),
+		UserID:    msg.AuthorID(),
+		GuildID:   msg.GuildID(),
+		ChannelID: msg.ChannelID(),
+		MessageID: msg.Message.ID,
+		SentAt:    time.Now(),
+	}); err != nil {
 		b.Log.Error("error logging command", zap.Error(err))
 	}
-
-	fmt.Println(msg.Shard, msg.Message.Author.String(), msg.Message.Content, msg.TimeReceived.String())
 }

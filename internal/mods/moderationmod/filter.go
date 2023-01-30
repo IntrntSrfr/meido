@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/database"
+	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/utils"
 	"strconv"
 	"strings"
@@ -40,7 +40,7 @@ func (m *ModerationMod) filterwordCommand(msg *base.DiscordMessage) {
 	// this can be changed to just one statement probably,
 	// or it can use a function instead
 	// it looks so ugly
-	_, err := m.db.GetFilter(msg.GuildID(), phrase)
+	_, err := m.db.GetGuildFilterByPhrase(msg.GuildID(), phrase)
 	switch err {
 	case nil:
 		m.db.Exec("DELETE FROM filter WHERE guild_id=$1 AND phrase=$2;", msg.Message.GuildID, phrase)

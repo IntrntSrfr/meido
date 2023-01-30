@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/database"
+	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/utils"
 	"math/rand"
 	"strconv"
@@ -21,11 +21,11 @@ type FishMod struct {
 	allowedTypes base.MessageType
 	allowDMs     bool
 	bot          *base.Bot
-	db           *database.DB
+	db           *database.PsqlDB
 }
 
 // New returns a new PingMod.
-func New(b *base.Bot, db *database.DB) base.Mod {
+func New(b *base.Bot, db *database.PsqlDB) base.Mod {
 	return &FishMod{
 		name:         "Fish",
 		commands:     make(map[string]*base.ModCommand),

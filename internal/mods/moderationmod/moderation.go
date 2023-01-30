@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/database"
+	database2 "github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/utils"
 	"go.uber.org/zap"
 	"strconv"
@@ -22,11 +22,11 @@ type ModerationMod struct {
 	allowedTypes base.MessageType
 	allowDMs     bool
 	bot          *base.Bot
-	db           *database.DB
+	db           *database2.PsqlDB
 	log          *zap.Logger
 }
 
-func New(b *base.Bot, db *database.DB, log *zap.Logger) base.Mod {
+func New(b *base.Bot, db *database2.PsqlDB, log *zap.Logger) base.Mod {
 	return &ModerationMod{
 		name:         "Moderation",
 		commands:     make(map[string]*base.ModCommand),
@@ -55,7 +55,7 @@ func (m *ModerationMod) AllowDMs() bool {
 }
 func (m *ModerationMod) Hook() error {
 	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
-		dbg := &database.Guild{}
+		dbg := &database2.Guild{}
 		err := m.db.Get(dbg, "SELECT guild_id FROM guild WHERE guild_id = $1;", g.Guild.ID)
 		if err != nil && err != sql.ErrNoRows {
 			fmt.Println(err)
@@ -74,7 +74,7 @@ func (m *ModerationMod) Hook() error {
 					if g.Unavailable {
 						continue
 					}
-					dge := &database.Guild{}
+					dge := &database2.Guild{}
 					err := m.db.Get(dge, "SELECT * FROM guild WHERE guild_id=$1", g.ID)
 					if err != nil {
 						continue
@@ -84,7 +84,7 @@ func (m *ModerationMod) Hook() error {
 						continue
 					}
 
-					var warns []*database.Warn
+					var warns []*database2.Warn
 					err = m.db.Select(&warns, "SELECT * FROM warn WHERE guild_id=$1 AND is_valid", g.ID)
 					if err != nil {
 						continue

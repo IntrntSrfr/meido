@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/intrntsrfr/meido/internal/database"
 	"io/ioutil"
 	"log"
 	"os"
@@ -9,7 +10,6 @@ import (
 	"syscall"
 
 	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/database"
 	"github.com/intrntsrfr/meido/internal/mods/aimod"
 	"github.com/intrntsrfr/meido/internal/mods/loggermod"
 	"github.com/intrntsrfr/meido/internal/mods/mediaconvertmod"
