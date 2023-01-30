@@ -1,11 +1,10 @@
-package base
+package mio
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/pkg/structs"
-	"log"
+	"github.com/intrntsrfr/meido/internal/structs"
 	"math/rand"
 	"strings"
 	"time"
@@ -37,9 +36,10 @@ type Bot struct {
 }
 
 // NewBot takes in a Config and returns a pointer to a new Bot
-func NewBot(config *Config, db *database.PsqlDB, log *zap.Logger) *Bot {
-	rand.Seed(time.Now().Unix())
+func NewBot(config *Config, db database.DB, log *zap.Logger) *Bot {
 	log.Info("new bot")
+	rand.Seed(time.Now().Unix())
+
 	return &Bot{
 		Discord:   NewDiscord(config.Token),
 		Config:    config,
@@ -51,34 +51,34 @@ func NewBot(config *Config, db *database.PsqlDB, log *zap.Logger) *Bot {
 	}
 }
 
-// Open sets up the required things the bot needs to run.
-// establishes a PSQL connection and starts listening for commands.
+// Open will connect to Discord and register eventhandlers
 func (b *Bot) Open() error {
-	log.Println("open and run")
-	msgChan, err := b.Discord.Open()
+	b.Log.Info("setting up bot")
+	err := b.Discord.Open()
 	if err != nil {
 		panic(err)
 	}
 
 	registerEvents(b.Discord)
-
-	go b.listen(msgChan)
 	return nil
 }
 
 // Run will start the sessions against Discord and runs it.
 func (b *Bot) Run() error {
+	b.Log.Info("starting bot")
+	go b.listen(b.Discord.messageChan)
 	return b.Discord.Run()
 }
 
 // Close saves all mod states and closes the bot sessions.
 func (b *Bot) Close() {
+	b.Log.Info("stopping bot")
 	b.Discord.Close()
 }
 
 // RegisterMod takes in a Mod and registers it.
 func (b *Bot) RegisterMod(mod Mod) {
-	log.Println(fmt.Sprintf("registering mod '%s'", mod.Name()))
+	b.Log.Info("adding module", zap.String("name", mod.Name()))
 	err := mod.Hook()
 	if err != nil {
 		panic(err)
@@ -115,23 +115,21 @@ func (b *Bot) processMessage(m *DiscordMessage) {
 		// mostly server, channel and maybe role though.
 		// probably just server and channels
 
+		// run all passives if they allow the message type
 		for _, pas := range mod.Passives() {
-			if m.Type()&pas.AllowedTypes == 0 {
-				continue
+			if m.Type()&pas.AllowedTypes == pas.AllowedTypes {
+				go pas.Run(m)
 			}
-			go pas.Run(m)
 		}
 
+		// if there is no text, there can be no command
 		if m.LenArgs() <= 0 {
 			continue
 		}
 
-		cmd, found := FindCommand(mod, m.Args())
-		if !found {
-			continue
+		if cmd, found := FindCommand(mod, m.Args()); found {
+			b.processCommand(cmd, m)
 		}
-
-		b.processCommand(cmd, m)
 	}
 }
 
@@ -149,7 +147,7 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 	}
 
 	if cmd.RequiresOwner && !m.Discord.IsBotOwner(m) {
-		_, _ = m.Reply("owner only lol")
+		_, _ = m.Reply("this command is owner only")
 		return
 	}
 
@@ -177,7 +175,6 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 		if allow, err := m.HasPermissions(cmd.RequiredPerms); err != nil || !allow {
 			return
 		}
-
 		if cmd.CheckBotPerms {
 			if botAllow, err := m.Discord.HasPermissions(m.Message.ChannelID, cmd.RequiredPerms); err != nil || !botAllow {
 				return
@@ -202,13 +199,11 @@ func (b *Bot) runCommand(cmd *ModCommand, m *DiscordMessage) {
 				return
 			}
 
-			log.Println(string(d))
-			log.Println()
-			log.Println()
+			b.Log.Error("recovery needed", zap.String("message JSON", string(d)))
 
-			now := time.Now()
-
-			fmt.Println(fmt.Sprintf("!!! RECOVERY NEEDED !!!\ntime: %v\nreason: %v\n\n\n", now.String(), r))
+			//log.Println(string(d))
+			//now := time.Now()
+			//fmt.Println(fmt.Sprintf("!!! RECOVERY NEEDED !!!\ntime: %v\nreason: %v\n\n\n", now.String(), r))
 
 			_, _ = m.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
 		}

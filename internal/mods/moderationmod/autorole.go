@@ -3,12 +3,12 @@ package moderationmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"strings"
 )
 
-func NewAutoRoleCommand(m *ModerationMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewAutoRoleCommand(m *ModerationMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "autorolesettings",
 		Description:   "Sets the autorole to a supplied role name. If no role is supplied, it will be reset.",
@@ -17,33 +17,45 @@ func NewAutoRoleCommand(m *ModerationMod) *base.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionAdministrator,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.autoroleCommand,
 	}
 }
-func (m *ModerationMod) autoroleCommand(msg *base.DiscordMessage) {
+func (m *ModerationMod) autoroleCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() == 1 {
-		_, err := m.db.Exec("UPDATE auto_role SET role_id=$1 WHERE guild_id=$2", "", msg.Message.GuildID)
+		err := m.db.DeleteAutoRole(msg.GuildID())
 		if err != nil {
+			_, _ = msg.Reply("Failed to remove autorole")
 			return
 		}
-		msg.Reply("Cleared autorole")
+		_, _ = msg.Reply("Cleared autorole")
 		return
-	} else {
-		query := strings.Join(msg.Args()[1:], " ")
-
-		role, err := msg.Discord.GuildRoleByName(msg.GuildID(), query)
-		if err != nil {
-			msg.Reply("Couldn't find that role!")
-			return
-		}
-
-		_, err = m.db.Exec("UPDATE auto_role SET role_id=$1 WHERE guild_id=$2", role.ID, msg.Message.GuildID)
-		if err != nil {
-			return
-		}
-		msg.Reply(fmt.Sprintf("Autorole set to role `%v` (%v)", role.Name, role.ID))
 	}
+
+	query := strings.Join(msg.Args()[1:], " ")
+	role, err := msg.Discord.GuildRoleByName(msg.GuildID(), query)
+	if err != nil {
+		_, _ = msg.Reply("I could not find that role")
+		return
+	}
+
+	// the autorole already exists, update it
+	if _, err = m.db.GetAutoRole(msg.GuildID()); err == nil {
+		err = m.db.UpdateAutoRole(msg.GuildID(), role.ID)
+		if err != nil {
+			_, _ = msg.Reply("Failed to set autorole")
+			return
+		}
+		_, _ = msg.Reply(fmt.Sprintf("Autorole set to role `%v` (%v)", role.Name, role.ID))
+		return
+	}
+
+	err = m.db.CreateAutoRole(msg.GuildID(), role.ID)
+	if err != nil {
+		_, _ = msg.Reply("Failed to set autorole")
+		return
+	}
+	_, _ = msg.Reply(fmt.Sprintf("Autorole set to role `%v` (%v)", role.Name, role.ID))
 }

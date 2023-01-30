@@ -1,4 +1,4 @@
-package base
+package mio
 
 import (
 	"strings"
@@ -53,7 +53,6 @@ type ModPassive struct {
 }
 
 func FindCommand(mod Mod, args []string) (*ModCommand, bool) {
-
 	for _, cmd := range mod.Commands() {
 		for _, trig := range cmd.Triggers {
 			splitTrig := strings.Split(trig, " ")
@@ -66,6 +65,5 @@ func FindCommand(mod Mod, args []string) (*ModCommand, bool) {
 			}
 		}
 	}
-
 	return nil, false
 }

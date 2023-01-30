@@ -3,10 +3,10 @@ package aimod
 import (
 	"context"
 	"fmt"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"strings"
 	"sync"
 
-	"github.com/intrntsrfr/meido/base"
 	gogpt "github.com/sashabaranov/go-gpt3"
 )
 
@@ -14,19 +14,19 @@ import (
 type AIMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base.ModCommand
-	allowedTypes base.MessageType
+	commands     map[string]*mio.ModCommand
+	allowedTypes mio.MessageType
 	allowDMs     bool
 	gptClient    *gogpt.Client
 	engine       string
 }
 
 // New returns a new TestMod.
-func New(gptClient *gogpt.Client, engine string) base.Mod {
+func New(gptClient *gogpt.Client, engine string) mio.Mod {
 	return &AIMod{
 		name:         "AI",
-		commands:     make(map[string]*base.ModCommand),
-		allowedTypes: base.MessageTypeCreate,
+		commands:     make(map[string]*mio.ModCommand),
+		allowedTypes: mio.MessageTypeCreate,
 		allowDMs:     true,
 		gptClient:    gptClient,
 		engine:       engine,
@@ -39,17 +39,17 @@ func (m *AIMod) Name() string {
 }
 
 // Passives returns the mod passives.
-func (m *AIMod) Passives() []*base.ModPassive {
-	return []*base.ModPassive{}
+func (m *AIMod) Passives() []*mio.ModPassive {
+	return []*mio.ModPassive{}
 }
 
 // Commands returns the mod commands.
-func (m *AIMod) Commands() map[string]*base.ModCommand {
+func (m *AIMod) Commands() map[string]*mio.ModCommand {
 	return m.commands
 }
 
 // AllowedTypes returns the allowed MessageTypes.
-func (m *AIMod) AllowedTypes() base.MessageType {
+func (m *AIMod) AllowedTypes() mio.MessageType {
 	return m.allowedTypes
 }
 
@@ -67,7 +67,7 @@ func (m *AIMod) Hook() error {
 }
 
 // RegisterCommand registers a ModCommand to the Mod
-func (m *AIMod) RegisterCommand(cmd *base.ModCommand) {
+func (m *AIMod) RegisterCommand(cmd *mio.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -77,8 +77,8 @@ func (m *AIMod) RegisterCommand(cmd *base.ModCommand) {
 }
 
 // NewPromptCommand returns a new ping command.
-func NewPromptCommand(m *AIMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewPromptCommand(m *AIMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "prompt",
 		Description:   "Generate completions for a prompt using GPT-3.",
@@ -87,14 +87,14 @@ func NewPromptCommand(m *AIMod) *base.ModCommand {
 		Cooldown:      15,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.promptCommand,
 	}
 }
 
-func (m *AIMod) promptCommand(msg *base.DiscordMessage) {
+func (m *AIMod) promptCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}

@@ -1,7 +1,7 @@
 package database
 
 import (
-	"github.com/intrntsrfr/meido/pkg/structs"
+	"github.com/intrntsrfr/meido/internal/structs"
 	"github.com/jmoiron/sqlx"
 	"time"
 )
@@ -72,8 +72,9 @@ func (p *PsqlDB) GetGuildFilters(guildID string) ([]*structs.Filter, error) {
 	return filters, err
 }
 
-func (p *PsqlDB) DeleteGuildFilters(guildID string) {
-	_, _ = p.pool.Exec("DELETE FROM filter WHERE guild_id=$1", guildID)
+func (p *PsqlDB) DeleteGuildFilters(guildID string) error {
+	_, err := p.pool.Exec("DELETE FROM filter WHERE guild_id=$1", guildID)
+	return err
 }
 
 func (p *PsqlDB) InsertWarn(guildID, userID, reason, givenByID string) error {
@@ -103,4 +104,74 @@ func (p *PsqlDB) UpdateAquarium(aq *structs.Aquarium) error {
 	_, err := p.pool.Exec("UPDATE aquarium SET common=$1, uncommon=$2, rare=$3, super_rare=$4, legendary=$5 WHERE user_id=$6",
 		aq.Common, aq.Uncommon, aq.Rare, aq.SuperRare, aq.Legendary, aq.UserID)
 	return err
+}
+
+func (p *PsqlDB) CreateCommandLogEntry(e *structs.CommandLogEntry) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) CreateGuild(gid string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) UpdateGuild(g *structs.Guild) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) CreateGuildFilter(guildID, phrase string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) CreateMemberWarn(guildID, userID, reason, authorID string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) GetMemberWarns(guildID, userID string) ([]*structs.Warn, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) GetMemberWarnsIfActive(guildID, userID string) ([]*structs.Warn, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) UpdateMemberWarn(warn *structs.Warn) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) CreateMemberRole(guildID, userID string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) GetMemberRole(guildID, userID string) (*structs.UserRole, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) GetMemberRolesByGuild(guildID string) ([]*structs.UserRole, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) UpdateMemberRole(role *structs.UserRole) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) DeleteMemberRole(uid string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) CreateAquarium(userID string) error {
+	//TODO implement me
+	panic("implement me")
 }

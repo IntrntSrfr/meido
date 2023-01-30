@@ -3,14 +3,14 @@ package userrolemod
 import (
 	"database/sql"
 	"fmt"
-	database2 "github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/utils"
 	"go.uber.org/zap"
 
 	"github.com/bwmarrin/discordgo"
@@ -20,20 +20,20 @@ import (
 type UserRoleMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base.ModCommand
-	allowedTypes base.MessageType
+	commands     map[string]*mio.ModCommand
+	allowedTypes mio.MessageType
 	allowDMs     bool
-	bot          *base.Bot
-	db           *database2.PsqlDB
+	bot          *mio.Bot
+	db           *database.PsqlDB
 	owo          *owo.Client
 	log          *zap.Logger
 }
 
-func New(b *base.Bot, db *database2.PsqlDB, owo *owo.Client, log *zap.Logger) base.Mod {
+func New(b *mio.Bot, db *database.PsqlDB, owo *owo.Client, log *zap.Logger) mio.Mod {
 	return &UserRoleMod{
 		name:         "UserRoles",
-		commands:     make(map[string]*base.ModCommand),
-		allowedTypes: base.MessageTypeCreate,
+		commands:     make(map[string]*mio.ModCommand),
+		allowedTypes: mio.MessageTypeCreate,
 		allowDMs:     false,
 		bot:          b,
 		db:           db,
@@ -44,13 +44,13 @@ func New(b *base.Bot, db *database2.PsqlDB, owo *owo.Client, log *zap.Logger) ba
 func (m *UserRoleMod) Name() string {
 	return m.name
 }
-func (m *UserRoleMod) Passives() []*base.ModPassive {
-	return []*base.ModPassive{}
+func (m *UserRoleMod) Passives() []*mio.ModPassive {
+	return []*mio.ModPassive{}
 }
-func (m *UserRoleMod) Commands() map[string]*base.ModCommand {
+func (m *UserRoleMod) Commands() map[string]*mio.ModCommand {
 	return m.commands
 }
-func (m *UserRoleMod) AllowedTypes() base.MessageType {
+func (m *UserRoleMod) AllowedTypes() mio.MessageType {
 	return m.allowedTypes
 }
 func (m *UserRoleMod) AllowDMs() bool {
@@ -67,7 +67,7 @@ func (m *UserRoleMod) Hook() error {
 						continue
 					}
 
-					var userRoles []*database2.UserRole
+					var userRoles []*database.UserRole
 
 					err := m.db.Get(&userRoles, "SELECT * FROM user_role WHERE guild_id=$1", g.ID)
 					if err != nil {
@@ -99,7 +99,7 @@ func (m *UserRoleMod) Hook() error {
 	return nil
 }
 
-func (m *UserRoleMod) RegisterCommand(cmd *base.ModCommand) {
+func (m *UserRoleMod) RegisterCommand(cmd *mio.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -108,8 +108,8 @@ func (m *UserRoleMod) RegisterCommand(cmd *base.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewSetUserRoleCommand(m *UserRoleMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewSetUserRoleCommand(m *UserRoleMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "setuserrole",
 		Description:   "Binds, unbinds or changes a userrole bind to a user",
@@ -118,14 +118,14 @@ func NewSetUserRoleCommand(m *UserRoleMod) *base.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: discordgo.PermissionManageRoles,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.setuserroleCommand,
 	}
 }
 
-func (m *UserRoleMod) setuserroleCommand(msg *base.DiscordMessage) {
+func (m *UserRoleMod) setuserroleCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 3 {
 		return
 	}
@@ -161,7 +161,7 @@ func (m *UserRoleMod) setuserroleCommand(msg *base.DiscordMessage) {
 		return
 	}
 
-	userRole := &database2.UserRole{}
+	userRole := &database.UserRole{}
 	err = m.db.Get(userRole, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", g.ID, targetMember.User.ID)
 	switch err {
 	case nil:
@@ -181,8 +181,8 @@ func (m *UserRoleMod) setuserroleCommand(msg *base.DiscordMessage) {
 	}
 }
 
-func NewMyRoleCommand(m *UserRoleMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewMyRoleCommand(m *UserRoleMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "myrole",
 		Description:   "Displays a users bound role, or lets the user change the name or color of their bound role",
@@ -191,14 +191,14 @@ func NewMyRoleCommand(m *UserRoleMod) *base.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.myroleCommand,
 	}
 }
 
-func (m *UserRoleMod) myroleCommand(msg *base.DiscordMessage) {
+func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}

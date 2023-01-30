@@ -3,27 +3,27 @@ package feedbackmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"sync"
 )
 
 type FeedbackMod struct {
 	sync.Mutex
 	name            string
-	commands        map[string]*base.ModCommand
-	allowedTypes    base.MessageType
+	commands        map[string]*mio.ModCommand
+	allowedTypes    mio.MessageType
 	allowDMs        bool
-	bot             *base.Bot
+	bot             *mio.Bot
 	bannedUsers     map[string]bool
 	feedbackChannel string
 	owners          []string
 }
 
-func New(b *base.Bot, ownerIds []string) base.Mod {
+func New(b *mio.Bot, ownerIds []string) mio.Mod {
 	return &FeedbackMod{
 		name:         "Feedback",
-		commands:     make(map[string]*base.ModCommand),
-		allowedTypes: base.MessageTypeCreate,
+		commands:     make(map[string]*mio.ModCommand),
+		allowedTypes: mio.MessageTypeCreate,
 		allowDMs:     true,
 		bot:          b,
 		owners:       ownerIds,
@@ -33,13 +33,13 @@ func New(b *base.Bot, ownerIds []string) base.Mod {
 func (m *FeedbackMod) Name() string {
 	return m.name
 }
-func (m *FeedbackMod) Passives() []*base.ModPassive {
-	return []*base.ModPassive{}
+func (m *FeedbackMod) Passives() []*mio.ModPassive {
+	return []*mio.ModPassive{}
 }
-func (m *FeedbackMod) Commands() map[string]*base.ModCommand {
+func (m *FeedbackMod) Commands() map[string]*mio.ModCommand {
 	return m.commands
 }
-func (m *FeedbackMod) AllowedTypes() base.MessageType {
+func (m *FeedbackMod) AllowedTypes() mio.MessageType {
 	return m.allowedTypes
 }
 func (m *FeedbackMod) AllowDMs() bool {
@@ -52,7 +52,7 @@ func (m *FeedbackMod) Hook() error {
 
 	return nil
 }
-func (m *FeedbackMod) RegisterCommand(cmd *base.ModCommand) {
+func (m *FeedbackMod) RegisterCommand(cmd *mio.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -61,7 +61,7 @@ func (m *FeedbackMod) RegisterCommand(cmd *base.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func (m *FeedbackMod) ToggleBan(msg *base.DiscordMessage) {
+func (m *FeedbackMod) ToggleBan(msg *mio.DiscordMessage) {
 	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?togglefeedback" {
 		return
 	}
@@ -93,7 +93,7 @@ func (m *FeedbackMod) ToggleBan(msg *base.DiscordMessage) {
 	}
 }
 
-func (m *FeedbackMod) LeaveFeedback(msg *base.DiscordMessage) {
+func (m *FeedbackMod) LeaveFeedback(msg *mio.DiscordMessage) {
 	if msg.LenArgs() <= 1 || msg.Args()[0] != "m?feedback" {
 		return
 	}

@@ -3,15 +3,14 @@ package utilitymod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/base"
-	"github.com/intrntsrfr/meido/utils"
-	"math"
+	"github.com/intrntsrfr/meido/internal/mods"
+	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"strconv"
-	"time"
 )
 
-func NewAvatarCommand(m *UtilityMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewAvatarCommand(m *UtilityMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "avatar",
 		Description:   "Displays a users profile picture. User can be specified. Author is default.",
@@ -20,41 +19,39 @@ func NewAvatarCommand(m *UtilityMod) *base.ModCommand {
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
-		Run:           m.avatarCommand,
+		Run: func(msg *mio.DiscordMessage) {
+			if msg.LenArgs() < 1 {
+				return
+			}
+
+			targetUser := msg.Author()
+			var err error
+
+			if msg.LenArgs() > 1 {
+				targetUser, err = msg.GetMemberOrUserAtArg(1)
+				if err != nil {
+					return
+				}
+			}
+
+			if targetUser == nil {
+				return
+			}
+
+			_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{
+				Color: msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID),
+				Title: targetUser.String(),
+				Image: &discordgo.MessageEmbedImage{URL: targetUser.AvatarURL("1024")},
+			})
+		},
 	}
 }
 
-func (m *UtilityMod) avatarCommand(msg *base.DiscordMessage) {
-	if msg.LenArgs() < 1 {
-		return
-	}
-
-	targetUser := msg.Author()
-	var err error
-
-	if msg.LenArgs() > 1 {
-		targetUser, err = msg.GetMemberOrUserAtArg(1)
-		if err != nil {
-			return
-		}
-	}
-
-	if targetUser == nil {
-		return
-	}
-
-	msg.ReplyEmbed(&discordgo.MessageEmbed{
-		Color: msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID),
-		Title: targetUser.String(),
-		Image: &discordgo.MessageEmbedImage{URL: targetUser.AvatarURL("1024")},
-	})
-}
-
-func NewBannerCommand(m *UtilityMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewBannerCommand(m *UtilityMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "banner",
 		Description:   "Displays a users banner. User can be specified. Author is default.",
@@ -63,50 +60,48 @@ func NewBannerCommand(m *UtilityMod) *base.ModCommand {
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
-		Run:           m.bannerCommand,
+		Run: func(msg *mio.DiscordMessage) {
+			if msg.LenArgs() < 1 {
+				return
+			}
+
+			targetUserID := msg.AuthorID()
+
+			if msg.LenArgs() > 1 {
+				targetUserID = msg.Args()[1]
+			}
+
+			targetUserID = utils.TrimUserID(targetUserID)
+			if !utils.IsNumber(targetUserID) {
+				fmt.Println("thing isnt number")
+				return
+			}
+
+			targetUser, err := msg.Sess.User(targetUserID)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			if targetUser.Banner == "" {
+				_, _ = msg.Reply(fmt.Sprintf("**%v** doesn't have a server avatar!", targetUser.String()))
+				return
+			}
+
+			_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{
+				Color: msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID),
+				Title: targetUser.String(),
+				Image: &discordgo.MessageEmbedImage{URL: targetUser.BannerURL("1024")},
+			})
+		},
 	}
 }
 
-func (m *UtilityMod) bannerCommand(msg *base.DiscordMessage) {
-	if msg.LenArgs() < 1 {
-		return
-	}
-
-	targetUserID := msg.AuthorID()
-
-	if msg.LenArgs() > 1 {
-		targetUserID = msg.Args()[1]
-	}
-
-	targetUserID = utils.TrimUserID(targetUserID)
-	if !utils.IsNumber(targetUserID) {
-		fmt.Println("thing isnt number")
-		return
-	}
-
-	targetUser, err := msg.Sess.User(targetUserID)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	if targetUser.Banner == "" {
-		msg.Reply(fmt.Sprintf("**%v** doesn't have a banner!", targetUser.String()))
-		return
-	}
-
-	msg.ReplyEmbed(&discordgo.MessageEmbed{
-		Color: msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID),
-		Title: targetUser.String(),
-		Image: &discordgo.MessageEmbedImage{URL: targetUser.BannerURL("1024")},
-	})
-}
-
-func NewMemberAvatarCommand(m *UtilityMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewMemberAvatarCommand(m *UtilityMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "memberavatar",
 		Description:   "Displays a members profile picture. User can be specified. Author is default.",
@@ -115,46 +110,44 @@ func NewMemberAvatarCommand(m *UtilityMod) *base.ModCommand {
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
-		Run:           m.memberAvatarCommand,
+		Run: func(msg *mio.DiscordMessage) {
+			if msg.LenArgs() < 1 {
+				return
+			}
+
+			targetMember := msg.Member()
+			var err error
+
+			if msg.LenArgs() > 1 {
+				targetMember, err = msg.GetMemberAtArg(1)
+				if err != nil {
+					return
+				}
+			}
+
+			if targetMember == nil {
+				return
+			}
+
+			if targetMember.Avatar == "" {
+				_, _ = msg.Reply(fmt.Sprintf("**%v** doesn't have a server avatar!", targetMember.User.String()))
+				return
+			}
+
+			_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{
+				Color: msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID),
+				Title: targetMember.User.String(),
+				Image: &discordgo.MessageEmbedImage{URL: targetMember.AvatarURL("1024")},
+			})
+		},
 	}
 }
 
-func (m *UtilityMod) memberAvatarCommand(msg *base.DiscordMessage) {
-	if msg.LenArgs() < 1 {
-		return
-	}
-
-	targetMember := msg.Member()
-	var err error
-
-	if msg.LenArgs() > 1 {
-		targetMember, err = msg.GetMemberAtArg(1)
-		if err != nil {
-			return
-		}
-	}
-
-	if targetMember == nil {
-		return
-	}
-
-	if targetMember.Avatar == "" {
-		msg.Reply(fmt.Sprintf("**%v** doesn't have a server avatar!", targetMember.User.String()))
-		return
-	}
-
-	msg.ReplyEmbed(&discordgo.MessageEmbed{
-		Color: msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID),
-		Title: targetMember.User.String(),
-		Image: &discordgo.MessageEmbedImage{URL: targetMember.AvatarURL("1024")},
-	})
-}
-
-func NewUserInfoCommand(m *UtilityMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewUserInfoCommand(m *UtilityMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "userinfo",
 		Description:   "Displays information about a user",
@@ -163,91 +156,54 @@ func NewUserInfoCommand(m *UtilityMod) *base.ModCommand {
 		Cooldown:      1,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
-		Run:           m.userinfoCommand,
-	}
-}
-func (m *UtilityMod) userinfoCommand(msg *base.DiscordMessage) {
+		Run: func(msg *mio.DiscordMessage) {
+			targetUser := msg.Author()
+			targetMember := msg.Member()
+			if msg.LenArgs() > 1 {
+				if len(msg.Message.Mentions) >= 1 {
+					targetUser = msg.Message.Mentions[0]
+					targetMember, _ = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
+				} else {
+					_, err := strconv.Atoi(msg.Args()[1])
+					if err != nil {
+						return
+					}
+					targetMember, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
+					if err != nil {
+						targetUser, err = msg.Sess.User(msg.Args()[1])
+						if err != nil {
+							return
+						}
+					} else {
+						targetUser = targetMember.User
+					}
+				}
+			}
 
-	var (
-		targetUser   *discordgo.User
-		targetMember *discordgo.Member
-	)
-
-	if msg.LenArgs() > 1 {
-		if len(msg.Message.Mentions) >= 1 {
-			targetUser = msg.Message.Mentions[0]
-			targetMember, _ = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)
-		} else {
-			_, err := strconv.Atoi(msg.Args()[1])
-			if err != nil {
+			ts := utils.IDToTimestamp(targetUser.ID)
+			embed := &discordgo.MessageEmbed{}
+			embed = mods.SetEmbedTitle(embed, fmt.Sprintf("User info | %v", targetUser.String()))
+			embed = mods.SetEmbedThumbnail(embed, targetUser.AvatarURL("256"))
+			embed = mods.AddEmbedField(embed, "ID | Mention", fmt.Sprintf("%v | <@!%v>", targetUser.ID, targetUser.ID), false)
+			embed = mods.AddEmbedField(embed, "Creation date", fmt.Sprintf("<t:%v:R>", ts.Unix()), false)
+			if targetMember == nil {
+				_, _ = msg.ReplyEmbed(embed)
 				return
 			}
-			targetMember, err = msg.Discord.Member(msg.Message.GuildID, msg.Args()[1])
-			if err != nil {
-				targetUser, err = msg.Sess.User(msg.Args()[1])
-				if err != nil {
-					return
-				}
-			} else {
-				targetUser = targetMember.User
+
+			nick := targetMember.Nick
+			if nick == "" {
+				nick = "None"
 			}
-		}
-	} else {
-		targetMember = msg.Member()
-		targetUser = msg.Author()
-	}
 
-	createTs := utils.IDToTimestamp(targetUser.ID)
-	createDur := time.Since(createTs)
-
-	emb := &discordgo.MessageEmbed{
-		Title: fmt.Sprintf("User info | %v", targetUser.String()),
-		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: targetUser.AvatarURL("512"),
-		},
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "ID | Mention",
-				Value:  fmt.Sprintf("%v | <@!%v>", targetUser.ID, targetUser.ID),
-				Inline: false,
-			},
-			{
-				Name:   "Creation date",
-				Value:  fmt.Sprintf("%v | %v day(s) ago", createTs.Format(time.RFC1123), math.Floor(createDur.Hours()/24.0)),
-				Inline: false,
-			},
+			embed.Color = msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID)
+			embed = mods.AddEmbedField(embed, "Join date", fmt.Sprintf("<t:%v:R>", targetMember.JoinedAt.Unix()), false)
+			embed = mods.AddEmbedField(embed, "Roles", fmt.Sprint(len(targetMember.Roles)), true)
+			embed = mods.AddEmbedField(embed, "Nickname", nick, true)
+			_, _ = msg.ReplyEmbed(embed)
 		},
 	}
-
-	if targetMember != nil {
-		joinTs := targetMember.JoinedAt
-		joinDur := time.Since(joinTs)
-
-		nick := targetMember.Nick
-		if nick == "" {
-			nick = "None"
-		}
-
-		emb.Color = msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID)
-		emb.Fields = append(emb.Fields, &discordgo.MessageEmbedField{
-			Name:   "Join date",
-			Value:  fmt.Sprintf("%v | %v day(s) ago", joinTs.Format(time.RFC1123), math.Floor(joinDur.Hours()/24.0)),
-			Inline: false,
-		})
-		emb.Fields = append(emb.Fields, &discordgo.MessageEmbedField{
-			Name:   "Roles",
-			Value:  strconv.Itoa(len(targetMember.Roles)),
-			Inline: true,
-		})
-		emb.Fields = append(emb.Fields, &discordgo.MessageEmbedField{
-			Name:   "Nickname",
-			Value:  nick,
-			Inline: true,
-		})
-
-	}
-	msg.ReplyEmbed(emb)
 }

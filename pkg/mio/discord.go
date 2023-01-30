@@ -1,4 +1,4 @@
-package base
+package mio
 
 import (
 	"encoding/json"
@@ -30,7 +30,7 @@ func NewDiscord(token string) *Discord {
 }
 
 // Open populates the Discord object with Sessions and returns a DiscordMessage channel.
-func (d *Discord) Open() (<-chan *DiscordMessage, error) {
+func (d *Discord) Open() error {
 	shardCount, err := recommendedShards(d.token)
 	if err != nil {
 		panic(err)
@@ -41,7 +41,7 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 	for i := 0; i < shardCount; i++ {
 		s, err := discordgo.New("Bot " + d.token)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		s.State.TrackVoice = false
@@ -59,7 +59,7 @@ func (d *Discord) Open() (<-chan *DiscordMessage, error) {
 	}
 	d.Sess = d.Sessions[0]
 
-	return d.messageChan, nil
+	return nil
 }
 
 // recommendedShards asks discord for the recommended shardcount for the bot given the token.
@@ -95,7 +95,10 @@ func (d *Discord) Run() error {
 // Close closes the Discord sessions
 func (d *Discord) Close() {
 	for _, sess := range d.Sessions {
-		sess.Close()
+		err := sess.Close()
+		if err != nil {
+			fmt.Println("failed to close session", sess.ShardID)
+		}
 	}
 }
 

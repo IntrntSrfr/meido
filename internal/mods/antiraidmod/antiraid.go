@@ -3,7 +3,7 @@ package antiraidmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/owo"
 	"golang.org/x/time/rate"
 	"strconv"
@@ -16,10 +16,10 @@ import (
 type AntiRaidMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base.ModCommand
-	allowedTypes base.MessageType
+	commands     map[string]*mio.ModCommand
+	allowedTypes mio.MessageType
 	allowDMs     bool
-	bot          *base.Bot
+	bot          *mio.Bot
 	owo          *owo.Client
 
 	servers *serverMap
@@ -27,11 +27,11 @@ type AntiRaidMod struct {
 }
 
 // New returns a new AntiRaidMod.
-func New(b *base.Bot, o *owo.Client) base.Mod {
+func New(b *mio.Bot, o *owo.Client) mio.Mod {
 	return &AntiRaidMod{
 		name:         "AntiRaid",
-		commands:     make(map[string]*base.ModCommand),
-		allowedTypes: base.MessageTypeCreate,
+		commands:     make(map[string]*mio.ModCommand),
+		allowedTypes: mio.MessageTypeCreate,
 		allowDMs:     true,
 		bot:          b,
 		owo:          o,
@@ -46,17 +46,17 @@ func (m *AntiRaidMod) Name() string {
 }
 
 // Passives returns the mod passives.
-func (m *AntiRaidMod) Passives() []*base.ModPassive {
-	return []*base.ModPassive{}
+func (m *AntiRaidMod) Passives() []*mio.ModPassive {
+	return []*mio.ModPassive{}
 }
 
 // Commands returns the mod commands.
-func (m *AntiRaidMod) Commands() map[string]*base.ModCommand {
+func (m *AntiRaidMod) Commands() map[string]*mio.ModCommand {
 	return m.commands
 }
 
 // AllowedTypes returns the allowed MessageTypes.
-func (m *AntiRaidMod) AllowedTypes() base.MessageType {
+func (m *AntiRaidMod) AllowedTypes() mio.MessageType {
 	return m.allowedTypes
 }
 
@@ -81,7 +81,7 @@ func (m *AntiRaidMod) Hook() error {
 }
 
 // RegisterCommand registers a ModCommand to the Mod
-func (m *AntiRaidMod) RegisterCommand(cmd *base.ModCommand) {
+func (m *AntiRaidMod) RegisterCommand(cmd *mio.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {

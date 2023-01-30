@@ -2,7 +2,7 @@ package administrationmod
 
 import (
 	"fmt"
-	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"sync"
 )
 
@@ -10,18 +10,18 @@ import (
 type AdministrationMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base.ModCommand
-	allowedTypes base.MessageType
+	commands     map[string]*mio.ModCommand
+	allowedTypes mio.MessageType
 	allowDMs     bool
-	bot          *base.Bot
+	bot          *mio.Bot
 }
 
 // New returns a new AdministrationMod.
-func New(b *base.Bot) base.Mod {
+func New(b *mio.Bot) mio.Mod {
 	return &AdministrationMod{
 		name:         "Administration",
-		commands:     make(map[string]*base.ModCommand),
-		allowedTypes: base.MessageTypeCreate,
+		commands:     make(map[string]*mio.ModCommand),
+		allowedTypes: mio.MessageTypeCreate,
 		allowDMs:     true,
 		bot:          b,
 	}
@@ -33,17 +33,17 @@ func (m *AdministrationMod) Name() string {
 }
 
 // Passives returns the mod passives.
-func (m *AdministrationMod) Passives() []*base.ModPassive {
-	return []*base.ModPassive{}
+func (m *AdministrationMod) Passives() []*mio.ModPassive {
+	return []*mio.ModPassive{}
 }
 
 // Commands returns the mod commands.
-func (m *AdministrationMod) Commands() map[string]*base.ModCommand {
+func (m *AdministrationMod) Commands() map[string]*mio.ModCommand {
 	return m.commands
 }
 
 // AllowedTypes returns the allowed MessageTypes.
-func (m *AdministrationMod) AllowedTypes() base.MessageType {
+func (m *AdministrationMod) AllowedTypes() mio.MessageType {
 	return m.allowedTypes
 }
 
@@ -59,7 +59,7 @@ func (m *AdministrationMod) Hook() error {
 }
 
 // RegisterCommand registers a ModCommand to the Mod
-func (m *AdministrationMod) RegisterCommand(cmd *base.ModCommand) {
+func (m *AdministrationMod) RegisterCommand(cmd *mio.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -69,8 +69,8 @@ func (m *AdministrationMod) RegisterCommand(cmd *base.ModCommand) {
 }
 
 // NewToggleCommandCommand returns a new ping command.
-func NewToggleCommandCommand(m *AdministrationMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewToggleCommandCommand(m *AdministrationMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "togglecommand",
 		Description:   "Enables or disables a command. Bot owner only.",
@@ -79,14 +79,14 @@ func NewToggleCommandCommand(m *AdministrationMod) *base.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: true,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.toggleCommandCommand,
 	}
 }
 
-func (m *AdministrationMod) toggleCommandCommand(msg *base.DiscordMessage) {
+func (m *AdministrationMod) toggleCommandCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -96,7 +96,7 @@ func (m *AdministrationMod) toggleCommandCommand(msg *base.DiscordMessage) {
 	}
 
 	for _, mod := range m.bot.Mods {
-		cmd, ok := base.FindCommand(mod, msg.Args())
+		cmd, ok := mio.FindCommand(mod, msg.Args())
 		if !ok {
 			return
 		}

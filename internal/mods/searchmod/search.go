@@ -3,9 +3,9 @@ package searchmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/internal/services"
-	"github.com/intrntsrfr/meido/utils"
+	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"strings"
 	"sync"
 	"time"
@@ -14,19 +14,19 @@ import (
 type SearchMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base.ModCommand
-	allowedTypes base.MessageType
+	commands     map[string]*mio.ModCommand
+	allowedTypes mio.MessageType
 	allowDMs     bool
-	bot          *base.Bot
+	bot          *mio.Bot
 	search       *services.SearchService
 	imageCache   *services.ImageSearchCache
 }
 
-func New(b *base.Bot, s *services.SearchService) base.Mod {
+func New(b *mio.Bot, s *services.SearchService) mio.Mod {
 	return &SearchMod{
 		name:         "Search",
-		commands:     make(map[string]*base.ModCommand),
-		allowedTypes: base.MessageTypeCreate,
+		commands:     make(map[string]*mio.ModCommand),
+		allowedTypes: mio.MessageTypeCreate,
 		allowDMs:     true,
 		bot:          b,
 		search:       s,
@@ -37,13 +37,13 @@ func New(b *base.Bot, s *services.SearchService) base.Mod {
 func (m *SearchMod) Name() string {
 	return m.name
 }
-func (m *SearchMod) Passives() []*base.ModPassive {
-	return []*base.ModPassive{}
+func (m *SearchMod) Passives() []*mio.ModPassive {
+	return []*mio.ModPassive{}
 }
-func (m *SearchMod) Commands() map[string]*base.ModCommand {
+func (m *SearchMod) Commands() map[string]*mio.ModCommand {
 	return m.commands
 }
-func (m *SearchMod) AllowedTypes() base.MessageType {
+func (m *SearchMod) AllowedTypes() mio.MessageType {
 	return m.allowedTypes
 }
 func (m *SearchMod) AllowDMs() bool {
@@ -58,7 +58,7 @@ func (m *SearchMod) Hook() error {
 
 	return nil
 }
-func (m *SearchMod) RegisterCommand(cmd *base.ModCommand) {
+func (m *SearchMod) RegisterCommand(cmd *mio.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -67,8 +67,8 @@ func (m *SearchMod) RegisterCommand(cmd *base.ModCommand) {
 	m.commands[cmd.Name] = cmd
 }
 
-func NewYouTubeCommand(m *SearchMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewYouTubeCommand(m *SearchMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "youtube",
 		Description:   "Search for a YouTube video",
@@ -77,13 +77,13 @@ func NewYouTubeCommand(m *SearchMod) *base.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.youtubeCommand,
 	}
 }
-func (m *SearchMod) youtubeCommand(msg *base.DiscordMessage) {
+func (m *SearchMod) youtubeCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -102,8 +102,8 @@ func (m *SearchMod) youtubeCommand(msg *base.DiscordMessage) {
 	msg.Reply("https://youtube.com/watch?v=" + ids[0])
 }
 
-func NewImageCommand(m *SearchMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewImageCommand(m *SearchMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "image",
 		Description:   "Search for an image",
@@ -112,14 +112,14 @@ func NewImageCommand(m *SearchMod) *base.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.googleCommand,
 	}
 }
 
-func (m *SearchMod) googleCommand(msg *base.DiscordMessage) {
+func (m *SearchMod) googleCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

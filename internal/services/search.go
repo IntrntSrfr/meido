@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -37,7 +37,7 @@ func (s *SearchService) request(req *http.Request) ([]byte, error) {
 	if res.StatusCode != 200 {
 		return nil, errors.New("bad response code")
 	}
-	return ioutil.ReadAll(res.Body)
+	return io.ReadAll(res.Body)
 }
 
 func (s *SearchService) SearchGoogleImages(query string) ([]string, error) {

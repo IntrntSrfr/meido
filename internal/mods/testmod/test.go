@@ -2,7 +2,7 @@ package testmod
 
 import (
 	"fmt"
-	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"math/rand"
 	"sync"
 )
@@ -11,17 +11,17 @@ import (
 type TestMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base.ModCommand
-	allowedTypes base.MessageType
+	commands     map[string]*mio.ModCommand
+	allowedTypes mio.MessageType
 	allowDMs     bool
 }
 
 // New returns a new TestMod.
-func New() base.Mod {
+func New() mio.Mod {
 	return &TestMod{
 		name:         "Test",
-		commands:     make(map[string]*base.ModCommand),
-		allowedTypes: base.MessageTypeCreate,
+		commands:     make(map[string]*mio.ModCommand),
+		allowedTypes: mio.MessageTypeCreate,
 		allowDMs:     true,
 	}
 }
@@ -32,17 +32,17 @@ func (m *TestMod) Name() string {
 }
 
 // Passives returns the mod passives.
-func (m *TestMod) Passives() []*base.ModPassive {
-	return []*base.ModPassive{}
+func (m *TestMod) Passives() []*mio.ModPassive {
+	return []*mio.ModPassive{}
 }
 
 // Commands returns the mod commands.
-func (m *TestMod) Commands() map[string]*base.ModCommand {
+func (m *TestMod) Commands() map[string]*mio.ModCommand {
 	return m.commands
 }
 
 // AllowedTypes returns the allowed MessageTypes.
-func (m *TestMod) AllowedTypes() base.MessageType {
+func (m *TestMod) AllowedTypes() mio.MessageType {
 	return m.allowedTypes
 }
 
@@ -60,7 +60,7 @@ func (m *TestMod) Hook() error {
 }
 
 // RegisterCommand registers a ModCommand to the Mod
-func (m *TestMod) RegisterCommand(cmd *base.ModCommand) {
+func (m *TestMod) RegisterCommand(cmd *mio.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -70,8 +70,8 @@ func (m *TestMod) RegisterCommand(cmd *base.ModCommand) {
 }
 
 // NewTestCommand returns a new ping command.
-func NewTestCommand(m *TestMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewTestCommand(m *TestMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "test",
 		Description:   "This is an incredible test command",
@@ -80,20 +80,20 @@ func NewTestCommand(m *TestMod) *base.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.testCommand,
 	}
 }
 
-func (m *TestMod) testCommand(msg *base.DiscordMessage) {
+func (m *TestMod) testCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply("test")
 }
 
 // NewMonkeyCommand returns a new monkey command.
-func NewMonkeyCommand(m *TestMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewMonkeyCommand(m *TestMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "monkey",
 		Description:   "Monkey",
@@ -102,14 +102,14 @@ func NewMonkeyCommand(m *TestMod) *base.ModCommand {
 		Cooldown:      0,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.monkeyCommand,
 	}
 }
 
-func (m *TestMod) monkeyCommand(msg *base.DiscordMessage) {
+func (m *TestMod) monkeyCommand(msg *mio.DiscordMessage) {
 	msg.Reply(monkeys[rand.Intn(len(monkeys))])
 }
 

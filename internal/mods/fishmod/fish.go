@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/utils"
+	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -17,19 +17,19 @@ import (
 type FishMod struct {
 	sync.Mutex
 	name         string
-	commands     map[string]*base.ModCommand
-	allowedTypes base.MessageType
+	commands     map[string]*mio.ModCommand
+	allowedTypes mio.MessageType
 	allowDMs     bool
-	bot          *base.Bot
+	bot          *mio.Bot
 	db           *database.PsqlDB
 }
 
 // New returns a new PingMod.
-func New(b *base.Bot, db *database.PsqlDB) base.Mod {
+func New(b *mio.Bot, db *database.PsqlDB) mio.Mod {
 	return &FishMod{
 		name:         "Fish",
-		commands:     make(map[string]*base.ModCommand),
-		allowedTypes: base.MessageTypeCreate,
+		commands:     make(map[string]*mio.ModCommand),
+		allowedTypes: mio.MessageTypeCreate,
 		allowDMs:     true,
 		bot:          b,
 		db:           db,
@@ -42,17 +42,17 @@ func (m *FishMod) Name() string {
 }
 
 // Passives returns the mod passives.
-func (m *FishMod) Passives() []*base.ModPassive {
-	return []*base.ModPassive{}
+func (m *FishMod) Passives() []*mio.ModPassive {
+	return []*mio.ModPassive{}
 }
 
 // Commands returns the mod commands.
-func (m *FishMod) Commands() map[string]*base.ModCommand {
+func (m *FishMod) Commands() map[string]*mio.ModCommand {
 	return m.commands
 }
 
 // AllowedTypes returns the allowed MessageTypes.
-func (m *FishMod) AllowedTypes() base.MessageType {
+func (m *FishMod) AllowedTypes() mio.MessageType {
 	return m.allowedTypes
 }
 
@@ -69,7 +69,7 @@ func (m *FishMod) Hook() error {
 }
 
 // RegisterCommand registers a ModCommand to the Mod
-func (m *FishMod) RegisterCommand(cmd *base.ModCommand) {
+func (m *FishMod) RegisterCommand(cmd *mio.ModCommand) {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -79,8 +79,8 @@ func (m *FishMod) RegisterCommand(cmd *base.ModCommand) {
 }
 
 // NewFishCommand returns a new fish command.
-func NewFishCommand(m *FishMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewFishCommand(m *FishMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "fish",
 		Description:   "Fish",
@@ -90,18 +90,15 @@ func NewFishCommand(m *FishMod) *base.ModCommand {
 		CooldownUser:  true,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.fishCommand,
 	}
 }
 
-func (m *FishMod) fishCommand(msg *base.DiscordMessage) {
-
-	// if msg is sent in guild, check if it's sent in the fishing channel
-	if !msg.IsDM() && m.db.GetGuildFishingChannel(msg.GuildID()) != msg.ChannelID() {
-		fmt.Println("first")
+func (m *FishMod) fishCommand(msg *mio.DiscordMessage) {
+	if gc, err := m.db.GetGuild(msg.GuildID()); err != nil || msg.ChannelID() != gc.FishingChannelID {
 		return
 	}
 
@@ -125,7 +122,7 @@ func (m *FishMod) updateAquarium(userID string, f fish, d int) error {
 	aq, err := m.db.GetAquarium(userID)
 	if err != nil && err == sql.ErrNoRows {
 		// if no aquarium found, make one
-		aq, err = m.db.InsertNewAquarium(userID)
+		err = m.db.CreateAquarium(userID)
 		if err != nil {
 			return err
 		}
@@ -197,8 +194,8 @@ func pickFish() fish {
 }
 
 // NewAquariumCommand returns a new Aquarium command.
-func NewAquariumCommand(m *FishMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewAquariumCommand(m *FishMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "Aquarium",
 		Description:   "Displays your aquarium",
@@ -208,14 +205,14 @@ func NewAquariumCommand(m *FishMod) *base.ModCommand {
 		CooldownUser:  true,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
 		Run:           m.aquariumCommand,
 	}
 }
 
-func (m *FishMod) aquariumCommand(msg *base.DiscordMessage) {
+func (m *FishMod) aquariumCommand(msg *mio.DiscordMessage) {
 
 	targetUser := msg.Author()
 

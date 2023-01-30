@@ -2,15 +2,16 @@ package structs
 
 import "time"
 
+// CommandLogEntry represents an entry in the command log
 type CommandLogEntry struct {
-	UID       int
-	Command   string
-	Args      string
-	UserID    string
-	GuildID   string
-	ChannelID string
-	MessageID string
-	SentAt    time.Time
+	UID       int       `db:"uid"`
+	Command   string    `db:"command"`
+	Args      string    `db:"args"`
+	UserID    string    `db:"user_id"`
+	GuildID   string    `db:"guild_id"`
+	ChannelID string    `db:"channel_id"`
+	MessageID string    `db:"message_id"`
+	SentAt    time.Time `db:"sent_at"`
 }
 
 // UserRole represents a user role.

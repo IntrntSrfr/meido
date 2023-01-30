@@ -3,12 +3,12 @@ package moderationmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"time"
 )
 
-func NewMuteCommand(m *ModerationMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewMuteCommand(m *ModerationMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "mute",
 		Description:   "Mutes a member, making them unable to chat or speak. Duration will be 1 day unless something else is specified.",
@@ -19,14 +19,14 @@ func NewMuteCommand(m *ModerationMod) *base.ModCommand {
 		RequiredPerms: discordgo.PermissionModerateMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.muteCommand,
 	}
 }
 
-func (m *ModerationMod) muteCommand(msg *base.DiscordMessage) {
+func (m *ModerationMod) muteCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -76,8 +76,8 @@ func (m *ModerationMod) muteCommand(msg *base.DiscordMessage) {
 	_, _ = msg.Reply(fmt.Sprintf("%v has been timed out for %v", targetMember.User, duration))
 }
 
-func NewUnmuteCommand(m *ModerationMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewUnmuteCommand(m *ModerationMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "unmute",
 		Description:   "Unmutes a member",
@@ -88,14 +88,14 @@ func NewUnmuteCommand(m *ModerationMod) *base.ModCommand {
 		RequiredPerms: discordgo.PermissionModerateMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.unmuteCommand,
 	}
 }
 
-func (m *ModerationMod) unmuteCommand(msg *base.DiscordMessage) {
+func (m *ModerationMod) unmuteCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

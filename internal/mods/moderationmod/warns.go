@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
-	"github.com/intrntsrfr/meido/base"
 	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/utils"
+	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 	"strconv"
 	"strings"
 	"time"
 )
 
-func NewWarnCommand(m *ModerationMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewWarnCommand(m *ModerationMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "warn",
 		Description:   "Warns a user. Does not work if warn system is disabled.",
@@ -25,14 +25,14 @@ func NewWarnCommand(m *ModerationMod) *base.ModCommand {
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
 		CheckBotPerms: true,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.warnCommand,
 	}
 }
 
-func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
+func (m *ModerationMod) warnCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -139,8 +139,8 @@ func (m *ModerationMod) warnCommand(msg *base.DiscordMessage) {
 	}
 }
 
-func NewWarnLogCommand(m *ModerationMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewWarnLogCommand(m *ModerationMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "warnlog",
 		Description:   "Displays a users warns",
@@ -149,14 +149,14 @@ func NewWarnLogCommand(m *ModerationMod) *base.ModCommand {
 		Cooldown:      5,
 		RequiredPerms: discordgo.PermissionManageMessages,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.warnlogCommand,
 	}
 }
 
-func (m *ModerationMod) warnlogCommand(msg *base.DiscordMessage) {
+func (m *ModerationMod) warnlogCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -267,8 +267,8 @@ func (m *ModerationMod) warnlogCommand(msg *base.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewWarnCountCommand(m *ModerationMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewWarnCountCommand(m *ModerationMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "warncount",
 		Description:   "Displays how many warns a user has. User can be specified. Message author will be used if no user is provided.",
@@ -277,14 +277,14 @@ func NewWarnCountCommand(m *ModerationMod) *base.ModCommand {
 		Cooldown:      2,
 		RequiredPerms: 0,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.warncountCommand,
 	}
 }
 
-func (m *ModerationMod) warncountCommand(msg *base.DiscordMessage) {
+func (m *ModerationMod) warncountCommand(msg *mio.DiscordMessage) {
 
 	dge := database.Guild{}
 	err := m.db.Get(&dge, "SELECT use_warns, max_warns FROM guild WHERE guild_id=$1", msg.Message.GuildID)
@@ -315,8 +315,8 @@ func (m *ModerationMod) warncountCommand(msg *base.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("%v is at %v/%v warns", targetUser.String(), warnCount, dge.MaxWarns))
 }
 
-func NewClearWarnCommand(m *ModerationMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewClearWarnCommand(m *ModerationMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "pardon",
 		Description:   "Pardons a user. Opens a menu to clear a warn belonging to them.",
@@ -325,14 +325,14 @@ func NewClearWarnCommand(m *ModerationMod) *base.ModCommand {
 		Cooldown:      3,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.clearwarnCommand,
 	}
 }
 
-func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
+func (m *ModerationMod) clearwarnCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -372,7 +372,7 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 	}
 
 	var n int
-	var reply *base.DiscordMessage
+	var reply *mio.DiscordMessage
 	// this needs a timeout
 	for {
 		select {
@@ -412,8 +412,8 @@ func (m *ModerationMod) clearwarnCommand(msg *base.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("Invalidated warn with ID: %v", selectedEntry.UID))
 }
 
-func NewClearAllWarnsCommand(m *ModerationMod) *base.ModCommand {
-	return &base.ModCommand{
+func NewClearAllWarnsCommand(m *ModerationMod) *mio.ModCommand {
+	return &mio.ModCommand{
 		Mod:           m,
 		Name:          "pardonall",
 		Description:   "Pardons all active warns for a member",
@@ -422,13 +422,13 @@ func NewClearAllWarnsCommand(m *ModerationMod) *base.ModCommand {
 		Cooldown:      5,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run:           m.clearallwarnsCommand,
 	}
 }
-func (m *ModerationMod) clearallwarnsCommand(msg *base.DiscordMessage) {
+func (m *ModerationMod) clearallwarnsCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

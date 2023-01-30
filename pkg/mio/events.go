@@ -1,4 +1,4 @@
-package base
+package mio
 
 import (
 	"fmt"
@@ -19,7 +19,7 @@ func ready(s *discordgo.Session, r *discordgo.Ready) {
 }
 
 func guildJoin(s *discordgo.Session, g *discordgo.GuildCreate) {
-	s.RequestGuildMembers(g.ID, "", 0, false)
+	_ = s.RequestGuildMembers(g.ID, "", 0, false)
 	fmt.Println("loading: ", g.Guild.Name, g.MemberCount, len(g.Members))
 }
 

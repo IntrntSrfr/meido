@@ -1,10 +1,10 @@
-package base
+package mio
 
 import (
 	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/utils"
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"strings"
 	"time"
 )
