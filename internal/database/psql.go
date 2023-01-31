@@ -54,6 +54,12 @@ func (p *PsqlDB) GetValidUserWarnCount(guildID, userID string) (int, error) {
 	return count, err
 }
 
+func (p *PsqlDB) CreateCommandLogEntry(e *structs.CommandLogEntry) error {
+	_, err := p.pool.Exec("INSERT INTO command_log VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
+		e.Command, e.Args, e.UserID, e.GuildID, e.ChannelID, e.MessageID, e.SentAt)
+	return err
+}
+
 func (p *PsqlDB) GetCommandCount() (int, error) {
 	var count int
 	err := p.pool.Get(&count, "SELECT COUNT(*) FROM command_log;")
@@ -104,11 +110,6 @@ func (p *PsqlDB) UpdateAquarium(aq *structs.Aquarium) error {
 	_, err := p.pool.Exec("UPDATE aquarium SET common=$1, uncommon=$2, rare=$3, super_rare=$4, legendary=$5 WHERE user_id=$6",
 		aq.Common, aq.Uncommon, aq.Rare, aq.SuperRare, aq.Legendary, aq.UserID)
 	return err
-}
-
-func (p *PsqlDB) CreateCommandLogEntry(e *structs.CommandLogEntry) error {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (p *PsqlDB) CreateGuild(gid string) error {

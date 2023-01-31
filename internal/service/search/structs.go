@@ -1,7 +1,7 @@
 package search
 
-type SearchResponse interface {
-	WeatherResponse
+type Response interface {
+	WeatherResponse | YoutubeSearchResponse
 }
 
 type WeatherResponse struct {
@@ -51,4 +51,12 @@ type Sys struct {
 	Country string `json:"country"`
 	Sunrise int    `json:"sunrise"`
 	Sunset  int    `json:"sunset"`
+}
+
+type YoutubeSearchResponse struct {
+	Items []struct {
+		ID struct {
+			VideoID string `json:"videoId"`
+		} `json:"id"`
+	} `json:"items"`
 }

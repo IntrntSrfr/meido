@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/module/utilitymod"
 	"github.com/intrntsrfr/meido/internal/service/search"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"os"
@@ -35,7 +36,7 @@ func main() {
 	}
 
 	//owoClient := owo.NewClient(config.OwoToken)
-	searchService := search.NewSearchService(config.YouTubeToken, config.OpenWeatherApiKey)
+	searchService := search.NewService(config.YouTubeToken, config.OpenWeatherApiKey)
 	//gptClient := gogpt.NewClient(config.OpenAIToken)
 
 	bot := mio.NewBot(config, db, logger.Named("meido"))
@@ -47,7 +48,7 @@ func main() {
 	bot.RegisterMod(testmod.New())
 	//bot.RegisterMod(fishmod.New())
 	//bot.RegisterMod(loggermod.New(config.DmLogChannels))
-	//bot.RegisterMod(utilitymod.New(bot, db))
+	bot.RegisterMod(utilitymod.New(bot, db))
 	//bot.RegisterMod(moderationmod.New(bot, db, logger.Named("moderation")))
 	//bot.RegisterMod(userrolemod.New(bot, db, owoClient, logger.Named("userrole")))
 	bot.RegisterMod(searchmod.New(bot, searchService))

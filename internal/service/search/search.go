@@ -15,19 +15,19 @@ import (
 
 var imageReg = regexp.MustCompile(`"(http)s?://([^"])*\.(gif|png|jpg)",`)
 
-type SearchService struct {
+type Service struct {
 	youtubeToken      string
 	openWeatherApiKey string
 }
 
-func NewSearchService(ytToken, weatherKey string) *SearchService {
-	return &SearchService{
+func NewService(ytToken, weatherKey string) *Service {
+	return &Service{
 		youtubeToken:      ytToken,
 		openWeatherApiKey: weatherKey,
 	}
 }
 
-func (s *SearchService) request(req *http.Request) ([]byte, error) {
+func (s *Service) request(req *http.Request) ([]byte, error) {
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (s *SearchService) request(req *http.Request) ([]byte, error) {
 	return io.ReadAll(res.Body)
 }
 
-func parse[V SearchResponse](d []byte) (*V, error) {
+func parse[V Response](d []byte) (*V, error) {
 	var resp V
 	err := json.Unmarshal(d, &resp)
 	if err != nil {
@@ -51,9 +51,11 @@ func parse[V SearchResponse](d []byte) (*V, error) {
 
 const OpenWeatherApiURL = "https://api.openweathermap.org/data/2.5/weather"
 
-func (s *SearchService) GetWeatherData(query string) (*WeatherResponse, error) {
+func (s *Service) GetWeatherData(query string) (*WeatherResponse, error) {
 	params := url.Values{}
 	params.Set("q", query)
+	params.Set("appid", s.openWeatherApiKey)
+	params.Set("units", "metric")
 
 	// this will always work
 	req, _ := http.NewRequest("GET", OpenWeatherApiURL, nil)
@@ -72,7 +74,7 @@ func (s *SearchService) GetWeatherData(query string) (*WeatherResponse, error) {
 	return resp, nil
 }
 
-func (s *SearchService) SearchGoogleImages(query string) ([]string, error) {
+func (s *Service) SearchGoogleImages(query string) ([]string, error) {
 	var links []string
 	req, err := http.NewRequest("GET", "https://www.google.com/search?tbm=isch&gs_l=img&safe=yes&q="+url.QueryEscape(query), nil)
 	if err != nil {
@@ -102,44 +104,33 @@ func (s *SearchService) SearchGoogleImages(query string) ([]string, error) {
 	return links, nil
 }
 
-func (s *SearchService) SearchYouTube(query string) ([]string, error) {
-	URI, _ := url.Parse("https://www.googleapis.com/youtube/v3/search")
+const YoutubeURL = "https://www.googleapis.com/youtube/v3/search"
+
+func (s *Service) SearchYoutube(query string) ([]string, error) {
 	params := url.Values{}
 	params.Add("key", s.youtubeToken)
 	params.Add("q", query)
 	params.Add("type", "video")
 	params.Add("part", "snippet")
-	URI.RawQuery = params.Encode()
 
-	req, err := http.NewRequest("GET", URI.String(), nil)
+	req, _ := http.NewRequest("GET", YoutubeURL, nil)
+	req.URL.RawQuery = params.Encode()
+
+	b, err := s.request(req)
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := s.request(req)
-	if err != nil {
-		return nil, err
-	}
-
-	result := youtubeSearchResponse{}
-	err = json.Unmarshal(body, &result)
+	resp, err := parse[YoutubeSearchResponse](b)
 	if err != nil {
 		return nil, err
 	}
 
 	var ids []string
-	for _, item := range result.Items {
+	for _, item := range resp.Items {
 		ids = append(ids, item.ID.VideoID)
 	}
 	return ids, nil
-}
-
-type youtubeSearchResponse struct {
-	Items []struct {
-		ID struct {
-			VideoID string `json:"videoId"`
-		} `json:"id"`
-	} `json:"items"`
 }
 
 type ImageSearchCache struct {
