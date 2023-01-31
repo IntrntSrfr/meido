@@ -12,16 +12,15 @@ import (
 	"go.uber.org/zap"
 )
 
-// Config is the config struct for the bot.
+// Config is the config struct for the bot
 type Config struct {
-	Token            string   `json:"token"`
-	ConnectionString string   `json:"connection_string"`
-	OwnerIds         []string `json:"owner_ids"`
-	DmLogChannels    []string `json:"dm_log_channels"`
-	OwoToken         string   `json:"owo_token"`
-	YouTubeToken     string   `json:"youtube_key"`
-	OpenAIToken      string   `json:"open_ai_token"`
-	GPT3Engine       string   `json:"gpt3_engine"`
+	Token             string   `json:"token"`
+	ConnectionString  string   `json:"connection_string"`
+	OwnerIds          []string `json:"owner_ids"`
+	DmLogChannels     []string `json:"dm_log_channels"`
+	OwoToken          string   `json:"owo_token"`
+	YouTubeToken      string   `json:"youtube_key"`
+	OpenWeatherApiKey string   `json:"open_weather_api_key"`
 }
 
 // Bot is the main bot struct.

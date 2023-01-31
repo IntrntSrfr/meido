@@ -2,8 +2,7 @@ package utilitymod
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/internal/mods"
+	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"strconv"
@@ -23,29 +22,23 @@ func NewAvatarCommand(m *UtilityMod) *mio.ModCommand {
 		AllowDMs:      true,
 		Enabled:       true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 1 {
-				return
-			}
-
 			targetUser := msg.Author()
 			var err error
-
 			if msg.LenArgs() > 1 {
 				targetUser, err = msg.GetMemberOrUserAtArg(1)
 				if err != nil {
 					return
 				}
 			}
-
 			if targetUser == nil {
 				return
 			}
 
-			_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{
-				Color: msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID),
-				Title: targetUser.String(),
-				Image: &discordgo.MessageEmbedImage{URL: targetUser.AvatarURL("1024")},
-			})
+			embed := helpers.NewEmbed().
+				WithTitle(targetUser.String()).
+				WithImageUrl(targetUser.AvatarURL("1024")).
+				WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID))
+			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}
 }
@@ -76,7 +69,6 @@ func NewBannerCommand(m *UtilityMod) *mio.ModCommand {
 
 			targetUserID = utils.TrimUserID(targetUserID)
 			if !utils.IsNumber(targetUserID) {
-				fmt.Println("thing isnt number")
 				return
 			}
 
@@ -91,11 +83,11 @@ func NewBannerCommand(m *UtilityMod) *mio.ModCommand {
 				return
 			}
 
-			_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{
-				Color: msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID),
-				Title: targetUser.String(),
-				Image: &discordgo.MessageEmbedImage{URL: targetUser.BannerURL("1024")},
-			})
+			embed := helpers.NewEmbed().
+				WithTitle(targetUser.String()).
+				WithImageUrl(targetUser.BannerURL("1024")).
+				WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID))
+			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}
 }
@@ -137,11 +129,11 @@ func NewMemberAvatarCommand(m *UtilityMod) *mio.ModCommand {
 				return
 			}
 
-			_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{
-				Color: msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID),
-				Title: targetMember.User.String(),
-				Image: &discordgo.MessageEmbedImage{URL: targetMember.AvatarURL("1024")},
-			})
+			embed := helpers.NewEmbed().
+				WithTitle(targetMember.User.String()).
+				WithImageUrl(targetMember.AvatarURL("1024")).
+				WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID))
+			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}
 }
@@ -183,14 +175,14 @@ func NewUserInfoCommand(m *UtilityMod) *mio.ModCommand {
 				}
 			}
 
-			ts := utils.IDToTimestamp(targetUser.ID)
-			embed := &discordgo.MessageEmbed{}
-			embed = mods.SetEmbedTitle(embed, fmt.Sprintf("User info | %v", targetUser.String()))
-			embed = mods.SetEmbedThumbnail(embed, targetUser.AvatarURL("256"))
-			embed = mods.AddEmbedField(embed, "ID | Mention", fmt.Sprintf("%v | <@!%v>", targetUser.ID, targetUser.ID), false)
-			embed = mods.AddEmbedField(embed, "Creation date", fmt.Sprintf("<t:%v:R>", ts.Unix()), false)
+			embed := helpers.NewEmbed().
+				WithTitle(fmt.Sprintf("User info | %v", targetUser.String())).
+				WithThumbnail(targetUser.AvatarURL("256")).
+				AddField("ID | Mention", fmt.Sprintf("%v | <@!%v>", targetUser.ID, targetUser.ID), false).
+				AddField("Creation date", fmt.Sprintf("<t:%v:R>", utils.IDToTimestamp(targetUser.ID).Unix()), false)
+
 			if targetMember == nil {
-				_, _ = msg.ReplyEmbed(embed)
+				_, _ = msg.ReplyEmbed(embed.Build())
 				return
 			}
 
@@ -199,11 +191,11 @@ func NewUserInfoCommand(m *UtilityMod) *mio.ModCommand {
 				nick = "None"
 			}
 
-			embed.Color = msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID)
-			embed = mods.AddEmbedField(embed, "Join date", fmt.Sprintf("<t:%v:R>", targetMember.JoinedAt.Unix()), false)
-			embed = mods.AddEmbedField(embed, "Roles", fmt.Sprint(len(targetMember.Roles)), true)
-			embed = mods.AddEmbedField(embed, "Nickname", nick, true)
-			_, _ = msg.ReplyEmbed(embed)
+			embed = embed.WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID)).
+				AddField("Join date", fmt.Sprintf("<t:%v:R>", targetMember.JoinedAt.Unix()), false).
+				AddField("Roles", fmt.Sprint(len(targetMember.Roles)), true).
+				AddField("Nickname", nick, true)
+			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}
 }

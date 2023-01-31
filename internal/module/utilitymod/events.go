@@ -6,10 +6,8 @@ import (
 	"time"
 )
 
-func (m *UtilityMod) StatusLoop() interface{} {
-
+func (m *UtilityMod) StatusLoop() func(s *discordgo.Session, r *discordgo.Ready) {
 	statusTimer := time.NewTicker(time.Second * 15)
-
 	return func(s *discordgo.Session, r *discordgo.Ready) {
 		display := true
 		go func() {
@@ -21,7 +19,7 @@ func (m *UtilityMod) StatusLoop() interface{} {
 						srvCount++
 						memCount += g.MemberCount
 					}
-					s.UpdateStatusComplex(discordgo.UpdateStatusData{
+					_ = s.UpdateStatusComplex(discordgo.UpdateStatusData{
 						Activities: []*discordgo.Activity{
 							{
 								Name: fmt.Sprintf("over %v servers and %v members", srvCount, memCount),
@@ -30,7 +28,7 @@ func (m *UtilityMod) StatusLoop() interface{} {
 						},
 					})
 				} else {
-					s.UpdateStatusComplex(discordgo.UpdateStatusData{
+					_ = s.UpdateStatusComplex(discordgo.UpdateStatusData{
 						Activities: []*discordgo.Activity{
 							{
 								Name: fmt.Sprintf("m?help"),

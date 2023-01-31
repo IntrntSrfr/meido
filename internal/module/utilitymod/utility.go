@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/internal/mods"
+	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"image"
@@ -75,7 +75,6 @@ func (m *UtilityMod) Hook() error {
 	m.RegisterCommand(NewInviteCommand(m))
 	//m.RegisterCommand(NewUserPermsCommand(m))
 	m.RegisterCommand(NewUserInfoCommand(m))
-
 	m.RegisterCommand(NewHelpCommand(m))
 
 	return nil
@@ -87,27 +86,6 @@ func (m *UtilityMod) RegisterCommand(cmd *mio.ModCommand) {
 		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.name))
 	}
 	m.commands[cmd.Name] = cmd
-}
-
-func NewWeatherCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
-		Mod:           m,
-		Name:          "weather",
-		Description:   "Finds the weather at a provided location",
-		Triggers:      []string{"m?weather"},
-		Usage:         "m?weather Oslo",
-		Cooldown:      0,
-		CooldownUser:  false,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		CheckBotPerms: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		Enabled:       true,
-		Run: func(msg *mio.DiscordMessage) {
-			// utilize open weather api?
-		},
-	}
 }
 
 func NewConvertCommand(m *UtilityMod) *mio.ModCommand {
@@ -213,14 +191,14 @@ func NewAboutCommand(m *UtilityMod) *mio.ModCommand {
 			}
 
 			embed := &discordgo.MessageEmbed{}
-			embed = mods.SetEmbedTitle(embed, "About")
+			embed = helpers.SetEmbedTitle(embed, "About")
 			embed.Color = utils.ColorInfo
-			embed = mods.AddEmbedField(embed, "Uptime", uptime.String(), true)
-			embed = mods.AddEmbedField(embed, "Total commands ran", fmt.Sprint(count), true)
-			embed = mods.AddEmbedField(embed, "Guilds", fmt.Sprint(len(guilds)), false)
-			embed = mods.AddEmbedField(embed, "Users", fmt.Sprintf("%v users | %v humans | %v bots", totalUsers, totalHumans, totalBots), true)
-			embed = mods.AddEmbedField(embed, "Memory use", fmt.Sprintf("%v/%v", humanize.Bytes(memory.Alloc), humanize.Bytes(memory.Sys)), false)
-			embed = mods.AddEmbedField(embed, "Garbage collected", humanize.Bytes(memory.TotalAlloc-memory.Alloc), true)
+			embed = helpers.AddEmbedField(embed, "Uptime", uptime.String(), true)
+			embed = helpers.AddEmbedField(embed, "Total commands ran", fmt.Sprint(count), true)
+			embed = helpers.AddEmbedField(embed, "Guilds", fmt.Sprint(len(guilds)), false)
+			embed = helpers.AddEmbedField(embed, "Users", fmt.Sprintf("%v users | %v humans | %v bots", totalUsers, totalHumans, totalBots), true)
+			embed = helpers.AddEmbedField(embed, "Memory use", fmt.Sprintf("%v/%v", humanize.Bytes(memory.Alloc), humanize.Bytes(memory.Sys)), false)
+			embed = helpers.AddEmbedField(embed, "Garbage collected", humanize.Bytes(memory.TotalAlloc-memory.Alloc), true)
 			_, _ = msg.ReplyEmbed(embed)
 		},
 	}
@@ -248,10 +226,7 @@ func (m *UtilityMod) colorCommand(msg *mio.DiscordMessage) {
 	}
 
 	clrStr := msg.Args()[1]
-
-	if clrStr[0] == '#' {
-		clrStr = clrStr[1:]
-	}
+	clrStr = strings.TrimPrefix(clrStr, "#")
 
 	clr, err := strconv.ParseInt(clrStr, 16, 32)
 	if err != nil || clr < 0 || clr > 0xffffff {

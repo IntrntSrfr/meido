@@ -1,4 +1,4 @@
-package services
+package search
 
 import (
 	"encoding/json"
@@ -16,19 +16,19 @@ import (
 var imageReg = regexp.MustCompile(`"(http)s?://([^"])*\.(gif|png|jpg)",`)
 
 type SearchService struct {
-	youtubeToken string
-	http         *http.Client
+	youtubeToken      string
+	openWeatherApiKey string
 }
 
-func NewSearchService(ytToken string) *SearchService {
+func NewSearchService(ytToken, weatherKey string) *SearchService {
 	return &SearchService{
-		youtubeToken: ytToken,
-		http:         http.DefaultClient,
+		youtubeToken:      ytToken,
+		openWeatherApiKey: weatherKey,
 	}
 }
 
 func (s *SearchService) request(req *http.Request) ([]byte, error) {
-	res, err := s.http.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -38,6 +38,38 @@ func (s *SearchService) request(req *http.Request) ([]byte, error) {
 		return nil, errors.New("bad response code")
 	}
 	return io.ReadAll(res.Body)
+}
+
+func parse[V SearchResponse](d []byte) (*V, error) {
+	var resp V
+	err := json.Unmarshal(d, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+const OpenWeatherApiURL = "https://api.openweathermap.org/data/2.5/weather"
+
+func (s *SearchService) GetWeatherData(query string) (*WeatherResponse, error) {
+	params := url.Values{}
+	params.Set("q", query)
+
+	// this will always work
+	req, _ := http.NewRequest("GET", OpenWeatherApiURL, nil)
+	req.URL.RawQuery = params.Encode()
+
+	b, err := s.request(req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := parse[WeatherResponse](b)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }
 
 func (s *SearchService) SearchGoogleImages(query string) ([]string, error) {

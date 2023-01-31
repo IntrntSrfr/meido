@@ -3,20 +3,14 @@ package main
 import (
 	"encoding/json"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/service/search"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/intrntsrfr/meido/internal/mods/loggermod"
-	"github.com/intrntsrfr/meido/internal/mods/mediaconvertmod"
-	"github.com/intrntsrfr/meido/internal/mods/moderationmod"
-	"github.com/intrntsrfr/meido/internal/mods/searchmod"
-	"github.com/intrntsrfr/meido/internal/mods/testmod"
-	"github.com/intrntsrfr/meido/internal/mods/userrolemod"
-	"github.com/intrntsrfr/meido/internal/mods/utilitymod"
-	"github.com/intrntsrfr/meido/internal/services"
-	"github.com/intrntsrfr/owo"
+	"github.com/intrntsrfr/meido/internal/module/searchmod"
+	"github.com/intrntsrfr/meido/internal/module/testmod"
 	"go.uber.org/zap"
 
 	_ "github.com/lib/pq"
@@ -40,8 +34,8 @@ func main() {
 		panic(err)
 	}
 
-	owoClient := owo.NewClient(config.OwoToken)
-	searchService := services.NewSearchService(config.YouTubeToken)
+	//owoClient := owo.NewClient(config.OwoToken)
+	searchService := search.NewSearchService(config.YouTubeToken, config.OpenWeatherApiKey)
 	//gptClient := gogpt.NewClient(config.OpenAIToken)
 
 	bot := mio.NewBot(config, db, logger.Named("meido"))
@@ -52,12 +46,12 @@ func main() {
 
 	bot.RegisterMod(testmod.New())
 	//bot.RegisterMod(fishmod.New())
-	bot.RegisterMod(loggermod.New(config.DmLogChannels))
-	bot.RegisterMod(utilitymod.New(bot, db))
-	bot.RegisterMod(moderationmod.New(bot, db, logger.Named("moderation")))
-	bot.RegisterMod(userrolemod.New(bot, db, owoClient, logger.Named("userrole")))
+	//bot.RegisterMod(loggermod.New(config.DmLogChannels))
+	//bot.RegisterMod(utilitymod.New(bot, db))
+	//bot.RegisterMod(moderationmod.New(bot, db, logger.Named("moderation")))
+	//bot.RegisterMod(userrolemod.New(bot, db, owoClient, logger.Named("userrole")))
 	bot.RegisterMod(searchmod.New(bot, searchService))
-	bot.RegisterMod(mediaconvertmod.New())
+	//bot.RegisterMod(mediaconvertmod.New())
 	//bot.RegisterMod(aimod.New(gptClient, config.GPT3Engine))
 
 	err = bot.Run()

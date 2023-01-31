@@ -3,7 +3,8 @@ package searchmod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/internal/services"
+	"github.com/intrntsrfr/meido/internal/helpers"
+	"github.com/intrntsrfr/meido/internal/service/search"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"strings"
@@ -18,11 +19,11 @@ type SearchMod struct {
 	allowedTypes mio.MessageType
 	allowDMs     bool
 	bot          *mio.Bot
-	search       *services.SearchService
-	imageCache   *services.ImageSearchCache
+	search       *search.SearchService
+	imageCache   *search.ImageSearchCache
 }
 
-func New(b *mio.Bot, s *services.SearchService) mio.Mod {
+func New(b *mio.Bot, s *search.SearchService) mio.Mod {
 	return &SearchMod{
 		name:         "Search",
 		commands:     make(map[string]*mio.ModCommand),
@@ -30,7 +31,7 @@ func New(b *mio.Bot, s *services.SearchService) mio.Mod {
 		allowDMs:     true,
 		bot:          b,
 		search:       s,
-		imageCache:   services.NewImageSearchCache(),
+		imageCache:   search.NewImageSearchCache(),
 	}
 }
 
@@ -65,6 +66,51 @@ func (m *SearchMod) RegisterCommand(cmd *mio.ModCommand) {
 		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
 	}
 	m.commands[cmd.Name] = cmd
+}
+
+func NewWeatherCommand(m *SearchMod) *mio.ModCommand {
+
+	// https://api.openweathermap.org/data/2.5/weather?q=trondheim&appid=42cd627dd60debf25a5739e50a217d74&units=metric
+
+	return &mio.ModCommand{
+		Mod:           m,
+		Name:          "weather",
+		Description:   "Finds the weather at a provided location",
+		Triggers:      []string{"m?weather"},
+		Usage:         "m?weather Oslo",
+		Cooldown:      0,
+		CooldownUser:  false,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		CheckBotPerms: false,
+		AllowedTypes:  mio.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run: func(msg *mio.DiscordMessage) {
+			// utilize open weather api?
+			if msg.LenArgs() < 2 {
+				return
+			}
+
+			query := strings.Join(msg.RawArgs()[1:], " ")
+			d, err := m.search.GetWeatherData(query)
+			if err != nil {
+				_, _ = msg.Reply("I could not find that city :(")
+				return
+			}
+
+			f := helpers.CelsiusToFahrenheit
+			embed := helpers.NewEmbed().
+				WithTitle(fmt.Sprintf("%v, %v", d.Name, d.Sys.Country)).
+				AddField("Temperature", fmt.Sprintf("%v°C / %v°F", d.Main.Temp, f(d.Main.Temp)), true).
+				AddField("Min | Max", fmt.Sprintf("%v°C - %v°C\n%v°F - %v°F",
+					d.Main.TempMin, d.Main.TempMax, f(d.Main.TempMin), f(d.Main.TempMax)), true).
+				AddField("Sunrise", fmt.Sprintf("<t:%v:R>", time.Unix(int64(d.Sys.Sunrise), 0)), true).
+				AddField("Sunset", fmt.Sprintf("<t:%v:R>", time.Unix(int64(d.Sys.Sunset), 0)), true).
+				WithFooter("Powered by openweathermap.org", "")
+			_, _ = msg.ReplyEmbed(embed.Build())
+		},
+	}
 }
 
 func NewYouTubeCommand(m *SearchMod) *mio.ModCommand {
@@ -158,7 +204,7 @@ func (m *SearchMod) googleCommand(msg *mio.DiscordMessage) {
 	_ = msg.Sess.MessageReactionAdd(msg.Message.ChannelID, reply.ID, "➡")
 	_ = msg.Sess.MessageReactionAdd(msg.Message.ChannelID, reply.ID, "⏹")
 
-	m.imageCache.Set(services.NewImageSearch(msg.Message, reply, links))
+	m.imageCache.Set(search.NewImageSearch(msg.Message, reply, links))
 
 	go time.AfterFunc(time.Second*30, func() {
 		msg.Sess.MessageReactionsRemoveAll(msg.Message.ChannelID, reply.ID)
@@ -196,4 +242,8 @@ func (m *SearchMod) reactionHandler(s *discordgo.Session, msg *discordgo.Message
 		s.ChannelMessageDelete(msg.ChannelID, search.AuthorMsgID())
 		m.imageCache.Delete(search.BotMsgID())
 	}
+}
+
+func ValidateQuery(query string) bool {
+	return strings.TrimSpace(query) != ""
 }

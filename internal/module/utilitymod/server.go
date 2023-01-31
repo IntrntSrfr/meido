@@ -3,10 +3,9 @@ package utilitymod
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
-	"math"
-	"time"
 )
 
 func NewServerCommand(m *UtilityMod) *mio.ModCommand {
@@ -23,7 +22,6 @@ func NewServerCommand(m *UtilityMod) *mio.ModCommand {
 		AllowDMs:      false,
 		Enabled:       true,
 		Run: func(msg *mio.DiscordMessage) {
-
 			if msg.LenArgs() < 1 {
 				return
 			}
@@ -34,9 +32,7 @@ func NewServerCommand(m *UtilityMod) *mio.ModCommand {
 				return
 			}
 
-			tc := 0
-			vc := 0
-
+			tc, vc := 0, 0
 			for _, ch := range g.Channels {
 				if ch.Type == discordgo.ChannelTypeGuildText {
 					tc++
@@ -45,9 +41,7 @@ func NewServerCommand(m *UtilityMod) *mio.ModCommand {
 				}
 			}
 
-			users := 0
-			bots := 0
-
+			users, bots := 0, 0
 			for _, mem := range g.Members {
 				if mem.User.Bot {
 					bots++
@@ -62,49 +56,21 @@ func NewServerCommand(m *UtilityMod) *mio.ModCommand {
 				return
 			}
 
-			ts := utils.IDToTimestamp(g.ID)
-			dur := time.Since(ts)
+			embed := helpers.NewEmbed().
+				WithAuthor(g.Name, "").
+				WithOkColor().
+				AddField("Owner", fmt.Sprintf("%v\n(%v)", owner.Mention(), owner.User.ID), true).
+				AddField("Creation date", fmt.Sprintf("<t:%v:R>", utils.IDToTimestamp(g.ID)), false).
+				AddField("Members", fmt.Sprintf("%v members\n%v users\n%v bots", g.MemberCount, users, bots), true).
+				AddField("Channels", fmt.Sprintf("Total: %v\nText: %v\nVoice: %v", len(g.Channels), tc, vc), false).
+				AddField("Roles", fmt.Sprintf("%v roles", len(g.Roles)), true)
 
-			embed := &discordgo.MessageEmbed{
-				Color: utils.ColorInfo,
-				Author: &discordgo.MessageEmbedAuthor{
-					Name: g.Name,
-				},
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:   "Owner",
-						Value:  fmt.Sprintf("%v\n(%v)", owner.Mention(), owner.User.ID),
-						Inline: true,
-					},
-					{
-						Name:  "Creation date",
-						Value: fmt.Sprintf("%v | %v day(s) ago", ts.Format(time.RFC1123), math.Floor(dur.Hours()/24.0)),
-					},
-					{
-						Name:   "Members",
-						Value:  fmt.Sprintf("%v members\n%v users\n%v bots", g.MemberCount, users, bots),
-						Inline: true,
-					},
-					{
-						Name:   "Channels",
-						Value:  fmt.Sprintf("Total: %v\nText: %v\nVoice: %v", len(g.Channels), tc, vc),
-						Inline: true,
-					},
-					{
-						Name:   "Roles",
-						Value:  fmt.Sprintf("%v roles", len(g.Roles)),
-						Inline: true,
-					},
-				},
-			}
 			if g.Icon != "" {
-				embed.Thumbnail = &discordgo.MessageEmbedThumbnail{
-					URL: fmt.Sprintf("https://cdn.discordapp.com/icons/%v/%v.png", g.ID, g.Icon),
-				}
-				embed.Author.IconURL = fmt.Sprintf("https://cdn.discordapp.com/icons/%v/%v.png", g.ID, g.Icon)
+				embed = embed.WithThumbnail(fmt.Sprintf("https://cdn.discordapp.com/icons/%v/%v.png", g.ID, g.Icon))
+				embed = embed.WithAuthor(g.Name, fmt.Sprintf("https://cdn.discordapp.com/icons/%v/%v.png", g.ID, g.Icon))
 			}
 
-			_, _ = msg.ReplyEmbed(embed)
+			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}
 }
@@ -137,14 +103,11 @@ func NewServerSplashCommand(m *UtilityMod) *mio.ModCommand {
 				return
 			}
 
-			embed := &discordgo.MessageEmbed{
-				Title: g.Name,
-				Color: utils.ColorInfo,
-				Image: &discordgo.MessageEmbedImage{
-					URL: fmt.Sprintf("https://cdn.discordapp.com/splashes/%v/%v.png?size=2048", g.ID, g.Splash),
-				},
-			}
-			_, _ = msg.ReplyEmbed(embed)
+			embed := helpers.NewEmbed().
+				WithTitle(g.Name).
+				WithOkColor().
+				WithImageUrl(fmt.Sprintf("https://cdn.discordapp.com/splashes/%v/%v.png?size=2048", g.ID, g.Splash))
+			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}
 }
@@ -176,14 +139,11 @@ func NewServerIconCommand(m *UtilityMod) *mio.ModCommand {
 				return
 			}
 
-			embed := &discordgo.MessageEmbed{
-				Title: g.Name,
-				Color: utils.ColorInfo,
-				Image: &discordgo.MessageEmbedImage{
-					URL: fmt.Sprintf("%v?size=2048", g.IconURL()),
-				},
-			}
-			_, _ = msg.ReplyEmbed(embed)
+			embed := helpers.NewEmbed().
+				WithTitle(g.Name).
+				WithOkColor().
+				WithImageUrl(fmt.Sprintf("%v?size=2048", g.IconURL()))
+			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}
 }
@@ -216,14 +176,11 @@ func NewServerBannerCommand(m *UtilityMod) *mio.ModCommand {
 				return
 			}
 
-			embed := &discordgo.MessageEmbed{
-				Title: g.Name,
-				Color: utils.ColorInfo,
-				Image: &discordgo.MessageEmbedImage{
-					URL: fmt.Sprintf("https://cdn.discordapp.com/banners/%v/%v.png?size=2048", g.ID, g.Banner),
-				},
-			}
-			_, _ = msg.ReplyEmbed(embed)
+			embed := helpers.NewEmbed().
+				WithTitle(g.Name).
+				WithOkColor().
+				WithImageUrl(fmt.Sprintf("https://cdn.discordapp.com/banners/%v/%v.png?size=2048", g.ID, g.Banner))
+			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}
 }

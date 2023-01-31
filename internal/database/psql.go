@@ -175,3 +175,23 @@ func (p *PsqlDB) CreateAquarium(userID string) error {
 	//TODO implement me
 	panic("implement me")
 }
+
+func (p *PsqlDB) CreateAutoRole(guildID, roleID string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) GetAutoRole(guildID string) (*structs.AutoRole, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) UpdateAutoRole(guildID, roleID string) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) DeleteAutoRole(guildID string) error {
+	//TODO implement me
+	panic("implement me")
+}
