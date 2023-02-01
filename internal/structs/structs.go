@@ -16,7 +16,7 @@ type CommandLogEntry struct {
 
 // UserRole represents a user role.
 type UserRole struct {
-	UID     int
+	UID     int    `db:"uid"`
 	GuildID string `db:"guild_id"`
 	RoleID  string `db:"role_id"`
 	UserID  string `db:"user_id"`
@@ -68,7 +68,7 @@ type Aquarium struct {
 
 // AutoRole represents a users aquarium
 type AutoRole struct {
-	ID      int    `db:"id"`
+	UID     int    `db:"uid"`
 	GuildID string `db:"guild_id"`
 	RoleID  string `db:"role_id"`
 	Enabled bool   `db:"enabled"`

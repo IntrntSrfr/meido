@@ -8,8 +8,8 @@ import (
 	"strconv"
 )
 
-func NewAvatarCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewAvatarCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "avatar",
 		Description:   "Displays a users profile picture. User can be specified. Author is default.",
@@ -43,8 +43,8 @@ func NewAvatarCommand(m *UtilityMod) *mio.ModCommand {
 	}
 }
 
-func NewBannerCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewBannerCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "banner",
 		Description:   "Displays a users banner. User can be specified. Author is default.",
@@ -92,8 +92,8 @@ func NewBannerCommand(m *UtilityMod) *mio.ModCommand {
 	}
 }
 
-func NewMemberAvatarCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewMemberAvatarCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "memberavatar",
 		Description:   "Displays a members profile picture. User can be specified. Author is default.",
@@ -138,8 +138,8 @@ func NewMemberAvatarCommand(m *UtilityMod) *mio.ModCommand {
 	}
 }
 
-func NewUserInfoCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewUserInfoCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "userinfo",
 		Description:   "Displays information about a user",
@@ -176,7 +176,7 @@ func NewUserInfoCommand(m *UtilityMod) *mio.ModCommand {
 			}
 
 			embed := helpers.NewEmbed().
-				WithTitle(fmt.Sprintf("User info | %v", targetUser.String())).
+				WithTitle(targetUser.String()).
 				WithThumbnail(targetUser.AvatarURL("256")).
 				AddField("ID | Mention", fmt.Sprintf("%v | <@!%v>", targetUser.ID, targetUser.ID), false).
 				AddField("Creation date", fmt.Sprintf("<t:%v:R>", utils.IDToTimestamp(targetUser.ID).Unix()), false)
@@ -191,7 +191,7 @@ func NewUserInfoCommand(m *UtilityMod) *mio.ModCommand {
 				nick = "None"
 			}
 
-			embed = embed.WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID)).
+			embed.WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID)).
 				AddField("Join date", fmt.Sprintf("<t:%v:R>", targetMember.JoinedAt.Unix()), false).
 				AddField("Roles", fmt.Sprint(len(targetMember.Roles)), true).
 				AddField("Nickname", nick, true)

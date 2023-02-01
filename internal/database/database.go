@@ -55,7 +55,7 @@ type MemberRoleDB interface {
 	GetMemberRole(guildID, userID string) (*structs.UserRole, error)
 	GetMemberRolesByGuild(guildID string) ([]*structs.UserRole, error)
 	UpdateMemberRole(role *structs.UserRole) error
-	DeleteMemberRole(uid string) error
+	DeleteMemberRole(uid int) error
 }
 
 type AquariumDB interface {

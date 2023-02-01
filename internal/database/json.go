@@ -83,7 +83,7 @@ func (j *JsonDB) CreateGuild(gid string) error {
 	if _, ok := j.state.Guilds[gid]; ok {
 		return errors.New("key already exists")
 	}
-	g := &Guild{ID: gid}
+	g := &Guild{UID: gid}
 	j.state.Guilds[gid] = g
 	return nil
 }

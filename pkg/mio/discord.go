@@ -288,7 +288,7 @@ func (d *Discord) Guilds() []*discordgo.Guild {
 	return guilds
 }
 
-// Guild takes in an ID and returns a discordgo.Guild if one with that ID exists.
+// Guild takes in an UID and returns a discordgo.Guild if one with that UID exists.
 func (d *Discord) Guild(guildID string) (*discordgo.Guild, error) {
 	var err error
 	var guild *discordgo.Guild
@@ -301,7 +301,7 @@ func (d *Discord) Guild(guildID string) (*discordgo.Guild, error) {
 	return nil, err
 }
 
-// Channel takes in an ID and returns a discordgo.Channel if one with that ID exists.
+// Channel takes in an UID and returns a discordgo.Channel if one with that UID exists.
 func (d *Discord) Channel(channelID string) (*discordgo.Channel, error) {
 	var err error
 	var channel *discordgo.Channel
@@ -314,7 +314,7 @@ func (d *Discord) Channel(channelID string) (*discordgo.Channel, error) {
 	return nil, err
 }
 
-// Member takes in a guild ID and a user ID and returns a discordgo.Member if one with such ID exists.
+// Member takes in a guild UID and a user UID and returns a discordgo.Member if one with such UID exists.
 func (d *Discord) Member(guildID, userID string) (*discordgo.Member, error) {
 	var err error
 	var mem *discordgo.Member
@@ -331,7 +331,7 @@ func (d *Discord) Member(guildID, userID string) (*discordgo.Member, error) {
 	return mem, nil
 }
 
-// Role takes in a guild ID and a role ID and returns a discordgo.Role if one with such IDs exists.
+// Role takes in a guild UID and a role UID and returns a discordgo.Role if one with such IDs exists.
 func (d *Discord) Role(guildID, roleID string) (*discordgo.Role, error) {
 	var err error
 	var role *discordgo.Role

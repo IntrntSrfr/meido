@@ -15,7 +15,7 @@ func (m *UtilityMod) StatusLoop() func(s *discordgo.Session, r *discordgo.Ready)
 				if display {
 					memCount := 0
 					srvCount := 0
-					for _, g := range m.bot.Discord.Guilds() {
+					for _, g := range m.Bot.Discord.Guilds() {
 						srvCount++
 						memCount += g.MemberCount
 					}

@@ -2,63 +2,29 @@ package feedbackmod
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"sync"
 )
 
 type FeedbackMod struct {
-	sync.Mutex
-	name            string
-	commands        map[string]*mio.ModCommand
-	allowedTypes    mio.MessageType
-	allowDMs        bool
+	*mio.ModuleBase
 	bot             *mio.Bot
 	bannedUsers     map[string]bool
 	feedbackChannel string
 	owners          []string
 }
 
-func New(b *mio.Bot, ownerIds []string) mio.Mod {
+func New(b *mio.Bot, ownerIds []string, feedbackCh string) mio.Module {
 	return &FeedbackMod{
-		name:         "Feedback",
-		commands:     make(map[string]*mio.ModCommand),
-		allowedTypes: mio.MessageTypeCreate,
-		allowDMs:     true,
-		bot:          b,
-		owners:       ownerIds,
+		ModuleBase:      mio.NewModule("Feedback"),
+		bot:             b,
+		bannedUsers:     make(map[string]bool),
+		feedbackChannel: feedbackCh,
+		owners:          ownerIds,
 	}
 }
 
-func (m *FeedbackMod) Name() string {
-	return m.name
-}
-func (m *FeedbackMod) Passives() []*mio.ModPassive {
-	return []*mio.ModPassive{}
-}
-func (m *FeedbackMod) Commands() map[string]*mio.ModCommand {
-	return m.commands
-}
-func (m *FeedbackMod) AllowedTypes() mio.MessageType {
-	return m.allowedTypes
-}
-func (m *FeedbackMod) AllowDMs() bool {
-	return m.allowDMs
-}
 func (m *FeedbackMod) Hook() error {
-	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		fmt.Println(r.User.String())
-	})
-
 	return nil
-}
-func (m *FeedbackMod) RegisterCommand(cmd *mio.ModCommand) {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
-	}
-	m.commands[cmd.Name] = cmd
 }
 
 func (m *FeedbackMod) ToggleBan(msg *mio.DiscordMessage) {
@@ -103,11 +69,11 @@ func (m *FeedbackMod) LeaveFeedback(msg *mio.DiscordMessage) {
 	banned, ok := m.bannedUsers[msg.Message.Author.ID]
 	if ok {
 		if banned {
-			msg.Reply("You're banned from using the feedback feature.")
+			_, _ = msg.Reply("You're banned from using the feedback feature.")
 			return
 		}
 	}
 
-	msg.Discord.Sess.ChannelMessageSend(m.feedbackChannel, fmt.Sprintf(`%v`, msg.RawArgs()[1:]))
-	msg.Reply("Feedback left")
+	_, _ = msg.Discord.Sess.ChannelMessageSend(m.feedbackChannel, fmt.Sprintf(`%v`, msg.RawArgs()[1:]))
+	_, _ = msg.Reply("Feedback left")
 }

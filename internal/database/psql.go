@@ -4,6 +4,8 @@ import (
 	"github.com/intrntsrfr/meido/internal/structs"
 	"github.com/jmoiron/sqlx"
 	"time"
+
+	_ "github.com/lib/pq"
 )
 
 type PsqlDB struct {
@@ -27,7 +29,7 @@ func NewPSQLDatabase(connStr string) (*PsqlDB, error) {
 // "INSERT INTO command_log VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
 //
 //	cmd.Name, strings.Join(msg.Args(), " "), msg.AuthorID(), gid,
-//	msg.ChannelID(), msg.Message.ID, time.Now()
+//	msg.ChannelID(), msg.Message.UID, time.Now()
 func (p *PsqlDB) GetConn() *sqlx.DB {
 	return p.pool
 }
@@ -158,8 +160,9 @@ func (p *PsqlDB) GetMemberRole(guildID, userID string) (*structs.UserRole, error
 }
 
 func (p *PsqlDB) GetMemberRolesByGuild(guildID string) ([]*structs.UserRole, error) {
-	//TODO implement me
-	panic("implement me")
+	var roles []*structs.UserRole
+	err := p.pool.Select(&roles, "SELECT * FROM user_role WHERE guild_id=$1", guildID)
+	return roles, err
 }
 
 func (p *PsqlDB) UpdateMemberRole(role *structs.UserRole) error {
@@ -167,9 +170,9 @@ func (p *PsqlDB) UpdateMemberRole(role *structs.UserRole) error {
 	panic("implement me")
 }
 
-func (p *PsqlDB) DeleteMemberRole(uid string) error {
-	//TODO implement me
-	panic("implement me")
+func (p *PsqlDB) DeleteMemberRole(uid int) error {
+	_, err := p.pool.Exec("DELETE FROM user_role WHERE uid=$1", uid)
+	return err
 }
 
 func (p *PsqlDB) CreateAquarium(userID string) error {

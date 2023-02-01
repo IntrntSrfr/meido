@@ -8,8 +8,8 @@ import (
 	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
-func NewServerCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewServerCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "server",
 		Description:   "Displays information about the server",
@@ -59,10 +59,10 @@ func NewServerCommand(m *UtilityMod) *mio.ModCommand {
 			embed := helpers.NewEmbed().
 				WithAuthor(g.Name, "").
 				WithOkColor().
-				AddField("Owner", fmt.Sprintf("%v\n(%v)", owner.Mention(), owner.User.ID), true).
-				AddField("Creation date", fmt.Sprintf("<t:%v:R>", utils.IDToTimestamp(g.ID)), false).
-				AddField("Members", fmt.Sprintf("%v members\n%v users\n%v bots", g.MemberCount, users, bots), true).
-				AddField("Channels", fmt.Sprintf("Total: %v\nText: %v\nVoice: %v", len(g.Channels), tc, vc), false).
+				AddField("Owner", fmt.Sprintf("%v\n(%v)", owner.Mention(), owner.User.ID), false).
+				AddField("Creation date", fmt.Sprintf("<t:%v:R>", utils.IDToTimestamp(g.ID).Unix()), false).
+				AddField("Members", fmt.Sprintf("Total: %v\nHuman: %v\nBots: %v", g.MemberCount, users, bots), true).
+				AddField("Channels", fmt.Sprintf("Total: %v\nText: %v\nVoice: %v", len(g.Channels), tc, vc), true).
 				AddField("Roles", fmt.Sprintf("%v roles", len(g.Roles)), true)
 
 			if g.Icon != "" {
@@ -75,8 +75,8 @@ func NewServerCommand(m *UtilityMod) *mio.ModCommand {
 	}
 }
 
-func NewServerSplashCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewServerSplashCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "serversplash",
 		Description:   "Displays server splash if one exists",
@@ -112,8 +112,8 @@ func NewServerSplashCommand(m *UtilityMod) *mio.ModCommand {
 	}
 }
 
-func NewServerIconCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewServerIconCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "servericon",
 		Description:   "Displays server icon, if one exists",
@@ -148,8 +148,8 @@ func NewServerIconCommand(m *UtilityMod) *mio.ModCommand {
 	}
 }
 
-func NewServerBannerCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewServerBannerCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "serverbanner",
 		Description:   "Displays server banner if one exists",

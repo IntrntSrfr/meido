@@ -27,7 +27,7 @@ type Config struct {
 type Bot struct {
 	Discord   *Discord
 	Config    *Config
-	Mods      map[string]Mod
+	Modules   map[string]Module
 	DB        database.DB
 	Cooldowns CooldownService
 	Callbacks CallbackService
@@ -42,7 +42,7 @@ func NewBot(config *Config, db database.DB, log *zap.Logger) *Bot {
 	return &Bot{
 		Discord:   NewDiscord(config.Token),
 		Config:    config,
-		Mods:      make(map[string]Mod),
+		Modules:   make(map[string]Module),
 		DB:        db,
 		Cooldowns: NewCooldownHandler(),
 		Callbacks: NewCallbackHandler(),
@@ -75,14 +75,14 @@ func (b *Bot) Close() {
 	b.Discord.Close()
 }
 
-// RegisterMod takes in a Mod and registers it.
-func (b *Bot) RegisterMod(mod Mod) {
+// RegisterMod takes in a Module and registers it.
+func (b *Bot) RegisterMod(mod Module) {
 	b.Log.Info("adding module", zap.String("name", mod.Name()))
 	err := mod.Hook()
 	if err != nil {
 		panic(err)
 	}
-	b.Mods[mod.Name()] = mod
+	b.Modules[mod.Name()] = mod
 }
 
 // listen is the main command handler. It will listen for messages and execute commands accordingly.
@@ -99,7 +99,7 @@ func (b *Bot) processMessage(m *DiscordMessage) {
 		return
 	}
 
-	for _, mod := range b.Mods {
+	for _, mod := range b.Modules {
 		if m.IsDM() && !mod.AllowDMs() {
 			continue
 		}
@@ -132,7 +132,7 @@ func (b *Bot) processMessage(m *DiscordMessage) {
 	}
 }
 
-func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
+func (b *Bot) processCommand(cmd *ModuleCommand, m *DiscordMessage) {
 	if !cmd.Enabled {
 		return
 	}
@@ -153,7 +153,7 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 	// check if user can use command or not
 	// may be based on user level, roles, channel etc..
 	/*
-		if m.GuildID() != "" && !b.Perms.Allow(cmd.Name, m.GuildID(), m.ChannelID(), m.Author().ID, m.Member().Roles) {
+		if m.GuildID() != "" && !b.Perms.Allow(cmd.Name, m.GuildID(), m.ChannelID(), m.Author().UID, m.Member().Roles) {
 			return
 		}
 	*/
@@ -190,7 +190,7 @@ func (b *Bot) processCommand(cmd *ModCommand, m *DiscordMessage) {
 }
 
 // if a command causes panic, this will surely keep everything from crashing
-func (b *Bot) runCommand(cmd *ModCommand, m *DiscordMessage) {
+func (b *Bot) runCommand(cmd *ModuleCommand, m *DiscordMessage) {
 	defer func() {
 		if r := recover(); r != nil {
 			d, err := json.MarshalIndent(m, "", "\t")
@@ -225,7 +225,7 @@ func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
 }
 
 // logCommand logs an executed command
-func (b *Bot) logCommand(msg *DiscordMessage, cmd *ModCommand) {
+func (b *Bot) logCommand(msg *DiscordMessage, cmd *ModuleCommand) {
 	b.Log.Info("new command", zap.String("author", fmt.Sprintf("%v | %v", msg.Author(), msg.AuthorID())), zap.String("content", msg.RawContent()))
 	// fmt.Println(msg.Shard, msg.Message.Author, msg.Message.Content, msg.TimeReceived.String())
 

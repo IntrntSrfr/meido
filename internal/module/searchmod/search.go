@@ -7,70 +7,39 @@ import (
 	"github.com/intrntsrfr/meido/internal/service/search"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
+	"go.uber.org/zap"
 	"strings"
-	"sync"
 	"time"
 )
 
 type SearchMod struct {
-	sync.Mutex
-	name         string
-	commands     map[string]*mio.ModCommand
-	allowedTypes mio.MessageType
-	allowDMs     bool
-	bot          *mio.Bot
-	search       *search.Service
-	imageCache   *search.ImageSearchCache
+	*mio.ModuleBase
+	search     *search.Service
+	imageCache *search.ImageSearchCache
 }
 
-func New(b *mio.Bot, s *search.Service) mio.Mod {
+func New(bot *mio.Bot, s *search.Service, logger *zap.Logger) mio.Module {
 	return &SearchMod{
-		name:         "Search",
-		commands:     make(map[string]*mio.ModCommand),
-		allowedTypes: mio.MessageTypeCreate,
-		allowDMs:     true,
-		bot:          b,
-		search:       s,
-		imageCache:   search.NewImageSearchCache(),
+		ModuleBase: mio.NewModule(bot, "Search", logger.Named("search")),
+		search:     s,
+		imageCache: search.NewImageSearchCache(),
 	}
 }
 
-func (m *SearchMod) Name() string {
-	return m.name
-}
-func (m *SearchMod) Passives() []*mio.ModPassive {
-	return []*mio.ModPassive{}
-}
-func (m *SearchMod) Commands() map[string]*mio.ModCommand {
-	return m.commands
-}
-func (m *SearchMod) AllowedTypes() mio.MessageType {
-	return m.allowedTypes
-}
-func (m *SearchMod) AllowDMs() bool {
-	return m.allowDMs
-}
 func (m *SearchMod) Hook() error {
-	m.RegisterCommand(NewWeatherCommand(m))
-	m.RegisterCommand(NewYouTubeCommand(m))
-	m.RegisterCommand(NewImageCommand(m))
 
-	m.bot.Discord.AddEventHandler(m.MessageReactionAddHandler)
-	m.bot.Discord.AddEventHandler(m.MessageReactionRemoveHandler)
+	m.Bot.Discord.AddEventHandler(m.MessageReactionAddHandler)
+	m.Bot.Discord.AddEventHandler(m.MessageReactionRemoveHandler)
 
-	return nil
-}
-func (m *SearchMod) RegisterCommand(cmd *mio.ModCommand) {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
-	}
-	m.commands[cmd.Name] = cmd
+	return m.RegisterCommands([]*mio.ModuleCommand{
+		NewWeatherCommand(m),
+		NewYouTubeCommand(m),
+		NewImageCommand(m),
+	})
 }
 
-func NewWeatherCommand(m *SearchMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewWeatherCommand(m *SearchMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "weather",
 		Description:   "Finds the weather at a provided location",
@@ -121,8 +90,8 @@ func NewWeatherCommand(m *SearchMod) *mio.ModCommand {
 	}
 }
 
-func NewYouTubeCommand(m *SearchMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewYouTubeCommand(m *SearchMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "youtube",
 		Description:   "Search for a YouTube video",
@@ -160,8 +129,8 @@ func NewYouTubeCommand(m *SearchMod) *mio.ModCommand {
 	}
 }
 
-func NewImageCommand(m *SearchMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewImageCommand(m *SearchMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "image",
 		Description:   "Search for an image",

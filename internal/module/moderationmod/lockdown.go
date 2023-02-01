@@ -5,8 +5,8 @@ import (
 	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
-func NewLockdownChannelCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewLockdownChannelCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "lockdown",
 		Description:   "Locks the current channel.",
@@ -96,8 +96,8 @@ func (m *ModerationMod) lockdownCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewUnlockChannelCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewUnlockChannelCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "unlock",
 		Description:   "Unlocks a previously locked channel.",

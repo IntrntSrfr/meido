@@ -29,7 +29,7 @@ type PermissionOverride struct {
 	GuildID string         `db:"guild_id"`
 	Type    PermissionType `db:"type"`
 
-	// TypeID is for the ID for the type this permission belongs to
+	// TypeID is for the UID for the type this permission belongs to
 	TypeID string `db:"type_id"`
 
 	// Allow  is whether this override should allow or disallow

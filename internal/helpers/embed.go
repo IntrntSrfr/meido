@@ -67,6 +67,11 @@ func (e *Embed) WithDescription(description string) *Embed {
 	return e
 }
 
+func (e *Embed) WithTimestamp(timestamp string) *Embed {
+	e.Timestamp = timestamp
+	return e
+}
+
 func (e *Embed) WithOkColor() *Embed {
 	e.Color = utils.ColorInfo
 	return e

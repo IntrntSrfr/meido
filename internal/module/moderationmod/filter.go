@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
-func NewFilterWordCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewFilterWordCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "filterword",
 		Description:   "Adds or removes a word or phrase to the server filter.",
@@ -53,8 +53,8 @@ func (m *ModerationMod) filterwordCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewFilterWordListCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewFilterWordListCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "filterwordlist",
 		Description:   "Lists of all filtered phrases for this server",
@@ -100,8 +100,8 @@ func (m *ModerationMod) filterwordlistCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewClearFilterCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewClearFilterCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "clearfilter",
 		Description:   "Removes all phrases from the server filter",
@@ -130,8 +130,8 @@ func (m *ModerationMod) clearfilterCommand(msg *mio.DiscordMessage) {
 	msg.Reply("Filter was cleared")
 }
 
-func NewModerationSettingsCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewModerationSettingsCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "moderationsettings",
 		Description:   "Moderation settings:\n- Toggle warn system [enable/disable]\n- Set max warns [0-10]\n- Set warn duration [0(infinite)-365]",
@@ -227,8 +227,8 @@ func (m *ModerationMod) moderationsettingsCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewCheckFilterPassive(m *ModerationMod) *mio.ModPassive {
-	return &mio.ModPassive{
+func NewCheckFilterPassive(m *ModerationMod) *mio.ModulePassive {
+	return &mio.ModulePassive{
 		Mod:          m,
 		Name:         "checkfilter",
 		Description:  "checks if messages contain phrases found in the server filter",

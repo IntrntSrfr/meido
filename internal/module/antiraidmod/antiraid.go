@@ -14,58 +14,26 @@ import (
 
 // AntiRaidMod represents the antiraid mod
 type AntiRaidMod struct {
-	sync.Mutex
-	name         string
-	commands     map[string]*mio.ModCommand
-	allowedTypes mio.MessageType
-	allowDMs     bool
-	bot          *mio.Bot
-	owo          *owo.Client
+	*mio.ModuleBase
+	bot *mio.Bot
+	owo *owo.Client
 
 	servers *serverMap
 	banChan chan [2]string
 }
 
 // New returns a new AntiRaidMod.
-func New(b *mio.Bot, o *owo.Client) mio.Mod {
+func New(b *mio.Bot, o *owo.Client) mio.Module {
 	return &AntiRaidMod{
-		name:         "AntiRaid",
-		commands:     make(map[string]*mio.ModCommand),
-		allowedTypes: mio.MessageTypeCreate,
-		allowDMs:     true,
-		bot:          b,
-		owo:          o,
-		servers:      &serverMap{Servers: make(map[string]*server)},
-		banChan:      make(chan [2]string, 1024),
+		ModuleBase: mio.NewModule("AntiRaid"),
+		bot:        b,
+		owo:        o,
+		servers:    &serverMap{Servers: make(map[string]*server)},
+		banChan:    make(chan [2]string, 1024),
 	}
 }
 
-// Name returns the name of the mod.
-func (m *AntiRaidMod) Name() string {
-	return m.name
-}
-
-// Passives returns the mod passives.
-func (m *AntiRaidMod) Passives() []*mio.ModPassive {
-	return []*mio.ModPassive{}
-}
-
-// Commands returns the mod commands.
-func (m *AntiRaidMod) Commands() map[string]*mio.ModCommand {
-	return m.commands
-}
-
-// AllowedTypes returns the allowed MessageTypes.
-func (m *AntiRaidMod) AllowedTypes() mio.MessageType {
-	return m.allowedTypes
-}
-
-// AllowDMs returns whether the mod allows DMs.
-func (m *AntiRaidMod) AllowDMs() bool {
-	return m.allowDMs
-}
-
-// Hook will hook the Mod into the Bot.
+// Hook will hook the Module into the Bot.
 func (m *AntiRaidMod) Hook() error {
 	m.bot.Discord.AddEventHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		m.servers.Add(g.ID)
@@ -80,28 +48,17 @@ func (m *AntiRaidMod) Hook() error {
 	return nil
 }
 
-// RegisterCommand registers a ModCommand to the Mod
-func (m *AntiRaidMod) RegisterCommand(cmd *mio.ModCommand) {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
-	}
-	m.commands[cmd.Name] = cmd
-}
-
 func (m *AntiRaidMod) runBanListener() {
 	for {
 		select {
 		case ban := <-m.banChan:
 			//fmt.Println("time to ban: ", ban)
-			m.bot.Discord.Sess.GuildBanCreateWithReason(ban[0], ban[1], "Raid prevention", 7)
+			_ = m.bot.Discord.Sess.GuildBanCreateWithReason(ban[0], ban[1], "Raid prevention", 7)
 		}
 	}
 }
 
 func (m *AntiRaidMod) GuildMemberAddHandler(s *discordgo.Session, mem *discordgo.GuildMemberAdd) {
-
 	srv, ok := m.servers.Get(mem.GuildID)
 	if !ok {
 		return
@@ -119,7 +76,6 @@ func (m *AntiRaidMod) GuildMemberAddHandler(s *discordgo.Session, mem *discordgo
 	}
 }
 func (m *AntiRaidMod) AutoDetectHandler(s *discordgo.Session, mem *discordgo.GuildMemberAdd) {
-
 	srv, ok := m.servers.Get(mem.GuildID)
 	if !ok {
 		return
@@ -140,7 +96,6 @@ func (m *AntiRaidMod) AutoDetectHandler(s *discordgo.Session, mem *discordgo.Gui
 }
 
 func (m *AntiRaidMod) RaidToggleHandler(s *discordgo.Session, msg *discordgo.MessageCreate) {
-
 	if msg.Author.Bot || len(msg.Content) <= 0 {
 		return
 	}
@@ -172,34 +127,34 @@ func (m *AntiRaidMod) RaidToggleHandler(s *discordgo.Session, msg *discordgo.Mes
 	switch strings.ToLower(args[0]) {
 	case "m?raidmode":
 		srv.RaidToggle(m)
-		s.ChannelMessageSend(msg.ChannelID, fmt.Sprintf("raid mode set to %v", srv.RaidMode()))
+		_, _ = s.ChannelMessageSend(msg.ChannelID, fmt.Sprintf("raid mode set to %v", srv.RaidMode()))
 	case "m?lastraid":
 		l := srv.GetLastRaid()
 		if len(l) <= 0 {
-			s.ChannelMessageSend(msg.ChannelID, "no last raid")
+			_, _ = s.ChannelMessageSend(msg.ChannelID, "no last raid")
 			return
 		}
 		res, err := m.owo.Upload(strings.Join(l, " "))
 		if err != nil {
-			s.ChannelMessageSend(msg.ChannelID, "Error getting last raid. try again?")
+			_, _ = s.ChannelMessageSend(msg.ChannelID, "Error getting last raid. try again?")
 			return
 		}
-		s.ChannelMessageSend(msg.ChannelID, res)
+		_, _ = s.ChannelMessageSend(msg.ChannelID, res)
 	case "m?raidignore":
 		if len(args) < 2 {
 			return
 		}
 		srv.IgnoreRole = args[1]
-		s.ChannelMessageSend(msg.ChannelID, fmt.Sprintf("raid will ignore users with role id: %v", args[1]))
+		_, _ = s.ChannelMessageSend(msg.ChannelID, fmt.Sprintf("raid will ignore users with role id: %v", args[1]))
 	case "m?autoraid":
 		srv.ToggleAutodetect()
-		s.ChannelMessageSend(msg.ChannelID, fmt.Sprintf("raid autodetect set to: %v", srv.AutoDetect))
+		_, _ = s.ChannelMessageSend(msg.ChannelID, fmt.Sprintf("raid autodetect set to: %v", srv.AutoDetect))
 	default:
 		return
 	}
 }
 
-func (m *AntiRaidMod) MessageCreateHandler(s *discordgo.Session, msg *discordgo.MessageCreate) {
+func (m *AntiRaidMod) MessageCreateHandler(_ *discordgo.Session, msg *discordgo.MessageCreate) {
 	if msg.Author.Bot {
 		return
 	}
@@ -225,15 +180,14 @@ func (m *AntiRaidMod) MessageCreateHandler(s *discordgo.Session, msg *discordgo.
 
 	if !usr.Allow() || len(msg.Mentions) > 10 {
 		// ban the user
-		//fmt.Println("bad user", m.GuildID, m.Author.ID)
+		//fmt.Println("bad user", m.GuildID, m.Author.UID)
 		srv.lastRaid[msg.Author.ID] = struct{}{}
 		m.banChan <- [2]string{msg.GuildID, msg.Author.ID}
-		//s.GuildBanCreateWithReason(m.GuildID, m.Author.ID, "Raid measure", 7)
+		//s.GuildBanCreateWithReason(m.GuildID, m.Author.UID, "Raid measure", 7)
 	}
 }
 
 func isNewAccount(userID string) bool {
-
 	id, err := strconv.ParseInt(userID, 0, 63)
 	if err != nil {
 		return false

@@ -8,6 +8,7 @@ import (
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
+	"go.uber.org/zap"
 	"image"
 	"image/color"
 	"image/draw"
@@ -15,81 +16,47 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 type UtilityMod struct {
-	sync.Mutex
-	name         string
-	commands     map[string]*mio.ModCommand
-	allowedTypes mio.MessageType
-	allowDMs     bool
-	bot          *mio.Bot
-	startTime    time.Time
-	db           database.DB
+	*mio.ModuleBase
+	db        database.DB
+	startTime time.Time
 }
 
-func New(b *mio.Bot, db database.DB) mio.Mod {
+func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 	return &UtilityMod{
-		startTime:    time.Now(),
-		name:         "Utility",
-		commands:     make(map[string]*mio.ModCommand),
-		allowedTypes: mio.MessageTypeCreate,
-		allowDMs:     true,
-		bot:          b,
-		db:           db,
+		ModuleBase: mio.NewModule(bot, "Utility", logger.Named("utility")),
+		db:         db,
+		startTime:  time.Now(),
 	}
 }
 
-func (m *UtilityMod) Name() string {
-	return m.name
-}
-func (m *UtilityMod) Passives() []*mio.ModPassive {
-	return []*mio.ModPassive{}
-}
-func (m *UtilityMod) Commands() map[string]*mio.ModCommand {
-	return m.commands
-}
-func (m *UtilityMod) AllowedTypes() mio.MessageType {
-	return m.allowedTypes
-}
-func (m *UtilityMod) AllowDMs() bool {
-	return m.allowDMs
-}
 func (m *UtilityMod) Hook() error {
-	m.bot.Discord.AddEventHandler(m.StatusLoop())
+	m.Bot.Discord.AddEventHandler(m.StatusLoop())
 
-	m.RegisterCommand(NewPingCommand(m))
-	m.RegisterCommand(NewAvatarCommand(m))
-	m.RegisterCommand(NewBannerCommand(m))
-	m.RegisterCommand(NewMemberAvatarCommand(m))
-	m.RegisterCommand(NewAboutCommand(m))
-	m.RegisterCommand(NewServerCommand(m))
-	m.RegisterCommand(NewServerIconCommand(m))
-	m.RegisterCommand(NewServerBannerCommand(m))
-	m.RegisterCommand(NewServerSplashCommand(m))
-	m.RegisterCommand(NewColorCommand(m))
-	m.RegisterCommand(NewInviteCommand(m))
-	//m.RegisterCommand(NewUserPermsCommand(m))
-	m.RegisterCommand(NewUserInfoCommand(m))
-	m.RegisterCommand(NewHelpCommand(m))
-
-	return nil
-}
-func (m *UtilityMod) RegisterCommand(cmd *mio.ModCommand) {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.name))
-	}
-	m.commands[cmd.Name] = cmd
+	return m.RegisterCommands([]*mio.ModuleCommand{
+		NewPingCommand(m),
+		NewAvatarCommand(m),
+		NewBannerCommand(m),
+		NewMemberAvatarCommand(m),
+		NewAboutCommand(m),
+		NewServerCommand(m),
+		NewServerIconCommand(m),
+		NewServerBannerCommand(m),
+		NewServerSplashCommand(m),
+		NewColorCommand(m),
+		NewInviteCommand(m),
+		NewUserInfoCommand(m),
+		NewHelpCommand(m),
+	})
 }
 
-func NewConvertCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewConvertCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "convert",
 		Description:   "Converts between units",
@@ -113,8 +80,8 @@ func NewConvertCommand(m *UtilityMod) *mio.ModCommand {
 }
 
 // NewPingCommand returns a new ping command.
-func NewPingCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewPingCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "ping",
 		Description:   "Checks the bot ping against Discord",
@@ -146,8 +113,8 @@ func (m *UtilityMod) pingCommand(msg *mio.DiscordMessage) {
 		fmt.Sprintf("Pong!\nDelay: %s", discordLatency))
 }
 
-func NewAboutCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewAboutCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "about",
 		Description:   "Displays Meido statistics",
@@ -204,8 +171,8 @@ func NewAboutCommand(m *UtilityMod) *mio.ModCommand {
 	}
 }
 
-func NewColorCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewColorCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "color",
 		Description:   "Displays a hex color",
@@ -248,8 +215,8 @@ func (m *UtilityMod) colorCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Sess.ChannelFileSend(msg.Message.ChannelID, "color.png", &buf)
 }
 
-func NewInviteCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewInviteCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "invite",
 		Description:   "Sends an invite link for Meido, as well as support server",
@@ -262,15 +229,15 @@ func NewInviteCommand(m *UtilityMod) *mio.ModCommand {
 		AllowDMs:      true,
 		Enabled:       true,
 		Run: func(msg *mio.DiscordMessage) {
-			botLink := "<https://discordapp.com/oauth2/authorize?client_id=" + m.bot.Discord.Sess.State.User.ID + "&scope=bot>"
+			botLink := "<https://discordapp.com/oauth2/authorize?client_id=" + msg.Sess.State.User.ID + "&scope=bot>"
 			serverLink := "https://discord.gg/KgMEGK3"
 			_, _ = msg.Reply(fmt.Sprintf("Invite me to your server: %v\nSupport server: %v", botLink, serverLink))
 		},
 	}
 }
 
-func NewHelpCommand(m *UtilityMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewHelpCommand(m *UtilityMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "help",
 		Description:   "Displays helpful things",
@@ -287,100 +254,76 @@ func NewHelpCommand(m *UtilityMod) *mio.ModCommand {
 }
 
 func (m *UtilityMod) helpCommand(msg *mio.DiscordMessage) {
+	embed := helpers.NewEmbed().
+		WithOkColor().
+		WithFooter("Use m?help [module] to see module commands.\nUse m?help [command] to see command info.", "").
+		WithThumbnail(msg.Sess.State.User.AvatarURL("256"))
 
-	emb := &discordgo.MessageEmbed{
-		Color: utils.ColorInfo,
-		Footer: &discordgo.MessageEmbedFooter{
-			Text: "Use m?help [plugin] to see plugin commands.\nUse m?help [command] to see command info.",
-		},
-	}
-	switch msg.LenArgs() {
-	case 1:
+	if msg.LenArgs() == 1 {
 		desc := strings.Builder{}
-		for _, mod := range m.bot.Mods {
+		for _, mod := range m.Bot.Modules {
 			desc.WriteString(fmt.Sprintf("- %v\n", mod.Name()))
 		}
-		emb.Title = "Meido plugins"
-		emb.Description = desc.String()
-		msg.ReplyEmbed(emb)
-	case 2:
+		embed.WithTitle("Plugin list")
+		embed.WithDescription(desc.String())
+		_, _ = msg.ReplyEmbed(embed.Build())
+		return
+	}
 
-		inp := strings.ToLower(msg.Args()[1])
+	if msg.LenArgs() < 2 {
+		return
+	}
 
-		for _, mod := range m.bot.Mods {
-			if strings.ToLower(mod.Name()) == strings.ToLower(inp) {
-				// this can maybe be replaced by making a helptext method for every mod, so they have more control
-				// over what they want to display, if they even want to display anything.
-
-				list := strings.Builder{}
-
-				list.WriteString("\nPassives:\n")
-				for _, pas := range mod.Passives() {
-					list.WriteString(fmt.Sprintf("- %v\n", pas.Name))
-				}
-
-				list.WriteString("\nCommands:\n")
-				for _, cmd := range mod.Commands() {
-					list.WriteString(fmt.Sprintf("- %v\n", cmd.Name))
-				}
-				dms := "Does not work in DMs."
-				if mod.AllowDMs() {
-					dms = "Works in DMs."
-				}
-				list.WriteString(dms)
-
-				emb.Title = fmt.Sprintf("Commands for %v plugin", mod.Name())
-				emb.Description = list.String()
-
-				msg.ReplyEmbed(emb)
-				return
-			}
-
+	inp := strings.ToLower(msg.Args()[1])
+	if mod := m.Bot.FindModule(inp); mod != nil {
+		// this can maybe be replaced by making a helptext method for every mod, so they have more control
+		// over what they want to display, if they even want to display anything.
+		list := strings.Builder{}
+		if len(mod.Passives()) > 0 {
+			list.WriteString("\nPassives:\n")
 			for _, pas := range mod.Passives() {
-				if strings.ToLower(pas.Name) == strings.ToLower(inp) {
-
-					emb.Title = fmt.Sprintf("Passive - %v", pas.Name)
-					emb.Description = pas.Description + "\n"
-					msg.ReplyEmbed(emb)
-
-					return
-				}
-			}
-			for _, cmd := range mod.Commands() {
-				isCmd := false
-				if strings.ToLower(cmd.Name) == strings.ToLower(inp) {
-					isCmd = true
-				}
-
-				for _, trig := range cmd.Triggers {
-					if strings.ToLower(trig) == strings.ToLower(inp) {
-						isCmd = true
-					}
-				}
-
-				if !isCmd {
-					continue
-				}
-
-				emb.Title = fmt.Sprintf("Command - %v", cmd.Name)
-
-				dmText := map[bool]string{true: "This works in DMs", false: "This does not work in DMs"}
-
-				info := strings.Builder{}
-				info.WriteString(fmt.Sprintf("\n\n%v", cmd.Description))
-				info.WriteString(fmt.Sprintf("\n\nAliases: %v", strings.Join(cmd.Triggers, ", ")))
-				info.WriteString(fmt.Sprintf("\n\nUsage: %v", cmd.Usage))
-				info.WriteString(fmt.Sprintf("\n\nCooldown: %v second(s)", cmd.Cooldown))
-				info.WriteString(fmt.Sprintf("\n\nRequired permissions: %v", mio.PermMap[cmd.RequiredPerms]))
-				info.WriteString(fmt.Sprintf("\n\n%v", dmText[cmd.AllowDMs]))
-				emb.Description = info.String()
-
-				msg.ReplyEmbed(emb)
-
-				return
+				list.WriteString(fmt.Sprintf("- %v\n", pas.Name))
 			}
 		}
-	default:
+
+		if len(mod.Commands()) > 0 {
+			list.WriteString("\nCommands:\n")
+			for _, cmd := range mod.Commands() {
+				list.WriteString(fmt.Sprintf("- %v\n", cmd.Name))
+			}
+		}
+
+		if !mod.AllowDMs() {
+			list.WriteString("\nCannot be used in DMs")
+		}
+
+		embed.WithTitle(fmt.Sprintf("%v module", mod.Name()))
+		embed.WithDescription(list.String())
+		_, _ = msg.ReplyEmbed(embed.Build())
+		return
+	}
+
+	if pas := m.Bot.FindPassive(inp); pas != nil {
+		embed.WithTitle(fmt.Sprintf("Passive - %v", pas.Name))
+		embed.WithDescription(fmt.Sprintf("%v\n", pas.Description))
+		_, _ = msg.ReplyEmbed(embed.Build())
+		return
+	}
+
+	if cmd := m.Bot.FindCommand(inp); cmd != nil {
+		info := strings.Builder{}
+		info.WriteString(fmt.Sprintf("%v\n", cmd.Description))
+		info.WriteString(fmt.Sprintf("\n**Usage**: %v", cmd.Usage))
+		info.WriteString(fmt.Sprintf("\n**Aliases**: %v", strings.Join(cmd.Triggers, ", ")))
+		info.WriteString(fmt.Sprintf("\n**Cooldown**: %v second(s)", cmd.Cooldown))
+		info.WriteString(fmt.Sprintf("\n**Required permissions**: %v", mio.PermMap[cmd.RequiredPerms]))
+		if !cmd.AllowDMs {
+			info.WriteString(fmt.Sprintf("\n%v", "Cannot be used in DMs"))
+		}
+
+		embed.WithTitle(fmt.Sprintf("Command - %v", cmd.Name))
+		embed.WithDescription(info.String())
+		_, _ = msg.ReplyEmbed(embed.Build())
 		return
 	}
 }

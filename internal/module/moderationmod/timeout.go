@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-func NewMuteCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewMuteCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "mute",
 		Description:   "Mutes a member, making them unable to chat or speak. Duration will be 1 day unless something else is specified.",
@@ -76,8 +76,8 @@ func (m *ModerationMod) muteCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply(fmt.Sprintf("%v has been timed out for %v", targetMember.User, duration))
 }
 
-func NewUnmuteCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewUnmuteCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "unmute",
 		Description:   "Unmutes a member",

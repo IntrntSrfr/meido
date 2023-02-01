@@ -3,65 +3,30 @@ package mediaconvertmod
 import (
 	"bytes"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"io"
 	"net/http"
 	"os/exec"
 	"path/filepath"
-	"sync"
-
-	"github.com/bwmarrin/discordgo"
 )
 
 type MediaConvertMod struct {
-	sync.Mutex
-	name         string
-	commands     map[string]*mio.ModCommand
-	passives     []*mio.ModPassive
-	allowedTypes mio.MessageType
-	allowDMs     bool
+	*mio.ModuleBase
 }
 
-func New() mio.Mod {
+func New() mio.Module {
 	return &MediaConvertMod{
-		name:         "Media",
-		commands:     make(map[string]*mio.ModCommand),
-		passives:     []*mio.ModPassive{},
-		allowedTypes: mio.MessageTypeCreate,
-		allowDMs:     true,
+		ModuleBase: mio.NewModule("Media"),
 	}
 }
 
-func (m *MediaConvertMod) Name() string {
-	return m.name
-}
-func (m *MediaConvertMod) Passives() []*mio.ModPassive {
-	return m.passives
-}
-func (m *MediaConvertMod) Commands() map[string]*mio.ModCommand {
-	return m.commands
-}
-func (m *MediaConvertMod) AllowedTypes() mio.MessageType {
-	return m.allowedTypes
-}
-func (m *MediaConvertMod) AllowDMs() bool {
-	return m.allowDMs
-}
 func (m *MediaConvertMod) Hook() error {
-	m.passives = append(m.passives, NewJpgLargeConvertPassive(m))
-	return nil
-}
-func (m *MediaConvertMod) RegisterCommand(cmd *mio.ModCommand) {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
-	}
-	m.commands[cmd.Name] = cmd
+	return m.RegisterPassive(NewJpgLargeConvertPassive(m))
 }
 
-func NewJpgLargeConvertPassive(m *MediaConvertMod) *mio.ModPassive {
-	return &mio.ModPassive{
+func NewJpgLargeConvertPassive(m *MediaConvertMod) *mio.ModulePassive {
+	return &mio.ModulePassive{
 		Mod:          m,
 		Name:         "jpglargeconvert",
 		Description:  "Automatically converts jpglarge files to jpg",
@@ -112,8 +77,8 @@ func (m *MediaConvertMod) jpglargeconvertPassive(msg *mio.DiscordMessage) {
 	})
 }
 
-func NewMediaConvertCommand(m *MediaConvertMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewMediaConvertCommand(m *MediaConvertMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "mediaconvert",
 		Description:   "Converts some media files from one format to another",

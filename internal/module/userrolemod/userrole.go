@@ -8,7 +8,6 @@ import (
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -18,44 +17,23 @@ import (
 )
 
 type UserRoleMod struct {
-	sync.Mutex
-	name         string
-	commands     map[string]*mio.ModCommand
-	allowedTypes mio.MessageType
-	allowDMs     bool
-	bot          *mio.Bot
-	db           *database.PsqlDB
-	owo          *owo.Client
-	log          *zap.Logger
+	*mio.ModuleBase
+	bot *mio.Bot
+	db  database.DB
+	owo *owo.Client
+	log *zap.Logger
 }
 
-func New(b *mio.Bot, db *database.PsqlDB, owo *owo.Client, log *zap.Logger) mio.Mod {
+func New(b *mio.Bot, db *database.PsqlDB, owo *owo.Client, log *zap.Logger) mio.Module {
 	return &UserRoleMod{
-		name:         "UserRoles",
-		commands:     make(map[string]*mio.ModCommand),
-		allowedTypes: mio.MessageTypeCreate,
-		allowDMs:     false,
-		bot:          b,
-		db:           db,
-		owo:          owo,
-		log:          log,
+		ModuleBase: mio.NewModule("UserRoles"),
+		bot:        b,
+		db:         db,
+		owo:        owo,
+		log:        log,
 	}
 }
-func (m *UserRoleMod) Name() string {
-	return m.name
-}
-func (m *UserRoleMod) Passives() []*mio.ModPassive {
-	return []*mio.ModPassive{}
-}
-func (m *UserRoleMod) Commands() map[string]*mio.ModCommand {
-	return m.commands
-}
-func (m *UserRoleMod) AllowedTypes() mio.MessageType {
-	return m.allowedTypes
-}
-func (m *UserRoleMod) AllowDMs() bool {
-	return m.allowDMs
-}
+
 func (m *UserRoleMod) Hook() error {
 	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		refreshTicker := time.NewTicker(time.Hour)
@@ -67,14 +45,12 @@ func (m *UserRoleMod) Hook() error {
 						continue
 					}
 
-					var userRoles []*database.UserRole
-
-					err := m.db.Get(&userRoles, "SELECT * FROM user_role WHERE guild_id=$1", g.ID)
+					roles, err := m.db.GetMemberRolesByGuild(g.ID)
 					if err != nil {
 						continue
 					}
 
-					for _, ur := range userRoles {
+					for _, ur := range roles {
 						hasRole := false
 
 						for _, gr := range g.Roles {
@@ -85,7 +61,13 @@ func (m *UserRoleMod) Hook() error {
 						}
 
 						if !hasRole {
-							m.db.Exec("DELETE FROM user_role WHERE uid=$1", ur.UID)
+							if err := m.db.DeleteMemberRole(ur.UID); err != nil {
+								m.log.Error("could not delete member role",
+									zap.Int("member role ID", ur.UID),
+									zap.String("guild id", ur.GuildID),
+									zap.String("role id", ur.RoleID),
+									zap.String("user id", ur.UserID))
+							}
 						}
 					}
 				}
@@ -93,23 +75,14 @@ func (m *UserRoleMod) Hook() error {
 		}()
 	})
 
-	m.RegisterCommand(NewSetUserRoleCommand(m))
-	m.RegisterCommand(NewMyRoleCommand(m))
-	//m.RegisterCommand(NewListUserRolesCommand(m))
-	return nil
+	return m.RegisterCommands([]*mio.ModuleCommand{
+		NewSetUserRoleCommand(m),
+		NewMyRoleCommand(m),
+	})
 }
 
-func (m *UserRoleMod) RegisterCommand(cmd *mio.ModCommand) {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
-	}
-	m.commands[cmd.Name] = cmd
-}
-
-func NewSetUserRoleCommand(m *UserRoleMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewSetUserRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "setuserrole",
 		Description:   "Binds, unbinds or changes a userrole bind to a user",
@@ -181,8 +154,8 @@ func (m *UserRoleMod) setuserroleCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewMyRoleCommand(m *UserRoleMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewMyRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "myrole",
 		Description:   "Displays a users bound role, or lets the user change the name or color of their bound role",
@@ -354,9 +327,9 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 }
 
 /*
-func NewListUserRolesCommand(m *UserRoleMod) *base.ModCommand {
-	return &base.ModCommand{
-		Mod:           m,
+func NewListUserRolesCommand(m *UserRoleMod) *base.ModuleCommand {
+	return &base.ModuleCommand{
+		Module:           m,
 		Name:          "listuserroles",
 		Description:   "Returns a list of the user roles that are in the server, displays if some users still are in the server or not",
 		Triggers:      []string{"m?listuserroles"},
@@ -393,16 +366,16 @@ func (m *UserRoleMod) listuserrolesCommand(msg *base.DiscordMessage) {
 	text := fmt.Sprintf("Userroles in %v\n\n", g.Name)
 	count := 0
 	for _, ur := range userRoles {
-		role, err := msg.Discord.Role(g.ID, ur.RoleID)
+		role, err := msg.Discord.Role(g.UID, ur.RoleID)
 		if err != nil {
 			continue
 		}
 
-		mem, err := msg.Discord.Member(g.ID, ur.UserID)
+		mem, err := msg.Discord.Member(g.UID, ur.UserID)
 		if err != nil {
-			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v - User no longer in guild.\n", count, role.Name, role.ID, ur.UserID)
+			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v - User no longer in guild.\n", count, role.Name, role.UID, ur.UserID)
 		} else {
-			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v (%v)\n", count, role.Name, role.ID, mem.User.String(), mem.User.ID)
+			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v (%v)\n", count, role.Name, role.UID, mem.User.String(), mem.User.UID)
 		}
 		count++
 	}

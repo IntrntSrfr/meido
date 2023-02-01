@@ -14,8 +14,8 @@ import (
 	"time"
 )
 
-func NewWarnCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewWarnCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "warn",
 		Description:   "Warns a user. Does not work if warn system is disabled.",
@@ -139,8 +139,8 @@ func (m *ModerationMod) warnCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewWarnLogCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewWarnLogCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "warnlog",
 		Description:   "Displays a users warns",
@@ -241,7 +241,7 @@ func (m *ModerationMod) warnlogCommand(msg *mio.DiscordMessage) {
 			}
 
 			if warn.IsValid {
-				field.Name = fmt.Sprintf("ID: %v | Issued by %v (%v) %v", warn.UID, gb.String(), gb.ID, humanize.Time(warn.GivenAt))
+				field.Name = fmt.Sprintf("UID: %v | Issued by %v (%v) %v", warn.UID, gb.String(), gb.ID, humanize.Time(warn.GivenAt))
 			} else {
 				if warn.ClearedByID == nil {
 					return
@@ -258,7 +258,7 @@ func (m *ModerationMod) warnlogCommand(msg *mio.DiscordMessage) {
 					userCache[*warn.ClearedByID] = cb
 				}
 
-				field.Name = fmt.Sprintf("ID: %v | !CLEARED! | Cleared by %v (%v) %v", warn.UID, cb.String(), cb.ID, humanize.Time(*warn.ClearedAt))
+				field.Name = fmt.Sprintf("UID: %v | !CLEARED! | Cleared by %v (%v) %v", warn.UID, cb.String(), cb.ID, humanize.Time(*warn.ClearedAt))
 			}
 
 			embed.Fields = append(embed.Fields, field)
@@ -267,8 +267,8 @@ func (m *ModerationMod) warnlogCommand(msg *mio.DiscordMessage) {
 	msg.ReplyEmbed(embed)
 }
 
-func NewWarnCountCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewWarnCountCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "warncount",
 		Description:   "Displays how many warns a user has. User can be specified. Message author will be used if no user is provided.",
@@ -315,8 +315,8 @@ func (m *ModerationMod) warncountCommand(msg *mio.DiscordMessage) {
 	msg.Reply(fmt.Sprintf("%v is at %v/%v warns", targetUser.String(), warnCount, dge.MaxWarns))
 }
 
-func NewClearWarnCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewClearWarnCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "pardon",
 		Description:   "Pardons a user. Opens a menu to clear a warn belonging to them.",
@@ -409,11 +409,11 @@ func (m *ModerationMod) clearwarnCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	msg.Reply(fmt.Sprintf("Invalidated warn with ID: %v", selectedEntry.UID))
+	msg.Reply(fmt.Sprintf("Invalidated warn with UID: %v", selectedEntry.UID))
 }
 
-func NewClearAllWarnsCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewClearAllWarnsCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "pardonall",
 		Description:   "Pardons all active warns for a member",

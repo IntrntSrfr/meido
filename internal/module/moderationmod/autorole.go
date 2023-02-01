@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-func NewAutoRoleCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewAutoRoleCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "autorolesettings",
 		Description:   "Sets the autorole to a supplied role name. If no role is supplied, it will be reset.",

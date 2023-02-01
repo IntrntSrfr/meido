@@ -10,49 +10,25 @@ import (
 	"go.uber.org/zap"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
 type ModerationMod struct {
-	sync.Mutex
-	name         string
-	commands     map[string]*mio.ModCommand
-	passives     []*mio.ModPassive
-	allowedTypes mio.MessageType
-	allowDMs     bool
-	bot          *mio.Bot
-	db           database.DB
-	log          *zap.Logger
+	*mio.ModuleBase
+	bot *mio.Bot
+	db  database.DB
+	log *zap.Logger
 }
 
-func New(b *mio.Bot, db *database.PsqlDB, log *zap.Logger) mio.Mod {
+func New(b *mio.Bot, db *database.PsqlDB, log *zap.Logger) mio.Module {
 	return &ModerationMod{
-		name:         "Moderation",
-		commands:     make(map[string]*mio.ModCommand),
-		allowedTypes: mio.MessageTypeCreate | mio.MessageTypeUpdate,
-		allowDMs:     false,
-		bot:          b,
-		db:           db,
-		log:          log,
+		ModuleBase: mio.NewModule("Moderation"),
+		bot:        b,
+		db:         db,
+		log:        log,
 	}
 }
 
-func (m *ModerationMod) Name() string {
-	return m.name
-}
-func (m *ModerationMod) Passives() []*mio.ModPassive {
-	return m.passives
-}
-func (m *ModerationMod) Commands() map[string]*mio.ModCommand {
-	return m.commands
-}
-func (m *ModerationMod) AllowedTypes() mio.MessageType {
-	return m.allowedTypes
-}
-func (m *ModerationMod) AllowDMs() bool {
-	return m.allowDMs
-}
 func (m *ModerationMod) Hook() error {
 	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		dbg := &database.Guild{}
@@ -122,7 +98,7 @@ func (m *ModerationMod) Hook() error {
 
 			found := false
 			for _, r := range guild.Roles {
-				if r.ID == a.RoleID {
+				if r.UID == a.RoleID {
 					found = true
 				}
 			}
@@ -132,50 +108,37 @@ func (m *ModerationMod) Hook() error {
 				return
 			}
 
-			s.GuildMemberRoleAdd(g.GuildID, g.User.ID, a.RoleID)
+			s.GuildMemberRoleAdd(g.GuildID, g.User.UID, a.RoleID)
 		})
 	*/
-	m.passives = append(m.passives, NewCheckFilterPassive(m))
-
-	m.RegisterCommand(NewBanCommand(m))
-	m.RegisterCommand(NewUnbanCommand(m))
-	m.RegisterCommand(NewHackbanCommand(m))
-	m.RegisterCommand(NewKickCommand(m))
-
-	m.RegisterCommand(NewWarnCommand(m))
-	m.RegisterCommand(NewClearWarnCommand(m))
-	m.RegisterCommand(NewWarnLogCommand(m))
-	m.RegisterCommand(NewClearAllWarnsCommand(m))
-	m.RegisterCommand(NewWarnCountCommand(m))
-
-	m.RegisterCommand(NewFilterWordCommand(m))
-	m.RegisterCommand(NewClearFilterCommand(m))
-	m.RegisterCommand(NewFilterWordListCommand(m))
-
-	m.RegisterCommand(NewModerationSettingsCommand(m))
-
-	m.RegisterCommand(NewLockdownChannelCommand(m))
-	m.RegisterCommand(NewUnlockChannelCommand(m))
-
-	m.RegisterCommand(NewMuteCommand(m))
-	m.RegisterCommand(NewUnmuteCommand(m))
-
-	//m.RegisterCommand(NewAutoRoleCommand(m))
-
-	return nil
-}
-
-func (m *ModerationMod) RegisterCommand(cmd *mio.ModCommand) {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.commands[cmd.Name]; ok {
-		panic(fmt.Sprintf("command '%v' already exists in %v", cmd.Name, m.Name()))
+	if err := m.RegisterPassive(NewCheckFilterPassive(m)); err != nil {
+		return err
 	}
-	m.commands[cmd.Name] = cmd
+
+	return m.RegisterCommands([]*mio.ModuleCommand{
+		NewBanCommand(m),
+		NewUnbanCommand(m),
+		NewHackbanCommand(m),
+		NewKickCommand(m),
+		NewWarnCommand(m),
+		NewClearWarnCommand(m),
+		NewWarnLogCommand(m),
+		NewClearAllWarnsCommand(m),
+		NewWarnCountCommand(m),
+		NewFilterWordCommand(m),
+		NewClearFilterCommand(m),
+		NewFilterWordListCommand(m),
+		NewModerationSettingsCommand(m),
+		NewLockdownChannelCommand(m),
+		NewUnlockChannelCommand(m),
+		NewMuteCommand(m),
+		NewUnmuteCommand(m),
+		//NewAutoRoleCommand(m),
+	})
 }
 
-func NewBanCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewBanCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "ban",
 		Description:   "Bans a user. Days of messages to be deleted and reason is optional",
@@ -202,16 +165,16 @@ func (m *ModerationMod) banCommand(msg *mio.DiscordMessage) {
 
 	targetUser, err := msg.GetUserAtArg(1)
 	if err != nil {
-		msg.Reply("Could not find that user!")
+		_, _ = msg.Reply("Could not find that user!")
 		return
 	}
 
 	if targetUser.ID == msg.Sess.State.User.ID {
-		msg.Reply("no (i can not ban myself)")
+		_, _ = msg.Reply("no (i can not ban myself)")
 		return
 	}
 	if targetUser.ID == msg.AuthorID() {
-		msg.Reply("no (you can not ban yourself)")
+		_, _ = msg.Reply("no (you can not ban yourself)")
 		return
 	}
 
@@ -233,7 +196,7 @@ func (m *ModerationMod) banCommand(msg *mio.DiscordMessage) {
 	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
-		msg.Reply("no (you can only ban users who are below you and me in the role hierarchy)")
+		_, _ = msg.Reply("no (you can only ban users who are below you and me in the role hierarchy)")
 		return
 	}
 
@@ -247,9 +210,9 @@ func (m *ModerationMod) banCommand(msg *mio.DiscordMessage) {
 			}
 
 			if reason == "" {
-				msg.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v", g.Name))
+				_, _ = msg.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v", g.Name))
 			} else {
-				msg.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v for the following reason:\n%v", g.Name, reason))
+				_, _ = msg.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been banned from %v for the following reason:\n%v", g.Name, reason))
 			}
 		}
 	}
@@ -267,7 +230,7 @@ func (m *ModerationMod) banCommand(msg *mio.DiscordMessage) {
 	}
 
 	//_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
-	//	msg.Sess.State.User.ID, time.Now(), msg.Message.GuildID, targetUser.ID)
+	//	msg.Sess.State.User.UID, time.Now(), msg.Message.GuildID, targetUser.UID)
 
 	embed := &discordgo.MessageEmbed{
 		Title: "User banned",
@@ -279,18 +242,18 @@ func (m *ModerationMod) banCommand(msg *mio.DiscordMessage) {
 				Inline: true,
 			},
 			{
-				Name:   "ID",
+				Name:   "UID",
 				Value:  fmt.Sprintf("%v", targetUser.ID),
 				Inline: true,
 			},
 		},
 	}
 
-	msg.ReplyEmbed(embed)
+	_, _ = msg.ReplyEmbed(embed)
 }
 
-func NewUnbanCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewUnbanCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "unban",
 		Description:   "Unbans a user",
@@ -332,11 +295,11 @@ func (m *ModerationMod) unbanCommand(msg *mio.DiscordMessage) {
 		Color:       utils.ColorGreen,
 	}
 
-	msg.ReplyEmbed(embed)
+	_, _ = msg.ReplyEmbed(embed)
 }
 
-func NewHackbanCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewHackbanCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "hackban",
 		Description:   "Hackbans one or several users. Prunes 7 days.",
@@ -359,7 +322,6 @@ func (m *ModerationMod) hackbanCommand(msg *mio.DiscordMessage) {
 	}
 
 	var userList []string
-
 	for _, mention := range msg.Message.Mentions {
 		userList = append(userList, fmt.Sprint(mention.ID))
 	}
@@ -368,9 +330,7 @@ func (m *ModerationMod) hackbanCommand(msg *mio.DiscordMessage) {
 		userList = append(userList, userID)
 	}
 
-	badBans := 0
-	badIDs := 0
-
+	badBans, badIDs := 0, 0
 	for _, userIDString := range userList {
 		_, err := strconv.Atoi(userIDString)
 		if err != nil {
@@ -384,11 +344,11 @@ func (m *ModerationMod) hackbanCommand(msg *mio.DiscordMessage) {
 			continue
 		}
 	}
-	msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
+	_, _ = msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
 }
 
-func NewKickCommand(m *ModerationMod) *mio.ModCommand {
-	return &mio.ModCommand{
+func NewKickCommand(m *ModerationMod) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "kick",
 		Description:   "Kicks a user. Reason is optional",
@@ -412,17 +372,17 @@ func (m *ModerationMod) kickCommand(msg *mio.DiscordMessage) {
 
 	targetUser, err := msg.GetMemberAtArg(1)
 	if err != nil {
-		msg.Reply("Could not find that user!")
+		_, _ = msg.Reply("Could not find that user!")
 		return
 	}
 
 	if targetUser.User.ID == msg.Sess.State.User.ID {
-		msg.Reply("no (i can not kick myself)")
+		_, _ = msg.Reply("no (i can not kick myself)")
 		return
 	}
 
 	if targetUser.User.ID == msg.AuthorID() {
-		msg.Reply("no (you can not kick yourself)")
+		_, _ = msg.Reply("no (you can not kick yourself)")
 		return
 	}
 
@@ -436,7 +396,7 @@ func (m *ModerationMod) kickCommand(msg *mio.DiscordMessage) {
 	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
-		msg.Reply("no (you can only kick users who are below you and me in the role hierarchy)")
+		_, _ = msg.Reply("no (you can only kick users who are below you and me in the role hierarchy)")
 		return
 	}
 
@@ -448,15 +408,15 @@ func (m *ModerationMod) kickCommand(msg *mio.DiscordMessage) {
 	userCh, userChErr := msg.Sess.UserChannelCreate(targetUser.User.ID)
 	if userChErr == nil {
 		if reason == "" {
-			msg.Sess.ChannelMessageSend(userCh.ID, fmt.Sprintf("You have been kicked from %v.", g.Name))
+			_, _ = msg.Sess.ChannelMessageSend(userCh.ID, fmt.Sprintf("You have been kicked from %v.", g.Name))
 		} else {
-			msg.Sess.ChannelMessageSend(userCh.ID, fmt.Sprintf("You have been kicked from %v for the following reason: %v", g.Name, reason))
+			_, _ = msg.Sess.ChannelMessageSend(userCh.ID, fmt.Sprintf("You have been kicked from %v for the following reason: %v", g.Name, reason))
 		}
 	}
 
 	err = msg.Sess.GuildMemberDeleteWithReason(g.ID, targetUser.User.ID, fmt.Sprintf("%v - %v", msg.Message.Author.String(), reason))
 	if err != nil {
-		msg.Reply("Something went wrong when trying to kick that user, please try again!")
+		_, _ = msg.Reply("Something went wrong when trying to kick that user, please try again!")
 		return
 	}
 
@@ -469,7 +429,7 @@ func (m *ModerationMod) kickCommand(msg *mio.DiscordMessage) {
 				Inline: true,
 			},
 			{
-				Name:   "ID",
+				Name:   "UID",
 				Value:  fmt.Sprintf("%v", targetUser.User.ID),
 				Inline: true,
 			},
@@ -477,5 +437,5 @@ func (m *ModerationMod) kickCommand(msg *mio.DiscordMessage) {
 		Color: utils.ColorCritical,
 	}
 
-	msg.ReplyEmbed(embed)
+	_, _ = msg.ReplyEmbed(embed)
 }
