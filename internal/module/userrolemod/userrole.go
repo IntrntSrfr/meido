@@ -18,29 +18,25 @@ import (
 
 type UserRoleMod struct {
 	*mio.ModuleBase
-	bot *mio.Bot
 	db  database.DB
 	owo *owo.Client
-	log *zap.Logger
 }
 
 func New(b *mio.Bot, db *database.PsqlDB, owo *owo.Client, log *zap.Logger) mio.Module {
 	return &UserRoleMod{
-		ModuleBase: mio.NewModule("UserRoles"),
-		bot:        b,
+		ModuleBase: mio.NewModule(b, "UserRoles", log),
 		db:         db,
 		owo:        owo,
-		log:        log,
 	}
 }
 
 func (m *UserRoleMod) Hook() error {
-	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	m.Bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		refreshTicker := time.NewTicker(time.Hour)
 
 		go func() {
 			for range refreshTicker.C {
-				for _, g := range m.bot.Discord.Guilds() {
+				for _, g := range m.Bot.Discord.Guilds() {
 					if g.Unavailable {
 						continue
 					}
@@ -62,7 +58,7 @@ func (m *UserRoleMod) Hook() error {
 
 						if !hasRole {
 							if err := m.db.DeleteMemberRole(ur.UID); err != nil {
-								m.log.Error("could not delete member role",
+								m.Log.Error("could not delete member role",
 									zap.Int("member role ID", ur.UID),
 									zap.String("guild id", ur.GuildID),
 									zap.String("role id", ur.RoleID),
@@ -105,18 +101,18 @@ func (m *UserRoleMod) setuserroleCommand(msg *mio.DiscordMessage) {
 
 	targetMember, err := msg.GetMemberAtArg(1)
 	if err != nil {
-		msg.Reply("could not find that user")
+		_, _ = msg.Reply("could not find that user")
 		return
 	}
 
 	if targetMember.User.Bot {
-		msg.Reply("Bots dont get to join the fun")
+		_, _ = msg.Reply("Bots dont get to join the fun")
 		return
 	}
 
 	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
-		msg.Reply(err.Error())
+		_, _ = msg.Reply(err.Error())
 		return
 	}
 
@@ -130,28 +126,50 @@ func (m *UserRoleMod) setuserroleCommand(msg *mio.DiscordMessage) {
 	}
 
 	if selectedRole == nil {
-		msg.Reply("Could not find that role!")
+		_, _ = msg.Reply("Could not find that role!")
 		return
 	}
 
-	userRole := &database.UserRole{}
-	err = m.db.Get(userRole, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", g.ID, targetMember.User.ID)
-	switch err {
-	case nil:
-		if selectedRole.ID == userRole.RoleID {
-			m.db.Exec("DELETE FROM user_role WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetMember.User.ID, selectedRole.ID)
-			msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetMember.User.String()))
-		} else {
-			m.db.Exec("UPDATE user_role SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetMember.User.ID)
-			msg.Reply(fmt.Sprintf("Updated userrole for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
+	if ur, err := m.db.GetMemberRole(g.ID, targetMember.User.ID); err == nil {
+		if selectedRole.ID == ur.RoleID {
+			return
 		}
-	case sql.ErrNoRows:
-		m.db.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
-		msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
-	default:
-		fmt.Println(err)
-		msg.Reply("there was an error, please try again")
+		ur.RoleID = selectedRole.ID
+		if err := m.db.UpdateMemberRole(ur); err != nil {
+			_, _ = msg.Reply("Could not set role, please try again!")
+			return
+		}
+		_, _ = msg.Reply(fmt.Sprintf("Updated member role for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
+		return
 	}
+
+	if err := m.db.CreateMemberRole(g.ID, targetMember.User.ID, selectedRole.ID); err != nil {
+		_, _ = msg.Reply("Could not set role, please try again!")
+		return
+	}
+	_, _ = msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
+
+	/*
+		//m.db.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
+		userRole := &database.UserRole{}
+		err = m.db.Get(userRole, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", g.ID, targetMember.User.ID)
+		switch err {
+		case nil:
+			if selectedRole.ID == userRole.RoleID {
+				m.db.Exec("DELETE FROM user_role WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetMember.User.ID, selectedRole.ID)
+				msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetMember.User.String()))
+			} else {
+				m.db.Exec("UPDATE user_role SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetMember.User.ID)
+				msg.Reply(fmt.Sprintf("Updated userrole for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
+			}
+		case sql.ErrNoRows:
+			m.db.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
+			msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
+		default:
+			fmt.Println(err)
+			msg.Reply("there was an error, please try again")
+		}
+	*/
 }
 
 func NewMyRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
@@ -184,7 +202,7 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 
 	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
-		msg.Reply("some error occurred")
+		_, _ = msg.Reply("some error occurred")
 		return
 	}
 
@@ -195,17 +213,17 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 		}
 
 		if allow, err := msg.Discord.HasPermissions(msg.Message.ChannelID, discordgo.PermissionManageRoles); err != nil || !allow {
-			msg.Reply("I am missing 'manage roles' permissions!")
+			_, _ = msg.Reply("I am missing 'manage roles' permissions!")
 			return
 		}
 
-		ur, err := m.db.GetUserRole(msg.GuildID(), msg.AuthorID())
+		ur, err := m.db.GetMemberRole(msg.GuildID(), msg.AuthorID())
 		if err != nil && err != sql.ErrNoRows {
-			m.log.Error("error fetching user role", zap.Error(err))
-			msg.Reply("there was an error, please try again")
+			m.Log.Error("error fetching user role", zap.Error(err))
+			_, _ = msg.Reply("there was an error, please try again")
 			return
 		} else if err == sql.ErrNoRows {
-			msg.Reply("No custom role set.")
+			_, _ = msg.Reply("No custom role set.")
 			return
 		}
 
@@ -216,7 +234,7 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 		}
 
 		if oldRole == nil {
-			msg.Reply("couldnt find role")
+			_, _ = msg.Reply("couldnt find role")
 			return
 		}
 
@@ -226,10 +244,10 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, newName, oldRole.Color, oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
 			if err != nil {
 				if strings.Contains(err.Error(), strconv.Itoa(discordgo.ErrCodeMissingPermissions)) {
-					msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Missing permissions.", Color: utils.ColorCritical})
+					_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Missing permissions.", Color: utils.ColorCritical})
 					return
 				}
-				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error() + "`.", Color: utils.ColorCritical})
+				_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error() + "`.", Color: utils.ColorCritical})
 				return
 			}
 
@@ -237,7 +255,7 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 				Color:       oldRole.Color,
 				Description: fmt.Sprintf("Role name changed from %v to %v", oldRole.Name, newName),
 			}
-			msg.ReplyEmbed(embed)
+			_, _ = msg.ReplyEmbed(embed)
 
 		} else if msg.Args()[1] == "color" {
 			clr := msg.Args()[2]
@@ -247,13 +265,13 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 
 			color, err := strconv.ParseInt(clr, 16, 64)
 			if err != nil || color < 0 || color > 0xFFFFFF {
-				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code.", Color: utils.ColorCritical})
+				_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code.", Color: utils.ColorCritical})
 				return
 			}
 
 			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, oldRole.Name, int(color), oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
 			if err != nil {
-				msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error(), Color: utils.ColorCritical})
+				_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error(), Color: utils.ColorCritical})
 				return
 			}
 
@@ -262,7 +280,7 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 				//Description: fmt.Sprintf("Color changed from #%v to #%v", fmt.Sprintf("%06X", oldRole.Color), fmt.Sprintf("%06X", color)),
 				Description: fmt.Sprintf("Color changed from #%v to #%v", strconv.FormatInt(int64(oldRole.Color), 16), strconv.FormatInt(color, 16)), // fmt.Sprintf("%06X", color)),
 			}
-			msg.ReplyEmbed(embed)
+			_, _ = msg.ReplyEmbed(embed)
 		}
 		return
 	case la == 1:
@@ -282,13 +300,13 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	ur, err := m.db.GetUserRole(msg.GuildID(), target.User.ID)
+	ur, err := m.db.GetMemberRole(msg.GuildID(), target.User.ID)
 	if err != nil && err != sql.ErrNoRows {
-		msg.Reply("there was an error, please try again")
-		m.log.Error("error fetching user role", zap.Error(err))
+		_, _ = msg.Reply("there was an error, please try again")
+		m.Log.Error("error fetching user role", zap.Error(err))
 		return
 	} else if err == sql.ErrNoRows {
-		msg.Reply("No custom role set.")
+		_, _ = msg.Reply("No custom role set.")
 		return
 	}
 
@@ -303,7 +321,7 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 	}
 
 	if customRole == nil {
-		msg.Reply("the custom role is broken, wait for someone to fix it or try setting a new userrole")
+		_, _ = msg.Reply("the custom role is broken, wait for someone to fix it or try setting a new userrole")
 		return
 	}
 
@@ -323,7 +341,7 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 			},
 		},
 	}
-	msg.ReplyEmbed(embed)
+	_, _ = msg.ReplyEmbed(embed)
 }
 
 /*

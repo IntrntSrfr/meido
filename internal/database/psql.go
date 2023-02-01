@@ -13,6 +13,16 @@ type PsqlDB struct {
 	connStr string
 }
 
+func (p *PsqlDB) GetGuildWarnsIfActive(guildID string) ([]*structs.Warn, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (p *PsqlDB) GetGuildWarns(guildID string) ([]*structs.Warn, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewPSQLDatabase(connStr string) (*PsqlDB, error) {
 	pool, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
@@ -26,10 +36,6 @@ func NewPSQLDatabase(connStr string) (*PsqlDB, error) {
 	return db, nil
 }
 
-// "INSERT INTO command_log VALUES(DEFAULT, $1, $2, $3, $4, $5, $6, $7);",
-//
-//	cmd.Name, strings.Join(msg.Args(), " "), msg.AuthorID(), gid,
-//	msg.ChannelID(), msg.Message.UID, time.Now()
 func (p *PsqlDB) GetConn() *sqlx.DB {
 	return p.pool
 }
@@ -149,14 +155,15 @@ func (p *PsqlDB) UpdateMemberWarn(warn *structs.Warn) error {
 	panic("implement me")
 }
 
-func (p *PsqlDB) CreateMemberRole(guildID, userID string) error {
-	//TODO implement me
-	panic("implement me")
+func (p *PsqlDB) CreateMemberRole(guildID, userID, roleID string) error {
+	_, err := p.pool.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", guildID, userID, roleID)
+	return err
 }
 
 func (p *PsqlDB) GetMemberRole(guildID, userID string) (*structs.UserRole, error) {
-	//TODO implement me
-	panic("implement me")
+	var role *structs.UserRole
+	err := p.pool.Get(&role, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", guildID, userID)
+	return role, err
 }
 
 func (p *PsqlDB) GetMemberRolesByGuild(guildID string) ([]*structs.UserRole, error) {
@@ -166,8 +173,8 @@ func (p *PsqlDB) GetMemberRolesByGuild(guildID string) ([]*structs.UserRole, err
 }
 
 func (p *PsqlDB) UpdateMemberRole(role *structs.UserRole) error {
-	//TODO implement me
-	panic("implement me")
+	_, err := p.pool.Exec("UPDATE user_role SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", role.RoleID, role.GuildID, role.UserID)
+	return err
 }
 
 func (p *PsqlDB) DeleteMemberRole(uid int) error {

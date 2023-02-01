@@ -20,42 +20,41 @@ func NewAutoRoleCommand(m *ModerationMod) *mio.ModuleCommand {
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
-		Run:           m.autoroleCommand,
-	}
-}
-func (m *ModerationMod) autoroleCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() == 1 {
-		err := m.db.DeleteAutoRole(msg.GuildID())
-		if err != nil {
-			_, _ = msg.Reply("Failed to remove autorole")
-			return
-		}
-		_, _ = msg.Reply("Cleared autorole")
-		return
-	}
+		Run: func(msg *mio.DiscordMessage) {
+			if msg.LenArgs() == 1 {
+				err := m.db.DeleteAutoRole(msg.GuildID())
+				if err != nil {
+					_, _ = msg.Reply("Failed to remove autorole")
+					return
+				}
+				_, _ = msg.Reply("Cleared autorole")
+				return
+			}
 
-	query := strings.Join(msg.Args()[1:], " ")
-	role, err := msg.Discord.GuildRoleByName(msg.GuildID(), query)
-	if err != nil {
-		_, _ = msg.Reply("I could not find that role")
-		return
-	}
+			query := strings.Join(msg.Args()[1:], " ")
+			role, err := msg.Discord.GuildRoleByName(msg.GuildID(), query)
+			if err != nil {
+				_, _ = msg.Reply("I could not find that role")
+				return
+			}
 
-	// the autorole already exists, update it
-	if _, err = m.db.GetAutoRole(msg.GuildID()); err == nil {
-		err = m.db.UpdateAutoRole(msg.GuildID(), role.ID)
-		if err != nil {
-			_, _ = msg.Reply("Failed to set autorole")
-			return
-		}
-		_, _ = msg.Reply(fmt.Sprintf("Autorole set to role `%v` (%v)", role.Name, role.ID))
-		return
-	}
+			// the autorole already exists, update it
+			if _, err = m.db.GetAutoRole(msg.GuildID()); err == nil {
+				err = m.db.UpdateAutoRole(msg.GuildID(), role.ID)
+				if err != nil {
+					_, _ = msg.Reply("Failed to set autorole")
+					return
+				}
+				_, _ = msg.Reply(fmt.Sprintf("Autorole set to role `%v` (%v)", role.Name, role.ID))
+				return
+			}
 
-	err = m.db.CreateAutoRole(msg.GuildID(), role.ID)
-	if err != nil {
-		_, _ = msg.Reply("Failed to set autorole")
-		return
+			err = m.db.CreateAutoRole(msg.GuildID(), role.ID)
+			if err != nil {
+				_, _ = msg.Reply("Failed to set autorole")
+				return
+			}
+			_, _ = msg.Reply(fmt.Sprintf("Autorole set to role `%v` (%v)", role.Name, role.ID))
+		},
 	}
-	_, _ = msg.Reply(fmt.Sprintf("Autorole set to role `%v` (%v)", role.Name, role.ID))
 }

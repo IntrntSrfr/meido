@@ -45,13 +45,15 @@ type FilterDB interface {
 
 type WarnDB interface {
 	CreateMemberWarn(guildID, userID, reason, authorID string) error
+	GetGuildWarns(guildID string) ([]*structs.Warn, error)
+	GetGuildWarnsIfActive(guildID string) ([]*structs.Warn, error)
 	GetMemberWarns(guildID, userID string) ([]*structs.Warn, error)
 	GetMemberWarnsIfActive(guildID, userID string) ([]*structs.Warn, error)
 	UpdateMemberWarn(warn *structs.Warn) error
 }
 
 type MemberRoleDB interface {
-	CreateMemberRole(guildID, userID string) error
+	CreateMemberRole(guildID, userID, roleID string) error
 	GetMemberRole(guildID, userID string) (*structs.UserRole, error)
 	GetMemberRolesByGuild(guildID string) ([]*structs.UserRole, error)
 	UpdateMemberRole(role *structs.UserRole) error

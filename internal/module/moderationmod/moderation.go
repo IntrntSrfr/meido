@@ -20,57 +20,54 @@ type ModerationMod struct {
 	log *zap.Logger
 }
 
-func New(b *mio.Bot, db *database.PsqlDB, log *zap.Logger) mio.Module {
+func New(b *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 	return &ModerationMod{
-		ModuleBase: mio.NewModule("Moderation"),
+		ModuleBase: mio.NewModule(b, "Moderation", logger),
 		bot:        b,
 		db:         db,
-		log:        log,
+		log:        logger,
 	}
 }
 
 func (m *ModerationMod) Hook() error {
 	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
-		dbg := &database.Guild{}
-		err := m.db.Get(dbg, "SELECT guild_id FROM guild WHERE guild_id = $1;", g.Guild.ID)
-		if err != nil && err != sql.ErrNoRows {
-			fmt.Println(err)
-		} else if err == sql.ErrNoRows {
-			m.db.Exec("INSERT INTO guild VALUES($1)", g.Guild.ID)
-			fmt.Println(fmt.Sprintf("Inserted new guild: %v [%v]", g.Guild.Name, g.Guild.ID))
+		if _, err := m.db.GetGuild(g.Guild.ID); err != nil && err == sql.ErrNoRows {
+			if err = m.db.CreateGuild(g.Guild.ID); err != nil {
+				m.Log.Error("could not create new guild", zap.Error(err), zap.String("guild ID", g.ID))
+			}
 		}
 	})
 
 	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		refreshTicker := time.NewTicker(time.Hour)
-
 		go func() {
 			for range refreshTicker.C {
 				for _, g := range m.bot.Discord.Guilds() {
 					if g.Unavailable {
 						continue
 					}
-					dge := &database.Guild{}
-					err := m.db.Get(dge, "SELECT * FROM guild WHERE guild_id=$1", g.ID)
+					gc, err := m.db.GetGuild(g.ID)
+					if err != nil || gc.WarnDuration <= 0 {
+						continue
+					}
+
+					warns, err := m.db.GetGuildWarnsIfActive(g.ID)
 					if err != nil {
 						continue
 					}
 
-					if dge.WarnDuration <= 0 {
-						continue
-					}
-
-					var warns []*database.Warn
-					err = m.db.Select(&warns, "SELECT * FROM warn WHERE guild_id=$1 AND is_valid", g.ID)
-					if err != nil {
-						continue
-					}
-
-					dur := time.Duration(dge.WarnDuration)
+					dur := time.Duration(gc.WarnDuration)
 					for _, warn := range warns {
-						if warn.GivenAt.Unix() < time.Now().Add(-1*time.Hour*24*dur).Unix() {
-							m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3",
-								m.bot.Discord.Sess.State.User.ID, time.Now(), warn.UID)
+						if time.Since(warn.GivenAt) > dur {
+							t := time.Now()
+							warn.IsValid = false
+							warn.ClearedByID = &m.bot.Discord.Sess.State.User.ID
+							warn.ClearedAt = &t
+							if err := m.db.UpdateMemberWarn(warn); err != nil {
+								m.log.Error("could not update warn", zap.Error(err), zap.Int("warn UID", warn.UID))
+							}
+							//m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3",
+							//	m.bot.Discord.Sess.State.User.ID, time.Now(), warn.UID)
 						}
 					}
 				}
@@ -219,7 +216,7 @@ func (m *ModerationMod) banCommand(msg *mio.DiscordMessage) {
 
 	err = msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, targetUser.ID, fmt.Sprintf("%v - %v", msg.Message.Author.String(), reason), pruneDays)
 	if err != nil {
-		msg.Reply("I could not ban that user!")
+		_, _ = msg.Reply("I could not ban that user!")
 		return
 	}
 
