@@ -10,7 +10,7 @@ create table aquarium
 
 create table command_log
 (
-    id         serial primary key,
+    uid        serial primary key,
     command    text                     not null,
     args       text                     not null,
     user_id    text                     not null,
@@ -22,7 +22,7 @@ create table command_log
 
 create table user_role
 (
-    id       serial primary key,
+    uid      serial primary key,
     guild_id text not null,
     user_id  text not null,
     role_id  text not null
@@ -30,14 +30,14 @@ create table user_role
 
 create table filter
 (
-    id       serial primary key,
+    uid      serial primary key,
     guild_id text not null,
     phrase   text not null
 );
 
 create table auto_role
 (
-    id       serial primary key,
+    uid      serial primary key,
     guild_id text not null,
     role_id  text not null,
     enabled  boolean default true
@@ -45,7 +45,7 @@ create table auto_role
 
 create table warn
 (
-    id            serial primary key,
+    uid           serial primary key,
     guild_id      text                     not null,
     user_id       text                     not null,
     reason        text                     not null,
