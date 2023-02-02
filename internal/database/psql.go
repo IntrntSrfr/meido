@@ -13,16 +13,6 @@ type PsqlDB struct {
 	connStr string
 }
 
-func (p *PsqlDB) GetGuildWarnsIfActive(guildID string) ([]*structs.Warn, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (p *PsqlDB) GetGuildWarns(guildID string) ([]*structs.Warn, error) {
-	//TODO implement me
-	panic("implement me")
-}
-
 func NewPSQLDatabase(connStr string) (*PsqlDB, error) {
 	pool, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
@@ -42,6 +32,18 @@ func (p *PsqlDB) GetConn() *sqlx.DB {
 
 func (p *PsqlDB) Close() error {
 	return p.pool.Close()
+}
+
+func (p *PsqlDB) GetGuildWarnsIfActive(guildID string) ([]*structs.Warn, error) {
+	var warns []*structs.Warn
+	err := p.pool.Select(&warns, "SELECT * FROM warn WHERE guild_id=$1 AND is_valid ORDER BY given_at DESC", guildID)
+	return warns, err
+}
+
+func (p *PsqlDB) GetGuildWarns(guildID string) ([]*structs.Warn, error) {
+	var warns []*structs.Warn
+	err := p.pool.Select(&warns, "SELECT * FROM warn WHERE guild_id=$1 ORDER BY given_at DESC", guildID)
+	return warns, err
 }
 
 func (p *PsqlDB) GetGuild(guildID string) (*structs.Guild, error) {
@@ -86,6 +88,11 @@ func (p *PsqlDB) GetGuildFilters(guildID string) ([]*structs.Filter, error) {
 	return filters, err
 }
 
+func (p *PsqlDB) DeleteGuildFilter(filterID int) error {
+	_, err := p.pool.Exec("DELETE FROM filter WHERE uid=$1", filterID)
+	return err
+}
+
 func (p *PsqlDB) DeleteGuildFilters(guildID string) error {
 	_, err := p.pool.Exec("DELETE FROM filter WHERE guild_id=$1", guildID)
 	return err
@@ -120,39 +127,44 @@ func (p *PsqlDB) UpdateAquarium(aq *structs.Aquarium) error {
 	return err
 }
 
-func (p *PsqlDB) CreateGuild(gid string) error {
-	//TODO implement me
-	panic("implement me")
+func (p *PsqlDB) CreateGuild(guildID string) error {
+	_, err := p.pool.Exec("INSERT INTO guild VALUES($1)", guildID)
+	return err
 }
 
 func (p *PsqlDB) UpdateGuild(g *structs.Guild) error {
-	//TODO implement me
-	panic("implement me")
+	_, err := p.pool.Exec("UPDATE guild SET use_warns=$1, max_warns=$2, warn_duration=$3, automod_log_channel=$4, fishing_channel=$5 WHERE guild_id=$6",
+		g.UseWarns, g.MaxWarns, g.WarnDuration, g.AutomodLogChannelID, g.FishingChannelID, g.GuildID)
+	return err
 }
 
 func (p *PsqlDB) CreateGuildFilter(guildID, phrase string) error {
-	//TODO implement me
-	panic("implement me")
+	_, err := p.pool.Exec("INSERT INTO filter VALUES (DEFAULT, $1, $2)", guildID, phrase)
+	return err
 }
 
 func (p *PsqlDB) CreateMemberWarn(guildID, userID, reason, authorID string) error {
-	//TODO implement me
-	panic("implement me")
+	_, err := p.pool.Exec("INSERT INTO warn VALUES(DEFAULT, $1, $2, $3, $4, $5, $6)",
+		guildID, userID, reason, authorID, time.Now(), true)
+	return err
 }
 
 func (p *PsqlDB) GetMemberWarns(guildID, userID string) ([]*structs.Warn, error) {
-	//TODO implement me
-	panic("implement me")
+	var warns []*structs.Warn
+	err := p.pool.Select(&warns, "SELECT * FROM warn WHERE guild_id=$1 AND user_id=$2 ORDER BY given_at DESC", guildID, userID)
+	return warns, err
 }
 
 func (p *PsqlDB) GetMemberWarnsIfActive(guildID, userID string) ([]*structs.Warn, error) {
-	//TODO implement me
-	panic("implement me")
+	var warns []*structs.Warn
+	err := p.pool.Select(&warns, "SELECT * FROM warn WHERE guild_id=$1 AND user_id=$2 AND is_valid ORDER BY given_at DESC", guildID, userID)
+	return warns, err
 }
 
 func (p *PsqlDB) UpdateMemberWarn(warn *structs.Warn) error {
-	//TODO implement me
-	panic("implement me")
+	_, err := p.pool.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid = $3",
+		warn.ClearedByID, warn.ClearedAt, warn.UID)
+	return err
 }
 
 func (p *PsqlDB) CreateMemberRole(guildID, userID, roleID string) error {

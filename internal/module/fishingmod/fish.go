@@ -7,6 +7,7 @@ import (
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
+	"go.uber.org/zap"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -15,15 +16,13 @@ import (
 // FishMod represents the ping mod
 type FishMod struct {
 	*mio.ModuleBase
-	bot *mio.Bot
-	db  *database.PsqlDB
+	db *database.PsqlDB
 }
 
 // New returns a new PingMod.
-func New(b *mio.Bot, db *database.PsqlDB) mio.Module {
+func New(bot *mio.Bot, db *database.PsqlDB, logger *zap.Logger) mio.Module {
 	return &FishMod{
-		ModuleBase: mio.NewModule("Fishing"),
-		bot:        b,
+		ModuleBase: mio.NewModule(bot, "Fishing", logger),
 		db:         db,
 	}
 }
@@ -185,7 +184,7 @@ func (m *FishMod) aquariumCommand(msg *mio.DiscordMessage) {
 
 	aq, err := m.db.GetAquarium(targetUser.ID)
 	if err != nil && err == sql.ErrNoRows {
-		msg.Reply(fmt.Sprintf("%v has no fish", targetUser.String()))
+		_, _ = msg.Reply(fmt.Sprintf("%v has no fish", targetUser.String()))
 		return
 	} else if err != nil {
 		return

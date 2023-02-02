@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	gogpt "github.com/sashabaranov/go-gpt3"
+	"go.uber.org/zap"
 	"strings"
 )
 
@@ -15,9 +16,9 @@ type AIMod struct {
 }
 
 // New returns a new TestMod.
-func New(gptClient *gogpt.Client, engine string) mio.Module {
+func New(bot *mio.Bot, logger *zap.Logger, gptClient *gogpt.Client, engine string) mio.Module {
 	return &AIMod{
-		ModuleBase: mio.NewModule("AI"),
+		ModuleBase: mio.NewModule(bot, "AI", logger),
 		gptClient:  gptClient,
 		engine:     engine,
 	}

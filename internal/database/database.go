@@ -24,9 +24,9 @@ type CommandLogDB interface {
 }
 
 type GuildDB interface {
-	CreateGuild(gid string) error
+	CreateGuild(guildID string) error
 	UpdateGuild(g *structs.Guild) error
-	GetGuild(gid string) (*structs.Guild, error)
+	GetGuild(guildID string) (*structs.Guild, error)
 }
 
 type AutoRoleDB interface {
@@ -40,6 +40,7 @@ type FilterDB interface {
 	CreateGuildFilter(guildID, phrase string) error
 	GetGuildFilterByPhrase(guildID, phrase string) (*structs.Filter, error)
 	GetGuildFilters(guildID string) ([]*structs.Filter, error)
+	DeleteGuildFilter(filterID int) error
 	DeleteGuildFilters(guildID string) error
 }
 

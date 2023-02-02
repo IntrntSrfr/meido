@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
+	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"os/exec"
@@ -15,9 +16,9 @@ type MediaConvertMod struct {
 	*mio.ModuleBase
 }
 
-func New() mio.Module {
+func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 	return &MediaConvertMod{
-		ModuleBase: mio.NewModule("Media"),
+		ModuleBase: mio.NewModule(bot, "Media", logger),
 	}
 }
 

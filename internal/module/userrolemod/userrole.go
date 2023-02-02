@@ -90,86 +90,84 @@ func NewSetUserRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
-		Run:           m.setuserroleCommand,
-	}
-}
-
-func (m *UserRoleMod) setuserroleCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 3 {
-		return
-	}
-
-	targetMember, err := msg.GetMemberAtArg(1)
-	if err != nil {
-		_, _ = msg.Reply("could not find that user")
-		return
-	}
-
-	if targetMember.User.Bot {
-		_, _ = msg.Reply("Bots dont get to join the fun")
-		return
-	}
-
-	g, err := msg.Discord.Guild(msg.Message.GuildID)
-	if err != nil {
-		_, _ = msg.Reply(err.Error())
-		return
-	}
-
-	var selectedRole *discordgo.Role
-	for _, role := range g.Roles {
-		if role.ID == msg.Args()[2] {
-			selectedRole = role
-		} else if strings.ToLower(role.Name) == strings.ToLower(strings.Join(msg.Args()[2:], " ")) {
-			selectedRole = role
-		}
-	}
-
-	if selectedRole == nil {
-		_, _ = msg.Reply("Could not find that role!")
-		return
-	}
-
-	if ur, err := m.db.GetMemberRole(g.ID, targetMember.User.ID); err == nil {
-		if selectedRole.ID == ur.RoleID {
-			return
-		}
-		ur.RoleID = selectedRole.ID
-		if err := m.db.UpdateMemberRole(ur); err != nil {
-			_, _ = msg.Reply("Could not set role, please try again!")
-			return
-		}
-		_, _ = msg.Reply(fmt.Sprintf("Updated member role for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
-		return
-	}
-
-	if err := m.db.CreateMemberRole(g.ID, targetMember.User.ID, selectedRole.ID); err != nil {
-		_, _ = msg.Reply("Could not set role, please try again!")
-		return
-	}
-	_, _ = msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
-
-	/*
-		//m.db.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
-		userRole := &database.UserRole{}
-		err = m.db.Get(userRole, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", g.ID, targetMember.User.ID)
-		switch err {
-		case nil:
-			if selectedRole.ID == userRole.RoleID {
-				m.db.Exec("DELETE FROM user_role WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetMember.User.ID, selectedRole.ID)
-				msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetMember.User.String()))
-			} else {
-				m.db.Exec("UPDATE user_role SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetMember.User.ID)
-				msg.Reply(fmt.Sprintf("Updated userrole for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
+		Run: func(msg *mio.DiscordMessage) {
+			if msg.LenArgs() < 3 {
+				return
 			}
-		case sql.ErrNoRows:
-			m.db.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
-			msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
-		default:
-			fmt.Println(err)
-			msg.Reply("there was an error, please try again")
-		}
-	*/
+
+			targetMember, err := msg.GetMemberAtArg(1)
+			if err != nil {
+				_, _ = msg.Reply("could not find that user")
+				return
+			}
+
+			if targetMember.User.Bot {
+				_, _ = msg.Reply("Bots dont get to join the fun")
+				return
+			}
+
+			g, err := msg.Discord.Guild(msg.Message.GuildID)
+			if err != nil {
+				_, _ = msg.Reply(err.Error())
+				return
+			}
+
+			var selectedRole *discordgo.Role
+			for _, role := range g.Roles {
+				if role.ID == msg.Args()[2] {
+					selectedRole = role
+				} else if strings.ToLower(role.Name) == strings.ToLower(strings.Join(msg.Args()[2:], " ")) {
+					selectedRole = role
+				}
+			}
+
+			if selectedRole == nil {
+				_, _ = msg.Reply("Could not find that role!")
+				return
+			}
+
+			if ur, err := m.db.GetMemberRole(g.ID, targetMember.User.ID); err == nil {
+				if selectedRole.ID == ur.RoleID {
+					return
+				}
+				ur.RoleID = selectedRole.ID
+				if err := m.db.UpdateMemberRole(ur); err != nil {
+					_, _ = msg.Reply("Could not set role, please try again!")
+					return
+				}
+				_, _ = msg.Reply(fmt.Sprintf("Updated member role for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
+				return
+			}
+
+			if err := m.db.CreateMemberRole(g.ID, targetMember.User.ID, selectedRole.ID); err != nil {
+				_, _ = msg.Reply("Could not set role, please try again!")
+				return
+			}
+			_, _ = msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
+
+			/*
+				//m.db.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
+				userRole := &database.UserRole{}
+				err = m.db.Get(userRole, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", g.ID, targetMember.User.ID)
+				switch err {
+				case nil:
+					if selectedRole.ID == userRole.RoleID {
+						m.db.Exec("DELETE FROM user_role WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetMember.User.ID, selectedRole.ID)
+						msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetMember.User.String()))
+					} else {
+						m.db.Exec("UPDATE user_role SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetMember.User.ID)
+						msg.Reply(fmt.Sprintf("Updated userrole for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
+					}
+				case sql.ErrNoRows:
+					m.db.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
+					msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
+				default:
+					fmt.Println(err)
+					msg.Reply("there was an error, please try again")
+				}
+			*/
+		},
+	}
 }
 
 func NewMyRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
@@ -288,10 +286,9 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 	case la == 2:
 		target, err = msg.GetMemberAtArg(1)
 		if err != nil {
-			msg.Reply("Could not find that user")
+			_, _ = msg.Reply("Could not find that user")
 			return
 		}
-
 	default:
 		return
 	}

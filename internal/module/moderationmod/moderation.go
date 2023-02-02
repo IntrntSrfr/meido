@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
@@ -15,22 +16,18 @@ import (
 
 type ModerationMod struct {
 	*mio.ModuleBase
-	bot *mio.Bot
-	db  database.DB
-	log *zap.Logger
+	db database.DB
 }
 
 func New(b *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 	return &ModerationMod{
 		ModuleBase: mio.NewModule(b, "Moderation", logger),
-		bot:        b,
 		db:         db,
-		log:        logger,
 	}
 }
 
 func (m *ModerationMod) Hook() error {
-	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
+	m.Bot.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		if _, err := m.db.GetGuild(g.Guild.ID); err != nil && err == sql.ErrNoRows {
 			if err = m.db.CreateGuild(g.Guild.ID); err != nil {
 				m.Log.Error("could not create new guild", zap.Error(err), zap.String("guild ID", g.ID))
@@ -38,11 +35,11 @@ func (m *ModerationMod) Hook() error {
 		}
 	})
 
-	m.bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	m.Bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		refreshTicker := time.NewTicker(time.Hour)
 		go func() {
 			for range refreshTicker.C {
-				for _, g := range m.bot.Discord.Guilds() {
+				for _, g := range m.Bot.Discord.Guilds() {
 					if g.Unavailable {
 						continue
 					}
@@ -61,10 +58,10 @@ func (m *ModerationMod) Hook() error {
 						if time.Since(warn.GivenAt) > dur {
 							t := time.Now()
 							warn.IsValid = false
-							warn.ClearedByID = &m.bot.Discord.Sess.State.User.ID
+							warn.ClearedByID = &m.Bot.Discord.Sess.State.User.ID
 							warn.ClearedAt = &t
 							if err := m.db.UpdateMemberWarn(warn); err != nil {
-								m.log.Error("could not update warn", zap.Error(err), zap.Int("warn UID", warn.UID))
+								m.Log.Error("could not update warn", zap.Error(err), zap.Int("warn UID", warn.UID))
 							}
 							//m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3",
 							//	m.bot.Discord.Sess.State.User.ID, time.Now(), warn.UID)
@@ -220,33 +217,31 @@ func (m *ModerationMod) banCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	// clear all active warns
-	err = m.db.ClearActiveUserWarns(msg.GuildID(), targetUser.ID, msg.AuthorID())
+	warns, err := m.db.GetMemberWarns(msg.GuildID(), targetUser.ID)
 	if err != nil {
-		m.log.Error("could not clear user warns", zap.Error(err))
+		_, _ = msg.Reply("There was an issue, please try again")
+		return
+	}
+
+	t := time.Now()
+	for _, warn := range warns {
+		warn.IsValid = false
+		warn.ClearedByID = &msg.Sess.State.User.ID
+		warn.ClearedAt = &t
+		if err := m.db.UpdateMemberWarn(warn); err != nil {
+			m.Log.Error("could not update warn", zap.Error(err), zap.Int("warn ID", warn.UID))
+		}
 	}
 
 	//_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
 	//	msg.Sess.State.User.UID, time.Now(), msg.Message.GuildID, targetUser.UID)
 
-	embed := &discordgo.MessageEmbed{
-		Title: "User banned",
-		Color: utils.ColorCritical,
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "Username",
-				Value:  fmt.Sprintf("%v", targetUser.Mention()),
-				Inline: true,
-			},
-			{
-				Name:   "UID",
-				Value:  fmt.Sprintf("%v", targetUser.ID),
-				Inline: true,
-			},
-		},
-	}
-
-	_, _ = msg.ReplyEmbed(embed)
+	embed := helpers.NewEmbed().
+		WithTitle("User banned").
+		WithOkColor().
+		AddField("Username", targetUser.Mention(), true).
+		AddField("ID", targetUser.ID, true)
+	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
 func NewUnbanCommand(m *ModerationMod) *mio.ModuleCommand {
@@ -287,19 +282,17 @@ func (m *ModerationMod) unbanCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	embed := &discordgo.MessageEmbed{
-		Description: fmt.Sprintf("**Unbanned** %v - %v#%v (%v)", targetUser.Mention(), targetUser.Username, targetUser.Discriminator, targetUser.ID),
-		Color:       utils.ColorGreen,
-	}
-
-	_, _ = msg.ReplyEmbed(embed)
+	embed := helpers.NewEmbed().
+		WithDescription(fmt.Sprintf("**Unbanned** %v - %v#%v (%v)", targetUser.Mention(), targetUser.Username, targetUser.Discriminator, targetUser.ID)).
+		WithOkColor()
+	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
 func NewHackbanCommand(m *ModerationMod) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "hackban",
-		Description:   "Hackbans one or several users. Prunes 7 days.",
+		Description:   "Hackbans one or several users. Prunes 7 days. Only accepts user IDs.",
 		Triggers:      []string{"m?hackban", "m?hb"},
 		Usage:         "m?hb [userID] <userID>...",
 		Cooldown:      3,
@@ -309,39 +302,26 @@ func NewHackbanCommand(m *ModerationMod) *mio.ModuleCommand {
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
-		Run:           m.hackbanCommand,
-	}
-}
+		Run: func(msg *mio.DiscordMessage) {
+			if msg.LenArgs() < 2 {
+				return
+			}
 
-func (m *ModerationMod) hackbanCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
-		return
+			badBans, badIDs := 0, 0
+			for _, arg := range msg.Args()[1:] {
+				if !utils.IsNumber(arg) {
+					badIDs++
+					continue
+				}
+				err := msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, arg, fmt.Sprintf("[%v] - Hackban", msg.Message.Author), 7)
+				if err != nil {
+					badBans++
+					continue
+				}
+			}
+			_, _ = msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", msg.LenArgs()-1-badBans-badIDs, msg.LenArgs()-1-badIDs))
+		},
 	}
-
-	var userList []string
-	for _, mention := range msg.Message.Mentions {
-		userList = append(userList, fmt.Sprint(mention.ID))
-	}
-
-	for _, userID := range msg.Args()[1:] {
-		userList = append(userList, userID)
-	}
-
-	badBans, badIDs := 0, 0
-	for _, userIDString := range userList {
-		_, err := strconv.Atoi(userIDString)
-		if err != nil {
-			badIDs++
-			continue
-		}
-		err = msg.Discord.Sess.GuildBanCreateWithReason(msg.Message.GuildID, userIDString, fmt.Sprintf("[%v] - Hackban", msg.Message.Author.String()), 7)
-		if err != nil {
-			fmt.Println(err)
-			badBans++
-			continue
-		}
-	}
-	_, _ = msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(userList)-badBans-badIDs, len(userList)-badIDs))
 }
 
 func NewKickCommand(m *ModerationMod) *mio.ModuleCommand {
@@ -374,7 +354,7 @@ func (m *ModerationMod) kickCommand(msg *mio.DiscordMessage) {
 	}
 
 	if targetUser.User.ID == msg.Sess.State.User.ID {
-		_, _ = msg.Reply("no (i can not kick myself)")
+		_, _ = msg.Reply("no (I can not kick myself)")
 		return
 	}
 
@@ -417,22 +397,10 @@ func (m *ModerationMod) kickCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	embed := &discordgo.MessageEmbed{
-		Title: "User kicked",
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "Username",
-				Value:  fmt.Sprintf("%v", targetUser.Mention()),
-				Inline: true,
-			},
-			{
-				Name:   "UID",
-				Value:  fmt.Sprintf("%v", targetUser.User.ID),
-				Inline: true,
-			},
-		},
-		Color: utils.ColorCritical,
-	}
-
-	_, _ = msg.ReplyEmbed(embed)
+	embed := helpers.NewEmbed().
+		WithTitle("User kicked").
+		WithOkColor().
+		AddField("Username", targetUser.Mention(), true).
+		AddField("ID", targetUser.User.ID, true)
+	_, _ = msg.ReplyEmbed(embed.Build())
 }

@@ -3,20 +3,19 @@ package feedbackmod
 import (
 	"fmt"
 	"github.com/intrntsrfr/meido/pkg/mio"
+	"go.uber.org/zap"
 )
 
 type FeedbackMod struct {
 	*mio.ModuleBase
-	bot             *mio.Bot
 	bannedUsers     map[string]bool
 	feedbackChannel string
 	owners          []string
 }
 
-func New(b *mio.Bot, ownerIds []string, feedbackCh string) mio.Module {
+func New(bot *mio.Bot, logger *zap.Logger, ownerIds []string, feedbackCh string) mio.Module {
 	return &FeedbackMod{
-		ModuleBase:      mio.NewModule("Feedback"),
-		bot:             b,
+		ModuleBase:      mio.NewModule(bot, "Feedback", logger),
 		bannedUsers:     make(map[string]bool),
 		feedbackChannel: feedbackCh,
 		owners:          ownerIds,

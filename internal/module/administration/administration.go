@@ -4,21 +4,20 @@ import (
 	"fmt"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
+	"go.uber.org/zap"
 	"time"
 )
 
 // Module represents the administration mod
 type Module struct {
 	*mio.ModuleBase
-	bot           *mio.Bot
 	dmLogChannels []string
 }
 
 // New returns a new AdministrationMod.
-func New(b *mio.Bot, logChs []string) mio.Module {
+func New(bot *mio.Bot, logger *zap.Logger, logChs []string) mio.Module {
 	return &Module{
-		ModuleBase:    mio.NewModule("Administration"),
-		bot:           b,
+		ModuleBase:    mio.NewModule(bot, "Administration", logger),
 		dmLogChannels: logChs,
 	}
 }
@@ -51,17 +50,14 @@ func NewToggleCommandCommand(m *Module) *mio.ModuleCommand {
 			if msg.LenArgs() < 2 || !msg.Discord.IsBotOwner(msg) {
 				return
 			}
-
-			for _, mod := range m.bot.Modules {
+			for _, mod := range m.Bot.Modules {
 				cmd, ok := mio.FindCommand(mod, msg.Args())
 				if !ok {
 					return
 				}
-
 				if cmd.Name == "togglecommand" {
 					return
 				}
-
 				cmd.Enabled = !cmd.Enabled
 				if cmd.Enabled {
 					_, _ = msg.Reply(fmt.Sprintf("Enabled command %v", cmd.Name))
@@ -91,11 +87,9 @@ func NewForwardDmsPassive(m *Module) *mio.ModulePassive {
 				WithDescription(msg.Message.Content).
 				WithFooter(msg.Message.Author.ID, "").
 				WithTimestamp(msg.Message.Timestamp.Format(time.RFC3339))
-
 			if len(msg.Message.Attachments) > 0 {
 				embed.WithImageUrl(msg.Message.Attachments[0].URL)
 			}
-
 			for _, id := range m.dmLogChannels {
 				_, _ = msg.Sess.ChannelMessageSendEmbed(id, embed.Build())
 			}

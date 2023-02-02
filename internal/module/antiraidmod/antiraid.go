@@ -5,6 +5,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/owo"
+	"go.uber.org/zap"
 	"golang.org/x/time/rate"
 	"strconv"
 	"strings"
@@ -15,7 +16,6 @@ import (
 // AntiRaidMod represents the antiraid mod
 type AntiRaidMod struct {
 	*mio.ModuleBase
-	bot *mio.Bot
 	owo *owo.Client
 
 	servers *serverMap
@@ -23,10 +23,9 @@ type AntiRaidMod struct {
 }
 
 // New returns a new AntiRaidMod.
-func New(b *mio.Bot, o *owo.Client) mio.Module {
+func New(bot *mio.Bot, logger *zap.Logger, o *owo.Client) mio.Module {
 	return &AntiRaidMod{
-		ModuleBase: mio.NewModule("AntiRaid"),
-		bot:        b,
+		ModuleBase: mio.NewModule(bot, "AntiRaid", logger),
 		owo:        o,
 		servers:    &serverMap{Servers: make(map[string]*server)},
 		banChan:    make(chan [2]string, 1024),
@@ -35,11 +34,11 @@ func New(b *mio.Bot, o *owo.Client) mio.Module {
 
 // Hook will hook the Module into the Bot.
 func (m *AntiRaidMod) Hook() error {
-	m.bot.Discord.AddEventHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
+	m.Bot.Discord.AddEventHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		m.servers.Add(g.ID)
 	})
 
-	m.bot.Discord.AddEventHandler(func(s *discordgo.Session, g *discordgo.GuildDelete) {
+	m.Bot.Discord.AddEventHandler(func(s *discordgo.Session, g *discordgo.GuildDelete) {
 		m.servers.Remove(g.ID)
 	})
 
@@ -53,7 +52,7 @@ func (m *AntiRaidMod) runBanListener() {
 		select {
 		case ban := <-m.banChan:
 			//fmt.Println("time to ban: ", ban)
-			_ = m.bot.Discord.Sess.GuildBanCreateWithReason(ban[0], ban[1], "Raid prevention", 7)
+			_ = m.Bot.Discord.Sess.GuildBanCreateWithReason(ban[0], ban[1], "Raid prevention", 7)
 		}
 	}
 }
