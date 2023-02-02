@@ -1,6 +1,6 @@
 module github.com/intrntsrfr/meido
 
-go 1.18
+go 1.19
 
 require (
 	github.com/bwmarrin/discordgo v0.24.0
