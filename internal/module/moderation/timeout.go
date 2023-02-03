@@ -1,4 +1,4 @@
-package moderationmod
+package moderation
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func NewMuteCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewMuteCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "mute",
@@ -26,7 +26,7 @@ func NewMuteCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) muteCommand(msg *mio.DiscordMessage) {
+func (m *Module) muteCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -76,7 +76,7 @@ func (m *ModerationMod) muteCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply(fmt.Sprintf("%v has been timed out for %v", targetMember.User, duration))
 }
 
-func NewUnmuteCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewUnmuteCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "unmute",
@@ -95,7 +95,7 @@ func NewUnmuteCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) unmuteCommand(msg *mio.DiscordMessage) {
+func (m *Module) unmuteCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

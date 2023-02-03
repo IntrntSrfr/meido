@@ -1,10 +1,10 @@
-package searchmod
+package search
 
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/helpers"
-	"github.com/intrntsrfr/meido/internal/service/search"
+	"github.com/intrntsrfr/meido/internal/module/search/service"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
 	"math/rand"
@@ -12,21 +12,21 @@ import (
 	"time"
 )
 
-type SearchMod struct {
+type Module struct {
 	*mio.ModuleBase
-	search     *search.Service
-	imageCache *search.ImageSearchCache
+	search     *service.Service
+	imageCache *service.ImageSearchCache
 }
 
 func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
-	return &SearchMod{
+	return &Module{
 		ModuleBase: mio.NewModule(bot, "Search", logger.Named("search")),
-		search:     search.NewService(bot.Config.YouTubeToken, bot.Config.OpenWeatherApiKey),
-		imageCache: search.NewImageSearchCache(),
+		search:     service.NewService(bot.Config.YouTubeToken, bot.Config.OpenWeatherApiKey),
+		imageCache: service.NewImageSearchCache(),
 	}
 }
 
-func (m *SearchMod) Hook() error {
+func (m *Module) Hook() error {
 	m.Bot.Discord.AddEventHandler(m.imageInteractionHandler)
 
 	return m.RegisterCommands([]*mio.ModuleCommand{
@@ -36,7 +36,7 @@ func (m *SearchMod) Hook() error {
 	})
 }
 
-func NewWeatherCommand(m *SearchMod) *mio.ModuleCommand {
+func NewWeatherCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "weather",
@@ -87,7 +87,7 @@ func NewWeatherCommand(m *SearchMod) *mio.ModuleCommand {
 	}
 }
 
-func NewYouTubeCommand(m *SearchMod) *mio.ModuleCommand {
+func NewYouTubeCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "youtube",
@@ -126,7 +126,7 @@ func NewYouTubeCommand(m *SearchMod) *mio.ModuleCommand {
 	}
 }
 
-func NewImageCommand(m *SearchMod) *mio.ModuleCommand {
+func NewImageCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "image",
@@ -197,7 +197,7 @@ func NewImageCommand(m *SearchMod) *mio.ModuleCommand {
 			if err != nil {
 				return
 			}
-			searchData := search.NewImageSearch(msg.Message, reply, links, nextID, prevID, stopID)
+			searchData := service.NewImageSearch(msg.Message, reply, links, nextID, prevID, stopID)
 			m.imageCache.Set(searchData)
 			defer func() {
 				m.imageCache.Delete(reply.ID)
@@ -235,7 +235,7 @@ func NewImageCommand(m *SearchMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *SearchMod) imageInteractionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+func (m *Module) imageInteractionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if i.Message == nil || i.Data == nil || i.Data.Type() != discordgo.InteractionMessageComponent {
 		return
 	}

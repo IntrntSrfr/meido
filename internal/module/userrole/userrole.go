@@ -1,9 +1,10 @@
-package userrolemod
+package userrole
 
 import (
 	"database/sql"
 	"fmt"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"strconv"
@@ -16,21 +17,21 @@ import (
 	"github.com/intrntsrfr/owo"
 )
 
-type UserRoleMod struct {
+type Module struct {
 	*mio.ModuleBase
 	db  database.DB
 	owo *owo.Client
 }
 
-func New(b *mio.Bot, db *database.PsqlDB, owo *owo.Client, log *zap.Logger) mio.Module {
-	return &UserRoleMod{
-		ModuleBase: mio.NewModule(b, "UserRoles", log),
+func New(b *mio.Bot, db *database.PsqlDB, owo *owo.Client, logger *zap.Logger) mio.Module {
+	return &Module{
+		ModuleBase: mio.NewModule(b, "UserRoles", logger.Named("userrole")),
 		db:         db,
 		owo:        owo,
 	}
 }
 
-func (m *UserRoleMod) Hook() error {
+func (m *Module) Hook() error {
 	m.Bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		refreshTicker := time.NewTicker(time.Hour)
 
@@ -73,17 +74,18 @@ func (m *UserRoleMod) Hook() error {
 
 	return m.RegisterCommands([]*mio.ModuleCommand{
 		NewSetUserRoleCommand(m),
+		NewRemoveUserRoleCommand(m),
 		NewMyRoleCommand(m),
 	})
 }
 
-func NewSetUserRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
+func NewSetUserRoleCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "setuserrole",
-		Description:   "Binds, unbinds or changes a userrole bind to a user",
-		Triggers:      []string{"m?setuserrole"},
-		Usage:         "m?setuserrole 1231231231231 cool role",
+		Description:   "Sets or changes a custom role for a user",
+		Triggers:      []string{"m?setuserrole", "m?setcustomrole"},
+		Usage:         "m?setcustomrole 1231231231231 cool role",
 		Cooldown:      3,
 		RequiredPerms: discordgo.PermissionManageRoles,
 		RequiresOwner: false,
@@ -97,7 +99,7 @@ func NewSetUserRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
 
 			targetMember, err := msg.GetMemberAtArg(1)
 			if err != nil {
-				_, _ = msg.Reply("could not find that user")
+				_, _ = msg.Reply("Could not find that user")
 				return
 			}
 
@@ -122,7 +124,7 @@ func NewSetUserRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
 			}
 
 			if selectedRole == nil {
-				_, _ = msg.Reply("Could not find that role!")
+				_, _ = msg.Reply("Could not find that role")
 				return
 			}
 
@@ -132,7 +134,7 @@ func NewSetUserRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
 				}
 				ur.RoleID = selectedRole.ID
 				if err := m.db.UpdateMemberRole(ur); err != nil {
-					_, _ = msg.Reply("Could not set role, please try again!")
+					_, _ = msg.Reply("Could not set role, please try again")
 					return
 				}
 				_, _ = msg.Reply(fmt.Sprintf("Updated member role for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
@@ -140,37 +142,56 @@ func NewSetUserRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
 			}
 
 			if err := m.db.CreateMemberRole(g.ID, targetMember.User.ID, selectedRole.ID); err != nil {
-				_, _ = msg.Reply("Could not set role, please try again!")
+				_, _ = msg.Reply("Could not set role, please try again")
 				return
 			}
 			_, _ = msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
-
-			/*
-				//m.db.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
-				userRole := &database.UserRole{}
-				err = m.db.Get(userRole, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", g.ID, targetMember.User.ID)
-				switch err {
-				case nil:
-					if selectedRole.ID == userRole.RoleID {
-						m.db.Exec("DELETE FROM user_role WHERE guild_id=$1 AND user_id=$2 AND role_id=$3;", g.ID, targetMember.User.ID, selectedRole.ID)
-						msg.Reply(fmt.Sprintf("Unbound role **%v** from user **%v**", selectedRole.Name, targetMember.User.String()))
-					} else {
-						m.db.Exec("UPDATE user_role SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", selectedRole.ID, g.ID, targetMember.User.ID)
-						msg.Reply(fmt.Sprintf("Updated userrole for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
-					}
-				case sql.ErrNoRows:
-					m.db.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", g.ID, targetMember.User.ID, selectedRole.ID)
-					msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
-				default:
-					fmt.Println(err)
-					msg.Reply("there was an error, please try again")
-				}
-			*/
 		},
 	}
 }
 
-func NewMyRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
+func NewRemoveUserRoleCommand(m *Module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
+		Mod:           m,
+		Name:          "removecustomrole",
+		Description:   "Removes a custom role that is bound to a user",
+		Triggers:      []string{"m?removeuserrole", "m?removecustomrole"},
+		Usage:         "m?removecustomrole 1231231231231",
+		Cooldown:      3,
+		RequiredPerms: discordgo.PermissionManageRoles,
+		RequiresOwner: false,
+		AllowedTypes:  mio.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run: func(msg *mio.DiscordMessage) {
+			if msg.LenArgs() < 2 {
+				return
+			}
+
+			targetUser, err := msg.GetMemberOrUserAtArg(1)
+			if err != nil {
+				_, _ = msg.Reply("Could not find user")
+				return
+			}
+
+			if targetUser.Bot {
+				_, _ = msg.Reply("Bots dont get to join the fun")
+				return
+			}
+
+			if ur, err := m.db.GetMemberRole(msg.GuildID(), targetUser.ID); err == nil {
+				if err := m.db.DeleteMemberRole(ur.UID); err != nil {
+					_, _ = msg.Reply("Could not remove custom role, please try again")
+					return
+				}
+				_, _ = msg.Reply(fmt.Sprintf("Removed custom role from %v", targetUser.Mention()))
+				return
+			}
+		},
+	}
+}
+
+func NewMyRoleCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "myrole",
@@ -187,7 +208,7 @@ func NewMyRoleCommand(m *UserRoleMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
+func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -292,7 +313,6 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 	default:
 		return
 	}
-
 	if target == nil {
 		return
 	}
@@ -308,37 +328,23 @@ func (m *UserRoleMod) myroleCommand(msg *mio.DiscordMessage) {
 	}
 
 	var customRole *discordgo.Role
-
 	for i := range g.Roles {
 		role := g.Roles[i]
-
 		if role.ID == ur.RoleID {
 			customRole = role
 		}
 	}
-
 	if customRole == nil {
 		_, _ = msg.Reply("the custom role is broken, wait for someone to fix it or try setting a new userrole")
 		return
 	}
 
-	embed := &discordgo.MessageEmbed{
-		Color: customRole.Color,
-		Title: fmt.Sprintf("Custom role for %v", target.User.String()),
-		Fields: []*discordgo.MessageEmbedField{
-			{
-				Name:   "Name",
-				Value:  customRole.Name,
-				Inline: true,
-			},
-			{
-				Name:   "Color",
-				Value:  fmt.Sprintf("#" + fmt.Sprintf("%06X", customRole.Color)),
-				Inline: true,
-			},
-		},
-	}
-	_, _ = msg.ReplyEmbed(embed)
+	embed := helpers.NewEmbed().
+		WithTitle(fmt.Sprintf("Custom role for %v", target.User.String())).
+		WithColor(customRole.Color).
+		AddField("Name", customRole.Name, true).
+		AddField("Color", fmt.Sprintf("#"+fmt.Sprintf("%06X", customRole.Color)), true)
+	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
 /*

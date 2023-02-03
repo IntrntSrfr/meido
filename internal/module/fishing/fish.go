@@ -1,4 +1,4 @@
-package fishingmod
+package fishing
 
 import (
 	"database/sql"

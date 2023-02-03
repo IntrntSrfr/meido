@@ -1,4 +1,4 @@
-package moderationmod
+package moderation
 
 import (
 	"bytes"
@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func NewFilterWordCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewFilterWordCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "filterword",
@@ -30,7 +30,7 @@ func NewFilterWordCommand(m *ModerationMod) *mio.ModuleCommand {
 		Run:           m.filterwordCommand,
 	}
 }
-func (m *ModerationMod) filterwordCommand(msg *mio.DiscordMessage) {
+func (m *Module) filterwordCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -57,7 +57,7 @@ func (m *ModerationMod) filterwordCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewFilterWordListCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewFilterWordListCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "filterwordlist",
@@ -73,7 +73,7 @@ func NewFilterWordListCommand(m *ModerationMod) *mio.ModuleCommand {
 		Run:           m.filterwordlistCommand,
 	}
 }
-func (m *ModerationMod) filterwordlistCommand(msg *mio.DiscordMessage) {
+func (m *Module) filterwordlistCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -104,7 +104,7 @@ func (m *ModerationMod) filterwordlistCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply(builder.String())
 }
 
-func NewClearFilterCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewClearFilterCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "clearfilter",
@@ -121,7 +121,7 @@ func NewClearFilterCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) clearfilterCommand(msg *mio.DiscordMessage) {
+func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -131,7 +131,7 @@ func (m *ModerationMod) clearfilterCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply("Filter was cleared")
 }
 
-func NewModerationSettingsCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewModerationSettingsCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "moderationsettings",
@@ -153,7 +153,7 @@ var (
 	warnsEnabledSettings = map[string]bool{"enable": true, "disable": false}
 )
 
-func (m *ModerationMod) moderationsettingsCommand(msg *mio.DiscordMessage) {
+func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -218,7 +218,7 @@ func (m *ModerationMod) moderationsettingsCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewCheckFilterPassive(m *ModerationMod) *mio.ModulePassive {
+func NewCheckFilterPassive(m *Module) *mio.ModulePassive {
 	return &mio.ModulePassive{
 		Mod:          m,
 		Name:         "checkfilter",
@@ -263,7 +263,6 @@ func NewCheckFilterPassive(m *ModerationMod) *mio.ModulePassive {
 			}
 
 			reason := "Triggering filter: " + trigger
-
 			warns, err := m.db.GetMemberWarnsIfActive(msg.GuildID(), msg.AuthorID())
 			if err != nil {
 				return

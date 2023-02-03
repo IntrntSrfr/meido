@@ -1,4 +1,4 @@
-package antiraidmod
+package antiraid
 
 import (
 	"fmt"

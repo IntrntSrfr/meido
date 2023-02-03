@@ -1,4 +1,4 @@
-package moderationmod
+package moderation
 
 import (
 	"database/sql"
@@ -14,19 +14,19 @@ import (
 	"time"
 )
 
-type ModerationMod struct {
+type Module struct {
 	*mio.ModuleBase
 	db database.DB
 }
 
 func New(b *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
-	return &ModerationMod{
-		ModuleBase: mio.NewModule(b, "Moderation", logger),
+	return &Module{
+		ModuleBase: mio.NewModule(b, "Moderation", logger.Named("moderation")),
 		db:         db,
 	}
 }
 
-func (m *ModerationMod) Hook() error {
+func (m *Module) Hook() error {
 	m.Bot.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		if _, err := m.db.GetGuild(g.Guild.ID); err != nil && err == sql.ErrNoRows {
 			if err = m.db.CreateGuild(g.Guild.ID); err != nil {
@@ -131,7 +131,7 @@ func (m *ModerationMod) Hook() error {
 	})
 }
 
-func NewBanCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewBanCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "ban",
@@ -149,7 +149,7 @@ func NewBanCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) banCommand(msg *mio.DiscordMessage) {
+func (m *Module) banCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -244,7 +244,7 @@ func (m *ModerationMod) banCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func NewUnbanCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewUnbanCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "unban",
@@ -262,7 +262,7 @@ func NewUnbanCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) unbanCommand(msg *mio.DiscordMessage) {
+func (m *Module) unbanCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -288,7 +288,7 @@ func (m *ModerationMod) unbanCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func NewHackbanCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewHackbanCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "hackban",
@@ -324,7 +324,7 @@ func NewHackbanCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func NewKickCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewKickCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "kick",
@@ -342,7 +342,7 @@ func NewKickCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) kickCommand(msg *mio.DiscordMessage) {
+func (m *Module) kickCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

@@ -1,11 +1,11 @@
-package moderationmod
+package moderation
 
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
-func NewLockdownChannelCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewLockdownChannelCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "lockdown",
@@ -23,7 +23,7 @@ func NewLockdownChannelCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) lockdownCommand(msg *mio.DiscordMessage) {
+func (m *Module) lockdownCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
@@ -96,7 +96,7 @@ func (m *ModerationMod) lockdownCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewUnlockChannelCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewUnlockChannelCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "unlock",
@@ -114,7 +114,7 @@ func NewUnlockChannelCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) unlockCommand(msg *mio.DiscordMessage) {
+func (m *Module) unlockCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}

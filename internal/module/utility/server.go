@@ -1,4 +1,4 @@
-package utilitymod
+package utility
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
-func NewServerCommand(m *UtilityMod) *mio.ModuleCommand {
+func NewServerCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "server",
@@ -75,7 +75,7 @@ func NewServerCommand(m *UtilityMod) *mio.ModuleCommand {
 	}
 }
 
-func NewServerSplashCommand(m *UtilityMod) *mio.ModuleCommand {
+func NewServerSplashCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "serversplash",
@@ -112,7 +112,7 @@ func NewServerSplashCommand(m *UtilityMod) *mio.ModuleCommand {
 	}
 }
 
-func NewServerIconCommand(m *UtilityMod) *mio.ModuleCommand {
+func NewServerIconCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "servericon",
@@ -148,7 +148,7 @@ func NewServerIconCommand(m *UtilityMod) *mio.ModuleCommand {
 	}
 }
 
-func NewServerBannerCommand(m *UtilityMod) *mio.ModuleCommand {
+func NewServerBannerCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "serverbanner",

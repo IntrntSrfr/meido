@@ -1,4 +1,4 @@
-package moderationmod
+package moderation
 
 import (
 	"database/sql"
@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func NewWarnCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewWarnCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "warn",
@@ -32,7 +32,7 @@ func NewWarnCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) warnCommand(msg *mio.DiscordMessage) {
+func (m *Module) warnCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -123,7 +123,7 @@ func (m *ModerationMod) warnCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewWarnLogCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewWarnLogCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "warnlog",
@@ -140,7 +140,7 @@ func NewWarnLogCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) warnlogCommand(msg *mio.DiscordMessage) {
+func (m *Module) warnlogCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -224,7 +224,7 @@ func (m *ModerationMod) warnlogCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func NewWarnCountCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewWarnCountCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "warncount",
@@ -241,7 +241,7 @@ func NewWarnCountCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) warncountCommand(msg *mio.DiscordMessage) {
+func (m *Module) warncountCommand(msg *mio.DiscordMessage) {
 	gc, err := m.db.GetGuild(msg.GuildID())
 	if err != nil {
 		_, _ = msg.Reply("There was an issue, please try again")
@@ -268,7 +268,7 @@ func (m *ModerationMod) warncountCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply(fmt.Sprintf("%v is at %v/%v warns", targetUser.String(), len(warns), gc.MaxWarns))
 }
 
-func NewClearWarnCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewClearWarnCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "pardon",
@@ -285,7 +285,7 @@ func NewClearWarnCommand(m *ModerationMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *ModerationMod) clearwarnCommand(msg *mio.DiscordMessage) {
+func (m *Module) clearwarnCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -350,6 +350,7 @@ func (m *ModerationMod) clearwarnCommand(msg *mio.DiscordMessage) {
 	m.Bot.Callbacks.Delete(key)
 	_ = msg.Sess.ChannelMessageDelete(menu.ChannelID, menu.ID)
 	_ = msg.Sess.ChannelMessageDelete(reply.Message.ChannelID, reply.Message.ID)
+
 	selectedEntry := entries[n-1]
 	t := time.Now()
 	selectedEntry.IsValid = false
@@ -363,7 +364,7 @@ func (m *ModerationMod) clearwarnCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply("Updated warning")
 }
 
-func NewClearAllWarnsCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewClearAllWarnsCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "pardonall",
@@ -379,7 +380,7 @@ func NewClearAllWarnsCommand(m *ModerationMod) *mio.ModuleCommand {
 		Run:           m.clearallwarnsCommand,
 	}
 }
-func (m *ModerationMod) clearallwarnsCommand(msg *mio.DiscordMessage) {
+func (m *Module) clearallwarnsCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}

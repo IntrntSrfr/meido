@@ -1,4 +1,4 @@
-package utilitymod
+package utility
 
 import (
 	"bytes"
@@ -18,23 +18,21 @@ import (
 	"time"
 )
 
-type UtilityMod struct {
+type Module struct {
 	*mio.ModuleBase
 	db        database.DB
 	startTime time.Time
 }
 
 func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
-	return &UtilityMod{
+	return &Module{
 		ModuleBase: mio.NewModule(bot, "Utility", logger.Named("utility")),
 		db:         db,
 		startTime:  time.Now(),
 	}
 }
 
-func (m *UtilityMod) Hook() error {
-	m.Bot.Discord.AddEventHandler(m.StatusLoop())
-
+func (m *Module) Hook() error {
 	return m.RegisterCommands([]*mio.ModuleCommand{
 		NewPingCommand(m),
 		NewAvatarCommand(m),
@@ -52,7 +50,7 @@ func (m *UtilityMod) Hook() error {
 	})
 }
 
-func NewConvertCommand(m *UtilityMod) *mio.ModuleCommand {
+func NewConvertCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "convert",
@@ -76,7 +74,7 @@ func NewConvertCommand(m *UtilityMod) *mio.ModuleCommand {
 }
 
 // NewPingCommand returns a new ping command.
-func NewPingCommand(m *UtilityMod) *mio.ModuleCommand {
+func NewPingCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "ping",
@@ -104,7 +102,7 @@ func NewPingCommand(m *UtilityMod) *mio.ModuleCommand {
 	}
 }
 
-func NewAboutCommand(m *UtilityMod) *mio.ModuleCommand {
+func NewAboutCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "about",
@@ -161,7 +159,7 @@ func NewAboutCommand(m *UtilityMod) *mio.ModuleCommand {
 	}
 }
 
-func NewColorCommand(m *UtilityMod) *mio.ModuleCommand {
+func NewColorCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "color",
@@ -177,7 +175,7 @@ func NewColorCommand(m *UtilityMod) *mio.ModuleCommand {
 		Run:           m.colorCommand,
 	}
 }
-func (m *UtilityMod) colorCommand(msg *mio.DiscordMessage) {
+func (m *Module) colorCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
@@ -205,7 +203,7 @@ func (m *UtilityMod) colorCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Sess.ChannelFileSend(msg.Message.ChannelID, "color.png", &buf)
 }
 
-func NewInviteCommand(m *UtilityMod) *mio.ModuleCommand {
+func NewInviteCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "invite",
@@ -226,7 +224,7 @@ func NewInviteCommand(m *UtilityMod) *mio.ModuleCommand {
 	}
 }
 
-func NewHelpCommand(m *UtilityMod) *mio.ModuleCommand {
+func NewHelpCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "help",
@@ -243,7 +241,7 @@ func NewHelpCommand(m *UtilityMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *UtilityMod) helpCommand(msg *mio.DiscordMessage) {
+func (m *Module) helpCommand(msg *mio.DiscordMessage) {
 	embed := helpers.NewEmbed().
 		WithOkColor().
 		WithFooter("Use m?help [module] to see module commands.\nUse m?help [command] to see command info.", "").

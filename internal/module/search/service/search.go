@@ -1,4 +1,4 @@
-package search
+package service
 
 import (
 	"encoding/json"
@@ -13,8 +13,6 @@ import (
 	"strings"
 	"sync"
 )
-
-var imageReg = regexp.MustCompile(`"(http)s?://([^"])*\.(gif|png|jpg)",`)
 
 type Service struct {
 	youtubeToken      string
@@ -74,6 +72,8 @@ func (s *Service) GetWeatherData(query string) (*WeatherResponse, error) {
 
 	return resp, nil
 }
+
+var imageReg = regexp.MustCompile(`"(http)s?://([^"])*\.(gif|png|jpg)",`)
 
 func (s *Service) SearchGoogleImages(query string) ([]string, error) {
 	var links []string

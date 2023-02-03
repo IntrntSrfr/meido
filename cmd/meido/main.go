@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/internal/module/utilitymod"
+	"github.com/intrntsrfr/meido/internal/module/administration"
+	"github.com/intrntsrfr/meido/internal/module/utility"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/intrntsrfr/meido/internal/module/searchmod"
+	"github.com/intrntsrfr/meido/internal/module/search"
 	"github.com/intrntsrfr/meido/internal/module/testing"
 	"go.uber.org/zap"
 )
@@ -42,12 +43,13 @@ func main() {
 		panic(err)
 	}
 
+	bot.RegisterMod(administration.New(bot, logger, config.DmLogChannels))
 	bot.RegisterMod(testing.New(bot, logger))
 	//bot.RegisterMod(fishmod.New())
-	bot.RegisterMod(utilitymod.New(bot, db, logger))
+	bot.RegisterMod(utility.New(bot, db, logger))
 	//bot.RegisterMod(moderationmod.New(bot, db, logger.Named("moderation")))
 	//bot.RegisterMod(userrolemod.New(bot, db, owoClient, logger.Named("userrole")))
-	bot.RegisterMod(searchmod.New(bot, logger))
+	bot.RegisterMod(search.New(bot, logger))
 	//bot.RegisterMod(mediaconvertmod.New())
 	//bot.RegisterMod(aimod.New(gptClient, config.GPT3Engine))
 

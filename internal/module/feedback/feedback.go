@@ -1,4 +1,4 @@
-package feedbackmod
+package feedback
 
 import (
 	"fmt"

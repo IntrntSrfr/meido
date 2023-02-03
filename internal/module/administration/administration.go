@@ -2,6 +2,7 @@ package administration
 
 import (
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
@@ -17,13 +18,14 @@ type Module struct {
 // New returns a new AdministrationMod.
 func New(bot *mio.Bot, logger *zap.Logger, logChs []string) mio.Module {
 	return &Module{
-		ModuleBase:    mio.NewModule(bot, "Administration", logger),
+		ModuleBase:    mio.NewModule(bot, "Administration", logger.Named("administration")),
 		dmLogChannels: logChs,
 	}
 }
 
 // Hook will hook the Module into the Bot.
 func (m *Module) Hook() error {
+	m.Bot.Discord.AddEventHandler(m.StatusLoop())
 	if err := m.RegisterPassive(NewForwardDmsPassive(m)); err != nil {
 		return err
 	}
@@ -94,5 +96,40 @@ func NewForwardDmsPassive(m *Module) *mio.ModulePassive {
 				_, _ = msg.Sess.ChannelMessageSendEmbed(id, embed.Build())
 			}
 		},
+	}
+}
+
+func (m *Module) StatusLoop() func(s *discordgo.Session, r *discordgo.Ready) {
+	statusTimer := time.NewTicker(time.Second * 15)
+	return func(s *discordgo.Session, r *discordgo.Ready) {
+		display := true
+		go func() {
+			for range statusTimer.C {
+				if display {
+					srvCount := 0
+					for range m.Bot.Discord.Guilds() {
+						srvCount++
+					}
+					_ = s.UpdateStatusComplex(discordgo.UpdateStatusData{
+						Activities: []*discordgo.Activity{
+							{
+								Name: fmt.Sprintf("over %v servers", srvCount),
+								Type: 3,
+							},
+						},
+					})
+				} else {
+					_ = s.UpdateStatusComplex(discordgo.UpdateStatusData{
+						Activities: []*discordgo.Activity{
+							{
+								Name: fmt.Sprintf("m?help"),
+								Type: discordgo.ActivityTypeGame,
+							},
+						},
+					})
+				}
+				display = !display
+			}
+		}()
 	}
 }

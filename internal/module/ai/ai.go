@@ -1,4 +1,4 @@
-package aimod
+package ai
 
 import (
 	"context"

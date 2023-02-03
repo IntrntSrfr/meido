@@ -1,4 +1,4 @@
-package moderationmod
+package moderation
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func NewAutoRoleCommand(m *ModerationMod) *mio.ModuleCommand {
+func NewAutoRoleCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "autorolesettings",
