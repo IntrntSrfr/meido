@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -80,25 +81,21 @@ func (s *Service) SearchGoogleImages(query string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.193 Safari/537.36")
-
 	body, err := s.request(req)
 	if err != nil {
 		return nil, err
 	}
 
 	matches := imageReg.FindAll(body, -1)
-
 	for _, m := range matches {
-		ma := string(m)
-		ma = strings.TrimPrefix(ma, `"`)
-		ma = strings.TrimSuffix(ma, `",`)
-
+		ma, err := strconv.Unquote(strings.TrimSuffix(string(m), ","))
+		if err != nil {
+			continue
+		}
 		if strings.Contains(strings.ToLower(ma), "https://www.google.com/logos/doodles") || strings.Contains(strings.ToLower(ma), "https://www.gstatic.com") {
 			continue
 		}
-
 		links = append(links, ma)
 	}
 	return links, nil

@@ -71,7 +71,6 @@ func NewConvertCommand(m *UtilityMod) *mio.ModuleCommand {
 			if msg.LenArgs() < 4 {
 				return
 			}
-
 		},
 	}
 }
@@ -90,24 +89,19 @@ func NewPingCommand(m *UtilityMod) *mio.ModuleCommand {
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
-		Run:           m.pingCommand,
+		Run: func(msg *mio.DiscordMessage) {
+			if msg.LenArgs() < 1 {
+				return
+			}
+			startTime := time.Now()
+			first, err := msg.Reply("Ping")
+			if err != nil {
+				return
+			}
+			_, _ = msg.Sess.ChannelMessageEdit(msg.Message.ChannelID, first.ID,
+				fmt.Sprintf("Pong!\nDelay: %s", time.Since(startTime)))
+		},
 	}
-}
-
-func (m *UtilityMod) pingCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 1 {
-		return
-	}
-
-	startTime := time.Now()
-	first, err := msg.Reply("Ping")
-	if err != nil {
-		return
-	}
-	now := time.Now()
-	discordLatency := now.Sub(startTime)
-	_, _ = msg.Sess.ChannelMessageEdit(msg.Message.ChannelID, first.ID,
-		fmt.Sprintf("Pong!\nDelay: %s", discordLatency))
 }
 
 func NewAboutCommand(m *UtilityMod) *mio.ModuleCommand {
