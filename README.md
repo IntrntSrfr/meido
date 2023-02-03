@@ -30,13 +30,13 @@ Features include:
   * Filter and warns
   * Lockdowns
   * Timeouts
-* Userroles
-* YouTube and Google image search
+* Custom roles
+* Search functions such as YouTube or weather
 * Utilities
-  * Avatar
-  * Server info
+  * Avatars and banners
   * User info
-  * Color lookup
+  * Server info
+  * Colors
 * Automatic media conversion
 * Fishing for the boomer inside you (currently on a break)
 
