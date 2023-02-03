@@ -7,7 +7,6 @@ import (
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 	"image"
 	"image/color"
@@ -17,8 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/bwmarrin/discordgo"
 )
 
 type UtilityMod struct {
@@ -147,7 +144,6 @@ func NewAboutCommand(m *UtilityMod) *mio.ModuleCommand {
 						totalHumans++
 					}
 				}
-
 				totalUsers += guild.MemberCount
 			}
 
@@ -156,17 +152,17 @@ func NewAboutCommand(m *UtilityMod) *mio.ModuleCommand {
 			if err != nil {
 				return
 			}
-
-			embed := &discordgo.MessageEmbed{}
-			embed = helpers.SetEmbedTitle(embed, "About")
-			embed.Color = utils.ColorInfo
-			embed = helpers.AddEmbedField(embed, "Uptime", uptime.String(), true)
-			embed = helpers.AddEmbedField(embed, "Total commands ran", fmt.Sprint(count), true)
-			embed = helpers.AddEmbedField(embed, "Guilds", fmt.Sprint(len(guilds)), false)
-			embed = helpers.AddEmbedField(embed, "Users", fmt.Sprintf("%v users | %v humans | %v bots", totalUsers, totalHumans, totalBots), true)
-			embed = helpers.AddEmbedField(embed, "Memory use", fmt.Sprintf("%v/%v", humanize.Bytes(memory.Alloc), humanize.Bytes(memory.Sys)), false)
-			embed = helpers.AddEmbedField(embed, "Garbage collected", humanize.Bytes(memory.TotalAlloc-memory.Alloc), true)
-			_, _ = msg.ReplyEmbed(embed)
+			embed := helpers.NewEmbed().
+				WithTitle("About").
+				WithOkColor().
+				AddField("Uptime", uptime.String(), true).
+				AddField("Total commands ran", fmt.Sprint(count), true).
+				AddField("Guilds", fmt.Sprint(len(guilds)), false).
+				AddField("Users", fmt.Sprintf("%v users | %v humans | %v bots", totalUsers, totalHumans, totalBots), true).
+				AddField("Memory use", fmt.Sprintf("%v/%v", humanize.Bytes(memory.Alloc), humanize.Bytes(memory.Sys)), false).
+				AddField("Garbage collected", humanize.Bytes(memory.TotalAlloc-memory.Alloc), true).
+				AddField("Owners", strings.Join(m.Bot.Config.OwnerIds, ", "), true)
+			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}
 }

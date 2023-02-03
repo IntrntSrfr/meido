@@ -6,8 +6,8 @@ import (
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/internal/service/search"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
+	"math/rand"
 	"strings"
 	"time"
 )
@@ -18,18 +18,16 @@ type SearchMod struct {
 	imageCache *search.ImageSearchCache
 }
 
-func New(bot *mio.Bot, s *search.Service, logger *zap.Logger) mio.Module {
+func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 	return &SearchMod{
 		ModuleBase: mio.NewModule(bot, "Search", logger.Named("search")),
-		search:     s,
+		search:     search.NewService(bot.Config.YouTubeToken, bot.Config.OpenWeatherApiKey),
 		imageCache: search.NewImageSearchCache(),
 	}
 }
 
 func (m *SearchMod) Hook() error {
-
-	m.Bot.Discord.AddEventHandler(m.MessageReactionAddHandler)
-	m.Bot.Discord.AddEventHandler(m.MessageReactionRemoveHandler)
+	m.Bot.Discord.AddEventHandler(m.imageInteractionHandler)
 
 	return m.RegisterCommands([]*mio.ModuleCommand{
 		NewWeatherCommand(m),
@@ -54,7 +52,6 @@ func NewWeatherCommand(m *SearchMod) *mio.ModuleCommand {
 		AllowDMs:      true,
 		Enabled:       true,
 		Run: func(msg *mio.DiscordMessage) {
-			// utilize open weather api?
 			if msg.LenArgs() < 2 {
 				return
 			}
@@ -155,42 +152,111 @@ func NewImageCommand(m *SearchMod) *mio.ModuleCommand {
 			}
 
 			if len(links) < 1 {
-				_, _ = msg.Reply("I got no results for that :(")
+				_, _ = msg.Reply("I found 0 results for that :(")
 				return
 			}
 
-			reply, err := msg.ReplyEmbed(&discordgo.MessageEmbed{
-				Title: "google search",
-				Color: utils.ColorInfo,
-				Author: &discordgo.MessageEmbedAuthor{
-					Name:    msg.Message.Author.String(),
-					IconURL: msg.Message.Author.AvatarURL("512"),
+			embed := helpers.NewEmbed().
+				WithTitle("Google Images search result").
+				WithOkColor().
+				WithAuthor(msg.Author().String(), msg.Author().AvatarURL("256")).
+				WithImageUrl(links[0]).
+				WithFooter(fmt.Sprintf("Image [ %v / %v ]", 1, len(links)), "")
+
+			nextID := fmt.Sprint(rand.Intn(12345))
+			prevID := fmt.Sprint(rand.Intn(12345))
+			stopID := fmt.Sprint(rand.Intn(12345))
+
+			replyData := &discordgo.MessageSend{
+				Components: []discordgo.MessageComponent{
+					&discordgo.ActionsRow{
+						Components: []discordgo.MessageComponent{
+							&discordgo.Button{
+								Label:    "⬅️",
+								Style:    discordgo.PrimaryButton,
+								CustomID: prevID,
+							},
+							&discordgo.Button{
+								Label:    "➡️",
+								Style:    discordgo.PrimaryButton,
+								CustomID: nextID,
+							},
+							&discordgo.Button{
+								Label:    "⏹️",
+								Style:    discordgo.PrimaryButton,
+								CustomID: stopID,
+							},
+						},
+					},
 				},
-				Image: &discordgo.MessageEmbedImage{
-					URL: links[0],
-				},
-				Footer: &discordgo.MessageEmbedFooter{
-					Text: fmt.Sprintf("entry [ %v / %v ]", 0, len(links)-1),
-				},
-			})
+				Reference: &discordgo.MessageReference{MessageID: msg.Message.ID, ChannelID: msg.ChannelID(), GuildID: msg.GuildID()},
+				Embed:     embed.Build(),
+			}
+
+			reply, err := msg.ReplyComplex(replyData)
 			if err != nil {
 				return
 			}
-
-			_ = msg.Sess.MessageReactionAdd(msg.Message.ChannelID, reply.ID, "⬅")
-			_ = msg.Sess.MessageReactionAdd(msg.Message.ChannelID, reply.ID, "➡")
-			_ = msg.Sess.MessageReactionAdd(msg.Message.ChannelID, reply.ID, "⏹")
-
-			m.imageCache.Set(search.NewImageSearch(msg.Message, reply, links))
-
-			go time.AfterFunc(time.Second*30, func() {
-				_ = msg.Sess.MessageReactionsRemoveAll(msg.Message.ChannelID, reply.ID)
+			searchData := search.NewImageSearch(msg.Message, reply, links, nextID, prevID, stopID)
+			m.imageCache.Set(searchData)
+			defer func() {
 				m.imageCache.Delete(reply.ID)
-			})
+				reply.Components = nil
+				if len(reply.Embeds) > 0 {
+					_, _ = msg.Sess.ChannelMessageEditComplex(&discordgo.MessageEdit{
+						Components: []discordgo.MessageComponent{},
+						ID:         reply.ID,
+						Channel:    reply.ChannelID,
+						Embed:      reply.Embeds[0],
+					})
+				}
+			}()
+			for {
+				select {
+				case id := <-searchData.UpdateCh:
+					switch id {
+					case nextID:
+						emb := searchData.UpdateEmbed(1)
+						_, _ = msg.Sess.ChannelMessageEditEmbed(reply.ChannelID, reply.ID, emb)
+					case prevID:
+						emb := searchData.UpdateEmbed(-1)
+						_, _ = msg.Sess.ChannelMessageEditEmbed(reply.ChannelID, reply.ID, emb)
+					case stopID:
+						_ = msg.Sess.ChannelMessageDelete(reply.ChannelID, reply.ID)
+						_ = msg.Sess.ChannelMessageDelete(msg.ChannelID(), msg.Message.ID)
+						m.imageCache.Delete(reply.ID)
+						return
+					}
+				case <-time.After(time.Second * 15):
+					return
+				}
+			}
 		},
 	}
 }
 
+func (m *SearchMod) imageInteractionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	if i.Message == nil || i.Data == nil || i.Data.Type() != discordgo.InteractionMessageComponent {
+		return
+	}
+	msg, ok := m.imageCache.Get(i.Message.ID)
+	if !ok {
+		return
+	}
+	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
+		Data: nil,
+	})
+	if i.GuildID != "" && i.Member.User.ID != msg.AuthorID() {
+		return
+	}
+	if i.GuildID == "" && i.User.ID != msg.AuthorID() {
+		return
+	}
+	msg.UpdateCh <- i.Interaction.MessageComponentData().CustomID
+}
+
+/*
 func (m *SearchMod) MessageReactionAddHandler(s *discordgo.Session, msg *discordgo.MessageReactionAdd) {
 	m.reactionHandler(s, msg.MessageReaction)
 }
@@ -222,3 +288,4 @@ func (m *SearchMod) reactionHandler(s *discordgo.Session, msg *discordgo.Message
 		m.imageCache.Delete(srch.BotMsgID())
 	}
 }
+*/

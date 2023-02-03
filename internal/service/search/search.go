@@ -167,14 +167,22 @@ type ImageSearch struct {
 	BotMsg     *discordgo.Message
 	ImageLinks []string
 	ImageIndex int
+	NextID     string
+	PrevID     string
+	StopID     string
+	UpdateCh   chan string
 }
 
-func NewImageSearch(a, b *discordgo.Message, links []string) *ImageSearch {
+func NewImageSearch(a, b *discordgo.Message, links []string, nID, pID, sID string) *ImageSearch {
 	return &ImageSearch{
 		AuthorMsg:  a,
 		BotMsg:     b,
 		ImageLinks: links,
 		ImageIndex: 0,
+		NextID:     nID,
+		PrevID:     pID,
+		StopID:     sID,
+		UpdateCh:   make(chan string),
 	}
 }
 

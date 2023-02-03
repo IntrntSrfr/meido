@@ -66,18 +66,18 @@ type DiscordMessage struct {
 
 // Reply replies directly to a DiscordMessage
 func (m *DiscordMessage) Reply(data string) (*discordgo.Message, error) {
-	return m.Sess.ChannelMessageSend(m.Message.ChannelID, data)
+	return m.Sess.ChannelMessageSend(m.ChannelID(), data)
 }
 
 // ReplyAndDelete sends a message to a channel, then deletes it after a duration d
 func (m *DiscordMessage) ReplyAndDelete(data string, d time.Duration) (*discordgo.Message, error) {
-	r, err := m.Sess.ChannelMessageSend(m.Message.ChannelID, data)
+	r, err := m.Sess.ChannelMessageSend(m.ChannelID(), data)
 	if err != nil {
 		return nil, err
 	}
 	go func() {
 		time.AfterFunc(d, func() {
-			_ = m.Sess.ChannelMessageDelete(m.Message.ChannelID, r.ID)
+			_ = m.Sess.ChannelMessageDelete(m.ChannelID(), r.ID)
 		})
 	}()
 	return r, nil
@@ -85,7 +85,11 @@ func (m *DiscordMessage) ReplyAndDelete(data string, d time.Duration) (*discordg
 
 // ReplyEmbed replies directly to a DiscordMessage with an embed.
 func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
-	return m.Sess.ChannelMessageSendEmbed(m.Message.ChannelID, embed)
+	return m.Sess.ChannelMessageSendEmbed(m.ChannelID(), embed)
+}
+
+func (m *DiscordMessage) ReplyComplex(data *discordgo.MessageSend) (*discordgo.Message, error) {
+	return m.Sess.ChannelMessageSendComplex(m.ChannelID(), data)
 }
 
 func (m *DiscordMessage) Type() MessageType {
