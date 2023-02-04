@@ -1,3 +1,5 @@
+github.com/IntrntSrfr/gol v0.0.0-20201226051958-28a7db2f7526 h1:4lefONAE7dyNtAHDdyaEsYG+WZqM0lHueXOphQLhwzU=
+github.com/IntrntSrfr/gol v0.0.0-20201226051958-28a7db2f7526/go.mod h1:YP3ovK/2pgjxL3S2LuyJdUD2L60LjCNqGv3RLmLFuOA=
 github.com/benbjohnson/clock v1.1.0 h1:Q92kusRqC1XV2MjkWETPvjJVqKetz1OzxZB7mHJLju8=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/bwmarrin/discordgo v0.24.0 h1:Gw4MYxqHdvhO99A3nXnSLy97z5pmIKHZVJ1JY5ZDPqY=
@@ -17,6 +19,8 @@ github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0U
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
 github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
+github.com/intrntsrfr/gol v0.0.0-20230204094040-9acd533ddee3 h1:q1wVA+kJu6PU8e866uMBqyQ8uU6WmU7UQHaZ0cz1hpI=
+github.com/intrntsrfr/gol v0.0.0-20230204094040-9acd533ddee3/go.mod h1:sFAK3K+B58G9YfbnA01Dm3Nm3bGBjZuDftjG7H1XlU8=
 github.com/intrntsrfr/owo v0.0.0-20190908123752-c365293bebfd h1:zyod0ma08evOyFPLdkyN+pq/h5hWJD5gd3H4W+lRefg=
 github.com/intrntsrfr/owo v0.0.0-20190908123752-c365293bebfd/go.mod h1:GPiO0g/PrG1PcOLQr0aP/sinICp9gdootiB/CMEHYhk=
 github.com/jmoiron/sqlx v1.2.0 h1:41Ip0zITnmWNR/vHV+S4m+VoUivnWY5E4OJfLZjCJMA=

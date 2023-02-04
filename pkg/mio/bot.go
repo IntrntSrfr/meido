@@ -75,8 +75,8 @@ func (b *Bot) Close() {
 	b.Discord.Close()
 }
 
-// RegisterMod takes in a Module and registers it.
-func (b *Bot) RegisterMod(mod Module) {
+// RegisterModule takes in a Module and registers it.
+func (b *Bot) RegisterModule(mod Module) {
 	b.Log.Info("adding module", zap.String("name", mod.Name()))
 	err := mod.Hook()
 	if err != nil {

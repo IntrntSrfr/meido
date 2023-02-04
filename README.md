@@ -31,7 +31,7 @@ Features include:
   * Lockdowns
   * Timeouts
 * Custom roles
-* Search functions such as YouTube or weather
+* Search functions such as YouTube or images
 * Utilities
   * Avatars and banners
   * User info

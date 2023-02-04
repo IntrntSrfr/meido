@@ -8,7 +8,7 @@ import (
 	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
-func NewServerCommand(m *Module) *mio.ModuleCommand {
+func newServerCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "server",
@@ -75,7 +75,7 @@ func NewServerCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewServerSplashCommand(m *Module) *mio.ModuleCommand {
+func newServerSplashCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "serversplash",
@@ -112,7 +112,7 @@ func NewServerSplashCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewServerIconCommand(m *Module) *mio.ModuleCommand {
+func newServerIconCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "servericon",
@@ -148,7 +148,7 @@ func NewServerIconCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewServerBannerCommand(m *Module) *mio.ModuleCommand {
+func newServerBannerCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "serverbanner",

@@ -3,10 +3,12 @@ package utility
 import (
 	"bytes"
 	"fmt"
+	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 	"image"
 	"image/color"
@@ -34,19 +36,20 @@ func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 
 func (m *Module) Hook() error {
 	return m.RegisterCommands([]*mio.ModuleCommand{
-		NewPingCommand(m),
-		NewAvatarCommand(m),
-		NewBannerCommand(m),
-		NewMemberAvatarCommand(m),
-		NewAboutCommand(m),
-		NewServerCommand(m),
-		NewServerIconCommand(m),
-		NewServerBannerCommand(m),
-		NewServerSplashCommand(m),
-		NewColorCommand(m),
-		NewInviteCommand(m),
-		NewUserInfoCommand(m),
-		NewHelpCommand(m),
+		newPingCommand(m),
+		newAvatarCommand(m),
+		newBannerCommand(m),
+		newMemberAvatarCommand(m),
+		newAboutCommand(m),
+		newServerCommand(m),
+		newServerIconCommand(m),
+		newServerBannerCommand(m),
+		newServerSplashCommand(m),
+		newColorCommand(m),
+		newIdTimestampCmd(m),
+		newInviteCommand(m),
+		newUserInfoCommand(m),
+		newHelpCommand(m),
 	})
 }
 
@@ -73,8 +76,8 @@ func NewConvertCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-// NewPingCommand returns a new ping command.
-func NewPingCommand(m *Module) *mio.ModuleCommand {
+// newPingCommand returns a new ping command.
+func newPingCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "ping",
@@ -102,7 +105,7 @@ func NewPingCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewAboutCommand(m *Module) *mio.ModuleCommand {
+func newAboutCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "about",
@@ -159,34 +162,42 @@ func NewAboutCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewColorCommand(m *Module) *mio.ModuleCommand {
+func newColorCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "color",
-		Description:   "Displays a hex color",
+		Description:   "Displays a small image of a provided color hex",
 		Triggers:      []string{"m?color"},
-		Usage:         "m?color [hex color]",
+		Usage:         "m?color [color hex]",
 		Cooldown:      1,
+		CooldownUser:  false,
 		RequiredPerms: 0,
 		RequiresOwner: false,
+		CheckBotPerms: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
-		Run:           m.colorCommand,
+		Run: func(msg *mio.DiscordMessage) {
+			if msg.LenArgs() < 2 {
+				return
+			}
+
+			colorStr := msg.Args()[1]
+			colorStr = strings.TrimPrefix(colorStr, "#")
+			buf, err := generateColorPNG(colorStr)
+			if err != nil {
+				_, _ = msg.Reply("Invalid hex code")
+				return
+			}
+			_, _ = msg.ReplyComplex(&discordgo.MessageSend{File: &discordgo.File{Name: "color.png", Reader: buf}})
+		},
 	}
 }
-func (m *Module) colorCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
-		return
-	}
 
-	clrStr := msg.Args()[1]
-	clrStr = strings.TrimPrefix(clrStr, "#")
-
+func generateColorPNG(clrStr string) (*bytes.Buffer, error) {
 	clr, err := strconv.ParseInt(clrStr, 16, 32)
 	if err != nil || clr < 0 || clr > 0xffffff {
-		_, _ = msg.Reply("invalid color")
-		return
+		return nil, err
 	}
 
 	red := clr >> 16
@@ -197,13 +208,40 @@ func (m *Module) colorCommand(msg *mio.DiscordMessage) {
 	draw.Draw(img, img.Bounds(), &image.Uniform{C: color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255}}, image.Point{}, draw.Src)
 	buf := bytes.Buffer{}
 	err = png.Encode(&buf, img)
-	if err != nil {
-		return
-	}
-	_, _ = msg.Sess.ChannelFileSend(msg.Message.ChannelID, "color.png", &buf)
+	return &buf, err
 }
 
-func NewInviteCommand(m *Module) *mio.ModuleCommand {
+func newIdTimestampCmd(m *Module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
+		Mod:           m,
+		Name:          "idtimestamp",
+		Description:   "",
+		Triggers:      []string{"m?idt", "m?idtimestamp"},
+		Usage:         "m?idt [ID]",
+		Cooldown:      0,
+		CooldownUser:  false,
+		RequiredPerms: 0,
+		RequiresOwner: false,
+		CheckBotPerms: false,
+		AllowedTypes:  mio.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run: func(msg *mio.DiscordMessage) {
+			id := msg.AuthorID()
+			if msg.LenArgs() > 1 {
+				id = msg.Args()[1]
+			}
+			ts, err := utils.IDToTimestamp2(id)
+			if err != nil {
+				return
+			}
+			_, _ = msg.Reply(fmt.Sprintf("<t:%v>", ts.Unix()))
+		},
+	}
+
+}
+
+func newInviteCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "invite",
@@ -224,7 +262,7 @@ func NewInviteCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewHelpCommand(m *Module) *mio.ModuleCommand {
+func newHelpCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "help",

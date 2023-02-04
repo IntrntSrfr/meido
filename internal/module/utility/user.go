@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func NewAvatarCommand(m *Module) *mio.ModuleCommand {
+func newAvatarCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "avatar",
@@ -43,7 +43,7 @@ func NewAvatarCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewBannerCommand(m *Module) *mio.ModuleCommand {
+func newBannerCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "banner",
@@ -92,7 +92,7 @@ func NewBannerCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewMemberAvatarCommand(m *Module) *mio.ModuleCommand {
+func newMemberAvatarCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "memberavatar",
@@ -138,7 +138,7 @@ func NewMemberAvatarCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewUserInfoCommand(m *Module) *mio.ModuleCommand {
+func newUserInfoCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "userinfo",

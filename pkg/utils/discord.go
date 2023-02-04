@@ -10,7 +10,7 @@ import (
 func IDToTimestamp(idStr string) time.Time {
 	id, err := strconv.ParseInt(idStr, 10, 64)
 	if err != nil {
-		return time.Now()
+		return time.Unix(0, 0)
 	}
 
 	id = ((id >> 22) + 1420070400000) / 1000

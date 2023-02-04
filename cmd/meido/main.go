@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/module/administration"
+	"github.com/intrntsrfr/meido/internal/module/fun"
 	"github.com/intrntsrfr/meido/internal/module/utility"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"os"
@@ -43,15 +44,16 @@ func main() {
 		panic(err)
 	}
 
-	bot.RegisterMod(administration.New(bot, logger, config.DmLogChannels))
-	bot.RegisterMod(testing.New(bot, logger))
-	//bot.RegisterMod(fishmod.New())
-	bot.RegisterMod(utility.New(bot, db, logger))
-	//bot.RegisterMod(moderationmod.New(bot, db, logger.Named("moderation")))
-	//bot.RegisterMod(userrolemod.New(bot, db, owoClient, logger.Named("userrole")))
-	bot.RegisterMod(search.New(bot, logger))
-	//bot.RegisterMod(mediaconvertmod.New())
-	//bot.RegisterMod(aimod.New(gptClient, config.GPT3Engine))
+	bot.RegisterModule(administration.New(bot, logger, config.DmLogChannels))
+	bot.RegisterModule(testing.New(bot, logger))
+	bot.RegisterModule(fun.New(bot, logger))
+	//bot.RegisterModule(fishmod.New())
+	bot.RegisterModule(utility.New(bot, db, logger))
+	//bot.RegisterModule(moderationmod.New(bot, db, logger.Named("moderation")))
+	//bot.RegisterModule(userrolemod.New(bot, db, owoClient, logger.Named("userrole")))
+	bot.RegisterModule(search.New(bot, logger))
+	//bot.RegisterModule(mediaconvertmod.New())
+	//bot.RegisterModule(aimod.New(gptClient, config.GPT3Engine))
 
 	err = bot.Run()
 	if err != nil {

@@ -15,6 +15,7 @@ require (
 
 require (
 	github.com/gorilla/websocket v1.4.2 // indirect
+	github.com/intrntsrfr/gol v0.0.0-20230204094040-9acd533ddee3 // indirect
 	github.com/sashabaranov/go-gpt3 v0.0.0-20220314221030-260ef874de6c // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
