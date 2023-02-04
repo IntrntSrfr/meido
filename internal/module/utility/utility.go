@@ -215,7 +215,7 @@ func newIdTimestampCmd(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "idtimestamp",
-		Description:   "",
+		Description:   "Converts a Discord ID to a timestamp",
 		Triggers:      []string{"m?idt", "m?idtimestamp"},
 		Usage:         "m?idt [ID]",
 		Cooldown:      0,
