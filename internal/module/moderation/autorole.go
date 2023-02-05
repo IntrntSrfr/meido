@@ -102,7 +102,8 @@ func newRemoveAutoRoleCommand(m *Module) *mio.ModuleCommand {
 					return
 				}
 
-				if strings.ToLower(msg.RawContent()) == "yes" {
+				if strings.ToLower(reply.RawContent()) == "yes" {
+					_ = msg.Sess.ChannelMessageDelete(reply.ChannelID(), reply.Message.ID)
 					_ = msg.Sess.ChannelMessageDelete(msg.ChannelID(), msg.Message.ID)
 					break
 				}
