@@ -353,13 +353,13 @@ func (d *Discord) Role(guildID, roleID string) (*discordgo.Role, error) {
 	return nil, err
 }
 
-func (d *Discord) GuildRoleByName(guildID, roleName string) (*discordgo.Role, error) {
+func (d *Discord) GuildRoleByNameOrID(guildID, name, id string) (*discordgo.Role, error) {
 	g, err := d.Guild(guildID)
 	if err != nil {
 		return nil, err
 	}
 	for _, role := range g.Roles {
-		if role.Name == roleName {
+		if role.Name == name || role.ID == id {
 			return role, nil
 		}
 	}

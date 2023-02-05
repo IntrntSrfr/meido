@@ -71,40 +71,9 @@ func (m *Module) Hook() error {
 			}
 		}()
 	})
-	/*
-		b.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
 
-			a := &database.AutoRole{}
-			err := m.db.Get(a, "SELECT * FROM guild WHERE guild_id=$1", g.GuildID)
-			if err != nil {
-				return
-			}
+	m.Bot.Discord.AddEventHandler(addAutoRoleOnJoin(m))
 
-			if a.RoleID == "" {
-				return
-			}
-
-			guild, err := b.Discord.Guild(g.GuildID)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			found := false
-			for _, r := range guild.Roles {
-				if r.UID == a.RoleID {
-					found = true
-				}
-			}
-
-			if !found {
-				// if its not found, the role should probably get set to be empty
-				return
-			}
-
-			s.GuildMemberRoleAdd(g.GuildID, g.User.UID, a.RoleID)
-		})
-	*/
 	if err := m.RegisterPassive(NewCheckFilterPassive(m)); err != nil {
 		return err
 	}
@@ -127,7 +96,8 @@ func (m *Module) Hook() error {
 		NewUnlockChannelCommand(m),
 		NewMuteCommand(m),
 		NewUnmuteCommand(m),
-		//NewAutoRoleCommand(m),
+		newSetAutoRoleCommand(m),
+		newRemoveAutoRoleCommand(m),
 	})
 }
 

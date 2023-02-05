@@ -5,56 +5,122 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"strings"
+	"time"
 )
 
-func NewAutoRoleCommand(m *Module) *mio.ModuleCommand {
+func addAutoRoleOnJoin(m *Module) func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
+	return func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
+		gc, err := m.db.GetGuild(g.GuildID)
+		if err != nil || gc.AutoRoleID == "" {
+			return
+		}
+
+		if role, err := m.Bot.Discord.GuildRoleByNameOrID(g.GuildID, "", gc.AutoRoleID); err == nil {
+			_ = s.GuildMemberRoleAdd(g.GuildID, g.User.ID, role.ID)
+		}
+	}
+}
+
+func newSetAutoRoleCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
-		Name:          "autorolesettings",
-		Description:   "Sets the autorole to a supplied role name. If no role is supplied, it will be reset.",
+		Name:          "setautorole",
+		Description:   "Sets an autorole for the server to a provided role",
 		Triggers:      []string{"m?setautorole"},
-		Usage:         "m?setautorole | m?setautorole [rolename]",
+		Usage:         "m?setautorole [role name / role ID]",
 		Cooldown:      2,
+		CooldownUser:  false,
 		RequiredPerms: discordgo.PermissionAdministrator,
 		RequiresOwner: false,
+		CheckBotPerms: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() == 1 {
-				err := m.db.DeleteAutoRole(msg.GuildID())
-				if err != nil {
-					_, _ = msg.Reply("Failed to remove autorole")
-					return
-				}
-				_, _ = msg.Reply("Cleared autorole")
+			if msg.LenArgs() < 2 {
 				return
 			}
 
 			query := strings.Join(msg.Args()[1:], " ")
-			role, err := msg.Discord.GuildRoleByName(msg.GuildID(), query)
+			role, err := msg.Discord.GuildRoleByNameOrID(msg.GuildID(), query, msg.Args()[1])
 			if err != nil {
 				_, _ = msg.Reply("I could not find that role")
 				return
 			}
 
 			// the autorole already exists, update it
-			if _, err = m.db.GetAutoRole(msg.GuildID()); err == nil {
-				err = m.db.UpdateAutoRole(msg.GuildID(), role.ID)
-				if err != nil {
+			if g, err := m.db.GetGuild(msg.GuildID()); err == nil {
+				g.AutoRoleID = role.ID
+				if err := m.db.UpdateGuild(g); err != nil {
 					_, _ = msg.Reply("Failed to set autorole")
 					return
 				}
 				_, _ = msg.Reply(fmt.Sprintf("Autorole set to role `%v` (%v)", role.Name, role.ID))
 				return
 			}
+		},
+	}
+}
 
-			err = m.db.CreateAutoRole(msg.GuildID(), role.ID)
+func newRemoveAutoRoleCommand(m *Module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
+		Mod:           m,
+		Name:          "removeautorole",
+		Description:   "Removes the autorole for the server",
+		Triggers:      []string{"m?removeautorole"},
+		Usage:         "m?removeautorole",
+		Cooldown:      2,
+		CooldownUser:  false,
+		RequiredPerms: discordgo.PermissionAdministrator,
+		RequiresOwner: false,
+		CheckBotPerms: false,
+		AllowedTypes:  mio.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run: func(msg *mio.DiscordMessage) {
+			rpl, err := msg.Reply("Are you sure you want to REMOVE the autorole? Please answer `yes` if you are.")
 			if err != nil {
-				_, _ = msg.Reply("Failed to set autorole")
+				_, _ = msg.Reply("There was an issue, please try again")
 				return
 			}
-			_, _ = msg.Reply(fmt.Sprintf("Autorole set to role `%v` (%v)", role.Name, role.ID))
+
+			ch, err := m.Bot.Callbacks.Make(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
+			if err != nil {
+				_, _ = msg.Reply("There was an issue, please try again")
+				return
+			}
+			defer m.Bot.Callbacks.Delete(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
+
+			var reply *mio.DiscordMessage
+			t := time.NewTimer(time.Second * 15)
+			for {
+				select {
+				case reply = <-ch:
+				case <-t.C:
+					_ = msg.Sess.ChannelMessageDelete(rpl.ChannelID, rpl.ID)
+					_ = msg.Sess.ChannelMessageDelete(msg.ChannelID(), msg.Message.ID)
+					return
+				}
+
+				if strings.ToLower(msg.RawContent()) == "yes" {
+					_ = msg.Sess.ChannelMessageDelete(msg.ChannelID(), msg.Message.ID)
+					break
+				}
+			}
+
+			// the autorole exists, remove it
+			if g, err := m.db.GetGuild(msg.GuildID()); err == nil {
+				if g.AutoRoleID == "" {
+					return
+				}
+				g.AutoRoleID = ""
+				if err := m.db.UpdateGuild(g); err != nil {
+					_, _ = msg.Reply("Failed to remove autorole")
+					return
+				}
+				_, _ = msg.Reply("Autorole was removed")
+				return
+			}
 		},
 	}
 }
