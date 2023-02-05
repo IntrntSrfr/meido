@@ -11,10 +11,9 @@ type DB interface {
 
 	CommandLogDB
 	GuildDB
-	AutoRoleDB
 	FilterDB
 	WarnDB
-	MemberRoleDB
+	CustomRoleDB
 	AquariumDB
 }
 
@@ -27,13 +26,6 @@ type GuildDB interface {
 	CreateGuild(guildID string) error
 	UpdateGuild(g *structs.Guild) error
 	GetGuild(guildID string) (*structs.Guild, error)
-}
-
-type AutoRoleDB interface {
-	CreateAutoRole(guildID, roleID string) error
-	GetAutoRole(guildID string) (*structs.AutoRole, error)
-	UpdateAutoRole(guildID, roleID string) error
-	DeleteAutoRole(guildID string) error
 }
 
 type FilterDB interface {
@@ -53,12 +45,12 @@ type WarnDB interface {
 	UpdateMemberWarn(warn *structs.Warn) error
 }
 
-type MemberRoleDB interface {
-	CreateMemberRole(guildID, userID, roleID string) error
-	GetMemberRole(guildID, userID string) (*structs.UserRole, error)
-	GetMemberRolesByGuild(guildID string) ([]*structs.UserRole, error)
-	UpdateMemberRole(role *structs.UserRole) error
-	DeleteMemberRole(uid int) error
+type CustomRoleDB interface {
+	CreateCustomRole(guildID, userID, roleID string) error
+	GetCustomRole(guildID, userID string) (*structs.CustomRole, error)
+	GetCustomRolesByGuild(guildID string) ([]*structs.CustomRole, error)
+	UpdateCustomRole(role *structs.CustomRole) error
+	DeleteCustomRole(uid int) error
 }
 
 type AquariumDB interface {

@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/module/administration"
+	"github.com/intrntsrfr/meido/internal/module/customrole"
 	"github.com/intrntsrfr/meido/internal/module/fun"
+	"github.com/intrntsrfr/meido/internal/module/moderation"
 	"github.com/intrntsrfr/meido/internal/module/utility"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"os"
@@ -49,8 +51,8 @@ func main() {
 	bot.RegisterModule(fun.New(bot, logger))
 	//bot.RegisterModule(fishmod.New())
 	bot.RegisterModule(utility.New(bot, db, logger))
-	//bot.RegisterModule(moderationmod.New(bot, db, logger.Named("moderation")))
-	//bot.RegisterModule(userrolemod.New(bot, db, owoClient, logger.Named("userrole")))
+	bot.RegisterModule(moderation.New(bot, db, logger))
+	bot.RegisterModule(customrole.New(bot, db, logger))
 	bot.RegisterModule(search.New(bot, logger))
 	//bot.RegisterModule(mediaconvertmod.New())
 	//bot.RegisterModule(aimod.New(gptClient, config.GPT3Engine))

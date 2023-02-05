@@ -1,2 +1,2 @@
 FROM postgres:latest
-COPY ./models.sql /docker-entrypoint-initdb.d/
+COPY ./migrations/* /docker-entrypoint-initdb.d/

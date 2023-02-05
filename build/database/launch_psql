@@ -1,2 +1,2 @@
-docker build --no-cache -t meidopsql .
-docker run --name meido-psql -e POSTGRES_DB=meido -e POSTGRES_PASSWORD=password -d -p 1234:5432 meidopsql
+docker build -t meido_psql .
+docker run --name meido-psql -e POSTGRES_DB=meido -e POSTGRES_PASSWORD=password -d -p 1234:5432 meido_psql

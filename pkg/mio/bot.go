@@ -98,7 +98,6 @@ func (b *Bot) processMessage(m *DiscordMessage) {
 	if m.Message.Author == nil || m.Message.Author.Bot {
 		return
 	}
-
 	for _, mod := range b.Modules {
 		if m.IsDM() && !mod.AllowDMs() {
 			continue
@@ -106,13 +105,6 @@ func (b *Bot) processMessage(m *DiscordMessage) {
 		if m.Type()&mod.AllowedTypes() == 0 {
 			continue
 		}
-
-		// check if user can use the folder or not
-		// may be based on user level, roles, channel etc..
-
-		// it should also be an option to disable passives for certain channels, server or user basis
-		// mostly server, channel and maybe role though.
-		// probably just server and channels
 
 		// run all passives if they allow the message type
 		for _, pas := range mod.Passives() {
@@ -146,17 +138,9 @@ func (b *Bot) processCommand(cmd *ModuleCommand, m *DiscordMessage) {
 	}
 
 	if cmd.RequiresOwner && !m.Discord.IsBotOwner(m) {
-		_, _ = m.Reply("this command is owner only")
+		_, _ = m.Reply("This command is owner only")
 		return
 	}
-
-	// check if user can use command or not
-	// may be based on user level, roles, channel etc..
-	/*
-		if m.GuildID() != "" && !b.Perms.Allow(cmd.Name, m.GuildID(), m.ChannelID(), m.Author().UID, m.Member().Roles) {
-			return
-		}
-	*/
 
 	// check if cooldown is for user or channel
 	key := fmt.Sprintf("%v:%v", m.Message.ChannelID, cmd.Name)

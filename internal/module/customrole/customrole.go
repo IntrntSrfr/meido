@@ -1,6 +1,7 @@
-package userrole
+package customrole
 
 import (
+	"bytes"
 	"database/sql"
 	"fmt"
 	"github.com/intrntsrfr/meido/internal/database"
@@ -14,75 +15,72 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/owo"
 )
 
 type Module struct {
 	*mio.ModuleBase
-	db  database.DB
-	owo *owo.Client
+	db database.DB
 }
 
-func New(b *mio.Bot, db *database.PsqlDB, owo *owo.Client, logger *zap.Logger) mio.Module {
+func New(bot *mio.Bot, db *database.PsqlDB, logger *zap.Logger) mio.Module {
 	return &Module{
-		ModuleBase: mio.NewModule(b, "UserRoles", logger.Named("userrole")),
+		ModuleBase: mio.NewModule(bot, "CustomRole", logger.Named("customrole")),
 		db:         db,
-		owo:        owo,
 	}
 }
 
 func (m *Module) Hook() error {
 	m.Bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		refreshTicker := time.NewTicker(time.Hour)
-
-		go func() {
-			for range refreshTicker.C {
-				for _, g := range m.Bot.Discord.Guilds() {
-					if g.Unavailable {
-						continue
-					}
-
-					roles, err := m.db.GetMemberRolesByGuild(g.ID)
-					if err != nil {
-						continue
-					}
-
-					for _, ur := range roles {
-						hasRole := false
-
-						for _, gr := range g.Roles {
-							if gr.ID == ur.RoleID {
-								hasRole = true
-								break
-							}
-						}
-
-						if !hasRole {
-							if err := m.db.DeleteMemberRole(ur.UID); err != nil {
-								m.Log.Error("could not delete member role",
-									zap.Int("member role ID", ur.UID),
-									zap.String("guild id", ur.GuildID),
-									zap.String("role id", ur.RoleID),
-									zap.String("user id", ur.UserID))
-							}
-						}
-					}
-				}
-			}
-		}()
+		go clearDeletedRoles(m)
 	})
 
 	return m.RegisterCommands([]*mio.ModuleCommand{
-		NewSetUserRoleCommand(m),
-		NewRemoveUserRoleCommand(m),
-		NewMyRoleCommand(m),
+		newSetCustomRoleCommand(m),
+		newRemoveCustomRoleCommand(m),
+		newMyRoleCommand(m),
+		NewListCustomRolesCommand(m),
 	})
 }
 
-func NewSetUserRoleCommand(m *Module) *mio.ModuleCommand {
+func clearDeletedRoles(m *Module) {
+	refreshTicker := time.NewTicker(time.Hour)
+	for range refreshTicker.C {
+		for _, g := range m.Bot.Discord.Guilds() {
+			if g.Unavailable {
+				continue
+			}
+			roles, err := m.db.GetCustomRolesByGuild(g.ID)
+			if err != nil {
+				continue
+			}
+			for _, ur := range roles {
+				hasRole := false
+				for _, gr := range g.Roles {
+					if gr.ID == ur.RoleID {
+						hasRole = true
+						break
+					}
+				}
+				if hasRole {
+					continue
+				}
+				// delete role from guild if it no longer exists
+				if err := m.db.DeleteCustomRole(ur.UID); err != nil {
+					m.Log.Error("could not delete custom role",
+						zap.Int("member role ID", ur.UID),
+						zap.String("guild id", ur.GuildID),
+						zap.String("role id", ur.RoleID),
+						zap.String("user id", ur.UserID))
+				}
+			}
+		}
+	}
+}
+
+func newSetCustomRoleCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
-		Name:          "setuserrole",
+		Name:          "setcustomrole",
 		Description:   "Sets or changes a custom role for a user",
 		Triggers:      []string{"m?setuserrole", "m?setcustomrole"},
 		Usage:         "m?setcustomrole 1231231231231 cool role",
@@ -128,12 +126,12 @@ func NewSetUserRoleCommand(m *Module) *mio.ModuleCommand {
 				return
 			}
 
-			if ur, err := m.db.GetMemberRole(g.ID, targetMember.User.ID); err == nil {
+			if ur, err := m.db.GetCustomRole(g.ID, targetMember.User.ID); err == nil {
 				if selectedRole.ID == ur.RoleID {
 					return
 				}
 				ur.RoleID = selectedRole.ID
-				if err := m.db.UpdateMemberRole(ur); err != nil {
+				if err := m.db.UpdateCustomRole(ur); err != nil {
 					_, _ = msg.Reply("Could not set role, please try again")
 					return
 				}
@@ -141,7 +139,7 @@ func NewSetUserRoleCommand(m *Module) *mio.ModuleCommand {
 				return
 			}
 
-			if err := m.db.CreateMemberRole(g.ID, targetMember.User.ID, selectedRole.ID); err != nil {
+			if err := m.db.CreateCustomRole(g.ID, targetMember.User.ID, selectedRole.ID); err != nil {
 				_, _ = msg.Reply("Could not set role, please try again")
 				return
 			}
@@ -150,7 +148,7 @@ func NewSetUserRoleCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewRemoveUserRoleCommand(m *Module) *mio.ModuleCommand {
+func newRemoveCustomRoleCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "removecustomrole",
@@ -179,8 +177,8 @@ func NewRemoveUserRoleCommand(m *Module) *mio.ModuleCommand {
 				return
 			}
 
-			if ur, err := m.db.GetMemberRole(msg.GuildID(), targetUser.ID); err == nil {
-				if err := m.db.DeleteMemberRole(ur.UID); err != nil {
+			if ur, err := m.db.GetCustomRole(msg.GuildID(), targetUser.ID); err == nil {
+				if err := m.db.DeleteCustomRole(ur.UID); err != nil {
 					_, _ = msg.Reply("Could not remove custom role, please try again")
 					return
 				}
@@ -191,7 +189,7 @@ func NewRemoveUserRoleCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewMyRoleCommand(m *Module) *mio.ModuleCommand {
+func newMyRoleCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "myrole",
@@ -236,7 +234,7 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 			return
 		}
 
-		ur, err := m.db.GetMemberRole(msg.GuildID(), msg.AuthorID())
+		ur, err := m.db.GetCustomRole(msg.GuildID(), msg.AuthorID())
 		if err != nil && err != sql.ErrNoRows {
 			m.Log.Error("error fetching user role", zap.Error(err))
 			_, _ = msg.Reply("there was an error, please try again")
@@ -317,7 +315,7 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	ur, err := m.db.GetMemberRole(msg.GuildID(), target.User.ID)
+	ur, err := m.db.GetCustomRole(msg.GuildID(), target.User.ID)
 	if err != nil && err != sql.ErrNoRows {
 		_, _ = msg.Reply("there was an error, please try again")
 		m.Log.Error("error fetching user role", zap.Error(err))
@@ -347,65 +345,59 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-/*
-func NewListUserRolesCommand(m *UserRoleMod) *base.ModuleCommand {
-	return &base.ModuleCommand{
-		Module:           m,
-		Name:          "listuserroles",
-		Description:   "Returns a list of the user roles that are in the server, displays if some users still are in the server or not",
-		Triggers:      []string{"m?listuserroles"},
-		Usage:         "m?listuserroles",
+func NewListCustomRolesCommand(m *Module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
+		Mod:           m,
+		Name:          "listcustomroles",
+		Description:   "Returns a list of custom roles for the server. It also shows whether users with custom roles are in the server or not",
+		Triggers:      []string{"m?listuserroles", "m?listcustomroles"},
+		Usage:         "m?listcustomroles",
 		Cooldown:      30,
-		RequiredPerms: 0,
+		CooldownUser:  false,
+		RequiredPerms: discordgo.PermissionManageRoles,
 		RequiresOwner: false,
-		AllowedTypes:  base.MessageTypeCreate,
+		CheckBotPerms: false,
+		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
 		Enabled:       true,
-		Run:           m.listuserrolesCommand,
+		Run: func(msg *mio.DiscordMessage) {
+			roles, err := m.db.GetCustomRolesByGuild(msg.GuildID())
+			if err != nil {
+				_, _ = msg.Reply("There was an issue, please try again")
+				return
+			}
+
+			g, err := msg.Discord.Guild(msg.Message.GuildID)
+			if err != nil {
+				_, _ = msg.Reply("some error occurred, please try again")
+				return
+			}
+
+			builder := strings.Builder{}
+			builder.WriteString(fmt.Sprintf("Custom roles in %v | Amount: %v\n\n", g.Name, len(roles)))
+			for _, ur := range roles {
+				role, err := msg.Discord.Role(g.ID, ur.RoleID)
+				if err != nil {
+					continue
+				}
+
+				mem, err := msg.Discord.Member(g.ID, ur.UserID)
+				if err != nil {
+					builder.WriteString(fmt.Sprintf("%v (%v) | Belongs to: %v - User no longer in guild.\n", role.Name, role.ID, ur.UserID))
+				} else {
+					builder.WriteString(fmt.Sprintf("%v (%v) | Belongs to: %v (%v)\n", role.Name, role.ID, mem.User.String(), mem.User.ID))
+				}
+			}
+
+			data := &discordgo.MessageSend{Content: builder.String()}
+			if builder.Len() > 1024 {
+				data.File = &discordgo.File{
+					Name:   "roles.txt",
+					Reader: bytes.NewBufferString(builder.String()),
+				}
+				data.Content = ""
+			}
+			_, _ = msg.ReplyComplex(data)
+		},
 	}
 }
-
-func (m *UserRoleMod) listuserrolesCommand(msg *base.DiscordMessage) {
-	if msg.LenArgs() != 1 {
-		return
-	}
-
-	var userRoles []*database.UserRole
-
-	err := m.db.Select(&userRoles, "SELECT role_id, user_id FROM userroles WHERE guild_id=$1;", msg.Message.GuildID)
-	if err != nil {
-		msg.Reply("there was an error, please try again")
-		return
-	}
-
-	g, err := msg.Discord.Guild(msg.Message.GuildID)
-	if err != nil {
-		msg.Reply("some error occurred, please try again")
-		return
-	}
-
-	text := fmt.Sprintf("Userroles in %v\n\n", g.Name)
-	count := 0
-	for _, ur := range userRoles {
-		role, err := msg.Discord.Role(g.UID, ur.RoleID)
-		if err != nil {
-			continue
-		}
-
-		mem, err := msg.Discord.Member(g.UID, ur.UserID)
-		if err != nil {
-			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v - User no longer in guild.\n", count, role.Name, role.UID, ur.UserID)
-		} else {
-			text += fmt.Sprintf("Role #%v: %v (%v) | Bound user: %v (%v)\n", count, role.Name, role.UID, mem.User.String(), mem.User.UID)
-		}
-		count++
-	}
-
-	link, err := m.owo.Upload(text)
-	if err != nil {
-		msg.Reply("Error getting user roles.")
-		return
-	}
-	msg.Reply(fmt.Sprintf("User roles in %v\n%v", g.Name, link))
-}
-*/

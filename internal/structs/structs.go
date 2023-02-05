@@ -14,8 +14,8 @@ type CommandLogEntry struct {
 	SentAt    time.Time `db:"sent_at"`
 }
 
-// UserRole represents a user role.
-type UserRole struct {
+// CustomRole represents a user role.
+type CustomRole struct {
 	UID     int    `db:"uid"`
 	GuildID string `db:"guild_id"`
 	RoleID  string `db:"role_id"`
@@ -36,11 +36,10 @@ type Guild struct {
 	MaxWarns int    `db:"max_warns"`
 
 	// described in days, 0 means infinite duration
-	WarnDuration int `db:"warn_duration"`
-	//AutoRole     string `db:"autorole"`
-
+	WarnDuration        int    `db:"warn_duration"`
 	AutomodLogChannelID string `db:"automod_log_channel_id"`
 	FishingChannelID    string `db:"fishing_channel_id"`
+	AutoRoleID          string `db:"auto_role_id"`
 }
 
 // Warn represents a warning
@@ -64,12 +63,4 @@ type Aquarium struct {
 	Rare      int    `db:"rare"`
 	SuperRare int    `db:"super_rare"`
 	Legendary int    `db:"legendary"`
-}
-
-// AutoRole represents a users aquarium
-type AutoRole struct {
-	UID     int    `db:"uid"`
-	GuildID string `db:"guild_id"`
-	RoleID  string `db:"role_id"`
-	Enabled bool   `db:"enabled"`
 }
