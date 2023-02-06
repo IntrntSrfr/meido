@@ -1,11 +1,14 @@
 package administration
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
+	"strings"
 	"time"
 )
 
@@ -26,14 +29,59 @@ func New(bot *mio.Bot, logger *zap.Logger, logChs []string) mio.Module {
 // Hook will hook the Module into the Bot.
 func (m *Module) Hook() error {
 	m.Bot.Discord.AddEventHandler(m.StatusLoop())
-	if err := m.RegisterPassive(NewForwardDmsPassive(m)); err != nil {
+	if err := m.RegisterPassive(newForwardDmsPassive(m)); err != nil {
 		return err
 	}
-	return m.RegisterCommand(NewToggleCommandCommand(m))
+	return m.RegisterCommands([]*mio.ModuleCommand{
+		newToggleCommandCommand(m),
+		newMessageCommand(m),
+	})
 }
 
-// NewToggleCommandCommand returns a new ping command.
-func NewToggleCommandCommand(m *Module) *mio.ModuleCommand {
+func newMessageCommand(m *Module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
+		Mod:           m,
+		Name:          "message",
+		Description:   "Sends a message to a channel",
+		Triggers:      []string{"m?msg"},
+		Usage:         "m?msg [channelID] [message]",
+		Cooldown:      0,
+		CooldownUser:  false,
+		RequiredPerms: 0,
+		RequiresOwner: true,
+		CheckBotPerms: false,
+		AllowedTypes:  mio.MessageTypeCreate,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run: func(msg *mio.DiscordMessage) {
+			if msg.LenArgs() < 3 {
+				return
+			}
+			chID := msg.Args()[1]
+			text := strings.Join(msg.Args()[1:], " ")
+
+			if !utils.IsNumber(chID) {
+				return
+			}
+
+			var data discordgo.MessageSend
+			err := json.Unmarshal([]byte(text), &data)
+			if err != nil {
+				_, _ = msg.Reply("There was an issue")
+				return
+			}
+
+			if _, err := msg.Sess.ChannelMessageSendComplex(chID, &data); err != nil {
+				_, _ = msg.Reply("Could not deliver message")
+				return
+			}
+			_, _ = msg.Reply("Message delivered")
+		},
+	}
+}
+
+// newToggleCommandCommand returns a new ping command.
+func newToggleCommandCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "togglecommand",
@@ -49,9 +97,6 @@ func NewToggleCommandCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:      true,
 		Enabled:       true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 2 || !msg.Discord.IsBotOwner(msg) {
-				return
-			}
 			for _, mod := range m.Bot.Modules {
 				cmd, ok := mio.FindCommand(mod, msg.Args())
 				if !ok {
@@ -71,7 +116,7 @@ func NewToggleCommandCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewForwardDmsPassive(m *Module) *mio.ModulePassive {
+func newForwardDmsPassive(m *Module) *mio.ModulePassive {
 	return &mio.ModulePassive{
 		Mod:          m,
 		Name:         "forwarddms",
