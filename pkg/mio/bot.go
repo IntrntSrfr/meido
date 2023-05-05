@@ -3,30 +3,20 @@ package mio
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/internal/structs"
 	"math/rand"
 	"strings"
 	"time"
 
+	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/structs"
+
 	"go.uber.org/zap"
 )
-
-// Config is the config struct for the bot
-type Config struct {
-	Token             string   `json:"token"`
-	ConnectionString  string   `json:"connection_string"`
-	OwnerIds          []string `json:"owner_ids"`
-	DmLogChannels     []string `json:"dm_log_channels"`
-	OwoToken          string   `json:"owo_token"`
-	YouTubeToken      string   `json:"youtube_key"`
-	OpenWeatherApiKey string   `json:"open_weather_api_key"`
-}
 
 // Bot is the main bot struct.
 type Bot struct {
 	Discord   *Discord
-	Config    *Config
+	Config    Configurable
 	Modules   map[string]Module
 	DB        database.DB
 	Cooldowns CooldownService
@@ -35,12 +25,12 @@ type Bot struct {
 }
 
 // NewBot takes in a Config and returns a pointer to a new Bot
-func NewBot(config *Config, db database.DB, log *zap.Logger) *Bot {
+func NewBot(config Configurable, db database.DB, log *zap.Logger) *Bot {
 	log.Info("new bot")
 	rand.Seed(time.Now().Unix())
 
 	return &Bot{
-		Discord:   NewDiscord(config.Token),
+		Discord:   NewDiscord(config.GetString("discord_token")),
 		Config:    config,
 		Modules:   make(map[string]Module),
 		DB:        db,

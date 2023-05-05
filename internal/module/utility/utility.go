@@ -156,7 +156,7 @@ func newAboutCommand(m *Module) *mio.ModuleCommand {
 				AddField("Users", fmt.Sprintf("%v users | %v humans | %v bots", totalUsers, totalHumans, totalBots), true).
 				AddField("Memory use", fmt.Sprintf("%v/%v", humanize.Bytes(memory.Alloc), humanize.Bytes(memory.Sys)), false).
 				AddField("Garbage collected", humanize.Bytes(memory.TotalAlloc-memory.Alloc), true).
-				AddField("Owners", strings.Join(m.Bot.Config.OwnerIds, ", "), true)
+				AddField("Owners", strings.Join(m.Bot.Config.GetStringSlice("owner_ids"), ", "), true)
 			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}

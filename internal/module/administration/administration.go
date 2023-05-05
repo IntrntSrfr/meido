@@ -19,10 +19,10 @@ type Module struct {
 }
 
 // New returns a new AdministrationMod.
-func New(bot *mio.Bot, logger *zap.Logger, logChs []string) mio.Module {
+func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 	return &Module{
 		ModuleBase:    mio.NewModule(bot, "Administration", logger.Named("administration")),
-		dmLogChannels: logChs,
+		dmLogChannels: bot.Config.GetStringSlice("dm_log_channels"),
 	}
 }
 
