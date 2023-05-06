@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"math/rand"
-	"strings"
+	"runtime/debug"
 	"sync"
 	"time"
 
 	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/internal/structs"
-
 	"go.uber.org/zap"
 )
 
@@ -34,13 +32,14 @@ func NewBot(config Configurable, db database.DB, log *zap.Logger) *Bot {
 	rand.Seed(time.Now().Unix())
 
 	return &Bot{
-		Discord:   NewDiscord(config.GetString("discord_token")),
+		Discord:   NewDiscord(config.GetString("token")),
 		Config:    config,
 		Modules:   make(map[string]Module),
 		DB:        db,
 		Cooldowns: NewCooldownHandler(),
 		Callbacks: NewCallbackHandler(),
 		Log:       log,
+		handlers:  make(map[string][]func(interface{})),
 	}
 }
 
@@ -179,8 +178,6 @@ func (b *Bot) processCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 		}
 	}
 
-	// log cmd
-	b.logCommand(msg, cmd)
 	// set cmd on cooldown
 	b.Cooldowns.Set(key, time.Duration(cmd.Cooldown))
 	// run cmd
@@ -196,17 +193,13 @@ func (b *Bot) runCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 				return
 			}
 			b.Log.Error("recovery needed", zap.String("message JSON", string(d)))
-
-			//log.Println(string(d))
-			//now := time.Now()
-			//fmt.Println(fmt.Sprintf("!!! RECOVERY NEEDED !!!\ntime: %v\nreason: %v\n\n\n", now.String(), r))
-
+			b.emit("command_panicked", &CommandPanicked{cmd, msg, string(debug.Stack())})
 			_, _ = msg.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
 		}
 	}()
 
 	cmd.Run(msg)
-	b.emit("command_ran", cmd)
+	b.emit("command_ran", &CommandRan{cmd, msg})
 	b.Log.Info("new command", zap.String("author", fmt.Sprintf("%v | %v", msg.Author(), msg.AuthorID())), zap.String("content", msg.RawContent()))
 }
 
@@ -221,24 +214,6 @@ func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
 		return
 	}
 	ch <- msg
-}
-
-// logCommand logs an executed command
-func (b *Bot) logCommand(msg *DiscordMessage, cmd *ModuleCommand) {
-	b.Log.Info("new command", zap.String("author", fmt.Sprintf("%v | %v", msg.Author(), msg.AuthorID())), zap.String("content", msg.RawContent()))
-	// fmt.Println(msg.Shard, msg.Message.Author, msg.Message.Content, msg.TimeReceived.String())
-
-	if err := b.DB.CreateCommandLogEntry(&structs.CommandLogEntry{
-		Command:   cmd.Name,
-		Args:      strings.Join(msg.Args(), " "),
-		UserID:    msg.AuthorID(),
-		GuildID:   msg.GuildID(),
-		ChannelID: msg.ChannelID(),
-		MessageID: msg.Message.ID,
-		SentAt:    time.Now(),
-	}); err != nil {
-		b.Log.Error("error logging command", zap.Error(err))
-	}
 }
 
 func ready(s *discordgo.Session, r *discordgo.Ready) {

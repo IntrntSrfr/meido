@@ -65,7 +65,7 @@ func (d *Discord) Open() error {
 // recommendedShards asks discord for the recommended shardcount for the bot given the token.
 // returns -1 if the request does not go well.
 func recommendedShards(token string) (int, error) {
-	req, _ := http.NewRequest("GET", "https://discord.com/api/v8/gateway/bot", nil)
+	req, _ := http.NewRequest("GET", "https://discord.com/api/v10/gateway/bot", nil)
 	req.Header.Add("Authorization", "Bot "+token)
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -73,7 +73,7 @@ func recommendedShards(token string) (int, error) {
 	}
 	defer res.Body.Close()
 
-	resp := &discordgo.GatewayBotResponse{}
+	var resp discordgo.GatewayBotResponse
 	err = json.NewDecoder(res.Body).Decode(&resp)
 	if err != nil {
 		return -1, err
