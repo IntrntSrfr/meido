@@ -28,7 +28,6 @@ func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 
 // Hook will hook the Module into the Bot.
 func (m *Module) Hook() error {
-	m.Bot.Discord.AddEventHandler(m.StatusLoop())
 	if err := m.RegisterPassive(newForwardDmsPassive(m)); err != nil {
 		return err
 	}
@@ -141,40 +140,5 @@ func newForwardDmsPassive(m *Module) *mio.ModulePassive {
 				_, _ = msg.Sess.ChannelMessageSendEmbed(id, embed.Build())
 			}
 		},
-	}
-}
-
-func (m *Module) StatusLoop() func(s *discordgo.Session, r *discordgo.Ready) {
-	statusTimer := time.NewTicker(time.Second * 15)
-	return func(s *discordgo.Session, r *discordgo.Ready) {
-		display := true
-		go func() {
-			for range statusTimer.C {
-				if display {
-					srvCount := 0
-					for range m.Bot.Discord.Guilds() {
-						srvCount++
-					}
-					_ = s.UpdateStatusComplex(discordgo.UpdateStatusData{
-						Activities: []*discordgo.Activity{
-							{
-								Name: fmt.Sprintf("over %v servers", srvCount),
-								Type: 3,
-							},
-						},
-					})
-				} else {
-					_ = s.UpdateStatusComplex(discordgo.UpdateStatusData{
-						Activities: []*discordgo.Activity{
-							{
-								Name: fmt.Sprintf("m?help"),
-								Type: discordgo.ActivityTypeGame,
-							},
-						},
-					})
-				}
-				display = !display
-			}
-		}()
 	}
 }

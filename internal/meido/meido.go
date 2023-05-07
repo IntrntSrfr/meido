@@ -2,8 +2,10 @@ package meido
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/module/fishing"
 	"github.com/intrntsrfr/meido/internal/module/utility"
 	"github.com/intrntsrfr/meido/internal/structs"
 	"github.com/intrntsrfr/meido/pkg/mio"
@@ -23,7 +25,7 @@ func New(config mio.Configurable, db database.DB, log *zap.Logger) *Meido {
 	//bot.RegisterModule(administration.New(bot, logger))
 	//bot.RegisterModule(testing.New(bot, logger))
 	//bot.RegisterModule(fun.New(bot, logger))
-	//bot.RegisterModule(fishmod.New())
+	bot.RegisterModule(fishing.New(bot, db, log))
 	bot.RegisterModule(utility.New(bot, db, log))
 	//bot.RegisterModule(moderation.New(bot, db, logger))
 	//bot.RegisterModule(customrole.New(bot, db, logger))
@@ -94,6 +96,7 @@ func logCommandPanicked(m *Meido) func(i interface{}) {
 
 func (m *Meido) registerDiscordHandlers() {
 	m.Bot.Discord.AddEventHandler(insertGuild(m))
+	m.Bot.Discord.AddEventHandlerOnce(statusLoop(m))
 }
 
 func insertGuild(m *Meido) func(s *discordgo.Session, g *discordgo.GuildCreate) {
@@ -103,5 +106,42 @@ func insertGuild(m *Meido) func(s *discordgo.Session, g *discordgo.GuildCreate) 
 				m.logger.Error("could not create new guild", zap.Error(err), zap.String("guild ID", g.ID))
 			}
 		}
+	}
+}
+
+const totalStatusDisplays = 3
+
+func statusLoop(m *Meido) func(s *discordgo.Session, r *discordgo.Ready) {
+	statusTimer := time.NewTicker(time.Second * 15)
+	return func(s *discordgo.Session, r *discordgo.Ready) {
+		display := 0
+		go func() {
+			for range statusTimer.C {
+				var (
+					name       string
+					statusType discordgo.ActivityType
+				)
+				switch display {
+				case 0:
+					srvCount := m.Bot.Discord.GuildCount()
+					name = fmt.Sprintf("over %v servers", srvCount)
+					statusType = discordgo.ActivityTypeWatching
+				case 1:
+					name = "m?help"
+					statusType = discordgo.ActivityTypeGame
+				case 2:
+					name = "Remember to stay sane"
+					statusType = discordgo.ActivityTypeGame
+				}
+
+				_ = s.UpdateStatusComplex(discordgo.UpdateStatusData{
+					Activities: []*discordgo.Activity{{
+						Name: name,
+						Type: statusType,
+					}},
+				})
+				display = (display + 1) % totalStatusDisplays
+			}
+		}()
 	}
 }

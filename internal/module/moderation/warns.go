@@ -20,7 +20,7 @@ func NewWarnCommand(m *Module) *mio.ModuleCommand {
 		Name:          "warn",
 		Description:   "Warns a user. Requires warnings enabled.",
 		Triggers:      []string{"m?warn", ".warn"},
-		Usage:         "m?warn 163454407999094786 stupid",
+		Usage:         "m?warn [user] <reason>",
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionBanMembers,
 		RequiresOwner: false,
@@ -129,7 +129,7 @@ func NewWarnLogCommand(m *Module) *mio.ModuleCommand {
 		Name:          "warnlog",
 		Description:   "Displays a users warns",
 		Triggers:      []string{"m?warnlog"},
-		Usage:         "m?warnlog 163454407999094786",
+		Usage:         "m?warnlog [user] <page>",
 		Cooldown:      5,
 		RequiredPerms: discordgo.PermissionManageMessages,
 		RequiresOwner: false,
@@ -144,10 +144,8 @@ func (m *Module) warnlogCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
-
 	page := 0
 	var err error
-
 	if msg.LenArgs() > 2 {
 		page, err = strconv.Atoi(msg.Args()[2])
 		if err != nil || page < 1 {

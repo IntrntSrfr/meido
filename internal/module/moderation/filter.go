@@ -135,9 +135,9 @@ func NewModerationSettingsCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "moderationsettings",
-		Description:   "Moderation settings:\n- Toggle warn system [enable/disable]\n- Set max warns [0-10]\n- Set warn duration [0(infinite)-365]",
+		Description:   "Moderation settings:\n- Toggle warn system [enable / disable]\n- Set max warns [0 - 10]\n- Set warn duration [0 (forever) - 365]",
 		Triggers:      []string{"m?settings moderation"},
-		Usage:         "m?settings moderation warns [enable/disable]\nm?settings moderation maxwarns [0-10]\nm?settings moderation warnduration [0-365]",
+		Usage:         "m?settings moderation warns [enable / disable]\nm?settings moderation maxwarns [0 - 10]\nm?settings moderation warnduration [0 - 365]",
 		Cooldown:      2,
 		RequiredPerms: discordgo.PermissionAdministrator,
 		RequiresOwner: false,

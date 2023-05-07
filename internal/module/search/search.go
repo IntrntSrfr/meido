@@ -30,19 +30,19 @@ func (m *Module) Hook() error {
 	m.Bot.Discord.AddEventHandler(m.imageInteractionHandler)
 
 	return m.RegisterCommands([]*mio.ModuleCommand{
-		NewWeatherCommand(m),
-		NewYouTubeCommand(m),
-		NewImageCommand(m),
+		newWeatherCommand(m),
+		newYouTubeCommand(m),
+		newImageCommand(m),
 	})
 }
 
-func NewWeatherCommand(m *Module) *mio.ModuleCommand {
+func newWeatherCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "weather",
 		Description:   "Finds the weather at a provided location",
 		Triggers:      []string{"m?weather"},
-		Usage:         "m?weather Oslo",
+		Usage:         "m?weather [city]",
 		Cooldown:      0,
 		CooldownUser:  false,
 		RequiredPerms: 0,
@@ -87,7 +87,7 @@ func NewWeatherCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewYouTubeCommand(m *Module) *mio.ModuleCommand {
+func newYouTubeCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "youtube",
@@ -126,7 +126,7 @@ func NewYouTubeCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewImageCommand(m *Module) *mio.ModuleCommand {
+func newImageCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "image",

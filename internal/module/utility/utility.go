@@ -282,7 +282,7 @@ func newHelpCommand(m *Module) *mio.ModuleCommand {
 func (m *Module) helpCommand(msg *mio.DiscordMessage) {
 	embed := helpers.NewEmbed().
 		WithOkColor().
-		WithFooter("Use m?help [module] to see module commands.\nUse m?help [command] to see command info.", "").
+		WithFooter("Use m?help [module] to see module commands.\nUse m?help [command] to see command info.\nArguments in [square brackets] are required, while arguments in <angle brackets> are optional.", "").
 		WithThumbnail(msg.Sess.State.User.AvatarURL("256"))
 
 	if msg.LenArgs() == 1 {

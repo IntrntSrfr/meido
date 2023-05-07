@@ -20,12 +20,12 @@ func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 
 // Hook will hook the Module into the Bot.
 func (m *Module) Hook() error {
-	return m.RegisterCommand(NewTestCommand(m))
-	//m.RegisterCommand(NewMonkeyCommand(m))
+	return m.RegisterCommand(newTestCommand(m))
+	//m.RegisterCommand(newMonkeyCommand(m))
 }
 
-// NewTestCommand returns a new ping command.
-func NewTestCommand(m *Module) *mio.ModuleCommand {
+// newTestCommand returns a new ping command.
+func newTestCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "test",
@@ -45,7 +45,7 @@ func NewTestCommand(m *Module) *mio.ModuleCommand {
 }
 
 // NewMonkeyCommand returns a new monkey command.
-func NewMonkeyCommand(m *Module) *mio.ModuleCommand {
+func newMonkeyCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "monkey",
