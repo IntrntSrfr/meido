@@ -87,10 +87,6 @@ func (e *Embed) WithColor(color int) *Embed {
 	return e
 }
 
-func (e *Embed) Build() *discordgo.MessageEmbed {
-	return e.MessageEmbed
-}
-
 func AddEmbedField(e *discordgo.MessageEmbed, name, value string, inline bool) *discordgo.MessageEmbed {
 	e.Fields = append(e.Fields, &discordgo.MessageEmbedField{
 		Name:   name,
@@ -110,4 +106,8 @@ func SetEmbedThumbnail(e *discordgo.MessageEmbed, url string) *discordgo.Message
 func SetEmbedTitle(e *discordgo.MessageEmbed, title string) *discordgo.MessageEmbed {
 	e.Title = title
 	return e
+}
+
+func (e *Embed) Build() *discordgo.MessageEmbed {
+	return e.MessageEmbed
 }
