@@ -23,6 +23,18 @@ func TrimUserID(id string) string {
 	return strings.TrimSuffix(id, ">")
 }
 
+func TrimChannelID(id string) string {
+	id = strings.TrimPrefix(id, "<#")
+	id = strings.TrimPrefix(id, "!")
+	return strings.TrimSuffix(id, ">")
+}
+
+func TrimRoleID(id string) string {
+	id = strings.TrimPrefix(id, "<&")
+	id = strings.TrimPrefix(id, "!")
+	return strings.TrimSuffix(id, ">")
+}
+
 // IDToTimestamp2 takes a Discord snowflake and parses a timestamp from it
 func IDToTimestamp2(idStr string) (time.Time, error) {
 	id, err := strconv.ParseInt(idStr, 10, 64)
