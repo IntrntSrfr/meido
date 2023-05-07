@@ -29,10 +29,10 @@ func (m *Module) Hook() error {
 func newGameOfLifeCmd(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
-		Name:          "gameoflife",
+		Name:          "life",
 		Description:   "Shows a gif of Conway's Game of Life. If no seed is provided, it uses your user ID",
 		Triggers:      []string{"m?gameoflife", "m?gol"},
-		Usage:         "m?gol | m?gol <seed>",
+		Usage:         "m?life | m?life <seed | user>",
 		Cooldown:      2,
 		CooldownUser:  false,
 		RequiredPerms: 0,

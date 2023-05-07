@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"github.com/intrntsrfr/meido/internal/database"
 	"math/rand"
+	"time"
 )
 
 type fishingService struct {
-	db database.DB
+	db  database.DB
+	rng *rand.Rand
 }
 
 type fishLevel int
@@ -35,7 +37,10 @@ var creatures = []Creature{
 }
 
 func newFishingService(db database.DB) *fishingService {
-	return &fishingService{db}
+	return &fishingService{
+		db:  db,
+		rng: rand.New(rand.NewSource(time.Now().Unix())),
+	}
 }
 
 func (fs *fishingService) goFishing(userID string) (*Creature, error) {
@@ -72,7 +77,7 @@ func (fs *fishingService) goFishing(userID string) (*Creature, error) {
 }
 
 func (fs *fishingService) getRandomCreature() *Creature {
-	pick := rand.Intn(1000) + 1
+	pick := fs.rng.Intn(1000) + 1
 	var fp Creature
 	if pick <= 800 {
 		fp = creatures[0]
