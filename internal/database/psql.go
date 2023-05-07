@@ -110,8 +110,8 @@ func (p *PsqlDB) ClearActiveUserWarns(guildID, userID, clearedByID string) error
 	return err
 }
 
-func (p *PsqlDB) InsertNewAquarium(userID string) error {
-	_, err := p.pool.Exec("INSERT INTO aquarium VALUES ($1)", userID)
+func (p *PsqlDB) CreateAquarium(userID string) error {
+	_, err := p.pool.Exec("INSERT INTO aquarium VALUES($1)", userID)
 	return err
 }
 
@@ -191,10 +191,5 @@ func (p *PsqlDB) UpdateCustomRole(role *structs.CustomRole) error {
 
 func (p *PsqlDB) DeleteCustomRole(uid int) error {
 	_, err := p.pool.Exec("DELETE FROM user_role WHERE uid=$1", uid)
-	return err
-}
-
-func (p *PsqlDB) CreateAquarium(userID string) error {
-	_, err := p.pool.Exec("INSERT INTO aquarium VALUES($1)", userID)
 	return err
 }
