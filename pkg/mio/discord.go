@@ -2,6 +2,7 @@ package mio
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"log"
@@ -179,6 +180,10 @@ func (d *Discord) onMessageDelete(s *discordgo.Session, m *discordgo.MessageDele
 	}
 }
 
+var (
+	ErrMissingArgs = errors.New("missing one or more required arguments")
+)
+
 func (d *Discord) BotUser() *discordgo.User {
 	return d.Sess.State.User
 }
@@ -279,6 +284,13 @@ func (d *Discord) AddEventHandler(h interface{}) {
 	}
 }
 
+// AddEventHandlerOnce adds an event handler to the main session that will be fired once.
+func (d *Discord) AddEventHandlerOnce(h interface{}) {
+	for _, s := range d.Sessions {
+		s.AddHandlerOnce(h)
+	}
+}
+
 // Guilds returns all the guild objects the bot has in its sessions.
 func (d *Discord) Guilds() []*discordgo.Guild {
 	var guilds []*discordgo.Guild
@@ -288,17 +300,20 @@ func (d *Discord) Guilds() []*discordgo.Guild {
 	return guilds
 }
 
-// GuildCount returns the amount of guild objects between all sessions.
-func (d *Discord) GuildCount() []*discordgo.Guild {
-	var guilds []*discordgo.Guild
+// GuildCount returns the amount of guilds shared between all sessions.
+func (d *Discord) GuildCount() int {
+	var amount int
 	for _, sess := range d.Sessions {
-		guilds = append(guilds, sess.State.Guilds...)
+		amount += len(sess.State.Guilds)
 	}
-	return guilds
+	return amount
 }
 
 // Guild takes in an ID and returns a discordgo.Guild if one with that ID exists.
 func (d *Discord) Guild(guildID string) (*discordgo.Guild, error) {
+	if guildID == "" {
+		return nil, ErrMissingArgs
+	}
 	var err error
 	var guild *discordgo.Guild
 	for _, sess := range d.Sessions {
@@ -312,6 +327,9 @@ func (d *Discord) Guild(guildID string) (*discordgo.Guild, error) {
 
 // Channel takes in an ID and returns a discordgo.Channel if one with that ID exists.
 func (d *Discord) Channel(channelID string) (*discordgo.Channel, error) {
+	if channelID == "" {
+		return nil, ErrMissingArgs
+	}
 	var err error
 	var channel *discordgo.Channel
 	for _, sess := range d.Sessions {
@@ -325,6 +343,9 @@ func (d *Discord) Channel(channelID string) (*discordgo.Channel, error) {
 
 // Member takes in a guild ID and a user ID and returns a discordgo.Member if one with such ID exists.
 func (d *Discord) Member(guildID, userID string) (*discordgo.Member, error) {
+	if guildID == "" || userID == "" {
+		return nil, ErrMissingArgs
+	}
 	var err error
 	var mem *discordgo.Member
 	for _, sess := range d.Sessions {
@@ -342,6 +363,9 @@ func (d *Discord) Member(guildID, userID string) (*discordgo.Member, error) {
 
 // Role takes in a guild ID and a role ID and returns a discordgo.Role if one with such IDs exists.
 func (d *Discord) Role(guildID, roleID string) (*discordgo.Role, error) {
+	if guildID == "" || roleID == "" {
+		return nil, ErrMissingArgs
+	}
 	var err error
 	var role *discordgo.Role
 	for _, sess := range d.Sessions {
@@ -354,6 +378,9 @@ func (d *Discord) Role(guildID, roleID string) (*discordgo.Role, error) {
 }
 
 func (d *Discord) GuildRoleByNameOrID(guildID, name, id string) (*discordgo.Role, error) {
+	if guildID == "" || (name == "" && id == "") {
+		return nil, ErrMissingArgs
+	}
 	g, err := d.Guild(guildID)
 	if err != nil {
 		return nil, err

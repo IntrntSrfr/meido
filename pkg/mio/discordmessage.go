@@ -66,7 +66,11 @@ type DiscordMessage struct {
 
 // Reply replies directly to a DiscordMessage
 func (m *DiscordMessage) Reply(data string) (*discordgo.Message, error) {
-	return m.Sess.ChannelMessageSend(m.ChannelID(), data)
+	return m.Sess.ChannelMessageSendReply(m.ChannelID(), data, &discordgo.MessageReference{
+		MessageID: m.MessageID(),
+		ChannelID: m.ChannelID(),
+		GuildID:   m.GuildID(),
+	})
 }
 
 // ReplyAndDelete sends a message to a channel, then deletes it after a duration d
@@ -156,6 +160,10 @@ func (m *DiscordMessage) GuildID() string {
 
 func (m *DiscordMessage) ChannelID() string {
 	return m.Message.ChannelID
+}
+
+func (m *DiscordMessage) MessageID() string {
+	return m.Message.ID
 }
 
 func (m *DiscordMessage) GetMemberAtArg(index int) (*discordgo.Member, error) {
