@@ -3,13 +3,16 @@ package fishing
 import (
 	"database/sql"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/structs"
+	"go.uber.org/zap"
 	"math/rand"
 	"time"
 )
 
 type fishingService struct {
-	db  database.DB
-	rng *rand.Rand
+	db     database.DB
+	rng    *rand.Rand
+	logger *zap.Logger
 }
 
 type fishLevel int
@@ -36,24 +39,31 @@ var creatures = []Creature{
 	{legendary, "No way, you got a LEGENDARY!! - 🎷🦈", true},
 }
 
-func newFishingService(db database.DB) *fishingService {
+func newFishingService(db database.DB, logger *zap.Logger) *fishingService {
 	return &fishingService{
-		db:  db,
-		rng: rand.New(rand.NewSource(time.Now().Unix())),
+		db:     db,
+		rng:    rand.New(rand.NewSource(time.Now().Unix())),
+		logger: logger.Named("service"),
 	}
+}
+
+func (fs *fishingService) getOrCreateAquarium(userID string) (*structs.Aquarium, error) {
+	aq, err := fs.db.GetAquarium(userID)
+	if err != nil && err == sql.ErrNoRows {
+		if err = fs.db.CreateAquarium(userID); err == nil {
+			aq, err = fs.db.GetAquarium(userID)
+		}
+	}
+	if err != nil {
+		fs.logger.Error("could not get or create aquarium", zap.Error(err))
+	}
+	return aq, err
 }
 
 func (fs *fishingService) goFishing(userID string) (*Creature, error) {
 	c := fs.getRandomCreature()
-	aq, err := fs.db.GetAquarium(userID)
-	if err != nil && err == sql.ErrNoRows {
-		// if no aquarium found, make one
-		err = fs.db.CreateAquarium(userID)
-		if err != nil {
-			return nil, err
-		}
-	} else if err != nil {
-		// everything else we just return
+	aq, err := fs.getOrCreateAquarium(userID)
+	if err != nil {
 		return nil, err
 	}
 

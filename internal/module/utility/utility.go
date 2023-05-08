@@ -245,7 +245,7 @@ func newInviteCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "invite",
-		Description:   "Sends an invite link for Meido, as well as support server",
+		Description:   "Sends a bot invite link and support server invite link",
 		Triggers:      []string{"m?invite"},
 		Usage:         "m?invite",
 		Cooldown:      1,

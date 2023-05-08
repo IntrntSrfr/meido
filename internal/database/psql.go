@@ -52,12 +52,6 @@ func (p *PsqlDB) GetGuild(guildID string) (*structs.Guild, error) {
 	return &guild, err
 }
 
-func (p *PsqlDB) GetUserRole(guildID, userID string) (*structs.CustomRole, error) {
-	var userRole structs.CustomRole
-	err := p.pool.Get(&userRole, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", guildID, userID)
-	return &userRole, err
-}
-
 func (p *PsqlDB) GetValidUserWarnCount(guildID, userID string) (int, error) {
 	var count int
 	err := p.pool.Get(&count, "SELECT COUNT(*) FROM warn WHERE guild_id=$1 AND user_id=$2 AND is_valid", guildID, userID)
@@ -167,29 +161,35 @@ func (p *PsqlDB) UpdateMemberWarn(warn *structs.Warn) error {
 	return err
 }
 
+func (p *PsqlDB) GetUserRole(guildID, userID string) (*structs.CustomRole, error) {
+	var userRole structs.CustomRole
+	err := p.pool.Get(&userRole, "SELECT * FROM custom_role WHERE guild_id=$1 AND user_id=$2", guildID, userID)
+	return &userRole, err
+}
+
 func (p *PsqlDB) CreateCustomRole(guildID, userID, roleID string) error {
-	_, err := p.pool.Exec("INSERT INTO user_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", guildID, userID, roleID)
+	_, err := p.pool.Exec("INSERT INTO custom_role(guild_id, user_id, role_id) VALUES($1, $2, $3);", guildID, userID, roleID)
 	return err
 }
 
 func (p *PsqlDB) GetCustomRole(guildID, userID string) (*structs.CustomRole, error) {
 	var role *structs.CustomRole
-	err := p.pool.Get(&role, "SELECT * FROM user_role WHERE guild_id=$1 AND user_id=$2", guildID, userID)
+	err := p.pool.Get(&role, "SELECT * FROM custom_role WHERE guild_id=$1 AND user_id=$2", guildID, userID)
 	return role, err
 }
 
 func (p *PsqlDB) GetCustomRolesByGuild(guildID string) ([]*structs.CustomRole, error) {
 	var roles []*structs.CustomRole
-	err := p.pool.Select(&roles, "SELECT * FROM user_role WHERE guild_id=$1", guildID)
+	err := p.pool.Select(&roles, "SELECT * FROM custom_role WHERE guild_id=$1", guildID)
 	return roles, err
 }
 
 func (p *PsqlDB) UpdateCustomRole(role *structs.CustomRole) error {
-	_, err := p.pool.Exec("UPDATE user_role SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", role.RoleID, role.GuildID, role.UserID)
+	_, err := p.pool.Exec("UPDATE custom_role SET role_id=$1 WHERE guild_id=$2 AND user_id=$3", role.RoleID, role.GuildID, role.UserID)
 	return err
 }
 
 func (p *PsqlDB) DeleteCustomRole(uid int) error {
-	_, err := p.pool.Exec("DELETE FROM user_role WHERE uid=$1", uid)
+	_, err := p.pool.Exec("DELETE FROM custom_role WHERE uid=$1", uid)
 	return err
 }

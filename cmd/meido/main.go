@@ -5,13 +5,16 @@ import (
 	"github.com/intrntsrfr/meido/internal/meido"
 	"github.com/intrntsrfr/meido/internal/structs"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"os"
 	"os/signal"
 	"syscall"
 )
 
 func main() {
-	logger, _ := zap.NewProduction()
+	loggerConfig := zap.NewDevelopmentConfig()
+	loggerConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	logger, _ := loggerConfig.Build()
 	logger = logger.Named("main")
 
 	cfg, err := structs.LoadConfig()

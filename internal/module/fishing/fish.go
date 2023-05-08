@@ -22,9 +22,9 @@ type FishMod struct {
 // New returns a new FishMod.
 func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 	return &FishMod{
-		ModuleBase: mio.NewModule(bot, "Fishing", logger),
+		ModuleBase: mio.NewModule(bot, "Fishing", logger.Named("fishing")),
 		db:         db,
-		fs:         newFishingService(db),
+		fs:         newFishingService(db, logger),
 	}
 }
 
