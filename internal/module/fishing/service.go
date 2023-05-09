@@ -2,6 +2,7 @@ package fishing
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/structs"
 	"go.uber.org/zap"
@@ -13,38 +14,37 @@ type fishingService struct {
 	db     database.DB
 	rng    *rand.Rand
 	logger *zap.Logger
+
+	creatures         []*structs.Creature
+	rarities          []*structs.CreatureRarity
+	weightedRaritySum int
 }
 
-type fishLevel int
-
-const (
-	common fishLevel = iota + 1
-	uncommon
-	rare
-	superRare
-	legendary
-)
-
-type Creature struct {
-	level   fishLevel
+type creatureWithCaption struct {
+	*structs.Creature
 	caption string
-	mention bool
 }
 
-var creatures = []Creature{
-	{common, "You got a common - 🐟", false},
-	{uncommon, "You got an uncommon - 🐠", false},
-	{rare, "Ohhh, you got a rare! - 🐡", false},
-	{superRare, "Woah! you got a super rare! - 🦈", true},
-	{legendary, "No way, you got a LEGENDARY!! - 🎷🦈", true},
-}
-
-func newFishingService(db database.DB, logger *zap.Logger) *fishingService {
-	return &fishingService{
+func newFishingService(db database.DB, logger *zap.Logger) (*fishingService, error) {
+	s := &fishingService{
 		db:     db,
 		rng:    rand.New(rand.NewSource(time.Now().Unix())),
 		logger: logger.Named("service"),
 	}
+
+	var err error
+	if s.creatures, err = s.db.GetCreatures(); err != nil {
+		return nil, err
+	}
+	// if really wanted, rarities can be extracted from creatures instead.
+	if s.rarities, err = s.db.GetCreatureRarities(); err != nil {
+		return nil, err
+	}
+	for _, r := range s.rarities {
+		s.weightedRaritySum += r.Weight
+	}
+
+	return s, nil
 }
 
 func (fs *fishingService) getOrCreateAquarium(userID string) (*structs.Aquarium, error) {
@@ -60,45 +60,59 @@ func (fs *fishingService) getOrCreateAquarium(userID string) (*structs.Aquarium,
 	return aq, err
 }
 
-func (fs *fishingService) goFishing(userID string) (*Creature, error) {
-	c := fs.getRandomCreature()
+func (fs *fishingService) goFishing(userID string) (*creatureWithCaption, error) {
 	aq, err := fs.getOrCreateAquarium(userID)
 	if err != nil {
 		return nil, err
 	}
 
-	switch c.level {
-	case common:
+	r := fs.getRandomRarity()
+	c := fs.getRandomCreature(r)
+
+	caption := ""
+	switch c.Name {
+	case "Common":
 		aq.Common++
-	case uncommon:
+		caption = fmt.Sprintf("You got a common - %v", c.DisplayName)
+	case "Uncommon":
 		aq.Uncommon++
-	case rare:
+		caption = fmt.Sprintf("You got an uncommon - %v", c.DisplayName)
+	case "Rare":
 		aq.Rare++
-	case superRare:
+		caption = fmt.Sprintf("Ohhh, you got a rare! - %v", c.DisplayName)
+	case "Super rare":
 		aq.SuperRare++
-	case legendary:
+		caption = fmt.Sprintf("Woah! you got a super rare! - %v", c.DisplayName)
+	case "Legendary":
 		aq.Legendary++
+		caption = fmt.Sprintf("No way, you got a LEGENDARY!! - %v", c.DisplayName)
 	}
 
 	if err = fs.db.UpdateAquarium(aq); err != nil {
 		return nil, err
 	}
-	return c, nil
+	return &creatureWithCaption{c, caption}, nil
 }
 
-func (fs *fishingService) getRandomCreature() *Creature {
-	pick := fs.rng.Intn(1000) + 1
-	var fp Creature
-	if pick <= 800 {
-		fp = creatures[0]
-	} else if pick <= 940 {
-		fp = creatures[1]
-	} else if pick <= 990 {
-		fp = creatures[2]
-	} else if pick <= 999 {
-		fp = creatures[3]
-	} else {
-		fp = creatures[4]
+func (fs *fishingService) getRandomRarity() *structs.CreatureRarity {
+	pick := fs.rng.Intn(fs.weightedRaritySum)
+	for _, r := range fs.rarities {
+		if pick < r.Weight {
+			return r
+		}
+		pick -= r.Weight
 	}
-	return &fp
+	return nil
+}
+
+func (fs *fishingService) getRandomCreature(r *structs.CreatureRarity) *structs.Creature {
+	// FIXME: consider calculating this once in newFishingService() instead.
+	var cs []*structs.Creature
+	for _, c := range fs.creatures {
+		if c.Rarity.UID == r.UID {
+			cs = append(cs, c)
+		}
+	}
+	pick := fs.rng.Intn(len(cs))
+	return cs[pick]
 }

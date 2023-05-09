@@ -1,10 +1,8 @@
 package mio
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"math/rand"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -29,10 +27,8 @@ type Bot struct {
 // NewBot takes in a Config and returns a pointer to a new Bot
 func NewBot(config Configurable, db database.DB, log *zap.Logger) *Bot {
 	log.Info("new bot")
-	rand.Seed(time.Now().Unix())
-
 	return &Bot{
-		Discord:   NewDiscord(config.GetString("token")),
+		Discord:   NewDiscord(config.GetString("token"), log),
 		Config:    config,
 		Modules:   make(map[string]Module),
 		DB:        db,
@@ -51,10 +47,10 @@ func (b *Bot) Open(useDefHandlers bool) error {
 		panic(err)
 	}
 	if useDefHandlers {
-		b.Discord.AddEventHandler(ready)
-		b.Discord.AddEventHandler(guildJoin)
-		b.Discord.AddEventHandler(guildLeave)
-		b.Discord.AddEventHandler(memberChunk)
+		b.Discord.AddEventHandler(readyHandler(b))
+		b.Discord.AddEventHandler(guildJoinHandler(b))
+		b.Discord.AddEventHandler(guildLeaveHandler(b))
+		b.Discord.AddEventHandler(memberChunkHandler(b))
 	}
 	return nil
 }
@@ -77,7 +73,8 @@ func (b *Bot) RegisterModule(mod Module) {
 	b.Log.Info("adding module", zap.String("name", mod.Name()))
 	err := mod.Hook()
 	if err != nil {
-		panic(err)
+		b.Log.Error("could not register module", zap.Error(err))
+		return
 	}
 	b.Modules[mod.Name()] = mod
 }
@@ -188,11 +185,7 @@ func (b *Bot) processCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 func (b *Bot) runCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	defer func() {
 		if r := recover(); r != nil {
-			d, err := json.MarshalIndent(msg, "", "\t")
-			if err != nil {
-				return
-			}
-			b.Log.Error("recovery needed", zap.String("message JSON", string(d)))
+			b.Log.Error("recovery needed", zap.Any("error", r))
 			b.emit("command_panicked", &CommandPanicked{cmd, msg, string(debug.Stack())})
 			_, _ = msg.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
 		}
@@ -216,31 +209,49 @@ func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
 	ch <- msg
 }
 
-func ready(s *discordgo.Session, r *discordgo.Ready) {
-	fmt.Println("shard:", s.ShardID)
-	fmt.Println("user:", r.User.String())
-	fmt.Println("servers:", len(r.Guilds))
-}
-
-func guildJoin(s *discordgo.Session, g *discordgo.GuildCreate) {
-	_ = s.RequestGuildMembers(g.ID, "", 0, false)
-	fmt.Println("loading: ", g.Guild.Name, g.MemberCount, len(g.Members))
-}
-
-func guildLeave(s *discordgo.Session, g *discordgo.GuildDelete) {
-	if !g.Unavailable {
-		return
+func readyHandler(b *Bot) func(s *discordgo.Session, r *discordgo.Ready) {
+	return func(s *discordgo.Session, r *discordgo.Ready) {
+		b.Log.Info("ready",
+			zap.Int("shard", s.ShardID),
+			zap.String("user", r.User.String()),
+			zap.Int("server count", len(r.Guilds)),
+		)
 	}
-	fmt.Println(fmt.Sprintf("Removed from guild (%v)", g.ID))
 }
 
-func memberChunk(s *discordgo.Session, g *discordgo.GuildMembersChunk) {
-	if g.ChunkIndex == g.ChunkCount-1 {
-		// I don't know if this will work with several shards
-		guild, err := s.Guild(g.GuildID)
-		if err != nil {
+func guildJoinHandler(b *Bot) func(s *discordgo.Session, g *discordgo.GuildCreate) {
+	return func(s *discordgo.Session, g *discordgo.GuildCreate) {
+		_ = s.RequestGuildMembers(g.ID, "", 0, false)
+		b.Log.Info("started loading guild",
+			zap.String("name", g.Guild.Name),
+			zap.Int("member count", g.MemberCount),
+			zap.Int("members available", len(g.Members)),
+		)
+	}
+}
+
+func guildLeaveHandler(b *Bot) func(s *discordgo.Session, g *discordgo.GuildDelete) {
+	return func(s *discordgo.Session, g *discordgo.GuildDelete) {
+		if !g.Unavailable {
 			return
 		}
-		fmt.Println("finished loading " + guild.Name)
+		b.Log.Info("removed from guild",
+			zap.String("id", g.ID),
+		)
+	}
+}
+
+func memberChunkHandler(b *Bot) func(s *discordgo.Session, g *discordgo.GuildMembersChunk) {
+	return func(s *discordgo.Session, g *discordgo.GuildMembersChunk) {
+		if g.ChunkIndex == g.ChunkCount-1 {
+			// I don't know if this will work with several shards
+			guild, err := s.Guild(g.GuildID)
+			if err != nil {
+				return
+			}
+			b.Log.Info("finished loading guild",
+				zap.String("name", guild.Name),
+			)
+		}
 	}
 }

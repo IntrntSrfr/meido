@@ -3,9 +3,8 @@ package mio
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/bwmarrin/discordgo"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 	"runtime/debug"
 	"sort"
@@ -20,13 +19,15 @@ type Discord struct {
 	ownerIds []string
 
 	messageChan chan *DiscordMessage
+	logger      *zap.Logger
 }
 
 // NewDiscord takes in a token and creates a Discord object.
-func NewDiscord(token string) *Discord {
+func NewDiscord(token string, logger *zap.Logger) *Discord {
 	return &Discord{
 		token:       token,
 		messageChan: make(chan *DiscordMessage, 256),
+		logger:      logger.Named("discord"),
 	}
 }
 
@@ -38,7 +39,6 @@ func (d *Discord) Open() error {
 	}
 
 	d.Sessions = make([]*discordgo.Session, shardCount)
-
 	for i := 0; i < shardCount; i++ {
 		s, err := discordgo.New("Bot " + d.token)
 		if err != nil {
@@ -56,7 +56,7 @@ func (d *Discord) Open() error {
 		s.AddHandler(d.onMessageDelete)
 
 		d.Sessions[i] = s
-		fmt.Println("created session:", i)
+		d.logger.Info("created session", zap.Int("sessionID", i))
 	}
 	d.Sess = d.Sessions[0]
 
@@ -98,19 +98,19 @@ func (d *Discord) Close() {
 	for _, sess := range d.Sessions {
 		err := sess.Close()
 		if err != nil {
-			fmt.Println("failed to close session", sess.ShardID)
+			d.logger.Error("failed to close session", zap.Int("shardID", sess.ShardID), zap.Error(err))
 		}
 	}
 }
 
-// BotRecover is the recovery function used in the message create and update handler.
-func BotRecover(i interface{}) {
+// botRecover is the recovery function used in the message create and update handler.
+func (d *Discord) botRecover(i interface{}) {
 	if r := recover(); r != nil {
-		log.Println("Recovery:", r)
-		log.Println(string(debug.Stack()))
-		if data, err := json.MarshalIndent(i, "", "\t"); err == nil {
-			log.Println(string(data))
-		}
+		d.logger.Error("recovery needed",
+			zap.Any("error", r),
+			zap.Any("message", i),
+			zap.String("stack trace", string(debug.Stack())),
+		)
 	}
 }
 
@@ -120,7 +120,7 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 	if m.Author == nil || m.Message.Author.Bot {
 		return
 	}
-	defer BotRecover(m)
+	defer d.botRecover(m)
 
 	if m.GuildID != "" {
 		// for some reason the member field might still be nil and no one knows why
@@ -147,7 +147,7 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 	if m.Author == nil || m.Message.Author.Bot {
 		return
 	}
-	defer BotRecover(m)
+	defer d.botRecover(m)
 
 	if m.GuildID != "" {
 		if m.Member == nil {

@@ -121,6 +121,32 @@ func (p *PsqlDB) UpdateAquarium(aq *structs.Aquarium) error {
 	return err
 }
 
+func (p *PsqlDB) GetCreatureRarities() ([]*structs.CreatureRarity, error) {
+	var rarities []*structs.CreatureRarity
+	err := p.pool.Select(&rarities, "SELECT * FROM creature_rarity")
+	return rarities, err
+}
+
+func (p *PsqlDB) GetCreatures() ([]*structs.Creature, error) {
+	var creatures []*structs.Creature
+	err := p.pool.Select(&creatures, "SELECT * FROM creature")
+	if err != nil {
+		return nil, err
+	}
+	rarities, err := p.GetCreatureRarities()
+	if err != nil {
+		return nil, err
+	}
+	for _, c := range creatures {
+		for _, r := range rarities {
+			if c.RarityID == r.UID {
+				c.Rarity = r
+			}
+		}
+	}
+	return creatures, nil
+}
+
 func (p *PsqlDB) CreateGuild(guildID string) error {
 	_, err := p.pool.Exec("INSERT INTO guild VALUES($1)", guildID)
 	return err

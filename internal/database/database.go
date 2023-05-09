@@ -57,4 +57,6 @@ type AquariumDB interface {
 	CreateAquarium(userID string) error
 	GetAquarium(userID string) (*structs.Aquarium, error)
 	UpdateAquarium(aquarium *structs.Aquarium) error
+	GetCreatureRarities() ([]*structs.CreatureRarity, error)
+	GetCreatures() ([]*structs.Creature, error)
 }

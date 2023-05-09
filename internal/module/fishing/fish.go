@@ -1,7 +1,6 @@
 package fishing
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
@@ -9,7 +8,6 @@ import (
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
-	"strings"
 )
 
 // FishMod represents the ping mod
@@ -24,12 +22,16 @@ func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 	return &FishMod{
 		ModuleBase: mio.NewModule(bot, "Fishing", logger.Named("fishing")),
 		db:         db,
-		fs:         newFishingService(db, logger),
 	}
 }
 
 // Hook will hook the Module into the Bot.
 func (m *FishMod) Hook() error {
+	var err error
+	if m.fs, err = newFishingService(m.db, m.Log); err != nil {
+		return err
+	}
+
 	return m.RegisterCommands([]*mio.ModuleCommand{
 		newFishCommand(m),
 		newAquariumCommand(m),
@@ -58,6 +60,7 @@ func newFishCommand(m *FishMod) *mio.ModuleCommand {
 			}
 			creature, err := m.fs.goFishing(msg.AuthorID())
 			if err != nil {
+				_, _ = msg.Reply("There was an issue, please try again!")
 				m.Log.Error("could not fish", zap.Error(err))
 				return
 			}
@@ -72,7 +75,7 @@ func newAquariumCommand(m *FishMod) *mio.ModuleCommand {
 		Mod:           m,
 		Name:          "aquarium",
 		Description:   "Displays your or someone else's aquarium",
-		Triggers:      []string{"m?Aquarium", "m?aq"},
+		Triggers:      []string{"m?aquarium", "m?aq"},
 		Usage:         "m?Aquarium <userID>",
 		Cooldown:      5,
 		CooldownUser:  true,
@@ -98,32 +101,23 @@ func (m *FishMod) aquariumCommand(msg *mio.DiscordMessage) {
 		targetUser = targetMember.User
 	}
 
-	aq, err := m.db.GetAquarium(targetUser.ID)
-	if err != nil && err == sql.ErrNoRows {
-		reply := "You have no fish!"
-		if targetUser.ID != msg.AuthorID() {
-			reply = fmt.Sprintf("%s has no fish!", targetUser.String())
-		}
-		_, _ = msg.Reply(reply)
-		return
-	} else if err != nil {
+	aq, err := m.fs.getOrCreateAquarium(targetUser.ID)
+	if err != nil {
+		_, _ = msg.Reply("There was an issue, please try again!")
 		m.Log.Error("could not get aquarium", zap.Error(err))
 		return
 	}
-
-	// do this but for each field instead
-	var w []string
-	w = append(w, fmt.Sprintf("Common 🐟: %v", aq.Common))
-	w = append(w, fmt.Sprintf("Uncommon 🐠: %v", aq.Uncommon))
-	w = append(w, fmt.Sprintf("Rare 🐡: %v", aq.Rare))
-	w = append(w, fmt.Sprintf("Super rare 🦈: %v", aq.SuperRare))
-	w = append(w, fmt.Sprintf("Legendary 🎷🦈: %v", aq.Legendary))
-
 	embed := helpers.NewEmbed().
 		WithOkColor().
 		WithTitle(fmt.Sprintf("%v's aquarium", targetUser.String())).
-		WithThumbnail(targetUser.AvatarURL("256")).
-		WithDescription(strings.Join(w, "\n"))
+		WithThumbnail(targetUser.AvatarURL("256"))
+
+	// this is terrible
+	embed.AddField("Common", fmt.Sprintf("🐟: %v", aq.Common), true)
+	embed.AddField("Uncommon", fmt.Sprintf("🐠: %v", aq.Uncommon), true)
+	embed.AddField("Rare", fmt.Sprintf("🐠: %v", aq.Rare), true)
+	embed.AddField("Super rare", fmt.Sprintf("🦈: %v", aq.SuperRare), true)
+	embed.AddField("Legendary", fmt.Sprintf("🎷🦈: %v", aq.Legendary), true)
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
