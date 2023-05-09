@@ -193,7 +193,12 @@ func (b *Bot) runCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 
 	cmd.Run(msg)
 	b.emit("command_ran", &CommandRan{cmd, msg})
-	b.Log.Info("new command", zap.String("author", fmt.Sprintf("%v | %v", msg.Author(), msg.AuthorID())), zap.String("content", msg.RawContent()))
+	b.Log.Info("new command",
+		zap.String("id", msg.MessageID()),
+		zap.String("content", msg.RawContent()),
+		zap.String("author ID", msg.AuthorID()),
+		zap.String("author username", msg.Author().String()),
+	)
 }
 
 func (b *Bot) deliverCallbacks(msg *DiscordMessage) {

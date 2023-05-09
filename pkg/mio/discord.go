@@ -3,6 +3,7 @@ package mio
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"go.uber.org/zap"
 	"net/http"
@@ -24,11 +25,13 @@ type Discord struct {
 
 // NewDiscord takes in a token and creates a Discord object.
 func NewDiscord(token string, logger *zap.Logger) *Discord {
-	return &Discord{
+	d := &Discord{
 		token:       token,
 		messageChan: make(chan *DiscordMessage, 256),
 		logger:      logger.Named("discord"),
 	}
+	discordgo.Logger = discordgoLogger(d.logger.Named("discordgo"))
+	return d
 }
 
 // Open populates the Discord object with Sessions and returns a DiscordMessage channel.
@@ -81,6 +84,22 @@ func recommendedShards(token string) (int, error) {
 	}
 
 	return resp.Shards, nil
+}
+
+func discordgoLogger(l *zap.Logger) func(msgL, caller int, format string, a ...interface{}) {
+	return func(msgL, caller int, format string, a ...interface{}) {
+		msg := fmt.Sprintf(format, a...)
+		switch msgL {
+		case discordgo.LogError:
+			l.Error(msg)
+		case discordgo.LogWarning:
+			l.Warn(msg)
+		case discordgo.LogInformational:
+			l.Info(msg)
+		case discordgo.LogDebug:
+			l.Debug(msg)
+		}
+	}
 }
 
 // Run opens the Discord sessions.
