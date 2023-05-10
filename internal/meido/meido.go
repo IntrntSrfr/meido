@@ -6,6 +6,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/module/fishing"
+	"github.com/intrntsrfr/meido/internal/module/fun"
 	"github.com/intrntsrfr/meido/internal/module/utility"
 	"github.com/intrntsrfr/meido/internal/structs"
 	"github.com/intrntsrfr/meido/pkg/mio"
@@ -24,7 +25,7 @@ func New(config mio.Configurable, db database.DB, log *zap.Logger) *Meido {
 
 	//bot.RegisterModule(administration.New(bot, logger))
 	//bot.RegisterModule(testing.New(bot, logger))
-	//bot.RegisterModule(fun.New(bot, logger))
+	bot.RegisterModule(fun.New(bot, log))
 	bot.RegisterModule(fishing.New(bot, db, log))
 	bot.RegisterModule(utility.New(bot, db, log))
 	//bot.RegisterModule(moderation.New(bot, db, logger))

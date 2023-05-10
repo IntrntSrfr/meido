@@ -223,7 +223,7 @@ func readyHandler(b *Bot) func(s *discordgo.Session, r *discordgo.Ready) {
 
 func guildJoinHandler(b *Bot) func(s *discordgo.Session, g *discordgo.GuildCreate) {
 	return func(s *discordgo.Session, g *discordgo.GuildCreate) {
-		_ = s.RequestGuildMembers(g.ID, "", 0, false)
+		_ = s.RequestGuildMembers(g.ID, "", 0, "", false)
 		b.Log.Info("started loading guild",
 			zap.String("name", g.Guild.Name),
 			zap.Int("member count", g.MemberCount),

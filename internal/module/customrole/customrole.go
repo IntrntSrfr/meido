@@ -164,7 +164,6 @@ func newRemoveCustomRoleCommand(m *Module) *mio.ModuleCommand {
 			if msg.LenArgs() < 2 {
 				return
 			}
-
 			targetUser, err := msg.GetMemberOrUserAtArg(1)
 			if err != nil {
 				_, _ = msg.Reply("Could not find user")
@@ -209,13 +208,11 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
-
 	var (
 		err     error
 		oldRole *discordgo.Role
 		target  *discordgo.Member
 	)
-
 	g, err := msg.Discord.Guild(msg.Message.GuildID)
 	if err != nil {
 		_, _ = msg.Reply("some error occurred")
@@ -227,16 +224,15 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 		if msg.Args()[1] != "name" && msg.Args()[1] != "color" {
 			return
 		}
-
 		if allow, err := msg.Discord.HasPermissions(msg.Message.ChannelID, discordgo.PermissionManageRoles); err != nil || !allow {
-			_, _ = msg.Reply("I am missing 'manage roles' permissions!")
+			_, _ = msg.Reply("I am missing `manage roles` permissions!")
 			return
 		}
 
 		ur, err := m.db.GetCustomRole(msg.GuildID(), msg.AuthorID())
 		if err != nil && err != sql.ErrNoRows {
 			m.Log.Error("error fetching user role", zap.Error(err))
-			_, _ = msg.Reply("there was an error, please try again")
+			_, _ = msg.Reply("There was an issue, please try again!")
 			return
 		} else if err == sql.ErrNoRows {
 			_, _ = msg.Reply("No custom role set")
@@ -248,21 +244,21 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 				oldRole = role
 			}
 		}
-
 		if oldRole == nil {
 			_, _ = msg.Reply("Could not find custom role")
+			return
+		}
+		topBotRole := msg.Discord.HighestRolePosition(msg.GuildID(), msg.Sess.State.User.ID)
+		if oldRole.Position >= topBotRole {
+			_, _ = msg.Reply("I cannot edit this role, it is above me in the role hierarchy!")
 			return
 		}
 
 		if msg.Args()[1] == "name" {
 			newName := strings.Join(msg.RawArgs()[2:], " ")
-			if _, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, newName, oldRole.Color, oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable); err != nil {
-				if strings.Contains(err.Error(), strconv.Itoa(discordgo.ErrCodeMissingPermissions)) {
-					_, _ = msg.Reply("Missing permissions")
-					return
-				}
+			if _, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, &discordgo.RoleParams{Name: newName}); err != nil {
 				_, _ = msg.Reply("There was an issue, please try again!")
-				m.Log.Error("could not edit custom role", zap.Error(err))
+				m.Log.Error("could not edit custom role name", zap.Error(err))
 				return
 			}
 			embed := helpers.NewEmbed().
@@ -274,11 +270,13 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 			clr := strings.TrimPrefix(msg.Args()[2], "#")
 			color, err := strconv.ParseInt(clr, 16, 64)
 			if err != nil || color < 0 || color > 0xFFFFFF {
-				_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code.", Color: utils.ColorCritical})
+				_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code", Color: utils.ColorCritical})
 				return
 			}
-			if _, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, oldRole.Name, int(color), oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable); err != nil {
-				_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error(), Color: utils.ColorCritical})
+			colorInt := int(color)
+			if _, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, &discordgo.RoleParams{Color: &colorInt}); err != nil {
+				_, _ = msg.Reply("There was an issue, please try again!")
+				m.Log.Error("could not edit custom role color", zap.Error(err))
 				return
 			}
 			embed := helpers.NewEmbed().
@@ -319,7 +317,7 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 		}
 	}
 	if customRole == nil {
-		_, _ = msg.Reply("the custom role is broken, wait for someone to fix it or try setting a new userrole")
+		_, _ = msg.Reply("The custom role is broken, wait for someone to fix it or try setting a new custom role")
 		return
 	}
 

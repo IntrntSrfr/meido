@@ -142,7 +142,7 @@ func newServerIconCommand(m *Module) *mio.ModuleCommand {
 			embed := helpers.NewEmbed().
 				WithTitle(g.Name).
 				WithOkColor().
-				WithImageUrl(fmt.Sprintf("%v?size=2048", g.IconURL()))
+				WithImageUrl(g.IconURL("1024"))
 			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}

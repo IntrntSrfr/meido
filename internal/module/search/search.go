@@ -3,11 +3,11 @@ package search
 import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
+	"github.com/google/uuid"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/internal/module/search/service"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
-	"math/rand"
 	"strings"
 	"time"
 )
@@ -143,14 +143,12 @@ func newImageCommand(m *Module) *mio.ModuleCommand {
 			if msg.LenArgs() < 2 {
 				return
 			}
-
 			query := strings.Join(msg.Args()[1:], " ")
 			links, err := m.search.SearchGoogleImages(query)
 			if err != nil {
 				_, _ = msg.Reply("There was an issue, please try again!")
 				return
 			}
-
 			if len(links) < 1 {
 				_, _ = msg.Reply("I found 0 results for that :(")
 				return
@@ -163,10 +161,9 @@ func newImageCommand(m *Module) *mio.ModuleCommand {
 				WithImageUrl(links[0]).
 				WithFooter(fmt.Sprintf("Image [ %v / %v ]", 1, len(links)), "")
 
-			nextID := fmt.Sprint(rand.Intn(12345))
-			prevID := fmt.Sprint(rand.Intn(12345))
-			stopID := fmt.Sprint(rand.Intn(12345))
-
+			nextID := uuid.New().String()
+			prevID := uuid.New().String()
+			stopID := uuid.New().String()
 			replyData := &discordgo.MessageSend{
 				Components: []discordgo.MessageComponent{
 					&discordgo.ActionsRow{
@@ -189,7 +186,7 @@ func newImageCommand(m *Module) *mio.ModuleCommand {
 						},
 					},
 				},
-				Reference: &discordgo.MessageReference{MessageID: msg.Message.ID, ChannelID: msg.ChannelID(), GuildID: msg.GuildID()},
+				Reference: &discordgo.MessageReference{MessageID: msg.MessageID(), ChannelID: msg.ChannelID(), GuildID: msg.GuildID()},
 				Embed:     embed.Build(),
 			}
 

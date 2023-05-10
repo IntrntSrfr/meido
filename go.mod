@@ -1,25 +1,24 @@
 module github.com/intrntsrfr/meido
 
-go 1.19
+go 1.20
 
 require (
-	github.com/bwmarrin/discordgo v0.24.0
-	github.com/dustin/go-humanize v1.0.0
+	github.com/bwmarrin/discordgo v0.27.1
+	github.com/dustin/go-humanize v1.0.1
+	github.com/intrntsrfr/gol v0.0.0-20230204094040-9acd533ddee3
 	github.com/intrntsrfr/owo v0.0.0-20190908123752-c365293bebfd
-	github.com/jmoiron/sqlx v1.2.0
-	github.com/lib/pq v1.8.0
-	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646
-	go.uber.org/zap v1.21.0
+	github.com/jmoiron/sqlx v1.3.5
+	github.com/lib/pq v1.10.9
+	github.com/sashabaranov/go-gpt3 v0.0.0-20220314221030-260ef874de6c
+	go.uber.org/zap v1.24.0
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324
 )
 
 require (
-	github.com/gorilla/websocket v1.4.2 // indirect
-	github.com/intrntsrfr/gol v0.0.0-20230204094040-9acd533ddee3 // indirect
-	github.com/sashabaranov/go-gpt3 v0.0.0-20220314221030-260ef874de6c // indirect
-	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/multierr v1.8.0 // indirect
-	golang.org/x/crypto v0.0.0-20210421170649-83a5a9bb288b // indirect
-	golang.org/x/sys v0.0.0-20210510120138-977fb7262007 // indirect
-	google.golang.org/appengine v1.6.7 // indirect
+	github.com/google/uuid v1.3.0 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
+	golang.org/x/crypto v0.9.0 // indirect
+	golang.org/x/sys v0.8.0 // indirect
 )

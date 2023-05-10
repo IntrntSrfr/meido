@@ -66,10 +66,14 @@ type DiscordMessage struct {
 
 // Reply replies directly to a DiscordMessage
 func (m *DiscordMessage) Reply(data string) (*discordgo.Message, error) {
-	return m.Sess.ChannelMessageSendReply(m.ChannelID(), data, &discordgo.MessageReference{
-		MessageID: m.MessageID(),
-		ChannelID: m.ChannelID(),
-		GuildID:   m.GuildID(),
+	return m.Sess.ChannelMessageSendComplex(m.ChannelID(), &discordgo.MessageSend{
+		Content:         data,
+		AllowedMentions: &discordgo.MessageAllowedMentions{},
+		Reference: &discordgo.MessageReference{
+			MessageID: m.MessageID(),
+			ChannelID: m.ChannelID(),
+			GuildID:   m.GuildID(),
+		},
 	})
 }
 
@@ -90,10 +94,8 @@ func (m *DiscordMessage) ReplyAndDelete(data string, d time.Duration) (*discordg
 // ReplyEmbed replies directly to a DiscordMessage with an embed.
 func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
 	return m.Sess.ChannelMessageSendComplex(m.ChannelID(), &discordgo.MessageSend{
-		Embed: embed,
-		AllowedMentions: &discordgo.MessageAllowedMentions{
-			Parse: []discordgo.AllowedMentionType{},
-		},
+		Embed:           embed,
+		AllowedMentions: &discordgo.MessageAllowedMentions{},
 		Reference: &discordgo.MessageReference{
 			MessageID: m.MessageID(),
 			ChannelID: m.ChannelID(),

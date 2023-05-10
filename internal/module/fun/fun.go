@@ -23,17 +23,17 @@ func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 }
 
 func (m *Module) Hook() error {
-	return m.RegisterCommand(newGameOfLifeCmd(m))
+	return m.RegisterCommand(newLifeCommand(m))
 }
 
-func newGameOfLifeCmd(m *Module) *mio.ModuleCommand {
+func newLifeCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "life",
 		Description:   "Shows a gif of Conway's Game of Life. If no seed is provided, it uses your user ID",
-		Triggers:      []string{"m?gameoflife", "m?gol"},
+		Triggers:      []string{"m?life"},
 		Usage:         "m?life | m?life <seed | user>",
-		Cooldown:      2,
+		Cooldown:      5,
 		CooldownUser:  false,
 		RequiredPerms: 0,
 		RequiresOwner: false,
@@ -55,7 +55,7 @@ func newGameOfLifeCmd(m *Module) *mio.ModuleCommand {
 			}
 
 			_, _ = msg.ReplyComplex(&discordgo.MessageSend{
-				Content: fmt.Sprintf("Here you go! Seed: %v", seed),
+				Content: fmt.Sprintf("Here you go! Seed: `%v`", seed),
 				File: &discordgo.File{
 					Name:   "game.gif",
 					Reader: buf,
@@ -65,6 +65,7 @@ func newGameOfLifeCmd(m *Module) *mio.ModuleCommand {
 					ChannelID: msg.ChannelID(),
 					GuildID:   msg.GuildID(),
 				},
+				AllowedMentions: &discordgo.MessageAllowedMentions{},
 			})
 		},
 	}
