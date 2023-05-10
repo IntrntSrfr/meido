@@ -18,67 +18,64 @@ type MediaConvertMod struct {
 
 func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 	return &MediaConvertMod{
-		ModuleBase: mio.NewModule(bot, "Media", logger),
+		ModuleBase: mio.NewModule(bot, "Media", logger.Named("mediaconvert")),
 	}
 }
 
 func (m *MediaConvertMod) Hook() error {
-	return m.RegisterPassive(NewJpgLargeConvertPassive(m))
+	return m.RegisterPassive(newJpgLargeConvertPassive(m))
 }
 
-func NewJpgLargeConvertPassive(m *MediaConvertMod) *mio.ModulePassive {
+func newJpgLargeConvertPassive(m *MediaConvertMod) *mio.ModulePassive {
 	return &mio.ModulePassive{
 		Mod:          m,
 		Name:         "jpglargeconvert",
 		Description:  "Automatically converts jpglarge files to jpg",
 		AllowedTypes: mio.MessageTypeCreate,
 		Enabled:      true,
-		Run:          m.jpglargeconvertPassive,
+		Run:          m.jpgLargeConvertPassive,
 	}
 }
 
-func (m *MediaConvertMod) jpglargeconvertPassive(msg *mio.DiscordMessage) {
+func (m *MediaConvertMod) jpgLargeConvertPassive(msg *mio.DiscordMessage) {
 	if len(msg.Message.Attachments) < 1 {
 		return
 	}
-
 	var files []*discordgo.File
-
 	for _, att := range msg.Message.Attachments {
 		func() {
 			if filepath.Ext(att.URL) != ".jpglarge" {
 				return
 			}
-
 			res, err := http.Get(att.URL)
 			if err != nil {
 				return
 			}
-
 			if res.StatusCode != 200 {
 				return
 			}
-
 			defer res.Body.Close()
-
 			files = append(files, &discordgo.File{
 				Name:   "converted.jpg",
 				Reader: res.Body,
 			})
 		}()
 	}
-
 	if len(files) < 1 {
 		return
 	}
-
-	msg.Sess.ChannelMessageSendComplex(msg.Message.ChannelID, &discordgo.MessageSend{
-		Content: fmt.Sprintf("%v, I converted that to JPG for you", msg.Author().Mention()),
+	_, _ = msg.ReplyComplex(&discordgo.MessageSend{
+		Content: fmt.Sprintf("I converted that to .jpg for you"),
 		Files:   files,
+		Reference: &discordgo.MessageReference{
+			MessageID: msg.MessageID(),
+			ChannelID: msg.ChannelID(),
+			GuildID:   msg.GuildID(),
+		},
 	})
 }
 
-func NewMediaConvertCommand(m *MediaConvertMod) *mio.ModuleCommand {
+func newMediaConvertCommand(m *MediaConvertMod) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "mediaconvert",
@@ -91,11 +88,11 @@ func NewMediaConvertCommand(m *MediaConvertMod) *mio.ModuleCommand {
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
 		Enabled:       true,
-		Run:           m.mediaconvertCommand,
+		Run:           m.mediaConvertCommand,
 	}
 }
 
-func (m *MediaConvertMod) mediaconvertCommand(msg *mio.DiscordMessage) {
+func (m *MediaConvertMod) mediaConvertCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 3 {
 		return
 	}

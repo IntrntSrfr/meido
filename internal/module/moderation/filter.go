@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func NewFilterWordCommand(m *Module) *mio.ModuleCommand {
+func newFilterWordCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "filterword",
@@ -57,7 +57,7 @@ func (m *Module) filterwordCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewFilterWordListCommand(m *Module) *mio.ModuleCommand {
+func newFilterWordListCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "filterwordlist",
@@ -104,7 +104,7 @@ func (m *Module) filterwordlistCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply(builder.String())
 }
 
-func NewClearFilterCommand(m *Module) *mio.ModuleCommand {
+func newClearFilterCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "clearfilter",
@@ -161,7 +161,7 @@ func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply("All filters successfully deleted")
 }
 
-func NewModerationSettingsCommand(m *Module) *mio.ModuleCommand {
+func newModerationSettingsCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "moderationsettings",
@@ -247,7 +247,7 @@ func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewCheckFilterPassive(m *Module) *mio.ModulePassive {
+func newCheckFilterPassive(m *Module) *mio.ModulePassive {
 	return &mio.ModulePassive{
 		Mod:          m,
 		Name:         "checkfilter",

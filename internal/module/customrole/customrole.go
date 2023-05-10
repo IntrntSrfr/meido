@@ -38,7 +38,7 @@ func (m *Module) Hook() error {
 		newSetCustomRoleCommand(m),
 		newRemoveCustomRoleCommand(m),
 		newMyRoleCommand(m),
-		NewListCustomRolesCommand(m),
+		newListCustomRolesCommand(m),
 	})
 }
 
@@ -329,7 +329,7 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func NewListCustomRolesCommand(m *Module) *mio.ModuleCommand {
+func newListCustomRolesCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "listcustomroles",

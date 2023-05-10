@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-func NewWarnCommand(m *Module) *mio.ModuleCommand {
+func newWarnCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "warn",
@@ -123,7 +123,7 @@ func (m *Module) warnCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func NewWarnLogCommand(m *Module) *mio.ModuleCommand {
+func newWarnLogCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "warnlog",
@@ -222,7 +222,7 @@ func (m *Module) warnlogCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func NewWarnCountCommand(m *Module) *mio.ModuleCommand {
+func newWarnCountCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "warncount",
@@ -266,7 +266,7 @@ func (m *Module) warncountCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply(fmt.Sprintf("%v is at %v/%v warns", targetUser.String(), len(warns), gc.MaxWarns))
 }
 
-func NewClearWarnCommand(m *Module) *mio.ModuleCommand {
+func newClearWarnCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "pardon",
@@ -362,7 +362,7 @@ func (m *Module) clearwarnCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply("Updated warning")
 }
 
-func NewClearAllWarnsCommand(m *Module) *mio.ModuleCommand {
+func newClearAllWarnsCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "pardonall",

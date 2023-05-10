@@ -8,16 +8,14 @@ import (
 	"strings"
 )
 
-// AIMod represents the ping mod
-type AIMod struct {
+type Module struct {
 	*mio.ModuleBase
 	gptClient *gogpt.Client
 	engine    string
 }
 
-// New returns a new TestMod.
 func New(bot *mio.Bot, logger *zap.Logger, gptClient *gogpt.Client, engine string) mio.Module {
-	return &AIMod{
+	return &Module{
 		ModuleBase: mio.NewModule(bot, "AI", logger),
 		gptClient:  gptClient,
 		engine:     engine,
@@ -25,12 +23,11 @@ func New(bot *mio.Bot, logger *zap.Logger, gptClient *gogpt.Client, engine strin
 }
 
 // Hook will hook the Module into the Bot.
-func (m *AIMod) Hook() error {
-	return m.RegisterCommand(NewPromptCommand(m))
+func (m *Module) Hook() error {
+	return m.RegisterCommand(newPromptCommand(m))
 }
 
-// NewPromptCommand returns a new ping command.
-func NewPromptCommand(m *AIMod) *mio.ModuleCommand {
+func newPromptCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "prompt",

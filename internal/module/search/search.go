@@ -28,7 +28,6 @@ func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 
 func (m *Module) Hook() error {
 	m.Bot.Discord.AddEventHandler(m.imageInteractionHandler)
-
 	return m.RegisterCommands([]*mio.ModuleCommand{
 		newWeatherCommand(m),
 		newYouTubeCommand(m),
@@ -55,32 +54,29 @@ func newWeatherCommand(m *Module) *mio.ModuleCommand {
 			if msg.LenArgs() < 2 {
 				return
 			}
-
 			query := strings.TrimSpace(strings.Join(msg.RawArgs()[1:], " "))
 			if query == "" {
 				return
 			}
-
 			d, err := m.search.GetWeatherData(query)
 			if err != nil {
 				_, _ = msg.Reply("I could not find that city :(")
 				return
 			}
-
 			f := helpers.CelsiusToFahrenheit
 			embed := helpers.NewEmbed().
-				WithDescription(fmt.Sprintf("[%v, %v](https://openweathermap.org/city/%v)", d.Name, d.Sys.Country, d.ID)).
+				WithDescription(fmt.Sprintf("Weather in [%v, %v](https://openweathermap.org/city/%v)", d.Name, d.Sys.Country, d.ID)).
 				WithOkColor()
 
 			if len(d.Weather) > 0 {
-				embed.AddField("Weather", d.Weather[0].Main, true)
+				embed.AddField("⛅ Weather", d.Weather[0].Main, true)
 			}
-			embed.AddField("Temperature", fmt.Sprintf("%.1f°C / %.1f°F", d.Main.Temp, f(d.Main.Temp)), true).
+			embed.AddField("🌡️ Temperature", fmt.Sprintf("%.1f°C / %.1f°F", d.Main.Temp, f(d.Main.Temp)), true).
 				AddField("Min | Max", fmt.Sprintf("%.1f°C | %.1f°C\n%.1f°F | %.1f°F",
 					d.Main.TempMin, d.Main.TempMax, f(d.Main.TempMin), f(d.Main.TempMax)), true).
-				AddField("Wind", fmt.Sprintf("%.1f m/s", d.Wind.Speed), true).
-				AddField("Sunrise", fmt.Sprintf("<t:%v:R>", d.Sys.Sunrise), true).
-				AddField("Sunset", fmt.Sprintf("<t:%v:R>", d.Sys.Sunset), true).
+				AddField("💨 Wind", fmt.Sprintf("%.1f m/s", d.Wind.Speed), true).
+				AddField("🌅 Sunrise", fmt.Sprintf("<t:%v:R>", d.Sys.Sunrise), true).
+				AddField("🌇 Sunset", fmt.Sprintf("<t:%v:R>", d.Sys.Sunset), true).
 				WithFooter("Powered by openweathermap.org", "")
 			_, _ = msg.ReplyEmbed(embed.Build())
 		},

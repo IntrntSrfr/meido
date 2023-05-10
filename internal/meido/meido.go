@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/module/administration"
 	"github.com/intrntsrfr/meido/internal/module/fishing"
 	"github.com/intrntsrfr/meido/internal/module/fun"
+	"github.com/intrntsrfr/meido/internal/module/mediaconvertmod"
+	"github.com/intrntsrfr/meido/internal/module/search"
 	"github.com/intrntsrfr/meido/internal/module/utility"
 	"github.com/intrntsrfr/meido/internal/structs"
 	"github.com/intrntsrfr/meido/pkg/mio"
@@ -23,15 +26,15 @@ type Meido struct {
 func New(config mio.Configurable, db database.DB, log *zap.Logger) *Meido {
 	bot := mio.NewBot(config, db, log.Named("mio"))
 
-	//bot.RegisterModule(administration.New(bot, logger))
+	bot.RegisterModule(administration.New(bot, log))
 	//bot.RegisterModule(testing.New(bot, logger))
 	bot.RegisterModule(fun.New(bot, log))
 	bot.RegisterModule(fishing.New(bot, db, log))
 	bot.RegisterModule(utility.New(bot, db, log))
 	//bot.RegisterModule(moderation.New(bot, db, logger))
 	//bot.RegisterModule(customrole.New(bot, db, logger))
-	//bot.RegisterModule(search.New(bot, logger))
-	//bot.RegisterModule(mediaconvertmod.New())
+	bot.RegisterModule(search.New(bot, log))
+	bot.RegisterModule(mediaconvertmod.New(bot, log))
 	//bot.RegisterModule(aimod.New(gptClient, config.GPT3Engine))
 
 	return &Meido{

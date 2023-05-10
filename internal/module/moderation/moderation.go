@@ -74,34 +74,34 @@ func (m *Module) Hook() error {
 
 	m.Bot.Discord.AddEventHandler(addAutoRoleOnJoin(m))
 
-	if err := m.RegisterPassive(NewCheckFilterPassive(m)); err != nil {
+	if err := m.RegisterPassive(newCheckFilterPassive(m)); err != nil {
 		return err
 	}
 
 	return m.RegisterCommands([]*mio.ModuleCommand{
-		NewBanCommand(m),
-		NewUnbanCommand(m),
-		NewHackbanCommand(m),
-		NewKickCommand(m),
-		NewWarnCommand(m),
-		NewClearWarnCommand(m),
-		NewWarnLogCommand(m),
-		NewClearAllWarnsCommand(m),
-		NewWarnCountCommand(m),
-		NewFilterWordCommand(m),
-		NewClearFilterCommand(m),
-		NewFilterWordListCommand(m),
-		NewModerationSettingsCommand(m),
-		NewLockdownChannelCommand(m),
-		NewUnlockChannelCommand(m),
-		NewMuteCommand(m),
-		NewUnmuteCommand(m),
+		newBanCommand(m),
+		newUnbanCommand(m),
+		newHackbanCommand(m),
+		newKickCommand(m),
+		newWarnCommand(m),
+		newClearWarnCommand(m),
+		newWarnLogCommand(m),
+		newClearAllWarnsCommand(m),
+		newWarnCountCommand(m),
+		newFilterWordCommand(m),
+		newClearFilterCommand(m),
+		newFilterWordListCommand(m),
+		newModerationSettingsCommand(m),
+		newLockdownChannelCommand(m),
+		newUnlockChannelCommand(m),
+		newMuteCommand(m),
+		newUnmuteCommand(m),
 		newSetAutoRoleCommand(m),
 		newRemoveAutoRoleCommand(m),
 	})
 }
 
-func NewBanCommand(m *Module) *mio.ModuleCommand {
+func newBanCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "ban",
@@ -214,7 +214,7 @@ func (m *Module) banCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func NewUnbanCommand(m *Module) *mio.ModuleCommand {
+func newUnbanCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "unban",
@@ -258,7 +258,7 @@ func (m *Module) unbanCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func NewHackbanCommand(m *Module) *mio.ModuleCommand {
+func newHackbanCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "hackban",
@@ -294,7 +294,7 @@ func NewHackbanCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func NewKickCommand(m *Module) *mio.ModuleCommand {
+func newKickCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:           m,
 		Name:          "kick",

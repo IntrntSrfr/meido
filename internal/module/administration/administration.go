@@ -126,7 +126,6 @@ func newForwardDmsPassive(m *Module) *mio.ModulePassive {
 			if !msg.IsDM() {
 				return
 			}
-
 			embed := helpers.NewEmbed().
 				WithTitle(fmt.Sprintf("Message from %v", msg.Message.Author.String())).
 				WithOkColor().
