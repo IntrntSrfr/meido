@@ -125,10 +125,40 @@ func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 1 {
 		return
 	}
+	rpl, err := msg.Reply("Are you sure you want to REMOVE ALL FILTERS? Please reply `YES`, in all caps, if you are")
+	if err != nil {
+		_, _ = msg.Reply("There was an issue, please try again")
+		return
+	}
+	ch, err := m.Bot.Callbacks.Make(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
+	if err != nil {
+		_, _ = msg.Reply("There was an issue, please try again")
+		return
+	}
+	defer m.Bot.Callbacks.Delete(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
 
-	// TODO: ADD A CONFIRMATION DIALOG HERE
-	_ = m.db.DeleteGuildFilters(msg.GuildID())
-	_, _ = msg.Reply("Filter was cleared")
+	var reply *mio.DiscordMessage
+	t := time.NewTimer(time.Second * 15)
+	for {
+		select {
+		case reply = <-ch:
+		case <-t.C:
+			_ = msg.Sess.ChannelMessageDelete(rpl.ChannelID, rpl.ID)
+			_ = msg.Sess.ChannelMessageDelete(msg.ChannelID(), msg.Message.ID)
+			return
+		}
+		if strings.ToLower(reply.RawContent()) == "YES" {
+			_ = msg.Sess.ChannelMessageDelete(reply.ChannelID(), reply.Message.ID)
+			_ = msg.Sess.ChannelMessageDelete(msg.ChannelID(), msg.Message.ID)
+			break
+		}
+	}
+	if err = m.db.DeleteGuildFilters(msg.GuildID()); err != nil {
+		_, _ = msg.Reply("There was an issue, please try again")
+		m.Log.Error("unable to delete guild filters", zap.Any("message", msg))
+		return
+	}
+	_, _ = msg.Reply("All filters successfully deleted")
 }
 
 func NewModerationSettingsCommand(m *Module) *mio.ModuleCommand {
@@ -157,7 +187,6 @@ func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
-
 	gc, err := m.db.GetGuild(msg.GuildID())
 	if err != nil {
 		_, _ = msg.Reply("There was an issue, please try again")

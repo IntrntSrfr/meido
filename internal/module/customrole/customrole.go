@@ -94,7 +94,6 @@ func newSetCustomRoleCommand(m *Module) *mio.ModuleCommand {
 			if msg.LenArgs() < 3 {
 				return
 			}
-
 			targetMember, err := msg.GetMemberAtArg(1)
 			if err != nil {
 				_, _ = msg.Reply("Could not find that user")
@@ -240,7 +239,7 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 			_, _ = msg.Reply("there was an error, please try again")
 			return
 		} else if err == sql.ErrNoRows {
-			_, _ = msg.Reply("No custom role set.")
+			_, _ = msg.Reply("No custom role set")
 			return
 		}
 
@@ -251,60 +250,47 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 		}
 
 		if oldRole == nil {
-			_, _ = msg.Reply("couldnt find role")
+			_, _ = msg.Reply("Could not find custom role")
 			return
 		}
 
 		if msg.Args()[1] == "name" {
 			newName := strings.Join(msg.RawArgs()[2:], " ")
-
-			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, newName, oldRole.Color, oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
-			if err != nil {
+			if _, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, newName, oldRole.Color, oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable); err != nil {
 				if strings.Contains(err.Error(), strconv.Itoa(discordgo.ErrCodeMissingPermissions)) {
-					_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Missing permissions.", Color: utils.ColorCritical})
+					_, _ = msg.Reply("Missing permissions")
 					return
 				}
-				_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error() + "`.", Color: utils.ColorCritical})
+				_, _ = msg.Reply("There was an issue, please try again!")
+				m.Log.Error("could not edit custom role", zap.Error(err))
 				return
 			}
-
-			embed := &discordgo.MessageEmbed{
-				Color:       oldRole.Color,
-				Description: fmt.Sprintf("Role name changed from %v to %v", oldRole.Name, newName),
-			}
-			_, _ = msg.ReplyEmbed(embed)
+			embed := helpers.NewEmbed().
+				WithColor(oldRole.Color).
+				WithDescription(fmt.Sprintf("Role name changed from %v to %v", oldRole.Name, newName))
+			_, _ = msg.ReplyEmbed(embed.Build())
 
 		} else if msg.Args()[1] == "color" {
-			clr := msg.Args()[2]
-			if strings.HasPrefix(clr, "#") {
-				clr = clr[1:]
-			}
-
+			clr := strings.TrimPrefix(msg.Args()[2], "#")
 			color, err := strconv.ParseInt(clr, 16, 64)
 			if err != nil || color < 0 || color > 0xFFFFFF {
 				_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code.", Color: utils.ColorCritical})
 				return
 			}
-
-			_, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, oldRole.Name, int(color), oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable)
-			if err != nil {
+			if _, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, oldRole.Name, int(color), oldRole.Hoist, oldRole.Permissions, oldRole.Mentionable); err != nil {
 				_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Some error occurred: `" + err.Error(), Color: utils.ColorCritical})
 				return
 			}
-
-			embed := &discordgo.MessageEmbed{
-				Color: int(color),
-				//Description: fmt.Sprintf("Color changed from #%v to #%v", fmt.Sprintf("%06X", oldRole.Color), fmt.Sprintf("%06X", color)),
-				Description: fmt.Sprintf("Color changed from #%v to #%v", strconv.FormatInt(int64(oldRole.Color), 16), strconv.FormatInt(color, 16)), // fmt.Sprintf("%06X", color)),
-			}
-			_, _ = msg.ReplyEmbed(embed)
+			embed := helpers.NewEmbed().
+				WithColor(int(color)).
+				WithDescription(fmt.Sprintf("Color changed from #%v to #%v", oldRole.Color, color))
+			_, _ = msg.ReplyEmbed(embed.Build())
 		}
 		return
 	case la == 1:
 		target = msg.Member()
 	case la == 2:
-		target, err = msg.GetMemberAtArg(1)
-		if err != nil {
+		if target, err = msg.GetMemberAtArg(1); err != nil {
 			_, _ = msg.Reply("Could not find that user")
 			return
 		}

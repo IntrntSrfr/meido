@@ -30,7 +30,6 @@ func (m *Module) muteCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
-
 	duration := time.Hour * 24
 	if msg.LenArgs() > 2 {
 		pDur, err := time.ParseDuration(msg.Args()[2])
@@ -99,29 +98,18 @@ func (m *Module) unmuteCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() < 2 {
 		return
 	}
-
 	// get the target member
 	targetMember, err := msg.GetMemberAtArg(1)
 	if err != nil {
 		return
 	}
-
-	// user is not timed out
 	if targetMember.CommunicationDisabledUntil == nil {
 		return
 	}
-
 	if msg.AuthorID() == targetMember.User.ID {
-		_, _ = msg.Reply("you cannot unmute yourself")
 		return
 	}
-
-	// check if command hierarchy is valid
-	topUserRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.AuthorID())
-	topTargetRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, targetMember.User.ID)
-	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
-
-	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
+	if msg.GoodHierarchy(targetMember) {
 		_, _ = msg.Reply("no (you can only unmute users who are below you and me in the role hierarchy)")
 		return
 	}

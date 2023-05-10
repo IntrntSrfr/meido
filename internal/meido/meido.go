@@ -109,7 +109,7 @@ func insertGuild(m *Meido) func(s *discordgo.Session, g *discordgo.GuildCreate) 
 	}
 }
 
-const totalStatusDisplays = 3
+const totalStatusDisplays = 6
 
 func statusLoop(m *Meido) func(s *discordgo.Session, r *discordgo.Ready) {
 	statusTimer := time.NewTicker(time.Second * 15)
@@ -131,6 +131,15 @@ func statusLoop(m *Meido) func(s *discordgo.Session, r *discordgo.Ready) {
 					statusType = discordgo.ActivityTypeGame
 				case 2:
 					name = "Remember to stay sane"
+					statusType = discordgo.ActivityTypeGame
+				case 3:
+					name = "m?fish"
+					statusType = discordgo.ActivityTypeGame
+				case 4:
+					name = "Changed custom role commands"
+					statusType = discordgo.ActivityTypeGame
+				case 5:
+					name = "Auto roles are added!! Wow!!"
 					statusType = discordgo.ActivityTypeGame
 				}
 

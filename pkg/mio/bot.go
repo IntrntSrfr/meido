@@ -138,15 +138,12 @@ func (b *Bot) processCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	if !cmd.Enabled {
 		return
 	}
-
 	if msg.IsDM() && !cmd.AllowDMs {
 		return
 	}
-
 	if msg.Type()&cmd.AllowedTypes == 0 {
 		return
 	}
-
 	if cmd.RequiresOwner && !msg.Discord.IsBotOwner(msg) {
 		_, _ = msg.Reply("This command is owner only")
 		return

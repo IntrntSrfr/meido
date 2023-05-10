@@ -75,7 +75,7 @@ func (m *DiscordMessage) Reply(data string) (*discordgo.Message, error) {
 
 // ReplyAndDelete sends a message to a channel, then deletes it after a duration d
 func (m *DiscordMessage) ReplyAndDelete(data string, d time.Duration) (*discordgo.Message, error) {
-	r, err := m.Sess.ChannelMessageSend(m.ChannelID(), data)
+	r, err := m.Reply(data)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,17 @@ func (m *DiscordMessage) ReplyAndDelete(data string, d time.Duration) (*discordg
 
 // ReplyEmbed replies directly to a DiscordMessage with an embed.
 func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
-	return m.Sess.ChannelMessageSendEmbed(m.ChannelID(), embed)
+	return m.Sess.ChannelMessageSendComplex(m.ChannelID(), &discordgo.MessageSend{
+		Embed: embed,
+		AllowedMentions: &discordgo.MessageAllowedMentions{
+			Parse: []discordgo.AllowedMentionType{},
+		},
+		Reference: &discordgo.MessageReference{
+			MessageID: m.MessageID(),
+			ChannelID: m.ChannelID(),
+			GuildID:   m.GuildID(),
+		},
+	})
 }
 
 func (m *DiscordMessage) ReplyComplex(data *discordgo.MessageSend) (*discordgo.Message, error) {
@@ -136,6 +146,9 @@ func (m *DiscordMessage) HasPermissions(perm int64) (bool, error) {
 }
 
 func (m *DiscordMessage) IsBot() bool {
+	if m.Message.Author == nil {
+		return false
+	}
 	return m.Message.Author.Bot
 }
 
@@ -196,4 +209,13 @@ func (m *DiscordMessage) GetMemberOrUserAtArg(index int) (*discordgo.User, error
 		return m.GetUserAtArg(index)
 	}
 	return member.User, nil
+}
+
+// GoodHierarchy compares the bot user, author, and a target member, and returns whether the
+// targetMember is below both the bot and author in the role hierarchy
+func (m *DiscordMessage) GoodHierarchy(targetMember *discordgo.Member) bool {
+	topUserRole := m.Discord.HighestRolePosition(m.GuildID(), m.AuthorID())
+	topTargetRole := m.Discord.HighestRolePosition(m.GuildID(), targetMember.User.ID)
+	topBotRole := m.Discord.HighestRolePosition(m.GuildID(), m.Sess.State.User.ID)
+	return topUserRole > topTargetRole && topBotRole > topTargetRole
 }
