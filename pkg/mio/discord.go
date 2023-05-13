@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"go.uber.org/zap"
 	"net/http"
 	"runtime/debug"
 	"sort"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"go.uber.org/zap"
 )
 
 // Discord represents the part of the bot that deals with interaction with Discord.
@@ -38,7 +39,7 @@ func NewDiscord(token string, logger *zap.Logger) *Discord {
 func (d *Discord) Open() error {
 	shardCount, err := recommendedShards(d.token)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	d.Sessions = make([]*discordgo.Session, shardCount)
@@ -64,6 +65,26 @@ func (d *Discord) Open() error {
 	d.Sess = d.Sessions[0]
 
 	return nil
+}
+
+// Run opens the Discord sessions.
+func (d *Discord) Run() error {
+	for _, sess := range d.Sessions {
+		if err := sess.Open(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Close closes the Discord sessions
+func (d *Discord) Close() {
+	for _, sess := range d.Sessions {
+		err := sess.Close()
+		if err != nil {
+			d.logger.Error("failed to close session", zap.Int("shardID", sess.ShardID), zap.Error(err))
+		}
+	}
 }
 
 // recommendedShards asks discord for the recommended shardcount for the bot given the token.
@@ -98,26 +119,6 @@ func discordgoLogger(l *zap.Logger) func(msgL, caller int, format string, a ...i
 			l.Info(msg)
 		case discordgo.LogDebug:
 			l.Debug(msg)
-		}
-	}
-}
-
-// Run opens the Discord sessions.
-func (d *Discord) Run() error {
-	for _, sess := range d.Sessions {
-		if err := sess.Open(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Close closes the Discord sessions
-func (d *Discord) Close() {
-	for _, sess := range d.Sessions {
-		err := sess.Close()
-		if err != nil {
-			d.logger.Error("failed to close session", zap.Int("shardID", sess.ShardID), zap.Error(err))
 		}
 	}
 }

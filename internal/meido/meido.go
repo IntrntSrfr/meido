@@ -3,6 +3,9 @@ package meido
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/module/administration"
@@ -14,8 +17,6 @@ import (
 	"github.com/intrntsrfr/meido/internal/structs"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
-	"strings"
-	"time"
 )
 
 type Meido struct {
@@ -24,21 +25,8 @@ type Meido struct {
 }
 
 func New(config mio.Configurable, db database.DB, log *zap.Logger) *Meido {
-	bot := mio.NewBot(config, db, log.Named("mio"))
-
-	bot.RegisterModule(administration.New(bot, log))
-	//bot.RegisterModule(testing.New(bot, logger))
-	bot.RegisterModule(fun.New(bot, log))
-	bot.RegisterModule(fishing.New(bot, db, log))
-	bot.RegisterModule(utility.New(bot, db, log))
-	//bot.RegisterModule(moderation.New(bot, db, logger))
-	//bot.RegisterModule(customrole.New(bot, db, logger))
-	bot.RegisterModule(search.New(bot, log))
-	bot.RegisterModule(mediaconvertmod.New(bot, log))
-	//bot.RegisterModule(aimod.New(gptClient, config.GPT3Engine))
-
 	return &Meido{
-		Bot:    bot,
+		Bot:    mio.NewBot(config, db, log.Named("mio")),
 		logger: log,
 	}
 }
@@ -49,6 +37,17 @@ func (m *Meido) Run(useDefHandlers bool) error {
 	}
 
 	// register modules here
+	m.Bot.RegisterModule(administration.New(m.Bot, m.logger))
+	//m.Bot.RegisterModule(testing.New(m.Bot, m.logger))
+	m.Bot.RegisterModule(fun.New(m.Bot, m.logger))
+	m.Bot.RegisterModule(fishing.New(m.Bot, m.Bot.DB, m.logger))
+	m.Bot.RegisterModule(utility.New(m.Bot, m.Bot.DB, m.logger))
+	//m.Bot.RegisterModule(moderation.New(m.Bot, m.Bot.DB, m.logger))
+	//m.Bot.RegisterModule(customrole.New(m.Bot, m.Bot.DB, m.logger))
+	m.Bot.RegisterModule(search.New(m.Bot, m.logger))
+	m.Bot.RegisterModule(mediaconvertmod.New(m.Bot, m.logger))
+	//m.Bot.RegisterModule(aimod.New(gptClient, config.GPT3Engine))
+
 	// register mio event handlers here
 	m.registerMioHandlers()
 	// register discord event handlers here

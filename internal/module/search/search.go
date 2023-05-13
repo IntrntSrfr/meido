@@ -2,14 +2,15 @@ package search
 
 import (
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/internal/module/search/service"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
-	"strings"
-	"time"
 )
 
 type Module struct {
@@ -153,7 +154,6 @@ func newImageCommand(m *Module) *mio.ModuleCommand {
 			embed := helpers.NewEmbed().
 				WithTitle("Google Images search result").
 				WithOkColor().
-				WithAuthor(msg.Author().String(), msg.Author().AvatarURL("256")).
 				WithImageUrl(links[0]).
 				WithFooter(fmt.Sprintf("Image [ %v / %v ]", 1, len(links)), "")
 
@@ -182,8 +182,9 @@ func newImageCommand(m *Module) *mio.ModuleCommand {
 						},
 					},
 				},
-				Reference: &discordgo.MessageReference{MessageID: msg.MessageID(), ChannelID: msg.ChannelID(), GuildID: msg.GuildID()},
-				Embed:     embed.Build(),
+				Reference:       &discordgo.MessageReference{MessageID: msg.MessageID(), ChannelID: msg.ChannelID(), GuildID: msg.GuildID()},
+				AllowedMentions: &discordgo.MessageAllowedMentions{},
+				Embed:           embed.Build(),
 			}
 
 			reply, err := msg.ReplyComplex(replyData)
