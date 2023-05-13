@@ -37,17 +37,7 @@ func (m *Meido) Run(useDefHandlers bool) error {
 	}
 
 	// register modules here
-	m.Bot.RegisterModule(administration.New(m.Bot, m.logger))
-	//m.Bot.RegisterModule(testing.New(m.Bot, m.logger))
-	m.Bot.RegisterModule(fun.New(m.Bot, m.logger))
-	m.Bot.RegisterModule(fishing.New(m.Bot, m.Bot.DB, m.logger))
-	m.Bot.RegisterModule(utility.New(m.Bot, m.Bot.DB, m.logger))
-	//m.Bot.RegisterModule(moderation.New(m.Bot, m.Bot.DB, m.logger))
-	//m.Bot.RegisterModule(customrole.New(m.Bot, m.Bot.DB, m.logger))
-	m.Bot.RegisterModule(search.New(m.Bot, m.logger))
-	m.Bot.RegisterModule(mediaconvertmod.New(m.Bot, m.logger))
-	//m.Bot.RegisterModule(aimod.New(gptClient, config.GPT3Engine))
-
+	m.registerModules()
 	// register mio event handlers here
 	m.registerMioHandlers()
 	// register discord event handlers here
@@ -61,6 +51,19 @@ func (m *Meido) Run(useDefHandlers bool) error {
 
 func (m *Meido) Close() {
 	m.Bot.Close()
+}
+
+func (m *Meido) registerModules() {
+	m.Bot.RegisterModule(administration.New(m.Bot, m.logger))
+	//m.Bot.RegisterModule(testing.New(m.Bot, m.logger))
+	m.Bot.RegisterModule(fun.New(m.Bot, m.logger))
+	m.Bot.RegisterModule(fishing.New(m.Bot, m.Bot.DB, m.logger))
+	m.Bot.RegisterModule(utility.New(m.Bot, m.Bot.DB, m.logger))
+	//m.Bot.RegisterModule(moderation.New(m.Bot, m.Bot.DB, m.logger))
+	//m.Bot.RegisterModule(customrole.New(m.Bot, m.Bot.DB, m.logger))
+	m.Bot.RegisterModule(search.New(m.Bot, m.logger))
+	m.Bot.RegisterModule(mediaconvertmod.New(m.Bot, m.logger))
+	//m.Bot.RegisterModule(aimod.New(gptClient, config.GPT3Engine))
 }
 
 func (m *Meido) registerMioHandlers() {
