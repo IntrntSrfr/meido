@@ -3,13 +3,6 @@ package utility
 import (
 	"bytes"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/dustin/go-humanize"
-	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/internal/helpers"
-	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/utils"
-	"go.uber.org/zap"
 	"image"
 	"image/color"
 	"image/draw"
@@ -18,6 +11,14 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/dustin/go-humanize"
+	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/internal/helpers"
+	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/utils"
+	"go.uber.org/zap"
 )
 
 type Module struct {
@@ -142,7 +143,7 @@ func newAboutCommand(m *Module) *mio.ModuleCommand {
 				totalUsers += guild.MemberCount
 			}
 
-			uptime := time.Now().Sub(m.startTime)
+			uptime := time.Since(m.startTime)
 			count, err := m.db.GetCommandCount()
 			if err != nil {
 				return
@@ -290,18 +291,19 @@ func (m *Module) helpCommand(msg *mio.DiscordMessage) {
 		for _, mod := range m.Bot.Modules {
 			desc.WriteString(fmt.Sprintf("- %v\n", mod.Name()))
 		}
-		embed.WithTitle("Plugin list")
+		embed.WithTitle("Plugins")
 		embed.WithDescription(desc.String())
 		_, _ = msg.ReplyEmbed(embed.Build())
 		return
 	}
 
+	// if only m?help
 	if msg.LenArgs() < 2 {
 		return
 	}
 
-	inp := strings.ToLower(msg.Args()[1])
-	if mod := m.Bot.FindModule(inp); mod != nil {
+	inp := strings.Join(msg.Args()[1:], "")
+	if mod, err := m.Bot.FindModule(inp); err == nil {
 		// this can maybe be replaced by making a helptext method for every mod, so they have more control
 		// over what they want to display, if they even want to display anything.
 		list := strings.Builder{}
@@ -329,14 +331,14 @@ func (m *Module) helpCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	if pas := m.Bot.FindPassive(inp); pas != nil {
+	if pas, err := m.Bot.FindPassive(inp); err == nil {
 		embed.WithTitle(fmt.Sprintf("Passive - %v", pas.Name))
 		embed.WithDescription(fmt.Sprintf("%v\n", pas.Description))
 		_, _ = msg.ReplyEmbed(embed.Build())
 		return
 	}
 
-	if cmd := m.Bot.FindCommand(inp); cmd != nil {
+	if cmd, err := m.Bot.FindCommand(inp); err == nil {
 		info := strings.Builder{}
 		info.WriteString(fmt.Sprintf("%v\n", cmd.Description))
 		info.WriteString(fmt.Sprintf("\n**Usage**: %v", cmd.Usage))

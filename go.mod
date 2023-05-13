@@ -11,11 +11,10 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/sashabaranov/go-gpt3 v0.0.0-20220314221030-260ef874de6c
 	go.uber.org/zap v1.24.0
-	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324
+	github.com/google/uuid v1.3.0
 )
 
 require (
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

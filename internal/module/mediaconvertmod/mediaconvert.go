@@ -3,13 +3,14 @@ package mediaconvertmod
 import (
 	"bytes"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio"
-	"go.uber.org/zap"
 	"io"
 	"net/http"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
+	"go.uber.org/zap"
 )
 
 type MediaConvertMod struct {
@@ -65,7 +66,7 @@ func (m *MediaConvertMod) jpgLargeConvertPassive(msg *mio.DiscordMessage) {
 		return
 	}
 	_, _ = msg.ReplyComplex(&discordgo.MessageSend{
-		Content: fmt.Sprintf("I converted that to .jpg for you"),
+		Content: "I converted that to .jpg for you",
 		Files:   files,
 		Reference: &discordgo.MessageReference{
 			MessageID: msg.MessageID(),

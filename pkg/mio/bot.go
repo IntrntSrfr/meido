@@ -2,10 +2,12 @@ package mio
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"runtime/debug"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 
 	"github.com/intrntsrfr/meido/internal/database"
 	"go.uber.org/zap"
@@ -128,9 +130,14 @@ func (b *Bot) processMessage(msg *DiscordMessage) {
 			continue
 		}
 
-		if cmd, found := FindCommand(mod, msg.Args()); found {
+		if cmd, err := mod.FindCommandByTriggers(msg.RawContent()); err == nil {
 			b.processCommand(cmd, msg)
 		}
+		/*
+			if cmd, found := FindCommand(mod, msg.Args()); found {
+				b.processCommand(cmd, msg)
+			}
+		*/
 	}
 }
 
@@ -209,6 +216,33 @@ func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
 		return
 	}
 	ch <- msg
+}
+
+func (b *Bot) FindModule(name string) (Module, error) {
+	for _, m := range b.Modules {
+		if strings.EqualFold(m.Name(), name) {
+			return m, nil
+		}
+	}
+	return nil, ErrModuleNotFound
+}
+
+func (b *Bot) FindCommand(name string) (*ModuleCommand, error) {
+	for _, m := range b.Modules {
+		if cmd, err := m.FindCommand(name); err == nil {
+			return cmd, nil
+		}
+	}
+	return nil, ErrCommandNotFound
+}
+
+func (b *Bot) FindPassive(name string) (*ModulePassive, error) {
+	for _, m := range b.Modules {
+		if pas, err := m.FindPassive(name); err == nil {
+			return pas, nil
+		}
+	}
+	return nil, ErrPassiveNotFound
 }
 
 func readyHandler(b *Bot) func(s *discordgo.Session, r *discordgo.Ready) {

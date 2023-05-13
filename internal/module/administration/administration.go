@@ -3,13 +3,14 @@ package administration
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
-	"strings"
-	"time"
 )
 
 // Module represents the administration mod
@@ -96,11 +97,7 @@ func newToggleCommandCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:      true,
 		Enabled:       true,
 		Run: func(msg *mio.DiscordMessage) {
-			for _, mod := range m.Bot.Modules {
-				cmd, ok := mio.FindCommand(mod, msg.Args())
-				if !ok {
-					return
-				}
+			if cmd, err := m.Bot.FindCommand(msg.RawContent()); err == nil {
 				if cmd.Name == "togglecommand" {
 					return
 				}

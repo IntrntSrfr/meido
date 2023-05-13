@@ -3,10 +3,11 @@ package mio
 import (
 	"errors"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/utils"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
 // MessageType represents the 3 types of message events from Discord.
@@ -188,7 +189,7 @@ func (m *DiscordMessage) GetMemberAtArg(index int) (*discordgo.Member, error) {
 	str := m.Args()[index]
 	userID := utils.TrimUserID(str)
 	if !utils.IsNumber(userID) {
-		return nil, errors.New(fmt.Sprintf("%s could not be parsed as a number", userID))
+		return nil, fmt.Errorf("%s could not be parsed as a number", userID)
 	}
 	return m.Discord.Member(m.GuildID(), userID)
 }
@@ -200,7 +201,7 @@ func (m *DiscordMessage) GetUserAtArg(index int) (*discordgo.User, error) {
 	str := m.Args()[index]
 	userID := utils.TrimUserID(str)
 	if !utils.IsNumber(userID) {
-		return nil, errors.New(fmt.Sprintf("%s could not be parsed as a number", userID))
+		return nil, fmt.Errorf("%s could not be parsed as a number", userID)
 	}
 	return m.Sess.User(userID)
 }
