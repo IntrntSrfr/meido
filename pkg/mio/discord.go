@@ -49,6 +49,7 @@ func (d *Discord) Open() error {
 			return err
 		}
 
+		s.State.MaxMessageCount = 100
 		s.State.TrackVoice = false
 		s.State.TrackPresences = false
 		s.ShardCount = shardCount

@@ -1,17 +1,17 @@
 package moderation
 
 import (
-	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type Module struct {
@@ -27,15 +27,40 @@ func New(b *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 }
 
 func (m *Module) Hook() error {
-	m.Bot.Discord.Sess.AddHandler(func(s *discordgo.Session, g *discordgo.GuildCreate) {
-		if _, err := m.db.GetGuild(g.Guild.ID); err != nil && err == sql.ErrNoRows {
-			if err = m.db.CreateGuild(g.Guild.ID); err != nil {
-				m.Log.Error("could not create new guild", zap.Error(err), zap.String("guild ID", g.ID))
-			}
-		}
-	})
 
-	m.Bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	m.Bot.Discord.AddEventHandlerOnce(checkWarnInterval(m))
+	m.Bot.Discord.AddEventHandler(addAutoRoleOnJoin(m))
+
+	if err := m.RegisterPassive(newCheckFilterPassive(m)); err != nil {
+		return err
+	}
+
+	return m.RegisterCommands([]*mio.ModuleCommand{
+		newBanCommand(m),
+		newUnbanCommand(m),
+		newHackbanCommand(m),
+		newKickCommand(m),
+		newWarnCommand(m),
+		newClearWarnCommand(m),
+		newWarnLogCommand(m),
+		newClearAllWarnsCommand(m),
+		newWarnCountCommand(m),
+		newFilterWordCommand(m),
+		newClearFilterCommand(m),
+		newFilterWordListCommand(m),
+		newModerationSettingsCommand(m),
+		newLockdownChannelCommand(m),
+		newUnlockChannelCommand(m),
+		newMuteCommand(m),
+		newUnmuteCommand(m),
+		newSetAutoRoleCommand(m),
+		newRemoveAutoRoleCommand(m),
+		newPruneCommand(m),
+	})
+}
+
+func checkWarnInterval(m *Module) func(s *discordgo.Session, r *discordgo.Ready) {
+	return func(s *discordgo.Session, r *discordgo.Ready) {
 		refreshTicker := time.NewTicker(time.Hour)
 		go func() {
 			for range refreshTicker.C {
@@ -70,35 +95,7 @@ func (m *Module) Hook() error {
 				}
 			}
 		}()
-	})
-
-	m.Bot.Discord.AddEventHandler(addAutoRoleOnJoin(m))
-
-	if err := m.RegisterPassive(newCheckFilterPassive(m)); err != nil {
-		return err
 	}
-
-	return m.RegisterCommands([]*mio.ModuleCommand{
-		newBanCommand(m),
-		newUnbanCommand(m),
-		newHackbanCommand(m),
-		newKickCommand(m),
-		newWarnCommand(m),
-		newClearWarnCommand(m),
-		newWarnLogCommand(m),
-		newClearAllWarnsCommand(m),
-		newWarnCountCommand(m),
-		newFilterWordCommand(m),
-		newClearFilterCommand(m),
-		newFilterWordListCommand(m),
-		newModerationSettingsCommand(m),
-		newLockdownChannelCommand(m),
-		newUnlockChannelCommand(m),
-		newMuteCommand(m),
-		newUnmuteCommand(m),
-		newSetAutoRoleCommand(m),
-		newRemoveAutoRoleCommand(m),
-	})
 }
 
 func newBanCommand(m *Module) *mio.ModuleCommand {
@@ -189,7 +186,7 @@ func (m *Module) banCommand(msg *mio.DiscordMessage) {
 
 	warns, err := m.db.GetMemberWarns(msg.GuildID(), targetUser.ID)
 	if err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 
@@ -373,4 +370,71 @@ func (m *Module) kickCommand(msg *mio.DiscordMessage) {
 		AddField("Username", targetUser.Mention(), true).
 		AddField("ID", targetUser.User.ID, true)
 	_, _ = msg.ReplyEmbed(embed.Build())
+}
+
+func newPruneCommand(m *Module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
+		Mod:           m,
+		Name:          "prune",
+		Description:   "Prunes all of Meido's messages in the last 100 messages. Amount of messages can be specified, but max 100. If a user is specified, it removes all messages from that user in the last 100 messages.",
+		Triggers:      []string{"m?prune"},
+		Usage:         "m?prune <user> <amount>",
+		Cooldown:      2,
+		RequiredPerms: discordgo.PermissionManageMessages,
+		RequiresOwner: false,
+		CheckBotPerms: true,
+		AllowedTypes:  mio.MessageTypeCreate,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           m.pruneCommand,
+	}
+}
+
+func (m *Module) pruneCommand(msg *mio.DiscordMessage) {
+	if msg.LenArgs() == 1 {
+		if botMember, err := msg.Discord.Member(msg.GuildID(), msg.Discord.BotUser().ID); err == nil {
+			pruneMessages(msg, botMember, 100)
+		}
+	} else if msg.LenArgs() == 2 {
+		if member, err := msg.Discord.Member(msg.GuildID(), msg.Args()[1]); err == nil {
+			pruneMessages(msg, member, 100)
+			return
+		}
+		if botMember, err := msg.Discord.Member(msg.GuildID(), msg.Discord.BotUser().ID); err == nil {
+			if !utils.IsNumber(msg.Args()[1]) {
+				return
+			}
+			num, _ := strconv.Atoi(msg.Args()[1])
+			pruneMessages(msg, botMember, num)
+		}
+	} else if msg.LenArgs() == 3 {
+		member, err := msg.Discord.Member(msg.GuildID(), msg.Args()[1])
+		if err != nil {
+			return
+		}
+		if !utils.IsNumber(msg.Args()[2]) {
+			return
+		}
+		num, _ := strconv.Atoi(msg.Args()[2])
+		pruneMessages(msg, member, num)
+	}
+}
+
+func pruneMessages(msg *mio.DiscordMessage, member *discordgo.Member, amount int) {
+	ch, err := msg.Discord.Channel(msg.ChannelID())
+	if err != nil {
+		return
+	}
+	targets := []string{}
+	for i := msg.Discord.Sess.State.MaxMessageCount; i >= 0; i-- {
+		msg := ch.Messages[i]
+		if msg.Author != nil && msg.Author.ID == member.User.ID {
+			targets = append(targets, msg.ID)
+		}
+	}
+	if err = msg.Discord.Sess.ChannelMessagesBulkDelete(msg.ChannelID(), targets); err != nil {
+		_, _ = msg.Reply("There was an issue, please try again!")
+		return
+	}
+	_, _ = msg.ReplyAndDelete(fmt.Sprintf("Pruned %v messages!", len(targets)), time.Second*2)
 }
