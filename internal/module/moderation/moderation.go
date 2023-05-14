@@ -64,6 +64,7 @@ func checkWarnInterval(m *Module) func(s *discordgo.Session, r *discordgo.Ready)
 		refreshTicker := time.NewTicker(time.Hour)
 		go func() {
 			for range refreshTicker.C {
+				m.Log.Info("running warn check")
 				for _, g := range m.Bot.Discord.Guilds() {
 					if g.Unavailable {
 						continue
@@ -392,23 +393,20 @@ func newPruneCommand(m *Module) *mio.ModuleCommand {
 
 func (m *Module) pruneCommand(msg *mio.DiscordMessage) {
 	if msg.LenArgs() == 1 {
-		if botMember, err := msg.Discord.Member(msg.GuildID(), msg.Discord.BotUser().ID); err == nil {
-			pruneMessages(msg, botMember, 100)
-		}
+		pruneMessages(msg, msg.Discord.BotUser().ID, 100)
 	} else if msg.LenArgs() == 2 {
-		if member, err := msg.Discord.Member(msg.GuildID(), msg.Args()[1]); err == nil {
-			pruneMessages(msg, member, 100)
+		if member, err := msg.GetMemberAtArg(1); err == nil {
+			pruneMessages(msg, member.User.ID, 100)
 			return
 		}
-		if botMember, err := msg.Discord.Member(msg.GuildID(), msg.Discord.BotUser().ID); err == nil {
-			if !utils.IsNumber(msg.Args()[1]) {
-				return
-			}
-			num, _ := strconv.Atoi(msg.Args()[1])
-			pruneMessages(msg, botMember, num)
+
+		if !utils.IsNumber(msg.Args()[1]) {
+			return
 		}
+		num, _ := strconv.Atoi(msg.Args()[1])
+		pruneMessages(msg, "", num)
 	} else if msg.LenArgs() == 3 {
-		member, err := msg.Discord.Member(msg.GuildID(), msg.Args()[1])
+		member, err := msg.GetMemberAtArg(1)
 		if err != nil {
 			return
 		}
@@ -416,21 +414,31 @@ func (m *Module) pruneCommand(msg *mio.DiscordMessage) {
 			return
 		}
 		num, _ := strconv.Atoi(msg.Args()[2])
-		pruneMessages(msg, member, num)
+		pruneMessages(msg, member.User.ID, num+1) // +1 because the command itself adds 1 new message
 	}
 }
 
-func pruneMessages(msg *mio.DiscordMessage, member *discordgo.Member, amount int) {
+// pruneMessages prunes messages in the DiscordMessage channel. It only prunes
+// messages where the author ID corresponds to the ID given. If the ID given is
+// empty, it prunes all messages. It prunes the amount of messages that the
+// Session.State allows, or how many are available, or the amount given.
+func pruneMessages(msg *mio.DiscordMessage, memberID string, amount int) {
 	ch, err := msg.Discord.Channel(msg.ChannelID())
 	if err != nil {
 		return
 	}
 	targets := []string{}
-	for i := msg.Discord.Sess.State.MaxMessageCount; i >= 0; i-- {
+	for i := len(ch.Messages) - 1; i >= 0; i-- {
 		msg := ch.Messages[i]
-		if msg.Author != nil && msg.Author.ID == member.User.ID {
+		if memberID == "" || (msg.Author != nil && memberID == msg.Author.ID) {
 			targets = append(targets, msg.ID)
 		}
+		if len(targets) == amount {
+			break
+		}
+	}
+	if len(targets) == 0 {
+		return
 	}
 	if err = msg.Discord.Sess.ChannelMessagesBulkDelete(msg.ChannelID(), targets); err != nil {
 		_, _ = msg.Reply("There was an issue, please try again!")
