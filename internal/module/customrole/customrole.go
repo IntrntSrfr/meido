@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
-	"strconv"
-	"strings"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -347,7 +348,7 @@ func newListCustomRolesCommand(m *Module) *mio.ModuleCommand {
 		Run: func(msg *mio.DiscordMessage) {
 			roles, err := m.db.GetCustomRolesByGuild(msg.GuildID())
 			if err != nil {
-				_, _ = msg.Reply("There was an issue, please try again")
+				_, _ = msg.Reply("There was an issue, please try again!")
 				return
 			}
 

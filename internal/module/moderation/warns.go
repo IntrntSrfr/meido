@@ -3,15 +3,16 @@ package moderation
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func newWarnCommand(m *Module) *mio.ModuleCommand {
@@ -39,7 +40,7 @@ func (m *Module) warnCommand(msg *mio.DiscordMessage) {
 
 	gc, err := m.db.GetGuild(msg.GuildID())
 	if err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 
@@ -84,12 +85,12 @@ func (m *Module) warnCommand(msg *mio.DiscordMessage) {
 
 	g, err := msg.Discord.Guild(msg.GuildID())
 	if err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 
 	if err := m.db.CreateMemberWarn(msg.GuildID(), targetMember.User.ID, reason, msg.AuthorID()); err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 
@@ -163,7 +164,7 @@ func (m *Module) warnlogCommand(msg *mio.DiscordMessage) {
 
 	warns, err := m.db.GetMemberWarns(msg.GuildID(), targetUser.ID)
 	if err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 
@@ -192,7 +193,7 @@ func (m *Module) warnlogCommand(msg *mio.DiscordMessage) {
 		if !ok {
 			gb, err = msg.Discord.Sess.User(warn.GivenByID)
 			if err != nil {
-				_, _ = msg.Reply("There was an issue, please try again")
+				_, _ = msg.Reply("There was an issue, please try again!")
 				continue
 			}
 			userCache[warn.GivenByID] = gb
@@ -211,7 +212,7 @@ func (m *Module) warnlogCommand(msg *mio.DiscordMessage) {
 		if !ok {
 			cb, err = msg.Discord.Sess.User(*warn.ClearedByID)
 			if err != nil {
-				_, _ = msg.Reply("There was an issue, please try again")
+				_, _ = msg.Reply("There was an issue, please try again!")
 				continue
 			}
 			userCache[*warn.ClearedByID] = cb
@@ -242,7 +243,7 @@ func newWarnCountCommand(m *Module) *mio.ModuleCommand {
 func (m *Module) warncountCommand(msg *mio.DiscordMessage) {
 	gc, err := m.db.GetGuild(msg.GuildID())
 	if err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 
@@ -295,7 +296,7 @@ func (m *Module) clearwarnCommand(msg *mio.DiscordMessage) {
 
 	entries, err := m.db.GetMemberWarnsIfActive(msg.GuildID(), targetMember.User.ID)
 	if err != nil && err != sql.ErrNoRows {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	} else if err == sql.ErrNoRows || len(entries) == 0 {
 		_, _ = msg.Reply("User has active no warns")
@@ -391,7 +392,7 @@ func (m *Module) clearallwarnsCommand(msg *mio.DiscordMessage) {
 
 	warns, err := m.db.GetMemberWarns(msg.GuildID(), targetMember.User.ID)
 	if err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 

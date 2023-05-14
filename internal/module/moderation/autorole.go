@@ -2,10 +2,11 @@ package moderation
 
 import (
 	"fmt"
-	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
 func addAutoRoleOnJoin(m *Module) func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
@@ -80,13 +81,13 @@ func newRemoveAutoRoleCommand(m *Module) *mio.ModuleCommand {
 		Run: func(msg *mio.DiscordMessage) {
 			rpl, err := msg.Reply("Are you sure you want to REMOVE the autorole? Please answer `yes` if you are.")
 			if err != nil {
-				_, _ = msg.Reply("There was an issue, please try again")
+				_, _ = msg.Reply("There was an issue, please try again!")
 				return
 			}
 
 			ch, err := m.Bot.Callbacks.Make(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
 			if err != nil {
-				_, _ = msg.Reply("There was an issue, please try again")
+				_, _ = msg.Reply("There was an issue, please try again!")
 				return
 			}
 			defer m.Bot.Callbacks.Delete(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))

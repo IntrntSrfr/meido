@@ -5,11 +5,12 @@ import (
 	"crypto/sha1"
 	"encoding/binary"
 	"fmt"
+	"strings"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/gol"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
-	"strings"
 )
 
 type Module struct {
@@ -50,7 +51,7 @@ func newLifeCommand(m *Module) *mio.ModuleCommand {
 
 			buf, seed, err := generateGif(seedStr)
 			if err != nil {
-				_, _ = msg.Reply("There was an issue, please try again")
+				_, _ = msg.Reply("There was an issue, please try again!")
 				return
 			}
 

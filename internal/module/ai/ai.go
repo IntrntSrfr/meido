@@ -2,10 +2,11 @@ package ai
 
 import (
 	"context"
+	"strings"
+
 	"github.com/intrntsrfr/meido/pkg/mio"
 	gogpt "github.com/sashabaranov/go-gpt3"
 	"go.uber.org/zap"
-	"strings"
 )
 
 type Module struct {

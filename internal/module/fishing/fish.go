@@ -2,6 +2,7 @@ package fishing
 
 import (
 	"fmt"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/helpers"
@@ -142,7 +143,7 @@ func newSetFishingSettingsCommand(m *FishMod) *mio.ModuleCommand {
 			}
 			gc, err := m.db.GetGuild(msg.GuildID())
 			if err != nil {
-				_, _ = msg.Reply("There was an issue, please try again")
+				_, _ = msg.Reply("There was an issue, please try again!")
 				return
 			}
 
@@ -170,7 +171,7 @@ func newSetFishingSettingsCommand(m *FishMod) *mio.ModuleCommand {
 					}
 					gc.FishingChannelID = chID
 					if err = m.db.UpdateGuild(gc); err != nil {
-						_, _ = msg.Reply("There was an issue, please try again")
+						_, _ = msg.Reply("There was an issue, please try again!")
 						return
 					}
 					if before == "" {

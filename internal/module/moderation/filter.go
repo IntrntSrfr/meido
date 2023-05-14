@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
-	"strconv"
-	"strings"
-	"time"
 )
 
 func newFilterWordCommand(m *Module) *mio.ModuleCommand {
@@ -42,18 +43,18 @@ func (m *Module) filterwordCommand(msg *mio.DiscordMessage) {
 	switch err {
 	case nil:
 		if err := m.db.DeleteGuildFilter(f.UID); err != nil {
-			_, _ = msg.Reply("There was an issue, please try again")
+			_, _ = msg.Reply("There was an issue, please try again!")
 			return
 		}
 		_, _ = msg.Reply(fmt.Sprintf("Removed `%v` from the filter.", phrase))
 	case sql.ErrNoRows:
 		if err := m.db.CreateGuildFilter(msg.GuildID(), phrase); err != nil {
-			_, _ = msg.Reply("There was an issue, please try again")
+			_, _ = msg.Reply("There was an issue, please try again!")
 			return
 		}
 		_, _ = msg.Reply(fmt.Sprintf("Added `%v` to the filter.", phrase))
 	default:
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 	}
 }
 
@@ -80,7 +81,7 @@ func (m *Module) filterwordlistCommand(msg *mio.DiscordMessage) {
 
 	filterEntries, err := m.db.GetGuildFilters(msg.GuildID())
 	if err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 	if len(filterEntries) == 0 {
@@ -127,12 +128,12 @@ func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 	}
 	rpl, err := msg.Reply("Are you sure you want to REMOVE ALL FILTERS? Please reply `YES`, in all caps, if you are")
 	if err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 	ch, err := m.Bot.Callbacks.Make(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
 	if err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 	defer m.Bot.Callbacks.Delete(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
@@ -154,7 +155,7 @@ func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 		}
 	}
 	if err = m.db.DeleteGuildFilters(msg.GuildID()); err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		m.Log.Error("unable to delete guild filters", zap.Any("message", msg))
 		return
 	}
@@ -189,7 +190,7 @@ func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 	}
 	gc, err := m.db.GetGuild(msg.GuildID())
 	if err != nil {
-		_, _ = msg.Reply("There was an issue, please try again")
+		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
 
@@ -208,7 +209,7 @@ func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 			if v, ok := warnsEnabledSettings[msg.Args()[3]]; ok && gc.UseWarns != v {
 				gc.UseWarns = v
 				if err := m.db.UpdateGuild(gc); err != nil {
-					_, _ = msg.Reply("There was an issue, please try again")
+					_, _ = msg.Reply("There was an issue, please try again!")
 					return
 				}
 				_, _ = msg.Reply(fmt.Sprintf("Warnings: %v -> %v", !gc.UseWarns, gc.UseWarns))
@@ -224,7 +225,7 @@ func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 			n = utils.Clamp(0, 10, n)
 			gc.MaxWarns = n
 			if err := m.db.UpdateGuild(gc); err != nil {
-				_, _ = msg.Reply("There was an issue, please try again")
+				_, _ = msg.Reply("There was an issue, please try again!")
 				return
 			}
 			_, _ = msg.Reply(fmt.Sprintf("Max warnings: %v -> %v", before, n))
@@ -239,7 +240,7 @@ func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 			n = utils.Clamp(0, 365, n)
 			gc.WarnDuration = n
 			if err := m.db.UpdateGuild(gc); err != nil {
-				_, _ = msg.Reply("There was an issue, please try again")
+				_, _ = msg.Reply("There was an issue, please try again!")
 				return
 			}
 			_, _ = msg.Reply(fmt.Sprintf("Warn duration: %v days -> %v days", before, n))
