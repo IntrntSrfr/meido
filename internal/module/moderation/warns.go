@@ -28,7 +28,7 @@ func newWarnCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: true,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.warnCommand,
 	}
 }
@@ -136,7 +136,7 @@ func newWarnLogCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.warnlogCommand,
 	}
 }
@@ -235,7 +235,7 @@ func newWarnCountCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.warncountCommand,
 	}
 }
@@ -279,7 +279,7 @@ func newClearWarnCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.clearwarnCommand,
 	}
 }
@@ -375,7 +375,7 @@ func newClearAllWarnsCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.clearallwarnsCommand,
 	}
 }

@@ -2,10 +2,11 @@ package utility
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
-	"strconv"
 )
 
 func newAvatarCommand(m *Module) *mio.ModuleCommand {
@@ -20,7 +21,7 @@ func newAvatarCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			targetUser := msg.Author()
 			var err error
@@ -55,7 +56,7 @@ func newBannerCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -104,7 +105,7 @@ func newMemberAvatarCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -150,7 +151,7 @@ func newUserInfoCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			targetUser := msg.Author()
 			targetMember := msg.Member()

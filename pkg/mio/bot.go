@@ -142,7 +142,7 @@ func (b *Bot) processMessage(msg *DiscordMessage) {
 }
 
 func (b *Bot) processCommand(cmd *ModuleCommand, msg *DiscordMessage) {
-	if !cmd.Enabled {
+	if !cmd.IsEnabled {
 		return
 	}
 	if msg.IsDM() && !cmd.AllowDMs {
@@ -151,16 +151,21 @@ func (b *Bot) processCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	if msg.Type()&cmd.AllowedTypes == 0 {
 		return
 	}
-	if cmd.RequiresOwner && !msg.Discord.IsBotOwner(msg) {
+	if cmd.RequiresUserType == UserTypeBotOwner && !msg.Discord.IsBotOwner(msg) {
 		_, _ = msg.Reply("This command is owner only")
 		return
 	}
 
-	// check if cooldown is for user or channel
-	key := fmt.Sprintf("%v:%v", msg.Message.ChannelID, cmd.Name)
-	if cmd.CooldownUser {
-		key = fmt.Sprintf("%v:%v", msg.Message.Author.ID, cmd.Name)
+	var key string
+	switch cmd.CooldownScope {
+	case User:
+		key = fmt.Sprintf("%v:%v", msg.AuthorID(), cmd.Name)
+	case Channel:
+		key = fmt.Sprintf("%v:%v", msg.ChannelID(), cmd.Name)
+	case Guild:
+		key = fmt.Sprintf("%v:%v", msg.GuildID(), cmd.Name)
 	}
+
 	if t, ok := b.Cooldowns.Check(key); ok {
 		// if on cooldown, we know it's for this command, so we can break out and go next
 		_, _ = msg.ReplyAndDelete(fmt.Sprintf("This command is on cooldown for another %v", t), time.Second*2)

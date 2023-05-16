@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"go.uber.org/zap"
 )
@@ -46,22 +47,37 @@ type ModuleBase struct {
 	allowDMs     bool
 }
 
+type CooldownScope int
+
+const (
+	User CooldownScope = iota
+	Channel
+	Guild
+)
+
+type UserType int
+
+const (
+	UserTypeAny UserType = iota
+	UserTypeBotOwner
+)
+
 // ModuleCommand represents a command for a Module.
 type ModuleCommand struct {
-	Mod           Module
-	Name          string
-	Description   string
-	Triggers      []string
-	Usage         string
-	Cooldown      int
-	CooldownUser  bool
-	RequiredPerms int64
-	RequiresOwner bool
-	CheckBotPerms bool
-	AllowedTypes  MessageType
-	AllowDMs      bool
-	Enabled       bool
-	Run           func(*DiscordMessage) `json:"-"`
+	Mod              Module
+	Name             string
+	Description      string
+	Triggers         []string
+	Usage            string
+	Cooldown         time.Duration
+	CooldownScope    CooldownScope
+	RequiredPerms    int64
+	RequiresUserType UserType
+	CheckBotPerms    bool
+	AllowedTypes     MessageType
+	AllowDMs         bool
+	IsEnabled        bool
+	Run              func(*DiscordMessage) `json:"-"`
 }
 
 // ModulePassive represents a passive for a Module.

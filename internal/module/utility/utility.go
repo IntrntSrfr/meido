@@ -68,7 +68,7 @@ func NewConvertCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 4 {
 				return
@@ -90,7 +90,7 @@ func newPingCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -118,7 +118,7 @@ func newAboutCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowDMs:      true,
 		AllowedTypes:  mio.MessageTypeCreate,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -177,7 +177,7 @@ func newColorCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 2 {
 				return
@@ -226,7 +226,7 @@ func newIdTimestampCmd(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			id := msg.AuthorID()
 			if msg.LenArgs() > 1 {
@@ -254,7 +254,7 @@ func newInviteCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			botLink := "<https://discordapp.com/oauth2/authorize?client_id=" + msg.Sess.State.User.ID + "&scope=bot>"
 			serverLink := "https://discord.gg/KgMEGK3"
@@ -275,7 +275,7 @@ func newHelpCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.helpCommand,
 	}
 }

@@ -27,11 +27,13 @@ func New(b *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 }
 
 func (m *Module) Hook() error {
-
 	m.Bot.Discord.AddEventHandlerOnce(checkWarnInterval(m))
 	m.Bot.Discord.AddEventHandler(addAutoRoleOnJoin(m))
 
-	if err := m.RegisterPassive(newCheckFilterPassive(m)); err != nil {
+	err := m.RegisterPassives([]*mio.ModulePassive{
+		newCheckFilterPassive(m),
+	})
+	if err != nil {
 		return err
 	}
 
@@ -112,7 +114,7 @@ func newBanCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: true,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.banCommand,
 	}
 }
@@ -225,7 +227,7 @@ func newUnbanCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: true,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.unbanCommand,
 	}
 }
@@ -269,7 +271,7 @@ func newHackbanCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: true,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 2 {
 				return
@@ -305,7 +307,7 @@ func newKickCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: true,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.kickCommand,
 	}
 }
@@ -386,7 +388,7 @@ func newPruneCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: true,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.pruneCommand,
 	}
 }

@@ -43,18 +43,18 @@ func (m *FishMod) Hook() error {
 // newFishCommand returns a new fish command.
 func newFishCommand(m *FishMod) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "fish",
-		Description:   "Go fishin'",
-		Triggers:      []string{"m?fish"},
-		Usage:         "m?fish",
-		Cooldown:      2,
-		CooldownUser:  true,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		Enabled:       true,
+		Mod:              m,
+		Name:             "fish",
+		Description:      "Go fishin'",
+		Triggers:         []string{"m?fish"},
+		Usage:            "m?fish",
+		Cooldown:         2,
+		CooldownScope:    mio.User,
+		RequiredPerms:    0,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if gc, err := m.db.GetGuild(msg.GuildID()); err != nil || msg.ChannelID() != gc.FishingChannelID {
 				return
@@ -73,19 +73,19 @@ func newFishCommand(m *FishMod) *mio.ModuleCommand {
 // newAquariumCommand returns a new Aquarium command.
 func newAquariumCommand(m *FishMod) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "aquarium",
-		Description:   "Displays your or someone else's aquarium",
-		Triggers:      []string{"m?aquarium", "m?aq"},
-		Usage:         "m?Aquarium <userID>",
-		Cooldown:      3,
-		CooldownUser:  true,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		Enabled:       true,
-		Run:           m.aquariumCommand,
+		Mod:              m,
+		Name:             "aquarium",
+		Description:      "Displays your or someone else's aquarium",
+		Triggers:         []string{"m?aquarium", "m?aq"},
+		Usage:            "m?Aquarium <userID>",
+		Cooldown:         3,
+		CooldownScope:    mio.User,
+		RequiredPerms:    0,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
+		Run:              m.aquariumCommand,
 	}
 }
 
@@ -125,18 +125,19 @@ func (m *FishMod) aquariumCommand(msg *mio.DiscordMessage) {
 // newSetFishingSettingsCommand returns a new fish command.
 func newSetFishingSettingsCommand(m *FishMod) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "fishingsettings",
-		Description:   "Fishing settings:\n- Set fishing channel [channelID]",
-		Triggers:      []string{"m?settings fishing"},
-		Usage:         "m?settings fishing fishingchannel [channelID]",
-		Cooldown:      2,
-		CooldownUser:  false,
-		RequiredPerms: discordgo.PermissionAdministrator,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		Enabled:       true,
+		Mod:              m,
+		Name:             "fishingsettings",
+		Description:      "Fishing settings:\n- Set fishing channel [channelID]",
+		Triggers:         []string{"m?settings fishing"},
+		Usage:            "m?settings fishing fishingchannel [channelID]",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionAdministrator,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 2 {
 				return

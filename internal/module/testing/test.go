@@ -1,9 +1,10 @@
 package testing
 
 import (
+	"math/rand"
+
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
-	"math/rand"
 )
 
 // Module represents the ping mod
@@ -37,7 +38,7 @@ func newTestCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			_, _ = msg.Reply("test")
 		},
@@ -57,7 +58,7 @@ func newMonkeyCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.monkeyCommand,
 	}
 }

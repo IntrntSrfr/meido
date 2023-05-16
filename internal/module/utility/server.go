@@ -2,6 +2,7 @@ package utility
 
 import (
 	"fmt"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
@@ -20,7 +21,7 @@ func newServerCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -87,7 +88,7 @@ func newServerSplashCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -124,7 +125,7 @@ func newServerIconCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -160,7 +161,7 @@ func newServerBannerCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return

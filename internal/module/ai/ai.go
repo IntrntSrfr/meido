@@ -30,17 +30,19 @@ func (m *Module) Hook() error {
 
 func newPromptCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "prompt",
-		Description:   "Generate completions for a prompt using GPT-3.",
-		Triggers:      []string{"m?prompt"},
-		Usage:         "m?prompt tell me about maids.",
-		Cooldown:      15,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		Enabled:       true,
+		Mod:              m,
+		Name:             "prompt",
+		Description:      "Generate completions for a prompt using GPT-3.",
+		Triggers:         []string{"m?prompt"},
+		Usage:            "m?prompt [prompt]",
+		Cooldown:         15,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return

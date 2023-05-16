@@ -40,19 +40,19 @@ func (m *Module) Hook() error {
 
 func newMessageCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "message",
-		Description:   "Sends a message to a channel",
-		Triggers:      []string{"m?msg"},
-		Usage:         "m?msg [channelID] [message]",
-		Cooldown:      0,
-		CooldownUser:  false,
-		RequiredPerms: 0,
-		RequiresOwner: true,
-		CheckBotPerms: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		Enabled:       true,
+		Mod:              m,
+		Name:             "message",
+		Description:      "Sends a message to a channel",
+		Triggers:         []string{"m?msg"},
+		Usage:            "m?msg [channelID] [message]",
+		Cooldown:         0,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		RequiresUserType: mio.UserTypeBotOwner,
+		CheckBotPerms:    false,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 3 {
 				return
@@ -83,26 +83,26 @@ func newMessageCommand(m *Module) *mio.ModuleCommand {
 // newToggleCommandCommand returns a new ping command.
 func newToggleCommandCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "togglecommand",
-		Description:   "Enables or disables a command. Bot owner only.",
-		Triggers:      []string{"m?togglecommand", "m?tc"},
-		Usage:         "m?tc ping",
-		Cooldown:      2,
-		CooldownUser:  false,
-		RequiredPerms: 0,
-		RequiresOwner: true,
-		CheckBotPerms: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		Enabled:       true,
+		Mod:              m,
+		Name:             "togglecommand",
+		Description:      "Enables or disables a command. Bot owner only.",
+		Triggers:         []string{"m?togglecommand", "m?tc"},
+		Usage:            "m?tc ping",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeBotOwner,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if cmd, err := m.Bot.FindCommand(msg.RawContent()); err == nil {
 				if cmd.Name == "togglecommand" {
 					return
 				}
-				cmd.Enabled = !cmd.Enabled
-				if cmd.Enabled {
+				cmd.IsEnabled = !cmd.IsEnabled
+				if cmd.IsEnabled {
 					_, _ = msg.Reply(fmt.Sprintf("Enabled command %v", cmd.Name))
 					return
 				}

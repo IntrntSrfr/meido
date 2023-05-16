@@ -41,7 +41,7 @@ func newLifeCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      true,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run: func(msg *mio.DiscordMessage) {
 			_ = msg.Discord.StartTyping(msg.ChannelID())
 			seedStr := msg.AuthorID()

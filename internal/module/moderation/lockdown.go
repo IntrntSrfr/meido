@@ -18,7 +18,7 @@ func newLockdownChannelCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: true,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.lockdownCommand,
 	}
 }
@@ -109,7 +109,7 @@ func newUnlockChannelCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: true,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.unlockCommand,
 	}
 }

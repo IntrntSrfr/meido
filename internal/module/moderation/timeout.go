@@ -2,9 +2,10 @@ package moderation
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"time"
 )
 
 func newMuteCommand(m *Module) *mio.ModuleCommand {
@@ -21,7 +22,7 @@ func newMuteCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: true,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.muteCommand,
 	}
 }
@@ -89,7 +90,7 @@ func newUnmuteCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms: true,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.unmuteCommand,
 	}
 }

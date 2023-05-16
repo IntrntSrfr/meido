@@ -27,7 +27,7 @@ func newFilterWordCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.filterwordCommand,
 	}
 }
@@ -70,7 +70,7 @@ func newFilterWordListCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.filterwordlistCommand,
 	}
 }
@@ -117,7 +117,7 @@ func newClearFilterCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.clearfilterCommand,
 	}
 }
@@ -174,7 +174,7 @@ func newModerationSettingsCommand(m *Module) *mio.ModuleCommand {
 		RequiresOwner: false,
 		AllowedTypes:  mio.MessageTypeCreate,
 		AllowDMs:      false,
-		Enabled:       true,
+		IsEnabled:     true,
 		Run:           m.moderationsettingsCommand,
 	}
 }
