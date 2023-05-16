@@ -10,20 +10,20 @@ import (
 
 func newMuteCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "mute",
-		Description:   "Mutes a member, making them unable to chat or speak. Duration will be 1 day unless something else is specified.",
-		Triggers:      []string{"m?mute"},
-		Usage:         "m?mute <user> [duration] | m?mute 163454407999094786 1h30m",
-		Cooldown:      1,
-		CooldownUser:  false,
-		RequiredPerms: discordgo.PermissionModerateMembers,
-		RequiresOwner: false,
-		CheckBotPerms: true,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.muteCommand,
+		Mod:              m,
+		Name:             "mute",
+		Description:      "Mutes a member, making them unable to chat or speak. Duration will be 1 day unless something else is specified.",
+		Triggers:         []string{"m?mute"},
+		Usage:            "m?mute <user> [duration] | m?mute 163454407999094786 1h30m",
+		Cooldown:         1,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionModerateMembers,
+		CheckBotPerms:    true,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.muteCommand,
 	}
 }
 
@@ -78,20 +78,20 @@ func (m *Module) muteCommand(msg *mio.DiscordMessage) {
 
 func newUnmuteCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "unmute",
-		Description:   "Unmutes a member",
-		Triggers:      []string{"m?unmute"},
-		Usage:         "m?unmute <user>",
-		Cooldown:      1,
-		CooldownUser:  false,
-		RequiredPerms: discordgo.PermissionModerateMembers,
-		RequiresOwner: false,
-		CheckBotPerms: true,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.unmuteCommand,
+		Mod:              m,
+		Name:             "unmute",
+		Description:      "Unmutes a member",
+		Triggers:         []string{"m?unmute"},
+		Usage:            "m?unmute <user>",
+		Cooldown:         1,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionModerateMembers,
+		CheckBotPerms:    true,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.unmuteCommand,
 	}
 }
 

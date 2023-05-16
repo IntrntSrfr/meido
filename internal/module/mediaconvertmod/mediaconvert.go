@@ -78,18 +78,20 @@ func (m *MediaConvertMod) jpgLargeConvertPassive(msg *mio.DiscordMessage) {
 
 func newMediaConvertCommand(m *MediaConvertMod) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "mediaconvert",
-		Description:   "Converts some media files from one format to another",
-		Triggers:      []string{"m?mediaconvert"},
-		Usage:         "m?mediaconvert [url] [target format]",
-		Cooldown:      30,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		IsEnabled:     true,
-		Run:           m.mediaConvertCommand,
+		Mod:              m,
+		Name:             "mediaconvert",
+		Description:      "Converts some media files from one format to another",
+		Triggers:         []string{"m?mediaconvert"},
+		Usage:            "m?mediaconvert [url] [target format]",
+		Cooldown:         30,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
+		Run:              m.mediaConvertCommand,
 	}
 }
 

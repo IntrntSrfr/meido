@@ -24,19 +24,19 @@ func addAutoRoleOnJoin(m *Module) func(s *discordgo.Session, g *discordgo.GuildM
 
 func newSetAutoRoleCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "setautorole",
-		Description:   "Sets an autorole for the server to a provided role",
-		Triggers:      []string{"m?setautorole"},
-		Usage:         "m?setautorole [role name / role ID]",
-		Cooldown:      2,
-		CooldownUser:  false,
-		RequiredPerms: discordgo.PermissionAdministrator,
-		RequiresOwner: false,
-		CheckBotPerms: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "setautorole",
+		Description:      "Sets an autorole for the server to a provided role",
+		Triggers:         []string{"m?setautorole"},
+		Usage:            "m?setautorole [role name / role ID]",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionAdministrator,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 2 {
 				return
@@ -65,19 +65,19 @@ func newSetAutoRoleCommand(m *Module) *mio.ModuleCommand {
 
 func newRemoveAutoRoleCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "removeautorole",
-		Description:   "Removes the autorole for the server",
-		Triggers:      []string{"m?removeautorole"},
-		Usage:         "m?removeautorole",
-		Cooldown:      2,
-		CooldownUser:  false,
-		RequiredPerms: discordgo.PermissionAdministrator,
-		RequiresOwner: false,
-		CheckBotPerms: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "removeautorole",
+		Description:      "Removes the autorole for the server",
+		Triggers:         []string{"m?removeautorole"},
+		Usage:            "m?removeautorole",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionAdministrator,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			rpl, err := msg.Reply("Are you sure you want to REMOVE the autorole? Please answer `yes` if you are.")
 			if err != nil {

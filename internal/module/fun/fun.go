@@ -29,19 +29,19 @@ func (m *Module) Hook() error {
 
 func newLifeCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "life",
-		Description:   "Shows a gif of Conway's Game of Life. If no seed is provided, it uses your user ID",
-		Triggers:      []string{"m?life"},
-		Usage:         "m?life | m?life <seed | user>",
-		Cooldown:      5,
-		CooldownUser:  false,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		CheckBotPerms: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "life",
+		Description:      "Shows a gif of Conway's Game of Life. If no seed is provided, it uses your user ID",
+		Triggers:         []string{"m?life"},
+		Usage:            "m?life | m?life <seed | user>",
+		Cooldown:         5,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			_ = msg.Discord.StartTyping(msg.ChannelID())
 			seedStr := msg.AuthorID()

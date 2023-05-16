@@ -7,19 +7,20 @@ import (
 
 func newLockdownChannelCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "lockdown",
-		Description:   "Locks the current channel.",
-		Triggers:      []string{"m?lockdown"},
-		Usage:         "m?lockdown",
-		Cooldown:      10,
-		RequiredPerms: discordgo.PermissionManageRoles,
-		RequiresOwner: false,
-		CheckBotPerms: true,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.lockdownCommand,
+		Mod:              m,
+		Name:             "lockdown",
+		Description:      "Locks the current channel.",
+		Triggers:         []string{"m?lockdown"},
+		Usage:            "m?lockdown",
+		Cooldown:         10,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionManageRoles,
+		CheckBotPerms:    true,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.lockdownCommand,
 	}
 }
 
@@ -34,7 +35,6 @@ func (m *Module) lockdownCommand(msg *mio.DiscordMessage) {
 	}
 
 	var eRole *discordgo.Role
-
 	for _, val := range g.Roles {
 		if val.ID == g.ID {
 			eRole = val
@@ -51,7 +51,6 @@ func (m *Module) lockdownCommand(msg *mio.DiscordMessage) {
 	}
 
 	var ePerms *discordgo.PermissionOverwrite
-
 	for _, val := range ch.PermissionOverwrites {
 		if val.ID == eRole.ID {
 			ePerms = val
@@ -98,19 +97,20 @@ func (m *Module) lockdownCommand(msg *mio.DiscordMessage) {
 
 func newUnlockChannelCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "unlock",
-		Description:   "Unlocks a previously locked channel.",
-		Triggers:      []string{"m?unlock"},
-		Usage:         "m?unlock",
-		Cooldown:      10,
-		RequiredPerms: discordgo.PermissionManageRoles,
-		RequiresOwner: false,
-		CheckBotPerms: true,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.unlockCommand,
+		Mod:              m,
+		Name:             "unlock",
+		Description:      "Unlocks a previously locked channel.",
+		Triggers:         []string{"m?unlock"},
+		Usage:            "m?unlock",
+		Cooldown:         10,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionManageRoles,
+		CheckBotPerms:    true,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.unlockCommand,
 	}
 }
 
@@ -125,7 +125,6 @@ func (m *Module) unlockCommand(msg *mio.DiscordMessage) {
 	}
 
 	var eRole *discordgo.Role
-
 	for _, val := range g.Roles {
 		if val.ID == g.ID {
 			eRole = val
@@ -142,7 +141,6 @@ func (m *Module) unlockCommand(msg *mio.DiscordMessage) {
 	}
 
 	var ePerms *discordgo.PermissionOverwrite
-
 	for _, val := range ch.PermissionOverwrites {
 		if val.ID == eRole.ID {
 			ePerms = val

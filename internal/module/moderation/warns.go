@@ -17,19 +17,20 @@ import (
 
 func newWarnCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "warn",
-		Description:   "Warns a user. Requires warnings enabled.",
-		Triggers:      []string{"m?warn", ".warn"},
-		Usage:         "m?warn [user] <reason>",
-		Cooldown:      2,
-		RequiredPerms: discordgo.PermissionBanMembers,
-		RequiresOwner: false,
-		CheckBotPerms: true,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.warnCommand,
+		Mod:              m,
+		Name:             "warn",
+		Description:      "Warns a user. Requires warnings enabled.",
+		Triggers:         []string{"m?warn", ".warn"},
+		Usage:            "m?warn [user] <reason>",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionBanMembers,
+		CheckBotPerms:    true,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.warnCommand,
 	}
 }
 
@@ -126,18 +127,20 @@ func (m *Module) warnCommand(msg *mio.DiscordMessage) {
 
 func newWarnLogCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "warnlog",
-		Description:   "Displays a users warns",
-		Triggers:      []string{"m?warnlog"},
-		Usage:         "m?warnlog [user] <page>",
-		Cooldown:      5,
-		RequiredPerms: discordgo.PermissionManageMessages,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.warnlogCommand,
+		Mod:              m,
+		Name:             "warnlog",
+		Description:      "Displays a users warns",
+		Triggers:         []string{"m?warnlog"},
+		Usage:            "m?warnlog [user] <page>",
+		Cooldown:         5,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionManageMessages,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.warnlogCommand,
 	}
 }
 
@@ -225,18 +228,20 @@ func (m *Module) warnlogCommand(msg *mio.DiscordMessage) {
 
 func newWarnCountCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "warncount",
-		Description:   "Displays how many warns a user has. User can be specified. Message author will be used if no user is provided.",
-		Triggers:      []string{"m?warncount"},
-		Usage:         "m?warncount <user>",
-		Cooldown:      2,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.warncountCommand,
+		Mod:              m,
+		Name:             "warncount",
+		Description:      "Displays how many warns a user has. User can be specified. Message author will be used if no user is provided.",
+		Triggers:         []string{"m?warncount"},
+		Usage:            "m?warncount <user>",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.warncountCommand,
 	}
 }
 
@@ -269,18 +274,20 @@ func (m *Module) warncountCommand(msg *mio.DiscordMessage) {
 
 func newClearWarnCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "pardon",
-		Description:   "Pardons a user. Opens a menu to clear a warn belonging to them.",
-		Triggers:      []string{"m?pardon"},
-		Usage:         "m?pardon <user>",
-		Cooldown:      3,
-		RequiredPerms: discordgo.PermissionBanMembers,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.clearwarnCommand,
+		Mod:              m,
+		Name:             "pardon",
+		Description:      "Pardons a user. Opens a menu to clear a warn belonging to them.",
+		Triggers:         []string{"m?pardon"},
+		Usage:            "m?pardon <user>",
+		Cooldown:         3,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionBanMembers,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.clearwarnCommand,
 	}
 }
 
@@ -365,18 +372,20 @@ func (m *Module) clearwarnCommand(msg *mio.DiscordMessage) {
 
 func newClearAllWarnsCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "pardonall",
-		Description:   "Pardons all active warns for a member",
-		Triggers:      []string{"m?pardonall"},
-		Usage:         "m?pardonall <user>",
-		Cooldown:      5,
-		RequiredPerms: discordgo.PermissionBanMembers,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.clearallwarnsCommand,
+		Mod:              m,
+		Name:             "pardonall",
+		Description:      "Pardons all active warns for a member",
+		Triggers:         []string{"m?pardonall"},
+		Usage:            "m?pardonall <user>",
+		Cooldown:         5,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionBanMembers,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.clearallwarnsCommand,
 	}
 }
 func (m *Module) clearallwarnsCommand(msg *mio.DiscordMessage) {

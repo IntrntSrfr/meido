@@ -38,19 +38,19 @@ func (m *Module) Hook() error {
 
 func newWeatherCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "weather",
-		Description:   "Finds the weather at a provided location",
-		Triggers:      []string{"m?weather"},
-		Usage:         "m?weather [city]",
-		Cooldown:      0,
-		CooldownUser:  false,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		CheckBotPerms: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "weather",
+		Description:      "Finds the weather at a provided location",
+		Triggers:         []string{"m?weather"},
+		Usage:            "m?weather [city]",
+		Cooldown:         0,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 2 {
 				return
@@ -86,17 +86,19 @@ func newWeatherCommand(m *Module) *mio.ModuleCommand {
 
 func newYouTubeCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "youtube",
-		Description:   "Search for a YouTube video",
-		Triggers:      []string{"m?youtube", "m?yt"},
-		Usage:         "m?yt [query]",
-		Cooldown:      2,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "youtube",
+		Description:      "Search for a YouTube video",
+		Triggers:         []string{"m?youtube", "m?yt"},
+		Usage:            "m?yt [query]",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 2 {
 				return
@@ -125,17 +127,19 @@ func newYouTubeCommand(m *Module) *mio.ModuleCommand {
 
 func newImageCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "image",
-		Description:   "Search for an image",
-		Triggers:      []string{"m?image", "m?img", "m?im"},
-		Usage:         "m?img [query]",
-		Cooldown:      2,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "image",
+		Description:      "Search for an image",
+		Triggers:         []string{"m?image", "m?img", "m?im"},
+		Usage:            "m?img [query]",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 2 {
 				return

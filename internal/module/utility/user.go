@@ -11,17 +11,19 @@ import (
 
 func newAvatarCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "avatar",
-		Description:   "Displays a users profile picture. User can be specified. Author is default.",
-		Triggers:      []string{"m?avatar", "m?av", ">av"},
-		Usage:         ">av <user>",
-		Cooldown:      1,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "avatar",
+		Description:      "Displays a users profile picture. User can be specified. Author is default.",
+		Triggers:         []string{"m?avatar", "m?av", ">av"},
+		Usage:            ">av <user>",
+		Cooldown:         1,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			targetUser := msg.Author()
 			var err error
@@ -46,17 +48,19 @@ func newAvatarCommand(m *Module) *mio.ModuleCommand {
 
 func newBannerCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "banner",
-		Description:   "Displays a users banner. User can be specified. Author is default.",
-		Triggers:      []string{"m?banner", ">banner"},
-		Usage:         ">banner <user>",
-		Cooldown:      1,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "banner",
+		Description:      "Displays a users banner. User can be specified. Author is default.",
+		Triggers:         []string{"m?banner", ">banner"},
+		Usage:            ">banner <user>",
+		Cooldown:         1,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -95,17 +99,19 @@ func newBannerCommand(m *Module) *mio.ModuleCommand {
 
 func newMemberAvatarCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "memberavatar",
-		Description:   "Displays a members profile picture. User can be specified. Author is default.",
-		Triggers:      []string{"m?memberavatar", "m?mav", ">mav"},
-		Usage:         ">av <user>",
-		Cooldown:      1,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "memberavatar",
+		Description:      "Displays a members profile picture. User can be specified. Author is default.",
+		Triggers:         []string{"m?memberavatar", "m?mav", ">mav"},
+		Usage:            ">av <user>",
+		Cooldown:         1,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -141,17 +147,19 @@ func newMemberAvatarCommand(m *Module) *mio.ModuleCommand {
 
 func newUserInfoCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "userinfo",
-		Description:   "Displays information about a user",
-		Triggers:      []string{"m?userinfo"},
-		Usage:         "m?userinfo <user>",
-		Cooldown:      1,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "userinfo",
+		Description:      "Displays information about a user",
+		Triggers:         []string{"m?userinfo"},
+		Usage:            "m?userinfo <user>",
+		Cooldown:         1,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			targetUser := msg.Author()
 			targetMember := msg.Member()

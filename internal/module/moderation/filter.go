@@ -17,18 +17,20 @@ import (
 
 func newFilterWordCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "filterword",
-		Description:   "Adds or removes a word or phrase to the server filter.",
-		Triggers:      []string{"m?fw", "m?filterword"},
-		Usage:         "m?fw jeff",
-		Cooldown:      2,
-		RequiredPerms: discordgo.PermissionManageMessages,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.filterwordCommand,
+		Mod:              m,
+		Name:             "filterword",
+		Description:      "Adds or removes a word or phrase to the server filter.",
+		Triggers:         []string{"m?fw", "m?filterword"},
+		Usage:            "m?fw jeff",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionManageMessages,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.filterwordCommand,
 	}
 }
 func (m *Module) filterwordCommand(msg *mio.DiscordMessage) {
@@ -60,18 +62,20 @@ func (m *Module) filterwordCommand(msg *mio.DiscordMessage) {
 
 func newFilterWordListCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "filterwordlist",
-		Description:   "Lists of all filtered phrases for this server",
-		Triggers:      []string{"m?fwl", "m?filterwordlist"},
-		Usage:         "m?fwl",
-		Cooldown:      10,
-		RequiredPerms: discordgo.PermissionManageMessages,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.filterwordlistCommand,
+		Mod:              m,
+		Name:             "filterwordlist",
+		Description:      "Lists of all filtered phrases for this server",
+		Triggers:         []string{"m?fwl", "m?filterwordlist"},
+		Usage:            "m?fwl",
+		Cooldown:         10,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionManageMessages,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.filterwordlistCommand,
 	}
 }
 func (m *Module) filterwordlistCommand(msg *mio.DiscordMessage) {
@@ -107,18 +111,20 @@ func (m *Module) filterwordlistCommand(msg *mio.DiscordMessage) {
 
 func newClearFilterCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "clearfilter",
-		Description:   "Removes all phrases from the server filter",
-		Triggers:      []string{"m?clearfilter"},
-		Usage:         "m?clearfilter",
-		Cooldown:      10,
-		RequiredPerms: discordgo.PermissionAdministrator,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.clearfilterCommand,
+		Mod:              m,
+		Name:             "clearfilter",
+		Description:      "Removes all phrases from the server filter",
+		Triggers:         []string{"m?clearfilter"},
+		Usage:            "m?clearfilter",
+		Cooldown:         10,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionAdministrator,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.clearfilterCommand,
 	}
 }
 
@@ -164,18 +170,20 @@ func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 
 func newModerationSettingsCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "moderationsettings",
-		Description:   "Moderation settings:\n- Toggle warn system [enable / disable]\n- Set max warns [0 - 10]\n- Set warn duration [0 (forever) - 365]",
-		Triggers:      []string{"m?settings moderation"},
-		Usage:         "m?settings moderation warns [enable / disable]\nm?settings moderation maxwarns [0 - 10]\nm?settings moderation warnduration [0 - 365]",
-		Cooldown:      2,
-		RequiredPerms: discordgo.PermissionAdministrator,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.moderationsettingsCommand,
+		Mod:              m,
+		Name:             "moderationsettings",
+		Description:      "Moderation settings:\n- Toggle warn system [enable / disable]\n- Set max warns [0 - 10]\n- Set warn duration [0 (forever) - 365]",
+		Triggers:         []string{"m?settings moderation"},
+		Usage:            "m?settings moderation warns [enable / disable]\nm?settings moderation maxwarns [0 - 10]\nm?settings moderation warnduration [0 - 365]",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionAdministrator,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.moderationsettingsCommand,
 	}
 }
 

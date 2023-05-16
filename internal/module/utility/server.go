@@ -11,17 +11,19 @@ import (
 
 func newServerCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "server",
-		Description:   "Displays information about the server",
-		Triggers:      []string{"m?server"},
-		Usage:         "m?server",
-		Cooldown:      5,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "server",
+		Description:      "Displays information about the server",
+		Triggers:         []string{"m?server"},
+		Usage:            "m?server",
+		Cooldown:         5,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -78,17 +80,19 @@ func newServerCommand(m *Module) *mio.ModuleCommand {
 
 func newServerSplashCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "serversplash",
-		Description:   "Displays server splash if one exists",
-		Triggers:      []string{"m?serversplash"},
-		Usage:         "m?serversplash",
-		Cooldown:      5,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "serversplash",
+		Description:      "Displays server splash if one exists",
+		Triggers:         []string{"m?serversplash"},
+		Usage:            "m?serversplash",
+		Cooldown:         5,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -115,17 +119,19 @@ func newServerSplashCommand(m *Module) *mio.ModuleCommand {
 
 func newServerIconCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "servericon",
-		Description:   "Displays server icon, if one exists",
-		Triggers:      []string{"m?servericon", "m?si", ">si"},
-		Usage:         "m?servericon",
-		Cooldown:      5,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "servericon",
+		Description:      "Displays server icon, if one exists",
+		Triggers:         []string{"m?servericon", "m?si", ">si"},
+		Usage:            "m?servericon",
+		Cooldown:         5,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return
@@ -151,17 +157,19 @@ func newServerIconCommand(m *Module) *mio.ModuleCommand {
 
 func newServerBannerCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "serverbanner",
-		Description:   "Displays server banner if one exists",
-		Triggers:      []string{"m?serverbanner"},
-		Usage:         "m?serverbanner",
-		Cooldown:      5,
-		RequiredPerms: 0,
-		RequiresOwner: false,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "serverbanner",
+		Description:      "Displays server banner if one exists",
+		Triggers:         []string{"m?serverbanner"},
+		Usage:            "m?serverbanner",
+		Cooldown:         5,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 1 {
 				return

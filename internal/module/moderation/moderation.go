@@ -103,19 +103,20 @@ func checkWarnInterval(m *Module) func(s *discordgo.Session, r *discordgo.Ready)
 
 func newBanCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "ban",
-		Description:   "Bans a user. Days of messages to be deleted and reason is optional",
-		Triggers:      []string{"m?ban", "m?b", ".b", ".ban"},
-		Usage:         ".b [user] <days> <reason>",
-		Cooldown:      2,
-		RequiredPerms: discordgo.PermissionBanMembers,
-		RequiresOwner: false,
-		CheckBotPerms: true,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.banCommand,
+		Mod:              m,
+		Name:             "ban",
+		Description:      "Bans a user. Days of messages to be deleted and reason is optional",
+		Triggers:         []string{"m?ban", "m?b", ".b", ".ban"},
+		Usage:            ".b [user] <days> <reason>",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionBanMembers,
+		CheckBotPerms:    true,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.banCommand,
 	}
 }
 
@@ -203,9 +204,6 @@ func (m *Module) banCommand(msg *mio.DiscordMessage) {
 		}
 	}
 
-	//_, err = m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE guild_id=$3 AND user_id=$4 and is_valid",
-	//	msg.Sess.State.User.UID, time.Now(), msg.Message.GuildID, targetUser.UID)
-
 	embed := helpers.NewEmbed().
 		WithTitle("User banned").
 		WithOkColor().
@@ -216,19 +214,20 @@ func (m *Module) banCommand(msg *mio.DiscordMessage) {
 
 func newUnbanCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "unban",
-		Description:   "Unbans a user",
-		Triggers:      []string{"m?unban", "m?ub", ".ub", ".unban"},
-		Usage:         ".unban [userID]",
-		Cooldown:      2,
-		RequiredPerms: discordgo.PermissionBanMembers,
-		RequiresOwner: false,
-		CheckBotPerms: true,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.unbanCommand,
+		Mod:              m,
+		Name:             "unban",
+		Description:      "Unbans a user",
+		Triggers:         []string{"m?unban", "m?ub", ".ub", ".unban"},
+		Usage:            ".unban [userID]",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionBanMembers,
+		CheckBotPerms:    true,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.unbanCommand,
 	}
 }
 
@@ -260,18 +259,19 @@ func (m *Module) unbanCommand(msg *mio.DiscordMessage) {
 
 func newHackbanCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "hackban",
-		Description:   "Hackbans one or several users. Prunes 7 days. Only accepts user IDs.",
-		Triggers:      []string{"m?hackban", "m?hb"},
-		Usage:         "m?hb [userID] <additional userIDs...>",
-		Cooldown:      3,
-		RequiredPerms: discordgo.PermissionBanMembers,
-		RequiresOwner: false,
-		CheckBotPerms: true,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
+		Mod:              m,
+		Name:             "hackban",
+		Description:      "Hackbans one or several users. Prunes 7 days. Only accepts user IDs.",
+		Triggers:         []string{"m?hackban", "m?hb"},
+		Usage:            "m?hb [userID] <additional userIDs...>",
+		Cooldown:         3,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionBanMembers,
+		CheckBotPerms:    true,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			if msg.LenArgs() < 2 {
 				return
@@ -296,19 +296,20 @@ func newHackbanCommand(m *Module) *mio.ModuleCommand {
 
 func newKickCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "kick",
-		Description:   "Kicks a user. Reason is optional",
-		Triggers:      []string{"m?kick", "m?k", ".kick", ".k"},
-		Usage:         "m?k [user] <reason>",
-		Cooldown:      2,
-		RequiredPerms: discordgo.PermissionKickMembers,
-		RequiresOwner: false,
-		CheckBotPerms: true,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.kickCommand,
+		Mod:              m,
+		Name:             "kick",
+		Description:      "Kicks a user. Reason is optional",
+		Triggers:         []string{"m?kick", "m?k", ".kick", ".k"},
+		Usage:            "m?k [user] <reason>",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionKickMembers,
+		CheckBotPerms:    true,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.kickCommand,
 	}
 }
 
@@ -377,19 +378,20 @@ func (m *Module) kickCommand(msg *mio.DiscordMessage) {
 
 func newPruneCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "prune",
-		Description:   "Prunes all of Meido's messages in the last 100 messages. Amount of messages can be specified, but max 100. If a user is specified, it removes all messages from that user in the last 100 messages.",
-		Triggers:      []string{"m?prune"},
-		Usage:         "m?prune <user> <amount>",
-		Cooldown:      2,
-		RequiredPerms: discordgo.PermissionManageMessages,
-		RequiresOwner: false,
-		CheckBotPerms: true,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      false,
-		IsEnabled:     true,
-		Run:           m.pruneCommand,
+		Mod:              m,
+		Name:             "prune",
+		Description:      "Prunes all of Meido's messages in the last 100 messages. Amount of messages can be specified, but max 100. If a user is specified, it removes all messages from that user in the last 100 messages.",
+		Triggers:         []string{"m?prune"},
+		Usage:            "m?prune <user> <amount>",
+		Cooldown:         2,
+		CooldownScope:    mio.Channel,
+		RequiredPerms:    discordgo.PermissionManageMessages,
+		CheckBotPerms:    true,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         false,
+		IsEnabled:        true,
+		Run:              m.pruneCommand,
 	}
 }
 
