@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/base"
+	"github.com/intrntsrfr/meido/utils"
 	"time"
 )
 
@@ -33,7 +34,7 @@ func (m *ModerationMod) muteCommand(msg *base.DiscordMessage) {
 
 	duration := time.Hour * 24
 	if msg.LenArgs() > 2 {
-		pDur, err := time.ParseDuration(msg.Args()[2])
+		pDur, err := utils.ProcessDuration(msg.Args()[2])
 		if err != nil {
 			_, _ = msg.Reply("invalid time format - I allow hours and minutes! Example: 1h30m")
 			return
