@@ -1,0 +1,7 @@
+*.txt
+*.exe
+*.zip
+*.json
+*.dat
+data/
+randtests/

@@ -2,6 +2,4 @@
 *.xml
 *.iml
 .idea
-data/
-cmd/randtests/
 *.dat
