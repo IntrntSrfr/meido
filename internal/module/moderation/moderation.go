@@ -121,7 +121,7 @@ func newBanCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) banCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 
@@ -143,7 +143,7 @@ func (m *Module) banCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	if msg.LenArgs() > 2 {
+	if len(msg.Args()) > 2 {
 		reason = strings.Join(msg.RawArgs()[2:], " ")
 		pruneDays, err = strconv.Atoi(msg.Args()[2])
 		if err == nil {
@@ -232,7 +232,7 @@ func newUnbanCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) unbanCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 
@@ -273,7 +273,7 @@ func newHackbanCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         false,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 2 {
+			if len(msg.Args()) < 2 {
 				return
 			}
 
@@ -289,7 +289,7 @@ func newHackbanCommand(m *Module) *mio.ModuleCommand {
 					continue
 				}
 			}
-			_, _ = msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", msg.LenArgs()-1-badBans-badIDs, msg.LenArgs()-1-badIDs))
+			_, _ = msg.Reply(fmt.Sprintf("Banned %v out of %v users provided.", len(msg.Args())-1-badBans-badIDs, len(msg.Args())-1-badIDs))
 		},
 	}
 }
@@ -314,7 +314,7 @@ func newKickCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) kickCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 
@@ -335,7 +335,7 @@ func (m *Module) kickCommand(msg *mio.DiscordMessage) {
 	}
 
 	reason := ""
-	if msg.LenArgs() > 2 {
+	if len(msg.Args()) > 2 {
 		reason = strings.Join(msg.RawArgs()[2:], " ")
 	}
 
@@ -396,9 +396,9 @@ func newPruneCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) pruneCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() == 1 {
+	if len(msg.Args()) == 1 {
 		pruneMessages(msg, msg.Discord.BotUser().ID, 100)
-	} else if msg.LenArgs() == 2 {
+	} else if len(msg.Args()) == 2 {
 		if member, err := msg.GetMemberAtArg(1); err == nil {
 			pruneMessages(msg, member.User.ID, 100)
 			return
@@ -409,7 +409,7 @@ func (m *Module) pruneCommand(msg *mio.DiscordMessage) {
 		}
 		num, _ := strconv.Atoi(msg.Args()[1])
 		pruneMessages(msg, "", num)
-	} else if msg.LenArgs() == 3 {
+	} else if len(msg.Args()) == 3 {
 		member, err := msg.GetMemberAtArg(1)
 		if err != nil {
 			return

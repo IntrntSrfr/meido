@@ -54,7 +54,7 @@ func newMessageCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         true,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 3 {
+			if len(msg.Args()) < 3 {
 				return
 			}
 			chID := msg.Args()[1]

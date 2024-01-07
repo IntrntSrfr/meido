@@ -94,7 +94,7 @@ func (m *FishMod) aquariumCommand(msg *mio.DiscordMessage) {
 		return
 	}
 	targetUser := msg.Author()
-	if msg.LenArgs() > 1 {
+	if len(msg.Args()) > 1 {
 		targetMember, err := msg.GetMemberAtArg(1)
 		if err != nil {
 			return
@@ -139,7 +139,7 @@ func newSetFishingSettingsCommand(m *FishMod) *mio.ModuleCommand {
 		AllowDMs:         false,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 2 {
+			if len(msg.Args()) < 2 {
 				return
 			}
 			gc, err := m.db.GetGuild(msg.GuildID())
@@ -148,7 +148,7 @@ func newSetFishingSettingsCommand(m *FishMod) *mio.ModuleCommand {
 				return
 			}
 
-			switch msg.LenArgs() {
+			switch len(msg.Args()) {
 			case 2:
 				embed := helpers.NewEmbed().
 					WithTitle("Fishing settings").

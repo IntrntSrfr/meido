@@ -69,7 +69,7 @@ func (m *MediaConvertMod) jpgLargeConvertPassive(msg *mio.DiscordMessage) {
 		Content: "I converted that to .jpg for you",
 		Files:   files,
 		Reference: &discordgo.MessageReference{
-			MessageID: msg.MessageID(),
+			MessageID: msg.ID(),
 			ChannelID: msg.ChannelID(),
 			GuildID:   msg.GuildID(),
 		},
@@ -96,7 +96,7 @@ func newMediaConvertCommand(m *MediaConvertMod) *mio.ModuleCommand {
 }
 
 func (m *MediaConvertMod) mediaConvertCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 3 {
+	if len(msg.Args()) < 3 {
 		return
 	}
 	// m?mediaconvert link format

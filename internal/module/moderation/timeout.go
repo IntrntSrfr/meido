@@ -28,11 +28,11 @@ func newMuteCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) muteCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 	duration := time.Hour * 24
-	if msg.LenArgs() > 2 {
+	if len(msg.Args()) > 2 {
 		pDur, err := time.ParseDuration(msg.Args()[2])
 		if err != nil {
 			_, _ = msg.Reply("invalid time format - I allow hours and minutes! Example: 1h30m")
@@ -96,7 +96,7 @@ func newUnmuteCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) unmuteCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 	// get the target member

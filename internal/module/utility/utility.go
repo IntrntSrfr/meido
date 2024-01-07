@@ -70,7 +70,7 @@ func NewConvertCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         true,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 4 {
+			if len(msg.Args()) < 4 {
 				return
 			}
 		},
@@ -94,7 +94,7 @@ func newPingCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         true,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 1 {
+			if len(msg.Args()) < 1 {
 				return
 			}
 			startTime := time.Now()
@@ -124,7 +124,7 @@ func newAboutCommand(m *Module) *mio.ModuleCommand {
 		AllowedTypes:     mio.MessageTypeCreate,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 1 {
+			if len(msg.Args()) < 1 {
 				return
 			}
 
@@ -183,7 +183,7 @@ func newColorCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         true,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 2 {
+			if len(msg.Args()) < 2 {
 				return
 			}
 
@@ -233,7 +233,7 @@ func newIdTimestampCmd(m *Module) *mio.ModuleCommand {
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
 			id := msg.AuthorID()
-			if msg.LenArgs() > 1 {
+			if len(msg.Args()) > 1 {
 				id = msg.Args()[1]
 			}
 			ts, err := utils.IDToTimestamp2(id)
@@ -294,7 +294,7 @@ func (m *Module) helpCommand(msg *mio.DiscordMessage) {
 		WithFooter("Use m?help [module] to see module commands.\nUse m?help [command] to see command info.\nArguments in [square brackets] are required, while arguments in <angle brackets> are optional.", "").
 		WithThumbnail(msg.Sess.State.User.AvatarURL("256"))
 
-	if msg.LenArgs() == 1 {
+	if len(msg.Args()) == 1 {
 		desc := strings.Builder{}
 		for _, mod := range m.Bot.Modules {
 			desc.WriteString(fmt.Sprintf("- %v\n", mod.Name()))
@@ -306,7 +306,7 @@ func (m *Module) helpCommand(msg *mio.DiscordMessage) {
 	}
 
 	// if only m?help
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 

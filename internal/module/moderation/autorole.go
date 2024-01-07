@@ -38,7 +38,7 @@ func newSetAutoRoleCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         false,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 2 {
+			if len(msg.Args()) < 2 {
 				return
 			}
 

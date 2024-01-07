@@ -224,13 +224,22 @@ func (d *Discord) UserChannelPermissions(userID, channelID string) (int64, error
 	return permissions, err
 }
 
-// HasPermissions finds if the bot user has permissions in a channel.
-func (d *Discord) HasPermissions(channelID string, perm int64) (bool, error) {
+// BotHasPermissions finds if the bot user has permissions in a channel.
+func (d *Discord) BotHasPermissions(channelID string, perm int64) (bool, error) {
 	uPerms, err := d.UserChannelPermissions(d.Sess.State.User.ID, channelID)
 	if err != nil {
 		return false, err
 	}
-	return uPerms&perm != 0 || uPerms&discordgo.PermissionAdministrator != 0, nil
+	return uPerms&(perm|discordgo.PermissionAdministrator) != 0, nil
+}
+
+// HasPermissions finds if the bot user has permissions in a channel.
+func (d *Discord) HasPermissions(channelID, userID string, perm int64) (bool, error) {
+	uPerms, err := d.UserChannelPermissions(userID, channelID)
+	if err != nil {
+		return false, err
+	}
+	return uPerms&(perm|discordgo.PermissionAdministrator) != 0, nil
 }
 
 // HighestRole finds the highest role a user has in the guild hierarchy.
@@ -428,4 +437,28 @@ func (d *Discord) IsBotOwner(msg *DiscordMessage) bool {
 // StartTyping makes the bot show as 'typing...' in a channel.
 func (d *Discord) StartTyping(channelID string) error {
 	return d.Sess.ChannelTyping(channelID)
+}
+
+func (d *Discord) SendMessage(channelID, content string) (*discordgo.Message, error) {
+	return d.Sess.ChannelMessageSend(channelID, content)
+}
+
+func (d *Discord) UpdateStatus(status string, activityType discordgo.ActivityType) {
+	d.Sess.UpdateStatusComplex(discordgo.UpdateStatusData{
+		Status: status,
+		Activities: []*discordgo.Activity{
+			{
+				Type: activityType,
+			},
+		},
+	})
+}
+
+func (d *Discord) IsOwner(userID string) bool {
+	for _, id := range d.ownerIds {
+		if id == userID {
+			return true
+		}
+	}
+	return false
 }

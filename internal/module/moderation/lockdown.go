@@ -25,7 +25,7 @@ func newLockdownChannelCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) lockdownCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 1 {
+	if len(msg.Args()) < 1 {
 		return
 	}
 
@@ -115,7 +115,7 @@ func newUnlockChannelCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) unlockCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 1 {
+	if len(msg.Args()) < 1 {
 		return
 	}
 

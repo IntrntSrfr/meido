@@ -27,7 +27,7 @@ func newAvatarCommand(m *Module) *mio.ModuleCommand {
 		Run: func(msg *mio.DiscordMessage) {
 			targetUser := msg.Author()
 			var err error
-			if msg.LenArgs() > 1 {
+			if len(msg.Args()) > 1 {
 				targetUser, err = msg.GetMemberOrUserAtArg(1)
 				if err != nil {
 					return
@@ -62,13 +62,13 @@ func newBannerCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         true,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 1 {
+			if len(msg.Args()) < 1 {
 				return
 			}
 
 			targetUserID := msg.AuthorID()
 
-			if msg.LenArgs() > 1 {
+			if len(msg.Args()) > 1 {
 				targetUserID = msg.Args()[1]
 			}
 
@@ -113,14 +113,14 @@ func newMemberAvatarCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         false,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 1 {
+			if len(msg.Args()) < 1 {
 				return
 			}
 
 			targetMember := msg.Member()
 			var err error
 
-			if msg.LenArgs() > 1 {
+			if len(msg.Args()) > 1 {
 				targetMember, err = msg.GetMemberAtArg(1)
 				if err != nil {
 					return
@@ -163,7 +163,7 @@ func newUserInfoCommand(m *Module) *mio.ModuleCommand {
 		Run: func(msg *mio.DiscordMessage) {
 			targetUser := msg.Author()
 			targetMember := msg.Member()
-			if msg.LenArgs() > 1 {
+			if len(msg.Args()) > 1 {
 				if len(msg.Message.Mentions) >= 1 {
 					targetUser = msg.Message.Mentions[0]
 					targetMember, _ = msg.Discord.Member(msg.Message.GuildID, msg.Message.Mentions[0].ID)

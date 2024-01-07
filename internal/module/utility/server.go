@@ -25,7 +25,7 @@ func newServerCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         false,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 1 {
+			if len(msg.Args()) < 1 {
 				return
 			}
 
@@ -94,7 +94,7 @@ func newServerSplashCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         false,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 1 {
+			if len(msg.Args()) < 1 {
 				return
 			}
 
@@ -133,7 +133,7 @@ func newServerIconCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         false,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 1 {
+			if len(msg.Args()) < 1 {
 				return
 			}
 			g, err := msg.Discord.Guild(msg.Message.GuildID)
@@ -171,7 +171,7 @@ func newServerBannerCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         false,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 1 {
+			if len(msg.Args()) < 1 {
 				return
 			}
 

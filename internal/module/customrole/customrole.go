@@ -94,7 +94,7 @@ func newSetCustomRoleCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         false,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 3 {
+			if len(msg.Args()) < 3 {
 				return
 			}
 			targetMember, err := msg.GetMemberAtArg(1)
@@ -118,7 +118,7 @@ func newSetCustomRoleCommand(m *Module) *mio.ModuleCommand {
 			for _, role := range g.Roles {
 				if role.ID == msg.Args()[2] {
 					selectedRole = role
-				} else if strings.ToLower(role.Name) == strings.ToLower(strings.Join(msg.Args()[2:], " ")) {
+				} else if strings.EqualFold(role.Name, strings.Join(msg.Args()[2:], " ")) {
 					selectedRole = role
 				}
 			}
@@ -166,7 +166,7 @@ func newRemoveCustomRoleCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         false,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 2 {
+			if len(msg.Args()) < 2 {
 				return
 			}
 			targetUser, err := msg.GetMemberOrUserAtArg(1)
@@ -212,7 +212,7 @@ func newMyRoleCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 1 {
+	if len(msg.Args()) < 1 {
 		return
 	}
 	var (
@@ -226,12 +226,12 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	switch la := msg.LenArgs(); {
+	switch la := len(msg.Args()); {
 	case la > 2:
 		if msg.Args()[1] != "name" && msg.Args()[1] != "color" {
 			return
 		}
-		if allow, err := msg.Discord.HasPermissions(msg.Message.ChannelID, discordgo.PermissionManageRoles); err != nil || !allow {
+		if allow, err := msg.BotHasPermissions(discordgo.PermissionManageRoles); err != nil || !allow {
 			_, _ = msg.Reply("I am missing `manage roles` permissions!")
 			return
 		}

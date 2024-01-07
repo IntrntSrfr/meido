@@ -35,7 +35,7 @@ func newWarnCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) warnCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 
@@ -74,7 +74,7 @@ func (m *Module) warnCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	if msg.LenArgs() > 2 {
+	if len(msg.Args()) > 2 {
 		reason = strings.Join(msg.RawArgs()[2:], " ")
 	}
 
@@ -145,12 +145,12 @@ func newWarnLogCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) warnlogCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 	page := 0
 	var err error
-	if msg.LenArgs() > 2 {
+	if len(msg.Args()) > 2 {
 		page, err = strconv.Atoi(msg.Args()[2])
 		if err != nil || page < 1 {
 			_, _ = msg.Reply("Invalid page")
@@ -258,7 +258,7 @@ func (m *Module) warncountCommand(msg *mio.DiscordMessage) {
 	}
 
 	targetUser := msg.Author()
-	if msg.LenArgs() > 1 {
+	if len(msg.Args()) > 1 {
 		targetUser, err = msg.GetMemberOrUserAtArg(1)
 		if err != nil {
 			_, _ = msg.Reply("Could not find that user!")
@@ -292,7 +292,7 @@ func newClearWarnCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) clearwarnCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 
@@ -389,7 +389,7 @@ func newClearAllWarnsCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 func (m *Module) clearallwarnsCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 

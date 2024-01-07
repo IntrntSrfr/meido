@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-
 	"github.com/intrntsrfr/meido/internal/database"
 	"go.uber.org/zap"
 )
@@ -126,7 +125,7 @@ func (b *Bot) processMessage(msg *DiscordMessage) {
 		}
 
 		// if there is no text, there can be no command
-		if msg.LenArgs() <= 0 {
+		if len(msg.Args()) <= 0 {
 			continue
 		}
 
@@ -174,11 +173,11 @@ func (b *Bot) processCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 
 	//check for perms
 	if cmd.RequiredPerms != 0 {
-		if allow, err := msg.HasPermissions(cmd.RequiredPerms); err != nil || !allow {
+		if allow, err := msg.AuthorHasPermissions(cmd.RequiredPerms); err != nil || !allow {
 			return
 		}
 		if cmd.CheckBotPerms {
-			if botAllow, err := msg.Discord.HasPermissions(msg.Message.ChannelID, cmd.RequiredPerms); err != nil || !botAllow {
+			if botAllow, err := msg.Discord.BotHasPermissions(msg.ChannelID(), cmd.RequiredPerms); err != nil || !botAllow {
 				return
 			}
 		}
@@ -203,7 +202,7 @@ func (b *Bot) runCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	cmd.Run(msg)
 	b.emit("command_ran", &CommandRan{cmd, msg})
 	b.Log.Info("new command",
-		zap.String("id", msg.MessageID()),
+		zap.String("id", msg.ID()),
 		zap.String("content", msg.RawContent()),
 		zap.String("author ID", msg.AuthorID()),
 		zap.String("author username", msg.Author().String()),

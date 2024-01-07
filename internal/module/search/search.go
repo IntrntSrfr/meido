@@ -52,7 +52,7 @@ func newWeatherCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         true,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 2 {
+			if len(msg.Args()) < 2 {
 				return
 			}
 			query := strings.TrimSpace(strings.Join(msg.RawArgs()[1:], " "))
@@ -100,7 +100,7 @@ func newYouTubeCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         true,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 2 {
+			if len(msg.Args()) < 2 {
 				return
 			}
 
@@ -141,7 +141,7 @@ func newImageCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         true,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 2 {
+			if len(msg.Args()) < 2 {
 				return
 			}
 			query := strings.Join(msg.Args()[1:], " ")
@@ -186,7 +186,7 @@ func newImageCommand(m *Module) *mio.ModuleCommand {
 						},
 					},
 				},
-				Reference:       &discordgo.MessageReference{MessageID: msg.MessageID(), ChannelID: msg.ChannelID(), GuildID: msg.GuildID()},
+				Reference:       &discordgo.MessageReference{MessageID: msg.ID(), ChannelID: msg.ChannelID(), GuildID: msg.GuildID()},
 				AllowedMentions: &discordgo.MessageAllowedMentions{},
 				Embed:           embed.Build(),
 			}

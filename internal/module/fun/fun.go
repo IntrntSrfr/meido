@@ -45,7 +45,7 @@ func newLifeCommand(m *Module) *mio.ModuleCommand {
 		Run: func(msg *mio.DiscordMessage) {
 			_ = msg.Discord.StartTyping(msg.ChannelID())
 			seedStr := msg.AuthorID()
-			if msg.LenArgs() > 1 {
+			if len(msg.Args()) > 1 {
 				seedStr = strings.Join(msg.Args()[1:], " ")
 			}
 

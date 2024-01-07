@@ -34,7 +34,7 @@ func newFilterWordCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 func (m *Module) filterwordCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 
@@ -79,7 +79,7 @@ func newFilterWordListCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 func (m *Module) filterwordlistCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 1 {
+	if len(msg.Args()) < 1 {
 		return
 	}
 
@@ -129,7 +129,7 @@ func newClearFilterCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 1 {
+	if len(msg.Args()) < 1 {
 		return
 	}
 	rpl, err := msg.Reply("Are you sure you want to REMOVE ALL FILTERS? Please reply `YES`, in all caps, if you are")
@@ -193,7 +193,7 @@ var (
 )
 
 func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
-	if msg.LenArgs() < 2 {
+	if len(msg.Args()) < 2 {
 		return
 	}
 	gc, err := m.db.GetGuild(msg.GuildID())
@@ -202,7 +202,7 @@ func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	switch msg.LenArgs() {
+	switch len(msg.Args()) {
 	case 2:
 		embed := helpers.NewEmbed().
 			WithTitle("Moderation settings").
@@ -264,12 +264,12 @@ func newCheckFilterPassive(m *Module) *mio.ModulePassive {
 		Enabled:      true,
 		AllowedTypes: mio.MessageTypeCreate | mio.MessageTypeUpdate,
 		Run: func(msg *mio.DiscordMessage) {
-			if msg.LenArgs() < 1 {
+			if len(msg.Args()) < 1 {
 				return
 			}
 
 			isIllegal, trigger := false, ""
-			if perms, err := msg.HasPermissions(discordgo.PermissionManageMessages); err != nil || perms {
+			if perms, err := msg.AuthorHasPermissions(discordgo.PermissionManageMessages); err != nil || perms {
 				return
 			}
 
