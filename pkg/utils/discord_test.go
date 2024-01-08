@@ -1,6 +1,25 @@
 package utils
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
+
+func TestIDToTimestamp(t *testing.T) {
+	tests := []struct {
+		idStr string
+		want  time.Time
+	}{
+		{"163454407999094786", time.Unix(1459040967, 0)},
+		{"invalid", time.Unix(0, 0)},
+	}
+
+	for _, tc := range tests {
+		if got := IDToTimestamp(tc.idStr); !got.Equal(tc.want) {
+			t.Errorf("IDToTimestamp(%s) = %v; want %v", tc.idStr, got, tc.want)
+		}
+	}
+}
 
 func TestTrimUserID(t *testing.T) {
 	tests := []struct {
@@ -8,26 +27,14 @@ func TestTrimUserID(t *testing.T) {
 		input string
 		want  string
 	}{
-		{
-			name:  "ID",
-			input: "163454407999094786",
-			want:  "163454407999094786",
-		},
-		{
-			name:  "<@ID>",
-			input: "<@163454407999094786>",
-			want:  "163454407999094786",
-		},
-		{
-			name:  "<@!ID>",
-			input: "<@!163454407999094786>",
-			want:  "163454407999094786",
-		},
+		{"ID", "163454407999094786", "163454407999094786"},
+		{"<@ID>", "<@163454407999094786>", "163454407999094786"},
+		{"<@!ID>", "<@!163454407999094786>", "163454407999094786"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := TrimUserID(tt.input); got != tt.want {
-				t.Errorf("TrimUserID() = %v, want %v", got, tt.want)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := TrimUserID(tc.input); got != tc.want {
+				t.Errorf("TrimUserID(%s) = %s; want %s", tc.input, got, tc.want)
 			}
 		})
 	}
@@ -39,26 +46,14 @@ func TestTrimChannelID(t *testing.T) {
 		input string
 		want  string
 	}{
-		{
-			name:  "ID",
-			input: "393558442977263619",
-			want:  "393558442977263619",
-		},
-		{
-			name:  "<#ID>",
-			input: "<#393558442977263619>",
-			want:  "393558442977263619",
-		},
-		{
-			name:  "<#!ID>",
-			input: "<#!393558442977263619>",
-			want:  "393558442977263619",
-		},
+		{"ID", "393558442977263619", "393558442977263619"},
+		{"<#ID>", "<#393558442977263619>", "393558442977263619"},
+		{"<#!ID>", "<#!393558442977263619>", "393558442977263619"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := TrimChannelID(tt.input); got != tt.want {
-				t.Errorf("TrimChannelID() = %v, want %v", got, tt.want)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := TrimChannelID(tc.input); got != tc.want {
+				t.Errorf("TrimChannelID(%s) = %s; want %s", tc.input, got, tc.want)
 			}
 		})
 	}
@@ -70,26 +65,14 @@ func TestTrimRoleID(t *testing.T) {
 		input string
 		want  string
 	}{
-		{
-			name:  "ID",
-			input: "394302349721731072",
-			want:  "394302349721731072",
-		},
-		{
-			name:  "<&ID>",
-			input: "<&394302349721731072>",
-			want:  "394302349721731072",
-		},
-		{
-			name:  "<&!ID>",
-			input: "<&!394302349721731072>",
-			want:  "394302349721731072",
-		},
+		{"ID", "394302349721731072", "394302349721731072"},
+		{"<&ID>", "<&394302349721731072>", "394302349721731072"},
+		{"<&!ID>", "<&!394302349721731072>", "394302349721731072"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := TrimRoleID(tt.input); got != tt.want {
-				t.Errorf("TrimRoleID() = %v, want %v", got, tt.want)
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := TrimRoleID(tc.input); got != tc.want {
+				t.Errorf("TrimRoleID(%s) = %s; want %s", tc.input, got, tc.want)
 			}
 		})
 	}

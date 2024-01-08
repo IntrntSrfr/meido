@@ -5,32 +5,41 @@ import (
 	"time"
 )
 
-func TestBotCooldownService_Check(t *testing.T) {
-	c := &BotCooldownService{
-		m: map[string]time.Time{"future": time.Now()},
+func TestSetMethod(t *testing.T) {
+	handler := NewCooldownHandler()
+	key := "testKey"
+	dur := 5 * time.Second
+
+	handler.Set(key, dur)
+	if _, ok := handler.m[key]; !ok {
+		t.Errorf("Expected the key to be set with a cooldown")
 	}
-	_, ok := c.Check("future")
+
+	handler.Set("zeroDurKey", 0)
+	if _, ok := handler.m["zeroDurKey"]; ok {
+		t.Errorf("Expected the key with zero duration not to be set")
+	}
+}
+
+func TestCheckMethod(t *testing.T) {
+	handler := NewCooldownHandler()
+	key := "testKey"
+	dur := 1 * time.Second
+
+	handler.Set(key, dur)
+	_, ok := handler.Check(key)
 	if !ok {
-		t.Errorf("Check() got = %v, want %v", ok, true)
+		t.Errorf("Expected the key to be on cooldown")
 	}
 }
 
-func TestBotCooldownService_Remove(t *testing.T) {
-	c := &BotCooldownService{
-		m: map[string]time.Time{"future": time.Now()},
-	}
-	c.Remove("future")
-	if len(c.m) != 0 {
-		t.Errorf("Check() got = %v, want %v", len(c.m), 0)
-	}
-}
+func TestRemoveMethod(t *testing.T) {
+	handler := NewCooldownHandler()
+	key := "testKey"
 
-func TestBotCooldownService_Set(t *testing.T) {
-	c := &BotCooldownService{
-		m: make(map[string]time.Time),
-	}
-	c.Set("future", time.Second*5)
-	if len(c.m) != 1 {
-		t.Errorf("Check() got = %v, want %v", len(c.m), 1)
+	handler.Set(key, 5*time.Second)
+	handler.Remove(key)
+	if _, ok := handler.m[key]; ok {
+		t.Errorf("Expected the key to be removed from cooldown")
 	}
 }

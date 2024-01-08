@@ -236,11 +236,7 @@ func newIdTimestampCmd(m *Module) *mio.ModuleCommand {
 			if len(msg.Args()) > 1 {
 				id = msg.Args()[1]
 			}
-			ts, err := utils.IDToTimestamp2(id)
-			if err != nil {
-				return
-			}
-			_, _ = msg.Reply(fmt.Sprintf("<t:%v>", ts.Unix()))
+			_, _ = msg.Reply(fmt.Sprintf("<t:%v>", utils.IDToTimestamp(id).Unix()))
 		},
 	}
 

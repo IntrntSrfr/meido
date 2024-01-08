@@ -11,7 +11,6 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 )
 
@@ -186,7 +185,7 @@ func (m *Module) warnlogCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	warns = warns[page*10 : utils.Min(page*10+10, len(warns))]
+	warns = warns[page*10 : min(page*10+10, len(warns))]
 	userCache := make(map[string]*discordgo.User) // to cache users in case someone authored or cleared multiple
 	for _, warn := range warns {
 		field := &discordgo.MessageEmbedField{}
