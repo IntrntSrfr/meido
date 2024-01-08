@@ -14,8 +14,7 @@ func TestIsNumber(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			result := IsNumber(tc.str)
-			if result != tc.want {
+			if result := IsNumber(tc.str); result != tc.want {
 				t.Errorf("IsNumber(%s) = %v; expected %v", tc.str, result, tc.want)
 			}
 		})
@@ -35,8 +34,7 @@ func TestClamp(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
-			result := Clamp(tc.lower, tc.upper, tc.n)
-			if result != tc.want {
+			if result := Clamp(tc.lower, tc.upper, tc.n); result != tc.want {
 				t.Errorf("Clamp(%d, %d, %d) = %d; expected %d", tc.lower, tc.upper, tc.n, result, tc.want)
 			}
 		})

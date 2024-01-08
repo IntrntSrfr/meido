@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/internal/helpers"
+	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
@@ -137,7 +137,7 @@ func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	}
-	ch, err := m.Bot.Callbacks.Make(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
+	cb, err := m.Bot.Callbacks.Make(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
 	if err != nil {
 		_, _ = msg.Reply("There was an issue, please try again!")
 		return
@@ -148,7 +148,7 @@ func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 	t := time.NewTimer(time.Second * 15)
 	for {
 		select {
-		case reply = <-ch:
+		case reply = <-cb:
 		case <-t.C:
 			_ = msg.Sess.ChannelMessageDelete(rpl.ChannelID, rpl.ID)
 			_ = msg.Sess.ChannelMessageDelete(msg.ChannelID(), msg.Message.ID)
@@ -204,7 +204,7 @@ func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 
 	switch len(msg.Args()) {
 	case 2:
-		embed := helpers.NewEmbed().
+		embed := iutils.NewEmbed().
 			WithTitle("Moderation settings").
 			WithOkColor().
 			AddField("Warnings", warnsEnabledText[gc.UseWarns], true).

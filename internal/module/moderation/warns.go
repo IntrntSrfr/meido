@@ -9,7 +9,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
-	"github.com/intrntsrfr/meido/internal/helpers"
+	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
 )
@@ -170,7 +170,7 @@ func (m *Module) warnlogCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	embed := helpers.NewEmbed().
+	embed := iutils.NewEmbed().
 		WithTitle(fmt.Sprintf("Warnings issued to %v", targetUser.String())).
 		WithOkColor().
 		WithFooter(fmt.Sprintf("Page %v", page+1), "")

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/intrntsrfr/meido/internal/helpers"
+	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 )
@@ -37,7 +37,7 @@ func newAvatarCommand(m *Module) *mio.ModuleCommand {
 				return
 			}
 
-			embed := helpers.NewEmbed().
+			embed := iutils.NewEmbed().
 				WithTitle(targetUser.String()).
 				WithImageUrl(targetUser.AvatarURL("1024")).
 				WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID))
@@ -88,7 +88,7 @@ func newBannerCommand(m *Module) *mio.ModuleCommand {
 				return
 			}
 
-			embed := helpers.NewEmbed().
+			embed := iutils.NewEmbed().
 				WithTitle(targetUser.String()).
 				WithImageUrl(targetUser.BannerURL("1024")).
 				WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetUser.ID))
@@ -136,7 +136,7 @@ func newMemberAvatarCommand(m *Module) *mio.ModuleCommand {
 				return
 			}
 
-			embed := helpers.NewEmbed().
+			embed := iutils.NewEmbed().
 				WithTitle(targetMember.User.String()).
 				WithImageUrl(targetMember.AvatarURL("1024")).
 				WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID))
@@ -184,7 +184,7 @@ func newUserInfoCommand(m *Module) *mio.ModuleCommand {
 				}
 			}
 
-			embed := helpers.NewEmbed().
+			embed := iutils.NewEmbed().
 				WithTitle(targetUser.String()).
 				WithThumbnail(targetUser.AvatarURL("256")).
 				AddField("ID | Mention", fmt.Sprintf("%v | <@!%v>", targetUser.ID, targetUser.ID), false).

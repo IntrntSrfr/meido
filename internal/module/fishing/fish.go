@@ -5,7 +5,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/internal/helpers"
+	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
@@ -108,7 +108,7 @@ func (m *FishMod) aquariumCommand(msg *mio.DiscordMessage) {
 		m.Log.Error("could not get aquarium", zap.Error(err))
 		return
 	}
-	embed := helpers.NewEmbed().
+	embed := iutils.NewEmbed().
 		WithOkColor().
 		WithTitle(fmt.Sprintf("%v's aquarium", targetUser.String())).
 		WithThumbnail(targetUser.AvatarURL("256"))
@@ -150,7 +150,7 @@ func newSetFishingSettingsCommand(m *FishMod) *mio.ModuleCommand {
 
 			switch len(msg.Args()) {
 			case 2:
-				embed := helpers.NewEmbed().
+				embed := iutils.NewEmbed().
 					WithTitle("Fishing settings").
 					WithOkColor().
 					AddField("Fishing channel", fmt.Sprintf("<#%v>", gc.FishingChannelID), true)

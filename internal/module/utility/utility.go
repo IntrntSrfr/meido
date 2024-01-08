@@ -15,7 +15,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/internal/helpers"
+	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
@@ -152,7 +152,7 @@ func newAboutCommand(m *Module) *mio.ModuleCommand {
 			if err != nil {
 				return
 			}
-			embed := helpers.NewEmbed().
+			embed := iutils.NewEmbed().
 				WithTitle("About").
 				WithOkColor().
 				AddField("Uptime", uptime.String(), true).
@@ -285,7 +285,7 @@ func newHelpCommand(m *Module) *mio.ModuleCommand {
 }
 
 func (m *Module) helpCommand(msg *mio.DiscordMessage) {
-	embed := helpers.NewEmbed().
+	embed := iutils.NewEmbed().
 		WithOkColor().
 		WithFooter("Use m?help [module] to see module commands.\nUse m?help [command] to see command info.\nArguments in [square brackets] are required, while arguments in <angle brackets> are optional.", "").
 		WithThumbnail(msg.Sess.State.User.AvatarURL("256"))

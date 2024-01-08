@@ -7,8 +7,8 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
-	"github.com/intrntsrfr/meido/internal/helpers"
 	"github.com/intrntsrfr/meido/internal/module/search/service"
+	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
 )
@@ -64,8 +64,8 @@ func newWeatherCommand(m *Module) *mio.ModuleCommand {
 				_, _ = msg.Reply("I could not find that city :(")
 				return
 			}
-			f := helpers.CelsiusToFahrenheit
-			embed := helpers.NewEmbed().
+			f := iutils.CelsiusToFahrenheit
+			embed := iutils.NewEmbed().
 				WithDescription(fmt.Sprintf("Weather in [%v, %v](https://openweathermap.org/city/%v)", d.Name, d.Sys.Country, d.ID)).
 				WithOkColor()
 
@@ -155,7 +155,7 @@ func newImageCommand(m *Module) *mio.ModuleCommand {
 				return
 			}
 
-			embed := helpers.NewEmbed().
+			embed := iutils.NewEmbed().
 				WithTitle("Google Images search result").
 				WithOkColor().
 				WithImageUrl(links[0]).
