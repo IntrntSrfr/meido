@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	"io"
 	"net/http"
 	"runtime/debug"
 	"sort"
@@ -16,12 +18,78 @@ import (
 // Discord represents the part of the bot that deals with interaction with Discord.
 type Discord struct {
 	token    string
-	Sess     *discordgo.Session
-	Sessions []*discordgo.Session
+	Sess     DiscordSession
+	Sessions []DiscordSession
 	ownerIds []string
 
 	messageChan chan *DiscordMessage
 	logger      *zap.Logger
+}
+
+type DiscordSession interface {
+	Open() error
+	Close() error
+	ShardID() int
+	State() *discordgo.State
+
+	AddHandler(handler interface{}) func()
+	AddHandlerOnce(handler interface{}) func()
+	Channel(channelID string, options ...discordgo.RequestOption) (st *discordgo.Channel, err error)
+	ChannelFileSend(channelID, name string, r io.Reader, options ...discordgo.RequestOption) (*discordgo.Message, error)
+	ChannelMessageDelete(channelID string, messageID string, options ...discordgo.RequestOption) (err error)
+	ChannelMessageEdit(channelID string, messageID string, content string, options ...discordgo.RequestOption) (*discordgo.Message, error)
+	ChannelMessageEditComplex(m *discordgo.MessageEdit, options ...discordgo.RequestOption) (st *discordgo.Message, err error)
+	ChannelMessageEditEmbed(channelID string, messageID string, embed *discordgo.MessageEmbed, options ...discordgo.RequestOption) (*discordgo.Message, error)
+	ChannelMessageEditEmbeds(channelID string, messageID string, embeds []*discordgo.MessageEmbed, options ...discordgo.RequestOption) (*discordgo.Message, error)
+	ChannelMessagePin(channelID string, messageID string, options ...discordgo.RequestOption) (err error)
+	ChannelMessageSend(channelID string, content string, options ...discordgo.RequestOption) (*discordgo.Message, error)
+	ChannelMessageSendComplex(channelID string, data *discordgo.MessageSend, options ...discordgo.RequestOption) (st *discordgo.Message, err error)
+	ChannelMessageSendEmbed(channelID string, embed *discordgo.MessageEmbed, options ...discordgo.RequestOption) (*discordgo.Message, error)
+	ChannelMessageSendEmbedReply(channelID string, embed *discordgo.MessageEmbed, reference *discordgo.MessageReference, options ...discordgo.RequestOption) (*discordgo.Message, error)
+	ChannelMessageSendEmbeds(channelID string, embeds []*discordgo.MessageEmbed, options ...discordgo.RequestOption) (*discordgo.Message, error)
+	ChannelMessageSendEmbedsReply(channelID string, embeds []*discordgo.MessageEmbed, reference *discordgo.MessageReference, options ...discordgo.RequestOption) (*discordgo.Message, error)
+	ChannelMessageSendReply(channelID string, content string, reference *discordgo.MessageReference, options ...discordgo.RequestOption) (*discordgo.Message, error)
+	ChannelMessages(channelID string, limit int, beforeID string, afterID string, aroundID string, options ...discordgo.RequestOption) (st []*discordgo.Message, err error)
+	ChannelMessagesBulkDelete(channelID string, messages []string, options ...discordgo.RequestOption) (err error)
+	ChannelTyping(channelID string, options ...discordgo.RequestOption) (err error)
+	Guild(guildID string, options ...discordgo.RequestOption) (st *discordgo.Guild, err error)
+	GuildBanCreate(guildID string, userID string, days int, options ...discordgo.RequestOption) (err error)
+	GuildBanCreateWithReason(guildID string, userID string, reason string, days int, options ...discordgo.RequestOption) (err error)
+	GuildBanDelete(guildID string, userID string, options ...discordgo.RequestOption) (err error)
+	GuildBans(guildID string, limit int, beforeID string, afterID string, options ...discordgo.RequestOption) (st []*discordgo.GuildBan, err error)
+	GuildChannels(guildID string, options ...discordgo.RequestOption) (st []*discordgo.Channel, err error)
+	GuildIcon(guildID string, options ...discordgo.RequestOption) (img image.Image, err error)
+	GuildMember(guildID string, userID string, options ...discordgo.RequestOption) (st *discordgo.Member, err error)
+	GuildMemberAdd(guildID string, userID string, data *discordgo.GuildMemberAddParams, options ...discordgo.RequestOption) (err error)
+	GuildMemberDelete(guildID string, userID string, options ...discordgo.RequestOption) (err error)
+	GuildMemberDeleteWithReason(guildID string, userID string, reason string, options ...discordgo.RequestOption) (err error)
+	GuildMemberRoleAdd(guildID string, userID string, roleID string, options ...discordgo.RequestOption) (err error)
+	GuildMemberRoleRemove(guildID string, userID string, roleID string, options ...discordgo.RequestOption) (err error)
+	GuildMemberTimeout(guildID string, userID string, until *time.Time, options ...discordgo.RequestOption) (err error)
+	GuildMembers(guildID string, after string, limit int, options ...discordgo.RequestOption) (st []*discordgo.Member, err error)
+	GuildRoleCreate(guildID string, data *discordgo.RoleParams, options ...discordgo.RequestOption) (st *discordgo.Role, err error)
+	GuildRoleDelete(guildID string, roleID string, options ...discordgo.RequestOption) (err error)
+	GuildRoleEdit(guildID string, roleID string, data *discordgo.RoleParams, options ...discordgo.RequestOption) (st *discordgo.Role, err error)
+	GuildRoles(guildID string, options ...discordgo.RequestOption) (st []*discordgo.Role, err error)
+	GuildSplash(guildID string, options ...discordgo.RequestOption) (img image.Image, err error)
+	RequestGuildMembers(guildID string, query string, limit int, nonce string, presences bool) error
+	RequestGuildMembersBatch(guildIDs []string, query string, limit int, nonce string, presences bool) (err error)
+	RequestGuildMembersBatchList(guildIDs []string, userIDs []string, limit int, nonce string, presences bool) (err error)
+	RequestGuildMembersList(guildID string, userIDs []string, limit int, nonce string, presences bool) error
+	User(userID string, options ...discordgo.RequestOption) (st *discordgo.User, err error)
+	UserChannelCreate(recipientID string, options ...discordgo.RequestOption) (st *discordgo.Channel, err error)
+	UpdateStatusComplex(usd discordgo.UpdateStatusData) (err error)
+}
+
+type SessionWrapper struct {
+	*discordgo.Session
+}
+
+func (s *SessionWrapper) ShardID() int {
+	return s.Session.ShardID
+}
+func (s *SessionWrapper) State() *discordgo.State {
+	return s.Session.State
 }
 
 // NewDiscord takes in a token and creates a Discord object.
@@ -42,7 +110,7 @@ func (d *Discord) Open() error {
 		return err
 	}
 
-	d.Sessions = make([]*discordgo.Session, shardCount)
+	d.Sessions = make([]DiscordSession, shardCount)
 	for i := 0; i < shardCount; i++ {
 		s, err := discordgo.New("Bot " + d.token)
 		if err != nil {
@@ -60,7 +128,7 @@ func (d *Discord) Open() error {
 		s.AddHandler(d.onMessageUpdate)
 		s.AddHandler(d.onMessageDelete)
 
-		d.Sessions[i] = s
+		d.Sessions[i] = &SessionWrapper{s}
 		d.logger.Info("created session", zap.Int("sessionID", i))
 	}
 	d.Sess = d.Sessions[0]
@@ -83,7 +151,7 @@ func (d *Discord) Close() {
 	for _, sess := range d.Sessions {
 		err := sess.Close()
 		if err != nil {
-			d.logger.Error("failed to close session", zap.Int("shardID", sess.ShardID), zap.Error(err))
+			d.logger.Error("failed to close session", zap.Int("shardID", sess.ShardID()), zap.Error(err))
 		}
 	}
 }
@@ -206,7 +274,7 @@ var (
 )
 
 func (d *Discord) BotUser() *discordgo.User {
-	return d.Sess.State.User
+	return d.Sess.State().User
 }
 
 // UserChannelPermissions finds member permissions the usual way, using just the IDs.
@@ -216,7 +284,7 @@ func (d *Discord) UserChannelPermissions(userID, channelID string) (int64, error
 		permissions int64
 	)
 	for _, s := range d.Sessions {
-		permissions, err = s.State.UserChannelPermissions(userID, channelID)
+		permissions, err = s.State().UserChannelPermissions(userID, channelID)
 		if err == nil {
 			return permissions, nil
 		}
@@ -226,7 +294,7 @@ func (d *Discord) UserChannelPermissions(userID, channelID string) (int64, error
 
 // BotHasPermissions finds if the bot user has permissions in a channel.
 func (d *Discord) BotHasPermissions(channelID string, perm int64) (bool, error) {
-	uPerms, err := d.UserChannelPermissions(d.Sess.State.User.ID, channelID)
+	uPerms, err := d.UserChannelPermissions(d.Sess.State().User.ID, channelID)
 	if err != nil {
 		return false, err
 	}
@@ -325,7 +393,7 @@ func (d *Discord) AddEventHandlerOnce(h interface{}) {
 func (d *Discord) Guilds() []*discordgo.Guild {
 	var guilds []*discordgo.Guild
 	for _, sess := range d.Sessions {
-		guilds = append(guilds, sess.State.Guilds...)
+		guilds = append(guilds, sess.State().Guilds...)
 	}
 	return guilds
 }
@@ -334,7 +402,7 @@ func (d *Discord) Guilds() []*discordgo.Guild {
 func (d *Discord) GuildCount() int {
 	var amount int
 	for _, sess := range d.Sessions {
-		amount += len(sess.State.Guilds)
+		amount += len(sess.State().Guilds)
 	}
 	return amount
 }
@@ -347,7 +415,7 @@ func (d *Discord) Guild(guildID string) (*discordgo.Guild, error) {
 	var err error
 	var guild *discordgo.Guild
 	for _, sess := range d.Sessions {
-		guild, err = sess.State.Guild(guildID)
+		guild, err = sess.State().Guild(guildID)
 		if err == nil {
 			return guild, nil
 		}
@@ -363,7 +431,7 @@ func (d *Discord) Channel(channelID string) (*discordgo.Channel, error) {
 	var err error
 	var channel *discordgo.Channel
 	for _, sess := range d.Sessions {
-		channel, err = sess.State.Channel(channelID)
+		channel, err = sess.State().Channel(channelID)
 		if err == nil {
 			return channel, nil
 		}
@@ -379,7 +447,7 @@ func (d *Discord) Member(guildID, userID string) (*discordgo.Member, error) {
 	var err error
 	var mem *discordgo.Member
 	for _, sess := range d.Sessions {
-		mem, err = sess.State.Member(guildID, userID)
+		mem, err = sess.State().Member(guildID, userID)
 		if err == nil {
 			return mem, nil
 		}
@@ -399,7 +467,7 @@ func (d *Discord) Role(guildID, roleID string) (*discordgo.Role, error) {
 	var err error
 	var role *discordgo.Role
 	for _, sess := range d.Sessions {
-		role, err = sess.State.Role(guildID, roleID)
+		role, err = sess.State().Role(guildID, roleID)
 		if err == nil {
 			return role, nil
 		}

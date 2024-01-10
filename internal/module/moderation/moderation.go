@@ -86,7 +86,7 @@ func checkWarnInterval(m *Module) func(s *discordgo.Session, r *discordgo.Ready)
 						if time.Since(warn.GivenAt) > dur {
 							t := time.Now()
 							warn.IsValid = false
-							warn.ClearedByID = &m.Bot.Discord.Sess.State.User.ID
+							warn.ClearedByID = &m.Bot.Discord.Sess.State().User.ID
 							warn.ClearedAt = &t
 							if err := m.db.UpdateMemberWarn(warn); err != nil {
 								m.Log.Error("could not update warn", zap.Error(err), zap.Int("warn UID", warn.UID))
