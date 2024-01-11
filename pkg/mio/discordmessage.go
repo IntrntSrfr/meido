@@ -73,8 +73,8 @@ var PermMap = map[int64]string{
 // DiscordMessage represents a Discord message sent in a channel, and
 // contains fields so that it is easy to work with the data it gives.
 type DiscordMessage struct {
-	Sess         *discordgo.Session `json:"-"`
-	Discord      *Discord           `json:"-"`
+	Sess         DiscordSession `json:"-"`
+	Discord      *Discord       `json:"-"`
 	Message      *discordgo.Message
 	MessageType  MessageType
 	TimeReceived time.Time
@@ -155,7 +155,7 @@ func (m *DiscordMessage) IsDM() bool {
 
 // AuthorHasPermissions returns if a member has certain permissions or not.
 func (m *DiscordMessage) AuthorHasPermissions(perm int64) (bool, error) {
-	uPerms, err := m.Sess.State.MessagePermissions(m.Message)
+	uPerms, err := m.Sess.State().MessagePermissions(m.Message)
 	if err != nil {
 		return false, err
 	}
@@ -321,6 +321,6 @@ func (m *DiscordMessage) GetMemberOrUserAtArg(index int) (*discordgo.User, error
 func (m *DiscordMessage) GoodHierarchy(targetMember *discordgo.Member) bool {
 	topUserRole := m.Discord.HighestRolePosition(m.GuildID(), m.AuthorID())
 	topTargetRole := m.Discord.HighestRolePosition(m.GuildID(), targetMember.User.ID)
-	topBotRole := m.Discord.HighestRolePosition(m.GuildID(), m.Sess.State.User.ID)
+	topBotRole := m.Discord.HighestRolePosition(m.GuildID(), m.Sess.State().User.ID)
 	return topUserRole > topTargetRole && topBotRole > topTargetRole
 }
