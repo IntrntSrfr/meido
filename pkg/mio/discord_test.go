@@ -1,7 +1,6 @@
 package mio
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -72,8 +71,6 @@ func setupDiscord() *Discord {
 
 func TestDiscord_Run(t *testing.T) {
 	d := setupDiscord()
-	fmt.Println(d.Sess)
-
 	if got := d.Run(); got != nil {
 		t.Errorf("Discord.Run() error = %v, wantErr %v", got, false)
 	}
