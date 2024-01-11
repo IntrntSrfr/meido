@@ -21,12 +21,14 @@ import (
 
 type Meido struct {
 	Bot    *mio.Bot
+	db     database.DB
 	logger *zap.Logger
 }
 
 func New(config mio.Configurable, db database.DB, log *zap.Logger) *Meido {
 	return &Meido{
-		Bot:    mio.NewBot(config, db, log.Named("mio")),
+		Bot:    mio.NewBot(config, log.Named("mio")),
+		db:     db,
 		logger: log,
 	}
 }
@@ -57,8 +59,8 @@ func (m *Meido) registerModules() {
 	m.Bot.RegisterModule(administration.New(m.Bot, m.logger))
 	//m.Bot.RegisterModule(testing.New(m.Bot, m.logger))
 	m.Bot.RegisterModule(fun.New(m.Bot, m.logger))
-	m.Bot.RegisterModule(fishing.New(m.Bot, m.Bot.DB, m.logger))
-	m.Bot.RegisterModule(utility.New(m.Bot, m.Bot.DB, m.logger))
+	m.Bot.RegisterModule(fishing.New(m.Bot, m.db, m.logger))
+	m.Bot.RegisterModule(utility.New(m.Bot, m.db, m.logger))
 	//m.Bot.RegisterModule(moderation.New(m.Bot, m.Bot.DB, m.logger))
 	//m.Bot.RegisterModule(customrole.New(m.Bot, m.Bot.DB, m.logger))
 	m.Bot.RegisterModule(search.New(m.Bot, m.logger))
@@ -74,7 +76,7 @@ func (m *Meido) registerMioHandlers() {
 func logCommand(m *Meido) func(i interface{}) {
 	return func(i interface{}) {
 		cmd, _ := i.(*mio.CommandRan)
-		err := m.Bot.DB.CreateCommandLogEntry(&structs.CommandLogEntry{
+		err := m.db.CreateCommandLogEntry(&structs.CommandLogEntry{
 			Command:   cmd.Command.Name,
 			Args:      strings.Join(cmd.Message.Args(), " "),
 			UserID:    cmd.Message.AuthorID(),
@@ -107,8 +109,8 @@ func (m *Meido) registerDiscordHandlers() {
 
 func insertGuild(m *Meido) func(s *discordgo.Session, g *discordgo.GuildCreate) {
 	return func(s *discordgo.Session, g *discordgo.GuildCreate) {
-		if _, err := m.Bot.DB.GetGuild(g.Guild.ID); err != nil && err == sql.ErrNoRows {
-			if err = m.Bot.DB.CreateGuild(g.Guild.ID); err != nil {
+		if _, err := m.db.GetGuild(g.Guild.ID); err != nil && err == sql.ErrNoRows {
+			if err = m.db.CreateGuild(g.Guild.ID); err != nil {
 				m.logger.Error("could not create new guild", zap.Error(err), zap.String("guild ID", g.ID))
 			}
 		}

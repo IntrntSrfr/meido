@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/internal/database"
 	"go.uber.org/zap"
 )
 
@@ -18,7 +17,6 @@ type Bot struct {
 	Discord   *Discord
 	Config    Configurable
 	Modules   map[string]Module
-	DB        database.DB
 	Cooldowns CooldownService
 	Callbacks CallbackService
 	Log       *zap.Logger
@@ -26,13 +24,12 @@ type Bot struct {
 }
 
 // NewBot takes in a Config and returns a pointer to a new Bot
-func NewBot(config Configurable, db database.DB, log *zap.Logger) *Bot {
+func NewBot(config Configurable, log *zap.Logger) *Bot {
 	log.Info("new bot")
 	return &Bot{
-		Discord:   NewDiscord(config.GetString("token"), log),
+		Discord:   NewDiscord(config.GetString("token"), config.GetInt("shards"), log),
 		Config:    config,
 		Modules:   make(map[string]Module),
-		DB:        db,
 		Cooldowns: NewCooldownHandler(),
 		Callbacks: NewCallbackHandler(),
 		Log:       log,
