@@ -92,7 +92,7 @@ func checkWarnInterval(m *Module) func(s *discordgo.Session, r *discordgo.Ready)
 								m.Log.Error("could not update warn", zap.Error(err), zap.Int("warn UID", warn.UID))
 							}
 							//m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3",
-							//	m.bot.Discord.Sess.State.User.ID, time.Now(), warn.UID)
+							//	m.bot.Discord.Sess.State().User.ID, time.Now(), warn.UID)
 						}
 					}
 				}
@@ -134,7 +134,7 @@ func (m *Module) banCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	if targetUser.ID == msg.Sess.State.User.ID {
+	if targetUser.ID == msg.Sess.State().User.ID {
 		_, _ = msg.Reply("no (i can not ban myself)")
 		return
 	}
@@ -158,7 +158,7 @@ func (m *Module) banCommand(msg *mio.DiscordMessage) {
 
 	topUserRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Message.Author.ID)
 	topTargetRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, targetUser.ID)
-	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
+	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State().User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		_, _ = msg.Reply("no (you can only ban users who are below you and me in the role hierarchy)")
@@ -197,7 +197,7 @@ func (m *Module) banCommand(msg *mio.DiscordMessage) {
 	t := time.Now()
 	for _, warn := range warns {
 		warn.IsValid = false
-		warn.ClearedByID = &msg.Sess.State.User.ID
+		warn.ClearedByID = &msg.Sess.State().User.ID
 		warn.ClearedAt = &t
 		if err := m.db.UpdateMemberWarn(warn); err != nil {
 			m.Log.Error("could not update warn", zap.Error(err), zap.Int("warn ID", warn.UID))
@@ -324,7 +324,7 @@ func (m *Module) kickCommand(msg *mio.DiscordMessage) {
 		return
 	}
 
-	if targetUser.User.ID == msg.Sess.State.User.ID {
+	if targetUser.User.ID == msg.Sess.State().User.ID {
 		_, _ = msg.Reply("no (I can not kick myself)")
 		return
 	}
@@ -341,7 +341,7 @@ func (m *Module) kickCommand(msg *mio.DiscordMessage) {
 
 	topUserRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Message.Author.ID)
 	topTargetRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, targetUser.User.ID)
-	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
+	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State().User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		_, _ = msg.Reply("no (you can only kick users who are below you and me in the role hierarchy)")

@@ -50,6 +50,7 @@ type DiscordSession interface {
 	ChannelMessageSendReply(channelID string, content string, reference *discordgo.MessageReference, options ...discordgo.RequestOption) (*discordgo.Message, error)
 	ChannelMessages(channelID string, limit int, beforeID string, afterID string, aroundID string, options ...discordgo.RequestOption) (st []*discordgo.Message, err error)
 	ChannelMessagesBulkDelete(channelID string, messages []string, options ...discordgo.RequestOption) (err error)
+	ChannelPermissionSet(channelID, targetID string, targetType discordgo.PermissionOverwriteType, allow, deny int64, options ...discordgo.RequestOption) (err error)
 	ChannelTyping(channelID string, options ...discordgo.RequestOption) (err error)
 	Guild(guildID string, options ...discordgo.RequestOption) (st *discordgo.Guild, err error)
 	GuildBanCreate(guildID string, userID string, days int, options ...discordgo.RequestOption) (err error)
@@ -196,7 +197,7 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 	}
 
 	d.messageChan <- &DiscordMessage{
-		Sess:         s,
+		Sess:         d.Sess,
 		Discord:      d,
 		Message:      m.Message,
 		MessageType:  MessageTypeCreate,
@@ -222,7 +223,7 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 	}
 
 	d.messageChan <- &DiscordMessage{
-		Sess:         s,
+		Sess:         d.Sess,
 		Discord:      d,
 		Message:      m.Message,
 		MessageType:  MessageTypeUpdate,
@@ -235,7 +236,7 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 // It populates a DiscordMessage object and sends it to Discord.messageChan
 func (d *Discord) onMessageDelete(s *discordgo.Session, m *discordgo.MessageDelete) {
 	d.messageChan <- &DiscordMessage{
-		Sess:         s,
+		Sess:         d.Sess,
 		Discord:      d,
 		Message:      m.Message,
 		MessageType:  MessageTypeDelete,

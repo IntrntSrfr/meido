@@ -60,7 +60,7 @@ func (m *Module) muteCommand(msg *mio.DiscordMessage) {
 	// check if command hierarchy is valid
 	topUserRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.AuthorID())
 	topTargetRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, targetMember.User.ID)
-	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
+	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State().User.ID)
 
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		_, _ = msg.Reply("no (you can only mute users who are below you and me in the role hierarchy)")

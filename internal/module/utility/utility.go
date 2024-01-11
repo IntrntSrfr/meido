@@ -258,7 +258,7 @@ func newInviteCommand(m *Module) *mio.ModuleCommand {
 		AllowDMs:         true,
 		IsEnabled:        true,
 		Run: func(msg *mio.DiscordMessage) {
-			botLink := "<https://discordapp.com/oauth2/authorize?client_id=" + msg.Sess.State.User.ID + "&scope=bot>"
+			botLink := "<https://discordapp.com/oauth2/authorize?client_id=" + msg.Sess.State().User.ID + "&scope=bot>"
 			serverLink := "https://discord.gg/KgMEGK3"
 			_, _ = msg.Reply(fmt.Sprintf("Invite me to your server: %v\nSupport server: %v", botLink, serverLink))
 		},
@@ -288,7 +288,7 @@ func (m *Module) helpCommand(msg *mio.DiscordMessage) {
 	embed := iutils.NewEmbed().
 		WithOkColor().
 		WithFooter("Use m?help [module] to see module commands.\nUse m?help [command] to see command info.\nArguments in [square brackets] are required, while arguments in <angle brackets> are optional.", "").
-		WithThumbnail(msg.Sess.State.User.AvatarURL("256"))
+		WithThumbnail(msg.Sess.State().User.AvatarURL("256"))
 
 	if len(msg.Args()) == 1 {
 		desc := strings.Builder{}

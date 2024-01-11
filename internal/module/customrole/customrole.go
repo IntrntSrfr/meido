@@ -255,7 +255,7 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 			_, _ = msg.Reply("Could not find custom role")
 			return
 		}
-		topBotRole := msg.Discord.HighestRolePosition(msg.GuildID(), msg.Sess.State.User.ID)
+		topBotRole := msg.Discord.HighestRolePosition(msg.GuildID(), msg.Sess.State().User.ID)
 		if oldRole.Position >= topBotRole {
 			_, _ = msg.Reply("I cannot edit this role, it is above me in the role hierarchy!")
 			return

@@ -67,7 +67,7 @@ func (m *Module) warnCommand(msg *mio.DiscordMessage) {
 
 	topUserRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Message.Author.ID)
 	topTargetRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, targetMember.User.ID)
-	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State.User.ID)
+	topBotRole := msg.Discord.HighestRolePosition(msg.Message.GuildID, msg.Sess.State().User.ID)
 	if topUserRole <= topTargetRole || topBotRole <= topTargetRole {
 		_, _ = msg.Reply("no (you can only kick users who are below you and me in the role hierarchy)")
 		return
