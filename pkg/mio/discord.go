@@ -1,12 +1,10 @@
 package mio
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"image"
 	"io"
-	"net/http"
 	"runtime/debug"
 	"sort"
 	"time"
@@ -21,6 +19,7 @@ type Discord struct {
 	Sess     DiscordSession
 	Sessions []DiscordSession
 	ownerIds []string
+	shards   int
 
 	messageChan chan *DiscordMessage
 	logger      *zap.Logger
@@ -93,9 +92,10 @@ func (s *SessionWrapper) State() *discordgo.State {
 }
 
 // NewDiscord takes in a token and creates a Discord object.
-func NewDiscord(token string, logger *zap.Logger) *Discord {
+func NewDiscord(token string, shards int, logger *zap.Logger) *Discord {
 	d := &Discord{
 		token:       token,
+		shards:      shards,
 		messageChan: make(chan *DiscordMessage, 256),
 		logger:      logger.Named("discord"),
 	}
@@ -105,13 +105,8 @@ func NewDiscord(token string, logger *zap.Logger) *Discord {
 
 // Open populates the Discord object with Sessions and returns a DiscordMessage channel.
 func (d *Discord) Open() error {
-	shardCount, err := recommendedShards(d.token)
-	if err != nil {
-		return err
-	}
-
-	d.Sessions = make([]DiscordSession, shardCount)
-	for i := 0; i < shardCount; i++ {
+	d.Sessions = make([]DiscordSession, d.shards)
+	for i := 0; i < d.shards; i++ {
 		s, err := discordgo.New("Bot " + d.token)
 		if err != nil {
 			return err
@@ -120,7 +115,7 @@ func (d *Discord) Open() error {
 		s.State.MaxMessageCount = 100
 		s.State.TrackVoice = false
 		s.State.TrackPresences = false
-		s.ShardCount = shardCount
+		s.ShardCount = d.shards
 		s.ShardID = i
 		s.Identify.Intents = discordgo.MakeIntent(discordgo.IntentsAllWithoutPrivileged | discordgo.IntentsGuildMembers | discordgo.IntentMessageContent)
 
@@ -154,26 +149,6 @@ func (d *Discord) Close() {
 			d.logger.Error("failed to close session", zap.Int("shardID", sess.ShardID()), zap.Error(err))
 		}
 	}
-}
-
-// recommendedShards asks discord for the recommended shardcount for the bot given the token.
-// returns -1 if the request does not go well.
-func recommendedShards(token string) (int, error) {
-	req, _ := http.NewRequest("GET", "https://discord.com/api/v10/gateway/bot", nil)
-	req.Header.Add("Authorization", "Bot "+token)
-	res, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return -1, err
-	}
-	defer res.Body.Close()
-
-	var resp discordgo.GatewayBotResponse
-	err = json.NewDecoder(res.Body).Decode(&resp)
-	if err != nil {
-		return -1, err
-	}
-
-	return resp.Shards, nil
 }
 
 func discordgoLogger(l *zap.Logger) func(msgL, caller int, format string, a ...interface{}) {

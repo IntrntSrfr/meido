@@ -4,15 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
 // Config is the config struct for the bot
 type Config struct {
-	data map[string]interface{}
+	*mio.ConfigBase
 }
 
 type jsonConfig struct {
 	Token            string   `json:"token"`
+	Shards           int      `json:"shards"`
 	ConnectionString string   `json:"connection_string"`
 	OwnerIds         []string `json:"owner_ids"`
 	DmLogChannels    []string `json:"dm_log_channels"`
@@ -23,14 +26,12 @@ type jsonConfig struct {
 
 func NewConfig() *Config {
 	return &Config{
-		data: make(map[string]interface{}),
+		ConfigBase: mio.NewConfig(),
 	}
 }
 
 func LoadConfig() (*Config, error) {
-	config := &Config{
-		data: make(map[string]interface{}),
-	}
+	config := NewConfig()
 
 	if err := config.loadJson(); err != nil {
 		return nil, err
@@ -74,41 +75,11 @@ func (c *Config) loadJson() error {
 		return err
 	}
 
+	c.Set("shards", jsonCfg.Shards)
 	c.Set("owner_ids", jsonCfg.OwnerIds)
 	c.Set("dm_log_channels", jsonCfg.DmLogChannels)
 	c.Set("owo_token", jsonCfg.OwoToken)
 	c.Set("youtube_token", jsonCfg.YouTubeToken)
 	c.Set("open_weather_key", jsonCfg.OpenWeatherKey)
 	return nil
-}
-
-func (c *Config) GetString(key string) string {
-	if v, found := c.data[key]; found {
-		if vt, ok := v.(string); ok {
-			return vt
-		}
-	}
-	return ""
-}
-
-func (c *Config) GetInt(key string) int {
-	if v, found := c.data[key]; found {
-		if vt, ok := v.(int); ok {
-			return vt
-		}
-	}
-	return -1
-}
-
-func (c *Config) GetStringSlice(key string) []string {
-	if v, found := c.data[key]; found {
-		if vt, ok := v.([]string); ok {
-			return vt
-		}
-	}
-	return []string{}
-}
-
-func (c *Config) Set(key string, value interface{}) {
-	c.data[key] = value
 }
