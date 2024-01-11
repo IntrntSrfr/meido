@@ -20,6 +20,10 @@ func NewConfig() *ConfigBase {
 	}
 }
 
+func (c *ConfigBase) Set(key string, value interface{}) {
+	c.data[key] = value
+}
+
 func (c *ConfigBase) GetString(key string) string {
 	if v, found := c.data[key]; found {
 		if vt, ok := v.(string); ok {
@@ -45,8 +49,4 @@ func (c *ConfigBase) GetStringSlice(key string) []string {
 		}
 	}
 	return []string{}
-}
-
-func (c *ConfigBase) Set(key string, value interface{}) {
-	c.data[key] = value
 }
