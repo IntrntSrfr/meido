@@ -29,7 +29,7 @@ func TestSessionWrapper_State(t *testing.T) {
 	}
 }
 
-func setupLogger() *zap.Logger {
+func testLogger() *zap.Logger {
 	loggerConfig := zap.NewDevelopmentConfig()
 	loggerConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	loggerConfig.OutputPaths = []string{}
@@ -41,7 +41,7 @@ func setupLogger() *zap.Logger {
 func TestNewDiscord(t *testing.T) {
 	token := "Bot asdf"
 	shards := 1
-	logger := setupLogger()
+	logger := testLogger()
 	d := NewDiscord(token, shards, logger)
 
 	if got := d.token; d.token != token {
@@ -56,15 +56,15 @@ func TestNewDiscord(t *testing.T) {
 }
 
 func TestDiscord_Open(t *testing.T) {
-	d := NewDiscord("asfd", 1, setupLogger())
+	d := NewDiscord("asfd", 1, testLogger())
 	if err := d.Open(); err != nil {
 		t.Errorf("Discord.Open() error = %v, wantErr %v", err, false)
 	}
 }
 
 func setupDiscord() *Discord {
-	d := NewDiscord("Bot asdf", 1, setupLogger())
-	d.Sess = &mocks.DiscordSessionMock{}
+	d := NewDiscord("Bot asdf", 1, testLogger())
+	d.Sess = mocks.NewDiscordSession("Bot asdf")
 	d.Sessions = []DiscordSession{d.Sess}
 	return d
 }
@@ -81,92 +81,99 @@ func TestDiscord_Run(t *testing.T) {
 	}
 }
 
-func TestDiscord_Close(t *testing.T) {
-	tests := []struct {
-		name string
-		d    *Discord
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.d.Close()
-		})
-	}
-}
-
-func TestDiscord_botRecover(t *testing.T) {
-	type args struct {
-		i interface{}
-	}
-	tests := []struct {
-		name string
-		d    *Discord
-		args args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.d.botRecover(tt.args.i)
-		})
-	}
-}
-
 func TestDiscord_onMessageCreate(t *testing.T) {
-	type args struct {
-		s *discordgo.Session
-		m *discordgo.MessageCreate
+	d := NewDiscord("asdf", 1, testLogger())
+
+	// empty
+	d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{})
+	if got := len(d.messageChan); got != 0 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 0)
 	}
-	tests := []struct {
-		name string
-		d    *Discord
-		args args
-	}{
-		// TODO: Add test cases.
+
+	// dm
+	d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{
+		Message: &discordgo.Message{
+			Author: &discordgo.User{},
+		},
+	})
+	if got := len(d.messageChan); got != 1 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 1)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.d.onMessageCreate(tt.args.s, tt.args.m)
-		})
+
+	// has guild, but no member
+	d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{
+		Message: &discordgo.Message{
+			GuildID: "1234",
+			Author:  &discordgo.User{},
+		},
+	})
+	if got := len(d.messageChan); got != 1 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 1)
+	}
+
+	// has guild and member
+	d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{
+		Message: &discordgo.Message{
+			GuildID: "1234",
+			Author:  &discordgo.User{},
+			Member:  &discordgo.Member{},
+		},
+	})
+	if got := len(d.messageChan); got != 2 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 2)
 	}
 }
 
 func TestDiscord_onMessageUpdate(t *testing.T) {
-	type args struct {
-		s *discordgo.Session
-		m *discordgo.MessageUpdate
+	d := NewDiscord("asdf", 1, testLogger())
+
+	// empty
+	d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{})
+	if got := len(d.messageChan); got != 0 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 0)
 	}
-	tests := []struct {
-		name string
-		d    *Discord
-		args args
-	}{
-		// TODO: Add test cases.
+
+	// dm
+	d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{
+		Message: &discordgo.Message{
+			Author: &discordgo.User{},
+		},
+	})
+	if got := len(d.messageChan); got != 1 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 1)
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.d.onMessageUpdate(tt.args.s, tt.args.m)
-		})
+
+	// has guild, but no member
+	d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{
+		Message: &discordgo.Message{
+			GuildID: "1234",
+			Author:  &discordgo.User{},
+		},
+	})
+	if got := len(d.messageChan); got != 1 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 1)
+	}
+
+	// has guild and member
+	d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{
+		Message: &discordgo.Message{
+			GuildID: "1234",
+			Author:  &discordgo.User{},
+			Member:  &discordgo.Member{},
+		},
+	})
+	if got := len(d.messageChan); got != 2 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 2)
 	}
 }
 
 func TestDiscord_onMessageDelete(t *testing.T) {
-	type args struct {
-		s *discordgo.Session
-		m *discordgo.MessageDelete
-	}
-	tests := []struct {
-		name string
-		d    *Discord
-		args args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.d.onMessageDelete(tt.args.s, tt.args.m)
-		})
+	d := NewDiscord("asdf", 1, testLogger())
+
+	// empty
+	d.onMessageDelete(&discordgo.Session{}, &discordgo.MessageDelete{})
+	if got := len(d.messageChan); got != 1 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 1)
 	}
 }
 
@@ -605,27 +612,6 @@ func TestDiscord_GuildRoleByNameOrID(t *testing.T) {
 	}
 }
 
-func TestDiscord_IsBotOwner(t *testing.T) {
-	type args struct {
-		msg *DiscordMessage
-	}
-	tests := []struct {
-		name string
-		d    *Discord
-		args args
-		want bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.d.IsBotOwner(tt.args.msg); got != tt.want {
-				t.Errorf("Discord.IsBotOwner() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestDiscord_StartTyping(t *testing.T) {
 	type args struct {
 		channelID string
@@ -690,27 +676,6 @@ func TestDiscord_UpdateStatus(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.d.UpdateStatus(tt.args.status, tt.args.activityType)
-		})
-	}
-}
-
-func TestDiscord_IsOwner(t *testing.T) {
-	type args struct {
-		userID string
-	}
-	tests := []struct {
-		name string
-		d    *Discord
-		args args
-		want bool
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.d.IsOwner(tt.args.userID); got != tt.want {
-				t.Errorf("Discord.IsOwner() = %v, want %v", got, tt.want)
-			}
 		})
 	}
 }

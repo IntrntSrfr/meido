@@ -4,13 +4,36 @@ import (
 	"errors"
 	"image"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 type DiscordSessionMock struct {
-	isOpened bool
+	token      string
+	shardID    int
+	shardCount int
+	isOpened   bool
+	identify   discordgo.Identify
+	state      *discordgo.State
+
+	handlersMu   sync.RWMutex
+	handlers     map[string][]*discordgo.EventHandler
+	onceHandlers map[string][]*discordgo.EventHandler
+}
+
+func NewDiscordSession(token string) *DiscordSessionMock {
+	s := &DiscordSessionMock{
+		token:        token,
+		shardID:      0,
+		shardCount:   1,
+		isOpened:     false,
+		state:        discordgo.NewState(),
+		handlers:     make(map[string][]*discordgo.EventHandler, 0),
+		onceHandlers: make(map[string][]*discordgo.EventHandler, 0),
+	}
+	return s
 }
 
 func (s *DiscordSessionMock) Open() error {
@@ -22,15 +45,15 @@ func (s *DiscordSessionMock) Open() error {
 }
 
 func (s *DiscordSessionMock) Close() error {
-	panic("not implemented") // TODO: Implement
+	return nil
 }
 
 func (s *DiscordSessionMock) ShardID() int {
-	panic("not implemented") // TODO: Implement
+	return s.shardID
 }
 
 func (s *DiscordSessionMock) State() *discordgo.State {
-	panic("not implemented") // TODO: Implement
+	return s.state
 }
 
 func (s *DiscordSessionMock) AddHandler(handler interface{}) func() {

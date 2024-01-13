@@ -18,7 +18,6 @@ type Discord struct {
 	token    string
 	Sess     DiscordSession
 	Sessions []DiscordSession
-	ownerIds []string
 	shards   int
 
 	messageChan chan *DiscordMessage
@@ -182,7 +181,7 @@ func (d *Discord) botRecover(i interface{}) {
 // onMessageCreate is the handler for the *discordgo.MessageCreate event.
 // It populates a DiscordMessage object and sends it to Discord.messageChan
 func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author == nil || m.Message.Author.Bot {
+	if m.Message == nil || m.Author == nil || m.Author.Bot {
 		return
 	}
 	defer d.botRecover(m)
@@ -209,7 +208,7 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 // onMessageUpdate is the handler for the *discordgo.MessageUpdate event.
 // It populates a DiscordMessage object and sends it to Discord.messageChan
 func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
-	if m.Author == nil || m.Message.Author.Bot {
+	if m.Message == nil || m.Author == nil || m.Author.Bot {
 		return
 	}
 	defer d.botRecover(m)
@@ -467,17 +466,6 @@ func (d *Discord) GuildRoleByNameOrID(guildID, name, id string) (*discordgo.Role
 	return nil, discordgo.ErrStateNotFound
 }
 
-// IsBotOwner returns whether the author of a DiscordMessage is a bot owner by checking
-// the IDs in the ownerIDs in the Discord struct.
-func (d *Discord) IsBotOwner(msg *DiscordMessage) bool {
-	for _, id := range d.ownerIds {
-		if msg.Author().ID == id {
-			return true
-		}
-	}
-	return false
-}
-
 // StartTyping makes the bot show as 'typing...' in a channel.
 func (d *Discord) StartTyping(channelID string) error {
 	return d.Sess.ChannelTyping(channelID)
@@ -496,13 +484,4 @@ func (d *Discord) UpdateStatus(status string, activityType discordgo.ActivityTyp
 			},
 		},
 	})
-}
-
-func (d *Discord) IsOwner(userID string) bool {
-	for _, id := range d.ownerIds {
-		if id == userID {
-			return true
-		}
-	}
-	return false
 }

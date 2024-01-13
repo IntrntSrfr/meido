@@ -147,7 +147,7 @@ func (b *Bot) processCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	if msg.Type()&cmd.AllowedTypes == 0 {
 		return
 	}
-	if cmd.RequiresUserType == UserTypeBotOwner && !msg.Discord.IsBotOwner(msg) {
+	if cmd.RequiresUserType == UserTypeBotOwner && !b.IsOwner(msg.AuthorID()) {
 		_, _ = msg.Reply("This command is owner only")
 		return
 	}
@@ -244,6 +244,15 @@ func (b *Bot) FindPassive(name string) (*ModulePassive, error) {
 		}
 	}
 	return nil, ErrPassiveNotFound
+}
+
+func (b *Bot) IsOwner(userID string) bool {
+	for _, id := range b.Config.GetStringSlice("owner_ids") {
+		if id == userID {
+			return true
+		}
+	}
+	return false
 }
 
 func readyHandler(b *Bot) func(s *discordgo.Session, r *discordgo.Ready) {
