@@ -7,7 +7,7 @@ import (
 
 func TestNewModule(t *testing.T) {
 	want := "testing"
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	if got := base.Name(); got != want {
 		t.Errorf("ModuleBase.New() did not produce correct name; got = %v, want %v", got, want)
 	}
@@ -15,7 +15,7 @@ func TestNewModule(t *testing.T) {
 
 func TestModuleBase_Name(t *testing.T) {
 	want := "testing"
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	if got := base.Name(); got != "testing" {
 		t.Errorf("ModuleBase.Name() = %v, want %v", got, want)
 	}
@@ -23,7 +23,7 @@ func TestModuleBase_Name(t *testing.T) {
 
 func TestModuleBase_Passives(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	base.RegisterPassive(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
@@ -32,7 +32,7 @@ func TestModuleBase_Passives(t *testing.T) {
 
 func TestModuleBase_Commands(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	base.RegisterCommand(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
@@ -57,7 +57,7 @@ func TestModuleBase_AllowDMs(t *testing.T) {
 
 func TestModuleBase_RegisterPassive(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	base.RegisterPassive(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
@@ -69,7 +69,7 @@ func TestModuleBase_RegisterPassive(t *testing.T) {
 
 func TestModuleBase_RegisterPassives(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	base.RegisterPassives([]*ModulePassive{{Name: "testing"}})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
@@ -81,7 +81,7 @@ func TestModuleBase_RegisterPassives(t *testing.T) {
 
 func TestModuleBase_RegisterCommand(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	base.RegisterCommand(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
@@ -93,7 +93,7 @@ func TestModuleBase_RegisterCommand(t *testing.T) {
 
 func TestModuleBase_RegisterCommands(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	base.RegisterCommands([]*ModuleCommand{{Name: "testing"}})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
@@ -104,7 +104,7 @@ func TestModuleBase_RegisterCommands(t *testing.T) {
 }
 
 func TestModuleBase_FindCommandByName(t *testing.T) {
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	cmd := &ModuleCommand{
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
@@ -158,7 +158,7 @@ func TestModuleBase_FindCommandByName(t *testing.T) {
 }
 
 func TestModuleBase_FindCommandByTriggers(t *testing.T) {
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	cmd := &ModuleCommand{
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
@@ -219,7 +219,7 @@ func TestModuleBase_FindCommandByTriggers(t *testing.T) {
 }
 
 func TestModuleBase_FindCommand(t *testing.T) {
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	cmd := &ModuleCommand{
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
@@ -280,7 +280,7 @@ func TestModuleBase_FindCommand(t *testing.T) {
 }
 
 func TestModuleBase_FindPassive(t *testing.T) {
-	base := NewModule(nil, "testing", nil)
+	base := NewModule(nil, "testing", testLogger())
 	cmd := &ModulePassive{
 		Name: "test",
 	}
