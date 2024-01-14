@@ -168,10 +168,7 @@ func (m *DiscordMessage) BotHasPermissions(perm int64) (bool, error) {
 }
 
 func (m *DiscordMessage) IsBot() bool {
-	if m.Message.Author == nil {
-		return false
-	}
-	return m.Message.Author.Bot
+	return m.Message != nil && m.Author() != nil && m.Author().Bot
 }
 
 func (m *DiscordMessage) Author() *discordgo.User {
