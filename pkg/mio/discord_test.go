@@ -62,15 +62,18 @@ func TestDiscord_Open(t *testing.T) {
 	}
 }
 
-func setupDiscord() *Discord {
+func setupDiscord(sess DiscordSession) *Discord {
+	if sess == nil {
+		sess = mocks.NewDiscordSession("Bot asdf")
+	}
 	d := NewDiscord("Bot asdf", 1, testLogger())
-	d.Sess = mocks.NewDiscordSession("Bot asdf")
+	d.Sess = sess
 	d.Sessions = []DiscordSession{d.Sess}
 	return d
 }
 
 func TestDiscord_Run(t *testing.T) {
-	d := setupDiscord()
+	d := setupDiscord(nil)
 	if got := d.Run(); got != nil {
 		t.Errorf("Discord.Run() error = %v, wantErr %v", got, false)
 	}
