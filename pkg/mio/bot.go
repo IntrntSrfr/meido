@@ -11,7 +11,13 @@ import (
 	"go.uber.org/zap"
 )
 
-// Bot is the main bot struct.
+type BotEvent string
+
+const (
+	BotEventCommandRan      BotEvent = "command_ran"
+	BotEventCommandPanicked BotEvent = "command_panicked"
+)
+
 type Bot struct {
 	sync.Mutex
 	Discord   *Discord
@@ -20,10 +26,9 @@ type Bot struct {
 	Cooldowns CooldownService
 	Callbacks CallbackService
 	Log       *zap.Logger
-	handlers  map[string][]func(interface{})
+	handlers  map[BotEvent][]func(interface{})
 }
 
-// NewBot takes in a Config and returns a pointer to a new Bot
 func NewBot(config Configurable, log *zap.Logger) *Bot {
 	log.Info("new bot")
 	return &Bot{
@@ -33,16 +38,15 @@ func NewBot(config Configurable, log *zap.Logger) *Bot {
 		Cooldowns: NewCooldownHandler(),
 		Callbacks: NewCallbackHandler(),
 		Log:       log,
-		handlers:  make(map[string][]func(interface{})),
+		handlers:  make(map[BotEvent][]func(interface{})),
 	}
 }
 
-// Open will connect to Discord and register event handlers
 func (b *Bot) Open(useDefHandlers bool) error {
 	b.Log.Info("setting up bot")
 	err := b.Discord.Open()
 	if err != nil {
-		panic(err)
+		return err
 	}
 	if useDefHandlers {
 		b.Discord.AddEventHandler(readyHandler(b))
@@ -53,20 +57,17 @@ func (b *Bot) Open(useDefHandlers bool) error {
 	return nil
 }
 
-// Run will start the sessions against Discord and runs it.
 func (b *Bot) Run() error {
 	b.Log.Info("starting bot")
 	go b.listen(b.Discord.messageChan)
 	return b.Discord.Run()
 }
 
-// Close saves all mod states and closes the bot sessions.
 func (b *Bot) Close() {
 	b.Log.Info("stopping bot")
 	b.Discord.Close()
 }
 
-// RegisterModule takes in a Module and registers it.
 func (b *Bot) RegisterModule(mod Module) {
 	b.Log.Info("adding module", zap.String("name", mod.Name()))
 	err := mod.Hook()
@@ -77,13 +78,13 @@ func (b *Bot) RegisterModule(mod Module) {
 	b.Modules[mod.Name()] = mod
 }
 
-func (b *Bot) AddEventHandler(event string, handler func(interface{})) {
+func (b *Bot) AddEventHandler(event BotEvent, handler func(interface{})) {
 	b.Lock()
 	defer b.Unlock()
 	b.handlers[event] = append(b.handlers[event], handler)
 }
 
-func (b *Bot) emit(event string, data interface{}) {
+func (b *Bot) emit(event BotEvent, data interface{}) {
 	b.Lock()
 	defer b.Unlock()
 	if cbs, ok := b.handlers[event]; ok {
@@ -93,7 +94,6 @@ func (b *Bot) emit(event string, data interface{}) {
 	}
 }
 
-// listen is the main command handler. It will listen for messages and execute commands accordingly.
 func (b *Bot) listen(msg <-chan *DiscordMessage) {
 	for {
 		m := <-msg
@@ -103,25 +103,18 @@ func (b *Bot) listen(msg <-chan *DiscordMessage) {
 }
 
 func (b *Bot) processMessage(msg *DiscordMessage) {
-	if msg.Message.Author == nil || msg.Message.Author.Bot {
-		return
-	}
 	for _, mod := range b.Modules {
-		if msg.IsDM() && !mod.AllowDMs() {
-			continue
-		}
-		if msg.Type()&mod.AllowedTypes() == 0 {
-			continue
+		if !mod.AllowsMessage(msg) {
+			return
 		}
 
-		// run all passives if they allow the message type
 		for _, pas := range mod.Passives() {
-			if msg.Type()&pas.AllowedTypes == pas.AllowedTypes {
-				go pas.Run(msg)
+			if !pas.Enabled || msg.Type()&pas.AllowedTypes == 0 {
+				continue
 			}
+			go pas.Run(msg)
 		}
 
-		// if there is no text, there can be no command
 		if len(msg.Args()) <= 0 {
 			continue
 		}
@@ -129,60 +122,25 @@ func (b *Bot) processMessage(msg *DiscordMessage) {
 		if cmd, err := mod.FindCommandByTriggers(msg.RawContent()); err == nil {
 			b.processCommand(cmd, msg)
 		}
-		/*
-			if cmd, found := FindCommand(mod, msg.Args()); found {
-				b.processCommand(cmd, msg)
-			}
-		*/
 	}
 }
 
 func (b *Bot) processCommand(cmd *ModuleCommand, msg *DiscordMessage) {
-	if !cmd.IsEnabled {
+	if !cmd.IsEnabled || !cmd.AllowsMessage(msg) {
 		return
 	}
-	if msg.IsDM() && !cmd.AllowDMs {
-		return
-	}
-	if msg.Type()&cmd.AllowedTypes == 0 {
-		return
-	}
+
 	if cmd.RequiresUserType == UserTypeBotOwner && !b.IsOwner(msg.AuthorID()) {
 		_, _ = msg.Reply("This command is owner only")
 		return
 	}
 
-	var key string
-	switch cmd.CooldownScope {
-	case User:
-		key = fmt.Sprintf("%v:%v", msg.AuthorID(), cmd.Name)
-	case Channel:
-		key = fmt.Sprintf("%v:%v", msg.ChannelID(), cmd.Name)
-	case Guild:
-		key = fmt.Sprintf("%v:%v", msg.GuildID(), cmd.Name)
-	}
-
-	if t, ok := b.Cooldowns.Check(key); ok {
-		// if on cooldown, we know it's for this command, so we can break out and go next
+	cdKey := cmd.CooldownKey(msg)
+	if t, ok := b.Cooldowns.Check(cdKey); ok {
 		_, _ = msg.ReplyAndDelete(fmt.Sprintf("This command is on cooldown for another %v", t), time.Second*2)
 		return
 	}
-
-	//check for perms
-	if cmd.RequiredPerms != 0 {
-		if allow, err := msg.AuthorHasPermissions(cmd.RequiredPerms); err != nil || !allow {
-			return
-		}
-		if cmd.CheckBotPerms {
-			if botAllow, err := msg.Discord.BotHasPermissions(msg.ChannelID(), cmd.RequiredPerms); err != nil || !botAllow {
-				return
-			}
-		}
-	}
-
-	// set cmd on cooldown
-	b.Cooldowns.Set(key, time.Duration(cmd.Cooldown))
-	// run cmd
+	b.Cooldowns.Set(cdKey, time.Duration(cmd.Cooldown))
 	b.runCommand(cmd, msg)
 }
 
@@ -207,7 +165,7 @@ func (b *Bot) runCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 }
 
 func (b *Bot) deliverCallbacks(msg *DiscordMessage) {
-	if msg.Type()&MessageTypeCreate == 0 {
+	if msg.Type() != MessageTypeCreate {
 		return
 	}
 

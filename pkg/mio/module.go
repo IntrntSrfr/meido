@@ -18,6 +18,7 @@ type Module interface {
 	AllowedTypes() MessageType
 	AllowDMs() bool
 	Hook() error
+	AllowsMessage(*DiscordMessage) bool
 	RegisterCommand(*ModuleCommand) error
 	RegisterCommands([]*ModuleCommand) error
 	RegisterPassive(*ModulePassive) error
@@ -45,49 +46,6 @@ type ModuleBase struct {
 	passives     map[string]*ModulePassive
 	allowedTypes MessageType
 	allowDMs     bool
-}
-
-type CooldownScope int
-
-const (
-	User CooldownScope = iota
-	Channel
-	Guild
-)
-
-type UserType int
-
-const (
-	UserTypeAny UserType = iota
-	UserTypeBotOwner
-)
-
-// ModuleCommand represents a command for a Module.
-type ModuleCommand struct {
-	Mod              Module
-	Name             string
-	Description      string
-	Triggers         []string
-	Usage            string
-	Cooldown         time.Duration
-	CooldownScope    CooldownScope
-	RequiredPerms    int64
-	RequiresUserType UserType
-	CheckBotPerms    bool
-	AllowedTypes     MessageType
-	AllowDMs         bool
-	IsEnabled        bool
-	Run              func(*DiscordMessage) `json:"-"`
-}
-
-// ModulePassive represents a passive for a Module.
-type ModulePassive struct {
-	Mod          Module
-	Name         string
-	Description  string
-	AllowedTypes MessageType
-	Enabled      bool
-	Run          func(*DiscordMessage) `json:"-"`
 }
 
 func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
@@ -208,4 +166,92 @@ func (m *ModuleBase) FindPassive(name string) (*ModulePassive, error) {
 		}
 	}
 	return nil, ErrPassiveNotFound
+}
+
+func (m *ModuleBase) AllowsMessage(msg *DiscordMessage) bool {
+	if msg.IsDM() && !m.allowDMs {
+		return false
+	}
+	if msg.Type()&m.allowedTypes == 0 {
+		return false
+	}
+	return true
+}
+
+type CooldownScope int
+
+const (
+	User CooldownScope = iota
+	Channel
+	Guild
+)
+
+type UserType int
+
+const (
+	UserTypeAny UserType = iota
+	UserTypeBotOwner
+)
+
+// ModuleCommand represents a command for a Module.
+type ModuleCommand struct {
+	Mod              Module
+	Name             string
+	Description      string
+	Triggers         []string
+	Usage            string
+	Cooldown         time.Duration
+	CooldownScope    CooldownScope
+	RequiredPerms    int64
+	RequiresUserType UserType
+	CheckBotPerms    bool
+	AllowedTypes     MessageType
+	AllowDMs         bool
+	IsEnabled        bool
+	Run              func(*DiscordMessage) `json:"-"`
+}
+
+func (cmd *ModuleCommand) AllowsMessage(msg *DiscordMessage) bool {
+	if msg.IsDM() && !cmd.AllowDMs {
+		return false
+	}
+
+	if msg.Type()&cmd.AllowedTypes == 0 {
+		return false
+	}
+
+	if cmd.RequiredPerms != 0 {
+		if allow, err := msg.AuthorHasPermissions(cmd.RequiredPerms); err != nil || !allow {
+			return false
+		}
+		if cmd.CheckBotPerms {
+			if botAllow, err := msg.Discord.BotHasPermissions(msg.ChannelID(), cmd.RequiredPerms); err != nil || !botAllow {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
+func (cmd *ModuleCommand) CooldownKey(msg *DiscordMessage) string {
+	switch cmd.CooldownScope {
+	case User:
+		return fmt.Sprintf("user:%v:%v", msg.AuthorID(), cmd.Name)
+	case Channel:
+		return fmt.Sprintf("channel:%v:%v", msg.ChannelID(), cmd.Name)
+	case Guild:
+		return fmt.Sprintf("guild:%v:%v", msg.GuildID(), cmd.Name)
+	}
+	return ""
+}
+
+// ModulePassive represents a passive for a Module.
+type ModulePassive struct {
+	Mod          Module
+	Name         string
+	Description  string
+	AllowedTypes MessageType
+	Enabled      bool
+	Run          func(*DiscordMessage) `json:"-"`
 }

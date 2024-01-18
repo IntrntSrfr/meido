@@ -69,8 +69,8 @@ func (m *Meido) registerModules() {
 }
 
 func (m *Meido) registerMioHandlers() {
-	m.Bot.AddEventHandler("command_ran", logCommand(m))
-	m.Bot.AddEventHandler("command_panicked", logCommandPanicked(m))
+	m.Bot.AddEventHandler(mio.BotEventCommandRan, logCommand(m))
+	m.Bot.AddEventHandler(mio.BotEventCommandPanicked, logCommandPanicked(m))
 }
 
 func logCommand(m *Meido) func(i interface{}) {
