@@ -11,13 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type BotEvent string
-
-const (
-	BotEventCommandRan      BotEvent = "command_ran"
-	BotEventCommandPanicked BotEvent = "command_panicked"
-)
-
 type Bot struct {
 	sync.Mutex
 	Discord   *Discord
@@ -27,6 +20,24 @@ type Bot struct {
 	Callbacks CallbackService
 	Log       *zap.Logger
 	handlers  map[BotEvent][]func(interface{})
+}
+
+type BotEvent string
+
+const (
+	BotEventCommandRan      BotEvent = "command_ran"
+	BotEventCommandPanicked BotEvent = "command_panicked"
+)
+
+type CommandRan struct {
+	Command *ModuleCommand
+	Message *DiscordMessage
+}
+
+type CommandPanicked struct {
+	Command    *ModuleCommand
+	Message    *DiscordMessage
+	StackTrace string
 }
 
 func NewBot(config Configurable, log *zap.Logger) *Bot {
