@@ -17,31 +17,31 @@ type AquariumDB struct {
 }
 
 func (db *AquariumDB) CreateAquarium(userID string) error {
-	_, err := db.GetConn().Exec("INSERT INTO aquarium VALUES($1)", userID)
+	_, err := db.Conn().Exec("INSERT INTO aquarium VALUES($1)", userID)
 	return err
 }
 
 func (db *AquariumDB) GetAquarium(userID string) (*Aquarium, error) {
 	var aquarium Aquarium
-	err := db.GetConn().Get(&aquarium, "SELECT * FROM aquarium WHERE user_id=$1", userID)
+	err := db.Conn().Get(&aquarium, "SELECT * FROM aquarium WHERE user_id=$1", userID)
 	return &aquarium, err
 }
 
 func (db *AquariumDB) UpdateAquarium(aq *Aquarium) error {
-	_, err := db.GetConn().Exec("UPDATE aquarium SET common=$1, uncommon=$2, rare=$3, super_rare=$4, legendary=$5 WHERE user_id=$6",
+	_, err := db.Conn().Exec("UPDATE aquarium SET common=$1, uncommon=$2, rare=$3, super_rare=$4, legendary=$5 WHERE user_id=$6",
 		aq.Common, aq.Uncommon, aq.Rare, aq.SuperRare, aq.Legendary, aq.UserID)
 	return err
 }
 
 func (db *AquariumDB) GetCreatureRarities() ([]*CreatureRarity, error) {
 	var rarities []*CreatureRarity
-	err := db.GetConn().Select(&rarities, "SELECT * FROM creature_rarity")
+	err := db.Conn().Select(&rarities, "SELECT * FROM creature_rarity")
 	return rarities, err
 }
 
 func (db *AquariumDB) GetCreatures() ([]*Creature, error) {
 	var creatures []*Creature
-	err := db.GetConn().Select(&creatures, "SELECT * FROM creature")
+	err := db.Conn().Select(&creatures, "SELECT * FROM creature")
 	if err != nil {
 		return nil, err
 	}

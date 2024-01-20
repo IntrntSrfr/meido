@@ -6,7 +6,7 @@ import (
 )
 
 type DB interface {
-	GetConn() *sqlx.DB
+	Conn() *sqlx.DB
 	Close() error
 
 	ICommandLogDB
