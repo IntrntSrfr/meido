@@ -14,7 +14,7 @@ import (
 // FishMod represents the ping mod
 type FishMod struct {
 	*mio.ModuleBase
-	db database.DB
+	db IAquariumDB
 	fs *fishingService
 }
 
@@ -22,7 +22,7 @@ type FishMod struct {
 func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 	return &FishMod{
 		ModuleBase: mio.NewModule(bot, "Fishing", logger.Named("fishing")),
-		db:         db,
+		db:         &AquariumDB{db},
 	}
 }
 

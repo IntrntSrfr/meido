@@ -20,18 +20,18 @@ import (
 
 type Module struct {
 	*mio.ModuleBase
-	db database.DB
+	db ICustomRoleDB
 }
 
 func New(bot *mio.Bot, db *database.PsqlDB, logger *zap.Logger) mio.Module {
 	return &Module{
 		ModuleBase: mio.NewModule(bot, "CustomRole", logger.Named("customrole")),
-		db:         db,
+		db:         &CustomRoleDB{db},
 	}
 }
 
 func (m *Module) Hook() error {
-	m.Bot.Discord.Sess.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+	m.Bot.Discord.Sess.AddHandlerOnce(func(s *discordgo.Session, r *discordgo.Ready) {
 		go clearDeletedRoles(m)
 	})
 

@@ -3,29 +3,28 @@ package fishing
 import (
 	"database/sql"
 	"fmt"
-	"github.com/intrntsrfr/meido/internal/database"
-	"github.com/intrntsrfr/meido/internal/structs"
-	"go.uber.org/zap"
 	"math/rand"
 	"time"
+
+	"go.uber.org/zap"
 )
 
 type fishingService struct {
-	db     database.DB
+	db     IAquariumDB
 	rng    *rand.Rand
 	logger *zap.Logger
 
-	creatures         []*structs.Creature
-	rarities          []*structs.CreatureRarity
+	creatures         []*Creature
+	rarities          []*CreatureRarity
 	weightedRaritySum int
 }
 
 type creatureWithCaption struct {
-	*structs.Creature
+	*Creature
 	caption string
 }
 
-func newFishingService(db database.DB, logger *zap.Logger) (*fishingService, error) {
+func newFishingService(db IAquariumDB, logger *zap.Logger) (*fishingService, error) {
 	s := &fishingService{
 		db:     db,
 		rng:    rand.New(rand.NewSource(time.Now().Unix())),
@@ -47,7 +46,7 @@ func newFishingService(db database.DB, logger *zap.Logger) (*fishingService, err
 	return s, nil
 }
 
-func (fs *fishingService) getOrCreateAquarium(userID string) (*structs.Aquarium, error) {
+func (fs *fishingService) getOrCreateAquarium(userID string) (*Aquarium, error) {
 	aq, err := fs.db.GetAquarium(userID)
 	if err != nil && err == sql.ErrNoRows {
 		if err = fs.db.CreateAquarium(userID); err == nil {
@@ -94,7 +93,7 @@ func (fs *fishingService) goFishing(userID string) (*creatureWithCaption, error)
 	return &creatureWithCaption{c, caption}, nil
 }
 
-func (fs *fishingService) getRandomRarity() *structs.CreatureRarity {
+func (fs *fishingService) getRandomRarity() *CreatureRarity {
 	pick := fs.rng.Intn(fs.weightedRaritySum)
 	for _, r := range fs.rarities {
 		if pick < r.Weight {
@@ -105,9 +104,9 @@ func (fs *fishingService) getRandomRarity() *structs.CreatureRarity {
 	return nil
 }
 
-func (fs *fishingService) getRandomCreature(r *structs.CreatureRarity) *structs.Creature {
+func (fs *fishingService) getRandomCreature(r *CreatureRarity) *Creature {
 	// FIXME: consider calculating this once in newFishingService() instead.
-	var cs []*structs.Creature
+	var cs []*Creature
 	for _, c := range fs.creatures {
 		if c.Rarity.UID == r.UID {
 			cs = append(cs, c)

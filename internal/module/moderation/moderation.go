@@ -16,13 +16,13 @@ import (
 
 type Module struct {
 	*mio.ModuleBase
-	db database.DB
+	db IModerationDB
 }
 
 func New(b *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 	return &Module{
 		ModuleBase: mio.NewModule(b, "Moderation", logger.Named("moderation")),
-		db:         db,
+		db:         &ModerationDB{DB: db, IFilterDB: &FilterDB{db}, IWarnDB: &WarnDB{db}},
 	}
 }
 
