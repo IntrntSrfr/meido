@@ -5,25 +5,19 @@ import (
 	"time"
 )
 
-type CooldownService interface {
-	Set(key string, dur time.Duration)
-	Check(key string) (time.Duration, bool)
-	Remove(key string)
-}
-
-type BotCooldownService struct {
+type CooldownManager struct {
 	sync.Mutex
 	m map[string]time.Time
 }
 
-func NewCooldownHandler() *BotCooldownService {
-	return &BotCooldownService{
+func NewCooldownManager() *CooldownManager {
+	return &CooldownManager{
 		m: make(map[string]time.Time),
 	}
 }
 
 // Set sets a command on cooldown, adding it to the map.
-func (c *BotCooldownService) Set(key string, dur time.Duration) {
+func (c *CooldownManager) Set(key string, dur time.Duration) {
 	if dur == 0 {
 		return
 	}
@@ -41,14 +35,14 @@ func (c *BotCooldownService) Set(key string, dur time.Duration) {
 
 // Check checks whether a command is on cooldown. If cooldown exists,
 // the time left is returned.
-func (c *BotCooldownService) Check(key string) (time.Duration, bool) {
+func (c *CooldownManager) Check(key string) (time.Duration, bool) {
 	c.Lock()
 	defer c.Unlock()
 	t, ok := c.m[key]
 	return time.Until(t), ok
 }
 
-func (c *BotCooldownService) Remove(key string) {
+func (c *CooldownManager) Remove(key string) {
 	c.Lock()
 	defer c.Unlock()
 	delete(c.m, key)

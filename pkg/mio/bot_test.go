@@ -52,6 +52,6 @@ func TestBot_Events(t *testing.T) {
 			t.Errorf("Timed out ")
 		}
 	}()
-	bot.emit(BotEventCommandRan, nil)
+	bot.Emit(BotEventCommandRan, nil)
 	<-done
 }

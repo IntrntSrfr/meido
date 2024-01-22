@@ -6,7 +6,7 @@ import (
 )
 
 func TestSetMethod(t *testing.T) {
-	handler := NewCooldownHandler()
+	handler := NewCooldownManager()
 	key := "testKey"
 	dur := 5 * time.Second
 
@@ -22,7 +22,7 @@ func TestSetMethod(t *testing.T) {
 }
 
 func TestCheckMethod(t *testing.T) {
-	handler := NewCooldownHandler()
+	handler := NewCooldownManager()
 	key := "testKey"
 	dur := 1 * time.Second
 
@@ -34,7 +34,7 @@ func TestCheckMethod(t *testing.T) {
 }
 
 func TestRemoveMethod(t *testing.T) {
-	handler := NewCooldownHandler()
+	handler := NewCooldownManager()
 	key := "testKey"
 
 	handler.Set(key, 5*time.Second)
