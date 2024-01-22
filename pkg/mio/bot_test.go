@@ -43,20 +43,15 @@ func TestBot_RegisterModule(t *testing.T) {
 
 func TestBot_Events(t *testing.T) {
 	bot := NewBot(NewConfig(), testLogger())
-	called := false
 	done := make(chan bool)
-
-	bot.AddEventHandler(BotEventCommandRan, func(i interface{}) {
-		called = true
-		done <- true
-	})
-	bot.emit(BotEventCommandRan, nil)
-	select {
-	case <-done:
-		if !called {
-			t.Errorf("Callback did not switch bool")
+	go func() {
+		select {
+		case <-bot.EventChannel():
+			done <- true
+		case <-time.After(time.Second):
+			t.Errorf("Timed out ")
 		}
-	case <-time.After(time.Second):
-		t.Errorf("Timed out ")
-	}
+	}()
+	bot.emit(BotEventCommandRan, nil)
+	<-done
 }
