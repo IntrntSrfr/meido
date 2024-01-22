@@ -1,8 +1,11 @@
 package mio
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 func TestNewModule(t *testing.T) {
@@ -327,6 +330,117 @@ func TestModuleBase_FindPassive(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ModuleBase.FindPassive() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestModuleBase_AllowsMessage(t *testing.T) {
+	m := NewModule(nil, "testing", testLogger())
+	msg := &DiscordMessage{
+		Message:     &discordgo.Message{Type: discordgo.MessageTypeDefault, GuildID: ""},
+		MessageType: MessageTypeCreate,
+	}
+
+	t.Run("dm ok if allows dms", func(t *testing.T) {
+		expected := true
+		if got := m.AllowsMessage(msg); got != true {
+			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
+		}
+	})
+
+	t.Run("dm not ok if not allows dms", func(t *testing.T) {
+		m.allowDMs = false
+		expected := true
+		if got := m.AllowsMessage(msg); got != false {
+			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
+		}
+	})
+
+	m.allowDMs = true
+	t.Run("ok if good type", func(t *testing.T) {
+		msg.MessageType = MessageTypeCreate | MessageTypeUpdate
+		expected := true
+		if got := m.AllowsMessage(msg); got != true {
+			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
+		}
+	})
+
+	t.Run("not ok if not good type", func(t *testing.T) {
+		msg.MessageType = MessageTypeUpdate
+		expected := true
+		if got := m.AllowsMessage(msg); got != false {
+			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
+		}
+	})
+}
+
+func TestModuleCommand_AllowsMessage(t *testing.T) {
+	cmd := &ModuleCommand{AllowedTypes: MessageTypeCreate, RequiredPerms: 0, AllowDMs: true}
+	msg := &DiscordMessage{
+		Message:     &discordgo.Message{Type: discordgo.MessageTypeDefault, GuildID: ""},
+		MessageType: MessageTypeCreate,
+	}
+
+	t.Run("dm ok if allows dms", func(t *testing.T) {
+		expected := true
+		if got := cmd.AllowsMessage(msg); got != expected {
+			t.Errorf("ModuleCommand.AllowsMessage(msg) = %v, want %v", got, expected)
+		}
+	})
+
+	t.Run("dm not ok if not allows dms", func(t *testing.T) {
+		cmd.AllowDMs = false
+		expected := true
+		if got := cmd.AllowsMessage(msg); got != false {
+			t.Errorf("ModuleCommand.AllowsMessage(msg) = %v, want %v", got, expected)
+		}
+	})
+
+	cmd.AllowDMs = true
+	t.Run("ok if good type", func(t *testing.T) {
+		msg.MessageType = MessageTypeCreate | MessageTypeUpdate
+		expected := true
+		if got := cmd.AllowsMessage(msg); got != true {
+			t.Errorf("ModuleCommand.AllowsMessage(msg) = %v, want %v", got, expected)
+		}
+	})
+
+	t.Run("not ok if not good type", func(t *testing.T) {
+		msg.MessageType = MessageTypeUpdate
+		expected := true
+		if got := cmd.AllowsMessage(msg); got != false {
+			t.Errorf("ModuleCommand.AllowsMessage(msg) = %v, want %v", got, expected)
+		}
+	})
+
+}
+func TestModuleCommand_CooldownKey(t *testing.T) {
+	gid, chid, uid := "1234", "2345", "3456"
+
+	msg := &DiscordMessage{
+		Message: &discordgo.Message{
+			GuildID:   gid,
+			ChannelID: chid,
+			Author:    &discordgo.User{ID: uid},
+		},
+		MessageType: MessageTypeCreate,
+	}
+
+	tests := []struct {
+		name string
+		cmd  *ModuleCommand
+		want string
+	}{
+		{"empty", &ModuleCommand{CooldownScope: -1, Name: "test"}, ""},
+		{"user", &ModuleCommand{CooldownScope: User, Name: "test"}, fmt.Sprintf("user:%v:%v", uid, "test")},
+		{"channel", &ModuleCommand{CooldownScope: Channel, Name: "test"}, fmt.Sprintf("channel:%v:%v", chid, "test")},
+		{"guild", &ModuleCommand{CooldownScope: Guild, Name: "test"}, fmt.Sprintf("guild:%v:%v", gid, "test")},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.cmd.CooldownKey(msg); got != tt.want {
+				t.Errorf("ModuleCommand.CooldownKey() = %v, want %v", got, tt.want)
 			}
 		})
 	}
