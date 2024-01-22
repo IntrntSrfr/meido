@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func TestSetMethod(t *testing.T) {
+func TestCooldownManager_Set(t *testing.T) {
 	handler := NewCooldownManager()
 	key := "testKey"
 	dur := 5 * time.Second
@@ -21,7 +21,7 @@ func TestSetMethod(t *testing.T) {
 	}
 }
 
-func TestCheckMethod(t *testing.T) {
+func TestCooldownManager_Check(t *testing.T) {
 	handler := NewCooldownManager()
 	key := "testKey"
 	dur := 1 * time.Second
@@ -33,7 +33,7 @@ func TestCheckMethod(t *testing.T) {
 	}
 }
 
-func TestRemoveMethod(t *testing.T) {
+func TestCooldownManager_Remove(t *testing.T) {
 	handler := NewCooldownManager()
 	key := "testKey"
 

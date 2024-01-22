@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestBotCooldownService_Make(t *testing.T) {
+func TestCooldownService_Make(t *testing.T) {
 	handler := NewCallbackManager()
 	key := "testKey"
 	ch, err := handler.Make(key)
@@ -21,7 +21,7 @@ func TestBotCooldownService_Make(t *testing.T) {
 	}
 }
 
-func TestBotCooldownService_Get(t *testing.T) {
+func TestCooldownService_Get(t *testing.T) {
 	handler := NewCallbackManager()
 	key := "testKey"
 	handler.Make(key)
@@ -40,7 +40,7 @@ func TestBotCooldownService_Get(t *testing.T) {
 	}
 }
 
-func TestBotCooldownService_Delete(t *testing.T) {
+func TestCooldownService_Delete(t *testing.T) {
 	handler := NewCallbackManager()
 	key := "testKey"
 
