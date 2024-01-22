@@ -15,11 +15,11 @@ type Bot struct {
 
 	*ModuleManager
 	MessageProcessor *MessageProcessor
+	Callbacks        *CallbackManager
 	*EventManager
 
 	Log *zap.Logger
 }
-
 
 func NewBot(config Configurable, log *zap.Logger) *Bot {
 	log.Info("new bot")
@@ -29,10 +29,11 @@ func NewBot(config Configurable, log *zap.Logger) *Bot {
 		Log:    log,
 	}
 
-	bot.Discord = NewDiscord(config.GetString("token"), config.GetInt("shards"), log)
-	bot.ModuleManager = NewModuleManager(log)
-	bot.MessageProcessor = NewMessageProcessor(bot, log)
 	bot.EventManager = NewEventManager()
+	bot.Callbacks = NewCallbackManager()
+	bot.ModuleManager = NewModuleManager(log)
+	bot.Discord = NewDiscord(config.GetString("token"), config.GetInt("shards"), log)
+	bot.MessageProcessor = NewMessageProcessor(bot, log)
 
 	return bot
 }

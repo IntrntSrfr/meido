@@ -20,7 +20,7 @@ func NewMessageProcessor(bot *Bot, log *zap.Logger) *MessageProcessor {
 	return &MessageProcessor{
 		Bot:       bot,
 		Cooldowns: NewCooldownManager(),
-		Callbacks: NewCallbackManager(),
+		Callbacks: bot.Callbacks,
 		log:       log.Named("MessageProcessor"),
 	}
 }

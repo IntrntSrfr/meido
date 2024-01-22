@@ -1,6 +1,7 @@
 package mio
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -21,15 +22,19 @@ func TestBot_IsOwner(t *testing.T) {
 	}
 }
 
-func newTestModule(bot *Bot, name string, log *zap.Logger) Module {
+func newTestModule(bot *Bot, name string, log *zap.Logger) *testModule {
 	return &testModule{ModuleBase: *NewModule(bot, name, log)}
 }
 
 type testModule struct {
 	ModuleBase
+	hookShouldFail bool
 }
 
 func (m *testModule) Hook() error {
+	if m.hookShouldFail {
+		return errors.New("Something terrible has happened")
+	}
 	return nil
 }
 
