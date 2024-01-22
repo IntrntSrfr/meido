@@ -1,6 +1,7 @@
 package mio
 
 import (
+	"context"
 	"fmt"
 	"runtime/debug"
 	"strings"
@@ -19,7 +20,7 @@ type Bot struct {
 	Cooldowns CooldownService
 	Callbacks CallbackService
 	Log       *zap.Logger
-	handlers  map[BotEvent][]func(interface{})
+	eventCh   chan *BotEventData
 }
 
 type BotEvent string
@@ -28,6 +29,11 @@ const (
 	BotEventCommandRan      BotEvent = "command_ran"
 	BotEventCommandPanicked BotEvent = "command_panicked"
 )
+
+type BotEventData struct {
+	Type BotEvent
+	Data interface{}
+}
 
 type CommandRan struct {
 	Command *ModuleCommand
@@ -49,7 +55,7 @@ func NewBot(config Configurable, log *zap.Logger) *Bot {
 		Cooldowns: NewCooldownHandler(),
 		Callbacks: NewCallbackHandler(),
 		Log:       log,
-		handlers:  make(map[BotEvent][]func(interface{})),
+		eventCh:   make(chan *BotEventData),
 	}
 }
 
@@ -68,9 +74,9 @@ func (b *Bot) Open(useDefHandlers bool) error {
 	return nil
 }
 
-func (b *Bot) Run() error {
+func (b *Bot) Run(ctx context.Context) error {
 	b.Log.Info("starting bot")
-	go b.listen(b.Discord.messageChan)
+	go b.listenMessages(ctx)
 	return b.Discord.Run()
 }
 
@@ -89,27 +95,23 @@ func (b *Bot) RegisterModule(mod Module) {
 	b.Modules[mod.Name()] = mod
 }
 
-func (b *Bot) AddEventHandler(event BotEvent, handler func(interface{})) {
-	b.Lock()
-	defer b.Unlock()
-	b.handlers[event] = append(b.handlers[event], handler)
-}
-
 func (b *Bot) emit(event BotEvent, data interface{}) {
-	b.Lock()
-	defer b.Unlock()
-	if cbs, ok := b.handlers[event]; ok {
-		for _, cb := range cbs {
-			go cb(data)
-		}
-	}
+	b.eventCh <- &BotEventData{Type: event, Data: data}
 }
 
-func (b *Bot) listen(msg <-chan *DiscordMessage) {
+func (b *Bot) EventChannel() chan *BotEventData {
+	return b.eventCh
+}
+
+func (b *Bot) listenMessages(ctx context.Context) {
 	for {
-		m := <-msg
-		go b.deliverCallbacks(m)
-		go b.processMessage(m)
+		select {
+		case msg := <-b.Discord.messageChan:
+			go b.deliverCallbacks(msg)
+			go b.processMessage(msg)
+		case <-ctx.Done():
+			return
+		}
 	}
 }
 

@@ -1,6 +1,7 @@
 package meido
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -33,7 +34,7 @@ func New(config mio.Configurable, db database.DB, log *zap.Logger) *Meido {
 	}
 }
 
-func (m *Meido) Run(useDefHandlers bool) error {
+func (m *Meido) Run(ctx context.Context, useDefHandlers bool) error {
 	if err := m.Bot.Open(useDefHandlers); err != nil {
 		return err
 	}
@@ -41,11 +42,11 @@ func (m *Meido) Run(useDefHandlers bool) error {
 	// register modules here
 	m.registerModules()
 	// register mio event handlers here
-	m.registerMioHandlers()
+	go m.listenMioEvents(ctx)
 	// register discord event handlers here
 	m.registerDiscordHandlers()
 
-	if err := m.Bot.Run(); err != nil {
+	if err := m.Bot.Run(ctx); err != nil {
 		return err
 	}
 	return nil
@@ -68,38 +69,43 @@ func (m *Meido) registerModules() {
 	//m.Bot.RegisterModule(aimod.New(gptClient, config.GPT3Engine))
 }
 
-func (m *Meido) registerMioHandlers() {
-	m.Bot.AddEventHandler(mio.BotEventCommandRan, logCommand(m))
-	m.Bot.AddEventHandler(mio.BotEventCommandPanicked, logCommandPanicked(m))
-}
-
-func logCommand(m *Meido) func(i interface{}) {
-	return func(i interface{}) {
-		cmd, _ := i.(*mio.CommandRan)
-		err := m.db.CreateCommandLogEntry(&structs.CommandLogEntry{
-			Command:   cmd.Command.Name,
-			Args:      strings.Join(cmd.Message.Args(), " "),
-			UserID:    cmd.Message.AuthorID(),
-			GuildID:   cmd.Message.GuildID(),
-			ChannelID: cmd.Message.ChannelID(),
-			MessageID: cmd.Message.Message.ID,
-			SentAt:    time.Now(),
-		})
-		if err != nil {
-			m.logger.Error("error logging command", zap.Error(err))
+func (m *Meido) listenMioEvents(ctx context.Context) {
+	for {
+		select {
+		case evt := <-m.Bot.EventChannel():
+			switch evt.Type {
+			case mio.BotEventCommandRan:
+				m.logCommand(evt.Data.(*mio.CommandRan))
+			case mio.BotEventCommandPanicked:
+				m.logCommandPanicked(evt.Data.(*mio.CommandPanicked))
+			}
+		case <-ctx.Done():
+			return
 		}
 	}
 }
 
-func logCommandPanicked(m *Meido) func(i interface{}) {
-	return func(i interface{}) {
-		cmd, _ := i.(*mio.CommandPanicked)
-		m.logger.Error("command panicked",
-			zap.Any("command", cmd.Command),
-			zap.Any("message", cmd.Message),
-			zap.String("stack trace", cmd.StackTrace),
-		)
+func (m *Meido) logCommand(cmd *mio.CommandRan) {
+	err := m.db.CreateCommandLogEntry(&structs.CommandLogEntry{
+		Command:   cmd.Command.Name,
+		Args:      strings.Join(cmd.Message.Args(), " "),
+		UserID:    cmd.Message.AuthorID(),
+		GuildID:   cmd.Message.GuildID(),
+		ChannelID: cmd.Message.ChannelID(),
+		MessageID: cmd.Message.Message.ID,
+		SentAt:    time.Now(),
+	})
+	if err != nil {
+		m.logger.Error("error logging command", zap.Error(err))
 	}
+}
+
+func (m *Meido) logCommandPanicked(cmd *mio.CommandPanicked) {
+	m.logger.Error("command panicked",
+		zap.Any("command", cmd.Command),
+		zap.Any("message", cmd.Message),
+		zap.String("stack trace", cmd.StackTrace),
+	)
 }
 
 func (m *Meido) registerDiscordHandlers() {

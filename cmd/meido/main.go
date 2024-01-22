@@ -1,14 +1,16 @@
 package main
 
 import (
+	"context"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/meido"
 	"github.com/intrntsrfr/meido/internal/structs"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"os"
-	"os/signal"
-	"syscall"
 )
 
 func main() {
@@ -28,13 +30,13 @@ func main() {
 	}
 
 	bot := meido.New(cfg, db, logger.Named("meido"))
-	err = bot.Run(true)
+	err = bot.Run(context.Background(), true)
 	if err != nil {
 		panic(err)
 	}
 	defer bot.Close()
 
 	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM)
 	<-sc
 }
