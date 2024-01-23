@@ -14,13 +14,15 @@ type DiscordSessionMock struct {
 	token      string
 	shardID    int
 	shardCount int
-	isOpened   bool
 	identify   discordgo.Identify
 	state      *discordgo.State
 
 	handlersMu   sync.RWMutex
 	handlers     map[string][]*discordgo.EventHandler
 	onceHandlers map[string][]*discordgo.EventHandler
+
+	IsOpen          bool
+	CloseShouldFail bool
 }
 
 func NewDiscordSession(token string) *DiscordSessionMock {
@@ -28,7 +30,7 @@ func NewDiscordSession(token string) *DiscordSessionMock {
 		token:        token,
 		shardID:      0,
 		shardCount:   1,
-		isOpened:     false,
+		IsOpen:       false,
 		state:        discordgo.NewState(),
 		handlers:     make(map[string][]*discordgo.EventHandler, 0),
 		onceHandlers: make(map[string][]*discordgo.EventHandler, 0),
@@ -37,14 +39,17 @@ func NewDiscordSession(token string) *DiscordSessionMock {
 }
 
 func (s *DiscordSessionMock) Open() error {
-	if s.isOpened {
+	if s.IsOpen {
 		return errors.New("session is already open")
 	}
-	s.isOpened = true
+	s.IsOpen = true
 	return nil
 }
 
 func (s *DiscordSessionMock) Close() error {
+	if s.CloseShouldFail {
+		return errors.New("failed to close session")
+	}
 	return nil
 }
 
