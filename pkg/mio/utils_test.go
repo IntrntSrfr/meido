@@ -26,6 +26,7 @@ func testLogger() *zap.Logger {
 
 func testBot() *Bot {
 	b := NewBot(testConfig(), testLogger())
+	b.UseDefaultHandlers()
 	b.Discord = testDiscord(nil, nil)
 	// more stuff
 	return b

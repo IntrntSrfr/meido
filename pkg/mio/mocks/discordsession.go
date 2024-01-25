@@ -2,8 +2,10 @@ package mocks
 
 import (
 	"errors"
+	"fmt"
 	"image"
 	"io"
+	"math/rand"
 	"sync"
 	"time"
 
@@ -43,6 +45,11 @@ func (s *DiscordSessionMock) Open() error {
 		return errors.New("session is already open")
 	}
 	s.IsOpen = true
+	s.state.User = &discordgo.User{
+		ID:       "1",
+		Username: "Mio",
+		Bot:      true,
+	}
 	return nil
 }
 
@@ -94,7 +101,7 @@ func (s *DiscordSessionMock) AddHandlerOnce(handler interface{}) func() {
 }
 
 func (s *DiscordSessionMock) Channel(channelID string, options ...discordgo.RequestOption) (st *discordgo.Channel, err error) {
-	panic("not implemented") // TODO: Implement
+	return s.state.Channel(channelID)
 }
 
 func (s *DiscordSessionMock) ChannelFileSend(channelID string, name string, r io.Reader, options ...discordgo.RequestOption) (*discordgo.Message, error) {
@@ -130,7 +137,31 @@ func (s *DiscordSessionMock) ChannelMessageSend(channelID string, content string
 }
 
 func (s *DiscordSessionMock) ChannelMessageSendComplex(channelID string, data *discordgo.MessageSend, options ...discordgo.RequestOption) (st *discordgo.Message, err error) {
-	panic("not implemented") // TODO: Implement
+	if !s.IsOpen {
+		return nil, errors.New("session is closed")
+	}
+
+	channel, err := s.Channel(channelID)
+	if err != nil {
+		return nil, errors.New("channel not found")
+	}
+
+	guildID := ""
+	if guild, err := s.Guild(channel.GuildID); err == nil {
+		guildID = guild.ID
+	}
+
+	message := &discordgo.Message{
+		ID:        fmt.Sprintf("%d", rand.Int()), // Generate a random ID or use a counter for simplicity
+		ChannelID: channelID,
+		GuildID:   guildID,
+		Content:   data.Content,
+		Author:    &discordgo.User{ID: s.State().User.ID}, // Assuming the author is the user represented by this session
+		Timestamp: time.Now(),
+	}
+
+	s.state.MessageAdd(message)
+	return message, nil
 }
 
 func (s *DiscordSessionMock) ChannelMessageSendEmbed(channelID string, embed *discordgo.MessageEmbed, options ...discordgo.RequestOption) (*discordgo.Message, error) {
@@ -170,7 +201,7 @@ func (s *DiscordSessionMock) ChannelTyping(channelID string, options ...discordg
 }
 
 func (s *DiscordSessionMock) Guild(guildID string, options ...discordgo.RequestOption) (st *discordgo.Guild, err error) {
-	panic("not implemented") // TODO: Implement
+	return s.state.Guild(guildID)
 }
 
 func (s *DiscordSessionMock) GuildBanCreate(guildID string, userID string, days int, options ...discordgo.RequestOption) (err error) {
