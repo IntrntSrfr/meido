@@ -110,7 +110,7 @@ func (m *Module) unmuteCommand(msg *mio.DiscordMessage) {
 	if msg.AuthorID() == targetMember.User.ID {
 		return
 	}
-	if msg.GoodHierarchy(targetMember) {
+	if msg.TargetRoleIsLowest(targetMember) {
 		_, _ = msg.Reply("no (you can only unmute users who are below you and me in the role hierarchy)")
 		return
 	}

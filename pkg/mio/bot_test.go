@@ -2,12 +2,10 @@ package mio
 
 import (
 	"context"
-	"errors"
 	"testing"
 	"time"
 
 	"github.com/intrntsrfr/meido/pkg/mio/mocks"
-	"go.uber.org/zap"
 )
 
 func TestBot_IsOwner(t *testing.T) {
@@ -22,22 +20,6 @@ func TestBot_IsOwner(t *testing.T) {
 	if ok := b.IsOwner("456"); ok {
 		t.Errorf("Bot.IsOwner('456') = %v, want %v", ok, false)
 	}
-}
-
-func newTestModule(bot *Bot, name string, log *zap.Logger) *testModule {
-	return &testModule{ModuleBase: *NewModule(bot, name, log)}
-}
-
-type testModule struct {
-	ModuleBase
-	hookShouldFail bool
-}
-
-func (m *testModule) Hook() error {
-	if m.hookShouldFail {
-		return errors.New("Something terrible has happened")
-	}
-	return nil
 }
 
 func TestBot_RegisterModule(t *testing.T) {
@@ -82,7 +64,7 @@ func TestBot_Run(t *testing.T) {
 	sessionMock := mocks.NewDiscordSession("asdf")
 
 	bot.Open(false)
-	bot.Discord = setupDiscord(sessionMock)
+	bot.Discord = testDiscord(sessionMock)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	bot.Run(ctx)

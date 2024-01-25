@@ -313,9 +313,9 @@ func (m *DiscordMessage) GetMemberOrUserAtArg(index int) (*discordgo.User, error
 	return member.User, nil
 }
 
-// GoodHierarchy compares the bot user, author, and a target member, and returns whether the
+// TargetRoleIsLowest compares the bot user, author, and a target member, and returns whether the
 // targetMember is below both the bot and author in the role hierarchy
-func (m *DiscordMessage) GoodHierarchy(targetMember *discordgo.Member) bool {
+func (m *DiscordMessage) TargetRoleIsLowest(targetMember *discordgo.Member) bool {
 	topUserRole := m.Discord.HighestRolePosition(m.GuildID(), m.AuthorID())
 	topTargetRole := m.Discord.HighestRolePosition(m.GuildID(), targetMember.User.ID)
 	topBotRole := m.Discord.HighestRolePosition(m.GuildID(), m.Sess.State().User.ID)

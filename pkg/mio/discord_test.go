@@ -5,9 +5,6 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio/mocks"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 func TestSessionWrapper_ShardID(t *testing.T) {
@@ -27,15 +24,6 @@ func TestSessionWrapper_State(t *testing.T) {
 	if got := s.State(); !reflect.DeepEqual(got, state) {
 		t.Errorf("SessionWrapper.State() = %v, want %v", got, state)
 	}
-}
-
-func testLogger() *zap.Logger {
-	loggerConfig := zap.NewDevelopmentConfig()
-	loggerConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	loggerConfig.OutputPaths = []string{}
-	loggerConfig.ErrorOutputPaths = []string{}
-	logger, _ := loggerConfig.Build()
-	return logger.Named("test")
 }
 
 func TestNewDiscord(t *testing.T) {
@@ -62,18 +50,8 @@ func TestDiscord_Open(t *testing.T) {
 	}
 }
 
-func setupDiscord(sess DiscordSession) *Discord {
-	if sess == nil {
-		sess = mocks.NewDiscordSession("Bot asdf")
-	}
-	d := NewDiscord("Bot asdf", 1, testLogger())
-	d.Sess = sess
-	d.Sessions = []DiscordSession{d.Sess}
-	return d
-}
-
 func TestDiscord_Run(t *testing.T) {
-	d := setupDiscord(nil)
+	d := testDiscord(nil)
 	if got := d.Run(); got != nil {
 		t.Errorf("Discord.Run() error = %v, wantErr %v", got, false)
 	}
