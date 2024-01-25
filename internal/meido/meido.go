@@ -35,21 +35,11 @@ func New(config mio.Configurable, db database.DB, log *zap.Logger) *Meido {
 }
 
 func (m *Meido) Run(ctx context.Context, useDefHandlers bool) error {
-	if err := m.Bot.Open(useDefHandlers); err != nil {
-		return err
-	}
-
-	// register modules here
+	m.Bot.UseDefaultHandlers()
 	m.registerModules()
-	// register mio event handlers here
 	go m.listenMioEvents(ctx)
-	// register discord event handlers here
 	m.registerDiscordHandlers()
-
-	if err := m.Bot.Run(ctx); err != nil {
-		return err
-	}
-	return nil
+	return m.Bot.Run(ctx)
 }
 
 func (m *Meido) Close() {

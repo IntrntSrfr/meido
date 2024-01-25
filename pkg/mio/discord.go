@@ -99,18 +99,16 @@ func NewDiscord(token string, shards int, logger *zap.Logger) *Discord {
 		messageChan: make(chan *DiscordMessage, 256),
 		logger:      logger.Named("discord"),
 	}
-	discordgo.Logger = discordgoLogger(d.logger.Named("discordgo"))
+	discordgo.Logger = discordgoLogger(d.logger)
+	d.createSessions()
 	return d
 }
 
-// Open populates the Discord object with Sessions and returns a DiscordMessage channel.
-func (d *Discord) Open() error {
+// createSessions populates the Discord object with Sessions and returns a DiscordMessage channel.
+func (d *Discord) createSessions() {
 	d.Sessions = make([]DiscordSession, d.shards)
 	for i := 0; i < d.shards; i++ {
-		s, err := discordgo.New("Bot " + d.token)
-		if err != nil {
-			return err
-		}
+		s, _ := discordgo.New("Bot " + d.token)
 
 		s.State.MaxMessageCount = 100
 		s.State.TrackVoice = false
@@ -127,8 +125,6 @@ func (d *Discord) Open() error {
 		d.logger.Info("created session", zap.Int("sessionID", i))
 	}
 	d.Sess = d.Sessions[0]
-
-	return nil
 }
 
 // Run opens the Discord sessions.
@@ -151,18 +147,19 @@ func (d *Discord) Close() {
 	}
 }
 
-func discordgoLogger(l *zap.Logger) func(msgL, caller int, format string, a ...interface{}) {
+func discordgoLogger(logger *zap.Logger) func(msgL, caller int, format string, a ...interface{}) {
+	logger = logger.Named("discordgo")
 	return func(msgL, caller int, format string, a ...interface{}) {
 		msg := fmt.Sprintf(format, a...)
 		switch msgL {
 		case discordgo.LogError:
-			l.Error(msg)
+			logger.Error(msg)
 		case discordgo.LogWarning:
-			l.Warn(msg)
+			logger.Warn(msg)
 		case discordgo.LogInformational:
-			l.Info(msg)
+			logger.Info(msg)
 		case discordgo.LogDebug:
-			l.Debug(msg)
+			logger.Debug(msg)
 		}
 	}
 }

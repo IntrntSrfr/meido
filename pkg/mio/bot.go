@@ -21,8 +21,6 @@ type Bot struct {
 }
 
 func NewBot(config Configurable, log *zap.Logger) *Bot {
-	log.Info("new bot")
-
 	bot := &Bot{
 		Config: config,
 		Log:    log,
@@ -37,19 +35,11 @@ func NewBot(config Configurable, log *zap.Logger) *Bot {
 	return bot
 }
 
-func (b *Bot) Open(useDefHandlers bool) error {
-	b.Log.Info("setting up bot")
-	err := b.Discord.Open()
-	if err != nil {
-		return err
-	}
-	if useDefHandlers {
-		b.Discord.AddEventHandler(readyHandler(b))
-		b.Discord.AddEventHandler(guildJoinHandler(b))
-		b.Discord.AddEventHandler(guildLeaveHandler(b))
-		b.Discord.AddEventHandler(memberChunkHandler(b))
-	}
-	return nil
+func (b *Bot) UseDefaultHandlers() {
+	b.Discord.AddEventHandler(readyHandler(b))
+	b.Discord.AddEventHandler(guildJoinHandler(b))
+	b.Discord.AddEventHandler(guildLeaveHandler(b))
+	b.Discord.AddEventHandler(memberChunkHandler(b))
 }
 
 func (b *Bot) Run(ctx context.Context) error {

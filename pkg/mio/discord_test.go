@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio/mocks"
 )
 
 func TestSessionWrapper_ShardID(t *testing.T) {
@@ -29,8 +30,13 @@ func TestSessionWrapper_State(t *testing.T) {
 func TestNewDiscord(t *testing.T) {
 	token := "Bot asdf"
 	shards := 1
+	conf := NewConfig()
+	conf.Set("token", token)
+	conf.Set("shards", shards)
+	mockSess := mocks.NewDiscordSession(token, shards)
+
 	logger := testLogger()
-	d := NewDiscord(token, shards, logger)
+	d := testDiscord(conf, mockSess)
 
 	if got := d.token; d.token != token {
 		t.Errorf("SessionWrapper.token = %v, want %v", got, token)
@@ -41,17 +47,14 @@ func TestNewDiscord(t *testing.T) {
 	if got := d.logger; d.logger == nil {
 		t.Errorf("SessionWrapper.shards = %v, want %v", got, logger)
 	}
-}
 
-func TestDiscord_Open(t *testing.T) {
-	d := NewDiscord("asfd", 1, testLogger())
-	if err := d.Open(); err != nil {
-		t.Errorf("Discord.Open() error = %v, wantErr %v", err, false)
+	if got := len(d.Sessions); got != shards {
+		t.Errorf("len(Discord.Sessions) = %v, want %v", got, 1)
 	}
 }
 
 func TestDiscord_Run(t *testing.T) {
-	d := testDiscord(nil)
+	d := testDiscord(nil, nil)
 	if got := d.Run(); got != nil {
 		t.Errorf("Discord.Run() error = %v, wantErr %v", got, false)
 	}

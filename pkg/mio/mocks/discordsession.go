@@ -18,22 +18,22 @@ type DiscordSessionMock struct {
 	state      *discordgo.State
 
 	handlersMu   sync.RWMutex
-	handlers     map[string][]*discordgo.EventHandler
-	onceHandlers map[string][]*discordgo.EventHandler
+	handlers     map[string][]interface{}
+	onceHandlers map[string][]interface{}
 
 	IsOpen          bool
 	CloseShouldFail bool
 }
 
-func NewDiscordSession(token string) *DiscordSessionMock {
+func NewDiscordSession(token string, shards int) *DiscordSessionMock {
 	s := &DiscordSessionMock{
 		token:        token,
 		shardID:      0,
-		shardCount:   1,
+		shardCount:   shards,
 		IsOpen:       false,
 		state:        discordgo.NewState(),
-		handlers:     make(map[string][]*discordgo.EventHandler, 0),
-		onceHandlers: make(map[string][]*discordgo.EventHandler, 0),
+		handlers:     make(map[string][]interface{}, 0),
+		onceHandlers: make(map[string][]interface{}, 0),
 	}
 	return s
 }
@@ -61,12 +61,36 @@ func (s *DiscordSessionMock) State() *discordgo.State {
 	return s.state
 }
 
+func handlerForInterface(ifc interface{}) string {
+	switch ifc.(type) {
+	case func(s *discordgo.Session, r *discordgo.Ready):
+		return "ready"
+	case func(s *discordgo.Session, g *discordgo.GuildCreate):
+		return "guildCreate"
+	case func(s *discordgo.Session, g *discordgo.GuildDelete):
+		return "guildDelete"
+	case func(s *discordgo.Session, g *discordgo.GuildMembersChunk):
+		return "guildMembersChunk"
+	}
+	return ""
+}
+
 func (s *DiscordSessionMock) AddHandler(handler interface{}) func() {
-	panic("not implemented") // TODO: Implement
+	typeStr := handlerForInterface(handler)
+	s.handlersMu.Lock()
+	defer s.handlersMu.Unlock()
+
+	s.handlers[typeStr] = append(s.handlers[typeStr], handler)
+	return func() {}
 }
 
 func (s *DiscordSessionMock) AddHandlerOnce(handler interface{}) func() {
-	panic("not implemented") // TODO: Implement
+	typeStr := handlerForInterface(handler)
+	s.handlersMu.Lock()
+	defer s.handlersMu.Unlock()
+
+	s.onceHandlers[typeStr] = append(s.onceHandlers[typeStr], handler)
+	return func() {}
 }
 
 func (s *DiscordSessionMock) Channel(channelID string, options ...discordgo.RequestOption) (st *discordgo.Channel, err error) {

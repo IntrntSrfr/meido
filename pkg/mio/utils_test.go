@@ -26,6 +26,7 @@ func testLogger() *zap.Logger {
 
 func testBot() *Bot {
 	b := NewBot(testConfig(), testLogger())
+	b.Discord = testDiscord(nil, nil)
 	// more stuff
 	return b
 }
@@ -46,11 +47,14 @@ func (m *testModule) Hook() error {
 	return nil
 }
 
-func testDiscord(sess DiscordSession) *Discord {
-	if sess == nil {
-		sess = mocks.NewDiscordSession("Bot asdf")
+func testDiscord(conf Configurable, sess DiscordSession) *Discord {
+	if conf == nil {
+		conf = testConfig()
 	}
-	d := NewDiscord("Bot asdf", 1, testLogger())
+	if sess == nil {
+		sess = mocks.NewDiscordSession(conf.GetString("token"), conf.GetInt("shards"))
+	}
+	d := NewDiscord(conf.GetString("token"), conf.GetInt("shards"), testLogger())
 	d.Sess = sess
 	d.Sessions = []DiscordSession{d.Sess}
 	return d
