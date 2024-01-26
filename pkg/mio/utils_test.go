@@ -90,6 +90,7 @@ func testPassive(mod Module) *ModulePassive {
 		Name:         "test",
 		Description:  "testing",
 		AllowedTypes: MessageTypeCreate,
+		Enabled:      true,
 		Run:          testPassiveRun,
 	}
 }

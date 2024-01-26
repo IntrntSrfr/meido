@@ -126,6 +126,52 @@ func TestBot_SimpleCommandGetsHandled(t *testing.T) {
 	}
 }
 
+func TestBot_SimplePassiveGetsHandled(t *testing.T) {
+	var (
+		bot    = testBot()
+		logger = testLogger()
+		mod    = newTestModule(bot, "testing", logger)
+		pas    = testPassive(mod)
+	)
+
+	// change the command
+	called := make(chan bool)
+	pas.Run = func(dm *DiscordMessage) {
+		called <- true
+	}
+
+	// register and run
+	mod.RegisterPassive(pas)
+	bot.RegisterModule(mod)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	bot.Run(ctx)
+
+	bot.Discord.Sess.State().GuildAdd(&discordgo.Guild{ID: "111", Channels: []*discordgo.Channel{}})
+	bot.Discord.Sess.State().ChannelAdd(&discordgo.Channel{ID: "1234", GuildID: "111"})
+	bot.Discord.messageChan <- &DiscordMessage{
+		Sess:         bot.Discord.Sess,
+		Discord:      bot.Discord,
+		MessageType:  MessageTypeCreate,
+		TimeReceived: time.Now(),
+		Message: &discordgo.Message{
+			GuildID: "111",
+			Author: &discordgo.User{
+				Username: "jeff",
+			},
+			ChannelID: "1234",
+			ID:        "112233",
+		},
+	}
+
+	select {
+	case <-called:
+		break
+	case <-time.After(time.Millisecond * 10):
+		t.Error("Test timed out")
+	}
+}
+
 func TestBot_PanicCommandGetsHandled(t *testing.T) {
 	var (
 		bot    = testBot()
