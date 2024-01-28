@@ -138,3 +138,10 @@ func TestDiscordMessage_Attachments(t *testing.T) {
 		t.Errorf("DiscordMessage.Attachments() = %v, want %v", got, attachments)
 	}
 }
+
+func TestDiscordMessage_CallbackKey(t *testing.T) {
+	msg := &DiscordMessage{Message: &discordgo.Message{ChannelID: "1", Author: &discordgo.User{ID: "2"}}}
+	if got := msg.CallbackKey(); got != "1:2" {
+		t.Errorf("DiscordMessage.CallbackKey() = %v, want %v", got, "1:2")
+	}
+}

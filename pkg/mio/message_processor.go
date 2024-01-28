@@ -104,8 +104,7 @@ func (mp *MessageProcessor) DeliverCallbacks(msg *DiscordMessage) {
 		return
 	}
 
-	key := fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID())
-	ch, err := mp.Callbacks.Get(key)
+	ch, err := mp.Callbacks.Get(msg.CallbackKey())
 	if err != nil {
 		return
 	}

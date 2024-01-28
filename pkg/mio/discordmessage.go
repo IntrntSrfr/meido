@@ -162,6 +162,10 @@ func (m *DiscordMessage) AuthorHasPermissions(perm int64) (bool, error) {
 	return uPerms&perm != 0 || uPerms&discordgo.PermissionAdministrator != 0, nil
 }
 
+func (m *DiscordMessage) CallbackKey() string {
+	return fmt.Sprintf("%v:%v", m.ChannelID(), m.AuthorID())
+}
+
 // BotHasPermissions returns if a member has certain permissions or not.
 func (m *DiscordMessage) BotHasPermissions(perm int64) (bool, error) {
 	return m.Discord.BotHasPermissions(m.ChannelID(), perm)

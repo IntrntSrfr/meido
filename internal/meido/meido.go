@@ -36,8 +36,8 @@ func New(config mio.Configurable, db database.DB, log *zap.Logger) *Meido {
 
 func (m *Meido) Run(ctx context.Context, useDefHandlers bool) error {
 	m.Bot.UseDefaultHandlers()
-	m.registerModules()
 	go m.listenMioEvents(ctx)
+	m.registerModules()
 	m.registerDiscordHandlers()
 	return m.Bot.Run(ctx)
 }
@@ -56,7 +56,6 @@ func (m *Meido) registerModules() {
 	//m.Bot.RegisterModule(customrole.New(m.Bot, m.Bot.DB, m.logger))
 	m.Bot.RegisterModule(search.New(m.Bot, m.logger))
 	m.Bot.RegisterModule(mediaconvertmod.New(m.Bot, m.logger))
-	//m.Bot.RegisterModule(aimod.New(gptClient, config.GPT3Engine))
 }
 
 func (m *Meido) listenMioEvents(ctx context.Context) {
