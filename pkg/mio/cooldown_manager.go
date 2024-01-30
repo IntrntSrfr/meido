@@ -23,11 +23,11 @@ func (c *CooldownManager) Set(key string, dur time.Duration) {
 	}
 
 	c.Lock()
-	c.m[key] = time.Now().Add(time.Second * dur)
+	c.m[key] = time.Now().Add(dur)
 	c.Unlock()
 
 	go func() {
-		time.AfterFunc(time.Second*dur, func() {
+		time.AfterFunc(dur, func() {
 			c.Remove(key)
 		})
 	}()
