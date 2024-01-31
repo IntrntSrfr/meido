@@ -181,7 +181,8 @@ func (m *ModuleBase) AllowsMessage(msg *DiscordMessage) bool {
 type CooldownScope int
 
 const (
-	User CooldownScope = iota
+	None CooldownScope = 1 << iota
+	User
 	Channel
 	Guild
 )
@@ -189,7 +190,7 @@ const (
 type UserType int
 
 const (
-	UserTypeAny UserType = iota
+	UserTypeAny UserType = 1 << iota
 	UserTypeBotOwner
 )
 

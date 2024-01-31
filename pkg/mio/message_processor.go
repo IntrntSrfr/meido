@@ -70,12 +70,13 @@ func (mp *MessageProcessor) ProcessCommand(cmd *ModuleCommand, msg *DiscordMessa
 		return
 	}
 
-	cdKey := cmd.CooldownKey(msg)
-	if t, ok := mp.Cooldowns.Check(cdKey); ok {
-		_, _ = msg.ReplyAndDelete(fmt.Sprintf("This command is on cooldown for another %v", t), time.Second*2)
-		return
+	if cdKey := cmd.CooldownKey(msg); cdKey != "" {
+		if t, ok := mp.Cooldowns.Check(cdKey); ok {
+			_, _ = msg.ReplyAndDelete(fmt.Sprintf("This command is on cooldown for another %v", t), time.Second*2)
+			return
+		}
+		mp.Cooldowns.Set(cdKey, time.Duration(cmd.Cooldown))
 	}
-	mp.Cooldowns.Set(cdKey, time.Duration(cmd.Cooldown))
 	mp.RunCommand(cmd, msg)
 }
 
