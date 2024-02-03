@@ -48,3 +48,31 @@ func TestModuleCommandBuilder(t *testing.T) {
 		t.Errorf("Built command run function should not be nil")
 	}
 }
+
+func TestModulePassiveBuilder(t *testing.T) {
+	mod := newTestModule(nil, "test", testLogger())
+
+	cmd := &ModulePassive{
+		Mod:          mod,
+		Name:         "testing",
+		Description:  "i am testing",
+		AllowedTypes: MessageTypeUpdate,
+		Enabled:      true,
+		Run:          nil,
+	}
+
+	cmdBuilder := NewModulePassiveBuilder(mod, "testing").
+		WithDescription("i am testing").
+		WithAllowedTypes(MessageTypeUpdate)
+
+	if built := cmdBuilder.Build(); !reflect.DeepEqual(cmd, built) {
+		t.Errorf("Built passive is not equal to expected")
+	}
+
+	rf := func(*DiscordMessage) {}
+	cmdBuilder.WithRunFunc(rf)
+
+	if built := cmdBuilder.Build(); built.Run == nil {
+		t.Errorf("Built passive run function should not be nil")
+	}
+}

@@ -74,3 +74,37 @@ func (b *ModuleCommandBuilder) Build() *ModuleCommand {
 	// bunch of if-statements
 	return b.cmd
 }
+
+type ModulePassiveBuilder struct {
+	cmd *ModulePassive
+}
+
+func NewModulePassiveBuilder(mod Module, name string) *ModulePassiveBuilder {
+	return &ModulePassiveBuilder{
+		cmd: &ModulePassive{
+			Mod:     mod,
+			Name:    name,
+			Enabled: true,
+		},
+	}
+}
+
+func (b *ModulePassiveBuilder) WithDescription(text string) *ModulePassiveBuilder {
+	b.cmd.Description = text
+	return b
+}
+
+func (b *ModulePassiveBuilder) WithAllowedTypes(msgType MessageType) *ModulePassiveBuilder {
+	b.cmd.AllowedTypes = msgType
+	return b
+}
+
+func (b *ModulePassiveBuilder) WithRunFunc(run func(*DiscordMessage)) *ModulePassiveBuilder {
+	b.cmd.Run = run
+	return b
+}
+
+func (b *ModulePassiveBuilder) Build() *ModulePassive {
+	// bunch of if-statements
+	return b.cmd
+}
