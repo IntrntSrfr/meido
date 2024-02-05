@@ -23,9 +23,10 @@ type Module struct {
 	db ICustomRoleDB
 }
 
-func New(bot *mio.Bot, db *database.PsqlDB, logger *zap.Logger) mio.Module {
+func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
+	logger = logger.Named("CustomRole")
 	return &Module{
-		ModuleBase: mio.NewModule(bot, "CustomRole", logger.Named("customrole")),
+		ModuleBase: mio.NewModule(bot, "CustomRole", logger),
 		db:         &CustomRoleDB{db},
 	}
 }
@@ -67,11 +68,11 @@ func clearDeletedRoles(m *Module) {
 				}
 				// delete role from guild if it no longer exists
 				if err := m.db.DeleteCustomRole(ur.UID); err != nil {
-					m.Log.Error("could not delete custom role",
-						zap.Int("member role ID", ur.UID),
-						zap.String("guild id", ur.GuildID),
-						zap.String("role id", ur.RoleID),
-						zap.String("user id", ur.UserID))
+					m.Logger.Error("Delete custom role failed",
+						zap.Int("member roleID", ur.UID),
+						zap.String("guildID", ur.GuildID),
+						zap.String("roleID", ur.RoleID),
+						zap.String("userID", ur.UserID))
 				}
 			}
 		}
@@ -238,7 +239,7 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 
 		ur, err := m.db.GetCustomRole(msg.GuildID(), msg.AuthorID())
 		if err != nil && err != sql.ErrNoRows {
-			m.Log.Error("error fetching user role", zap.Error(err))
+			m.Logger.Error("error fetching user role", zap.Error(err))
 			_, _ = msg.Reply("There was an issue, please try again!")
 			return
 		} else if err == sql.ErrNoRows {
@@ -265,7 +266,7 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 			newName := strings.Join(msg.RawArgs()[2:], " ")
 			if _, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, &discordgo.RoleParams{Name: newName}); err != nil {
 				_, _ = msg.Reply("There was an issue, please try again!")
-				m.Log.Error("could not edit custom role name", zap.Error(err))
+				m.Logger.Error("Editing custom role name failed", zap.Error(err))
 				return
 			}
 			embed := iutils.NewEmbed().
@@ -283,7 +284,7 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 			colorInt := int(color)
 			if _, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, &discordgo.RoleParams{Color: &colorInt}); err != nil {
 				_, _ = msg.Reply("There was an issue, please try again!")
-				m.Log.Error("could not edit custom role color", zap.Error(err))
+				m.Logger.Error("Editing custom role color failed", zap.Error(err))
 				return
 			}
 			embed := iutils.NewEmbed().
@@ -309,7 +310,7 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 	ur, err := m.db.GetCustomRole(msg.GuildID(), target.User.ID)
 	if err != nil && err != sql.ErrNoRows {
 		_, _ = msg.Reply("there was an error, please try again")
-		m.Log.Error("error fetching user role", zap.Error(err))
+		m.Logger.Error("Fetching custom role failed", zap.Error(err))
 		return
 	} else if err == sql.ErrNoRows {
 		_, _ = msg.Reply("No custom role set.")

@@ -14,8 +14,9 @@ type Module struct {
 
 // New returns a new Module.
 func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
+	logger = logger.Named("Testing")
 	return &Module{
-		ModuleBase: mio.NewModule(bot, "Testing", logger.Named("testing")),
+		ModuleBase: mio.NewModule(bot, "Testing", logger),
 	}
 }
 
@@ -50,20 +51,20 @@ func newTestCommand(m *Module) *mio.ModuleCommand {
 // NewMonkeyCommand returns a new monkey command.
 func newMonkeyCommand(m *Module) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
-		Mod:           m,
-		Name:          "monkey",
-		Description:   "Monkey",
-		Triggers:      []string{"m?monkey", "m?monke", "m?monki", "m?monky"},
-		Usage:         "m?monkey",
-		Cooldown:      2,
-		CooldownScope: mio.User,
-		RequiredPerms: 0,
-		CheckBotPerms: false,
+		Mod:              m,
+		Name:             "monkey",
+		Description:      "Monkey",
+		Triggers:         []string{"m?monkey", "m?monke", "m?monki", "m?monky"},
+		Usage:            "m?monkey",
+		Cooldown:         2,
+		CooldownScope:    mio.User,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
 		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:  mio.MessageTypeCreate,
-		AllowDMs:      true,
-		IsEnabled:     true,
-		Run:           m.monkeyCommand,
+		AllowedTypes:     mio.MessageTypeCreate,
+		AllowDMs:         true,
+		IsEnabled:        true,
+		Run:              m.monkeyCommand,
 	}
 }
 

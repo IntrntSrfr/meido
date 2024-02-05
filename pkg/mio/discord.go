@@ -93,13 +93,14 @@ func (s *SessionWrapper) State() *discordgo.State {
 
 // NewDiscord takes in a token and creates a Discord object.
 func NewDiscord(token string, shards int, logger *zap.Logger) *Discord {
+	logger = logger.Named("Discord")
 	d := &Discord{
 		token:       token,
 		shards:      shards,
 		messageChan: make(chan *DiscordMessage, 256),
-		logger:      logger.Named("discord"),
+		logger:      logger,
 	}
-	discordgo.Logger = discordgoLogger(d.logger)
+	discordgo.Logger = discordgoLogger(logger)
 	d.createSessions()
 	return d
 }
@@ -122,7 +123,7 @@ func (d *Discord) createSessions() {
 		s.AddHandler(d.onMessageDelete)
 
 		d.Sessions[i] = &SessionWrapper{s}
-		d.logger.Info("created session", zap.Int("sessionID", i))
+		d.logger.Info("Added session", zap.Int("sessionID", i))
 	}
 	d.Sess = d.Sessions[0]
 }
@@ -142,13 +143,13 @@ func (d *Discord) Close() {
 	for _, sess := range d.Sessions {
 		err := sess.Close()
 		if err != nil {
-			d.logger.Error("failed to close session", zap.Int("shardID", sess.ShardID()), zap.Error(err))
+			d.logger.Error("Failed to close session", zap.Int("shardID", sess.ShardID()), zap.Error(err))
 		}
 	}
 }
 
 func discordgoLogger(logger *zap.Logger) func(msgL, caller int, format string, a ...interface{}) {
-	logger = logger.Named("discordgo")
+	logger = logger.Named("DiscordGo")
 	return func(msgL, caller int, format string, a ...interface{}) {
 		msg := fmt.Sprintf(format, a...)
 		switch msgL {
@@ -167,7 +168,7 @@ func discordgoLogger(logger *zap.Logger) func(msgL, caller int, format string, a
 // botRecover is the recovery function used in the message create and update handler.
 func (d *Discord) botRecover(i interface{}) {
 	if r := recover(); r != nil {
-		d.logger.Error("recovery needed",
+		d.logger.Warn("Recovery needed",
 			zap.Any("error", r),
 			zap.Any("message", i),
 			zap.String("stack trace", string(debug.Stack())),

@@ -41,7 +41,6 @@ func LoadConfig() (*Config, error) {
 		config.loadEnvs()
 	}
 
-	fmt.Println(config)
 	return config, nil
 }
 
@@ -76,6 +75,8 @@ func (c *Config) loadJson() error {
 	}
 
 	c.Set("shards", jsonCfg.Shards)
+	c.Set("token", jsonCfg.Token)
+	c.Set("connection_string", jsonCfg.ConnectionString)
 	c.Set("owner_ids", jsonCfg.OwnerIds)
 	c.Set("dm_log_channels", jsonCfg.DmLogChannels)
 	c.Set("owo_token", jsonCfg.OwoToken)

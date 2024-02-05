@@ -7,7 +7,7 @@ import (
 
 func readyHandler(b *Bot) func(s *discordgo.Session, r *discordgo.Ready) {
 	return func(s *discordgo.Session, r *discordgo.Ready) {
-		b.Log.Info("ready",
+		b.Logger.Info("Event: ready",
 			zap.Int("shard", s.ShardID),
 			zap.String("user", r.User.String()),
 			zap.Int("server count", len(r.Guilds)),
@@ -18,7 +18,7 @@ func readyHandler(b *Bot) func(s *discordgo.Session, r *discordgo.Ready) {
 func guildJoinHandler(b *Bot) func(s *discordgo.Session, g *discordgo.GuildCreate) {
 	return func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		_ = s.RequestGuildMembers(g.ID, "", 0, "", false)
-		b.Log.Info("started loading guild",
+		b.Logger.Info("Event: guild join",
 			zap.String("name", g.Guild.Name),
 			zap.Int("member count", g.MemberCount),
 			zap.Int("members available", len(g.Members)),
@@ -31,7 +31,7 @@ func guildLeaveHandler(b *Bot) func(s *discordgo.Session, g *discordgo.GuildDele
 		if !g.Unavailable {
 			return
 		}
-		b.Log.Info("removed from guild",
+		b.Logger.Info("Event: guild leave",
 			zap.String("id", g.ID),
 		)
 	}
@@ -45,7 +45,7 @@ func memberChunkHandler(b *Bot) func(s *discordgo.Session, g *discordgo.GuildMem
 			if err != nil {
 				return
 			}
-			b.Log.Info("finished loading guild",
+			b.Logger.Info("Event: guild members chunk",
 				zap.String("name", guild.Name),
 			)
 		}

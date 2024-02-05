@@ -18,8 +18,9 @@ type Module struct {
 }
 
 func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
+	logger = logger.Named("Fun")
 	return &Module{
-		ModuleBase: mio.NewModule(bot, "Fun", logger.Named("fun")),
+		ModuleBase: mio.NewModule(bot, "Fun", logger),
 	}
 }
 

@@ -40,7 +40,7 @@ var (
 type ModuleBase struct {
 	sync.Mutex
 	Bot          *Bot
-	Log          *zap.Logger
+	Logger       *zap.Logger
 	name         string
 	commands     map[string]*ModuleCommand
 	passives     map[string]*ModulePassive
@@ -51,7 +51,7 @@ type ModuleBase struct {
 func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
 	return &ModuleBase{
 		Bot:          bot,
-		Log:          logger,
+		Logger:       logger,
 		name:         name,
 		commands:     make(map[string]*ModuleCommand),
 		passives:     make(map[string]*ModulePassive),
@@ -96,8 +96,8 @@ func (m *ModuleBase) RegisterPassive(pas *ModulePassive) error {
 		return fmt.Errorf("passive '%v' already exists in %v", pas.Name, m.Name())
 	}
 	m.passives[pas.Name] = pas
-	if m.Log != nil {
-		m.Log.Info("registered passive", zap.String("name", pas.Name))
+	if m.Logger != nil {
+		m.Logger.Info("Registered passive", zap.String("name", pas.Name))
 	}
 	return nil
 }
@@ -118,8 +118,8 @@ func (m *ModuleBase) RegisterCommand(cmd *ModuleCommand) error {
 		return fmt.Errorf("command '%v' already exists in %v", cmd.Name, m.Name())
 	}
 	m.commands[cmd.Name] = cmd
-	if m.Log != nil {
-		m.Log.Info("registered command", zap.String("name", cmd.Name))
+	if m.Logger != nil {
+		m.Logger.Info("Registered command", zap.String("name", cmd.Name))
 	}
 	return nil
 }

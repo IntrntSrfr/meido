@@ -25,10 +25,11 @@ type creatureWithCaption struct {
 }
 
 func newFishingService(db IAquariumDB, logger *zap.Logger) (*fishingService, error) {
+	logger = logger.Named("Service")
 	s := &fishingService{
 		db:     db,
 		rng:    rand.New(rand.NewSource(time.Now().Unix())),
-		logger: logger.Named("service"),
+		logger: logger,
 	}
 
 	var err error
@@ -54,7 +55,7 @@ func (fs *fishingService) getOrCreateAquarium(userID string) (*Aquarium, error) 
 		}
 	}
 	if err != nil {
-		fs.logger.Error("could not get or create aquarium", zap.Error(err))
+		fs.logger.Error("Get or create aquarium failed", zap.Error(err))
 	}
 	return aq, err
 }

@@ -119,7 +119,7 @@ func (m *Module) warnCommand(msg *mio.DiscordMessage) {
 		warn.ClearedByID = &msg.Discord.BotUser().ID
 		warn.ClearedAt = &t
 		if err := m.db.UpdateMemberWarn(warn); err != nil {
-			m.Log.Error("could not update warn", zap.Error(err), zap.Int("warn ID", warn.UID))
+			m.Logger.Error("could not update warn", zap.Error(err), zap.Int("warnID", warn.UID))
 		}
 	}
 }
@@ -410,7 +410,7 @@ func (m *Module) clearallwarnsCommand(msg *mio.DiscordMessage) {
 		warn.ClearedByID = &msg.Message.Author.ID
 		warn.ClearedAt = &t
 		if err := m.db.UpdateMemberWarn(warn); err != nil {
-			m.Log.Error("could not update warn", zap.Error(err), zap.Int("warn ID", warn.UID))
+			m.Logger.Error("could not update warn", zap.Error(err), zap.Int("warnID", warn.UID))
 		}
 	}
 	_, _ = msg.Reply(fmt.Sprintf("Cleared active warns issued to %v", targetMember.Mention()))

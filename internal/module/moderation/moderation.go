@@ -20,8 +20,9 @@ type Module struct {
 }
 
 func New(b *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
+	logger = logger.Named("Moderation")
 	return &Module{
-		ModuleBase: mio.NewModule(b, "Moderation", logger.Named("moderation")),
+		ModuleBase: mio.NewModule(b, "Moderation", logger),
 		db:         &ModerationDB{DB: db, IFilterDB: &FilterDB{db}, IWarnDB: &WarnDB{db}},
 	}
 }
@@ -66,7 +67,7 @@ func checkWarnInterval(m *Module) func(s *discordgo.Session, r *discordgo.Ready)
 		refreshTicker := time.NewTicker(time.Hour)
 		go func() {
 			for range refreshTicker.C {
-				m.Log.Info("running warn check")
+				m.Logger.Info("Running warn check")
 				for _, g := range m.Bot.Discord.Guilds() {
 					if g.Unavailable {
 						continue
@@ -89,7 +90,7 @@ func checkWarnInterval(m *Module) func(s *discordgo.Session, r *discordgo.Ready)
 							warn.ClearedByID = &m.Bot.Discord.Sess.State().User.ID
 							warn.ClearedAt = &t
 							if err := m.db.UpdateMemberWarn(warn); err != nil {
-								m.Log.Error("could not update warn", zap.Error(err), zap.Int("warn UID", warn.UID))
+								m.Logger.Error("Updating warn failed", zap.Error(err), zap.Int("warn UID", warn.UID))
 							}
 							//m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3",
 							//	m.bot.Discord.Sess.State().User.ID, time.Now(), warn.UID)
@@ -200,7 +201,7 @@ func (m *Module) banCommand(msg *mio.DiscordMessage) {
 		warn.ClearedByID = &msg.Sess.State().User.ID
 		warn.ClearedAt = &t
 		if err := m.db.UpdateMemberWarn(warn); err != nil {
-			m.Log.Error("could not update warn", zap.Error(err), zap.Int("warn ID", warn.UID))
+			m.Logger.Error("Updating warn failed", zap.Error(err), zap.Int("warnID", warn.UID))
 		}
 	}
 

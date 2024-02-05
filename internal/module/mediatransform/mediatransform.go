@@ -1,4 +1,4 @@
-package mediaconvertmod
+package mediatransform
 
 import (
 	"bytes"
@@ -13,21 +13,22 @@ import (
 	"go.uber.org/zap"
 )
 
-type MediaConvertMod struct {
+type MediaTransformMod struct {
 	*mio.ModuleBase
 }
 
 func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
-	return &MediaConvertMod{
-		ModuleBase: mio.NewModule(bot, "Media", logger.Named("mediaconvert")),
+	logger = logger.Named("MediaTransform")
+	return &MediaTransformMod{
+		ModuleBase: mio.NewModule(bot, "MediaTransform", logger),
 	}
 }
 
-func (m *MediaConvertMod) Hook() error {
+func (m *MediaTransformMod) Hook() error {
 	return m.RegisterPassive(newJpgLargeConvertPassive(m))
 }
 
-func newJpgLargeConvertPassive(m *MediaConvertMod) *mio.ModulePassive {
+func newJpgLargeConvertPassive(m *MediaTransformMod) *mio.ModulePassive {
 	return &mio.ModulePassive{
 		Mod:          m,
 		Name:         "jpglargeconvert",
@@ -38,7 +39,7 @@ func newJpgLargeConvertPassive(m *MediaConvertMod) *mio.ModulePassive {
 	}
 }
 
-func (m *MediaConvertMod) jpgLargeConvertPassive(msg *mio.DiscordMessage) {
+func (m *MediaTransformMod) jpgLargeConvertPassive(msg *mio.DiscordMessage) {
 	if len(msg.Message.Attachments) < 1 {
 		return
 	}
@@ -76,7 +77,7 @@ func (m *MediaConvertMod) jpgLargeConvertPassive(msg *mio.DiscordMessage) {
 	})
 }
 
-func newMediaConvertCommand(m *MediaConvertMod) *mio.ModuleCommand {
+func newMediaConvertCommand(m *MediaTransformMod) *mio.ModuleCommand {
 	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "mediaconvert",
@@ -95,7 +96,7 @@ func newMediaConvertCommand(m *MediaConvertMod) *mio.ModuleCommand {
 	}
 }
 
-func (m *MediaConvertMod) mediaConvertCommand(msg *mio.DiscordMessage) {
+func (m *MediaTransformMod) mediaConvertCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 3 {
 		return
 	}

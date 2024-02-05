@@ -8,21 +8,22 @@ import (
 
 type ModuleManager struct {
 	Modules map[string]Module
-	log     *zap.Logger
+	logger  *zap.Logger
 }
 
-func NewModuleManager(log *zap.Logger) *ModuleManager {
+func NewModuleManager(logger *zap.Logger) *ModuleManager {
+	logger = logger.Named("ModuleManager")
 	return &ModuleManager{
 		Modules: make(map[string]Module),
-		log:     log.Named("ModuleManager"),
+		logger:  logger,
 	}
 }
 
 func (m *ModuleManager) RegisterModule(mod Module) {
-	m.log.Info("adding module", zap.String("name", mod.Name()))
+	m.logger.Info("Registering module", zap.String("name", mod.Name()))
 	err := mod.Hook()
 	if err != nil {
-		m.log.Error("could not register module", zap.Error(err))
+		m.logger.Error("Failed to register module", zap.Error(err))
 		return
 	}
 	m.Modules[mod.Name()] = mod

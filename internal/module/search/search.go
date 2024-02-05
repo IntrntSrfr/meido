@@ -20,8 +20,9 @@ type Module struct {
 }
 
 func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
+	logger = logger.Named("Search")
 	return &Module{
-		ModuleBase: mio.NewModule(bot, "Search", logger.Named("search")),
+		ModuleBase: mio.NewModule(bot, "Search", logger),
 		search:     service.NewService(bot.Config.GetString("youtube_token"), bot.Config.GetString("open_weather_key")),
 		imageCache: service.NewImageSearchCache(),
 	}

@@ -21,8 +21,9 @@ type Module struct {
 
 // New returns a new AdministrationMod.
 func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
+	logger = logger.Named("Administration")
 	return &Module{
-		ModuleBase:    mio.NewModule(bot, "Administration", logger.Named("administration")),
+		ModuleBase:    mio.NewModule(bot, "Administration", logger),
 		dmLogChannels: bot.Config.GetStringSlice("dm_log_channels"),
 	}
 }

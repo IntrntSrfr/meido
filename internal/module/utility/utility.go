@@ -28,8 +28,9 @@ type Module struct {
 }
 
 func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
+	logger = logger.Named("Utility")
 	return &Module{
-		ModuleBase: mio.NewModule(bot, "Utility", logger.Named("utility")),
+		ModuleBase: mio.NewModule(bot, "Utility", logger),
 		db:         db,
 		startTime:  time.Now(),
 	}
@@ -314,14 +315,14 @@ func (m *Module) helpCommand(msg *mio.DiscordMessage) {
 		if len(mod.Passives()) > 0 {
 			list.WriteString("\nPassives:\n")
 			for _, pas := range mod.Passives() {
-				list.WriteString(fmt.Sprintf("- %v\n", pas.Name))
+				list.WriteString(fmt.Sprintf("- `%v`\n", pas.Name))
 			}
 		}
 
 		if len(mod.Commands()) > 0 {
 			list.WriteString("\nCommands:\n")
 			for _, cmd := range mod.Commands() {
-				list.WriteString(fmt.Sprintf("- %v\n", cmd.Name))
+				list.WriteString(fmt.Sprintf("- `%v`\n", cmd.Name))
 			}
 		}
 

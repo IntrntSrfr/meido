@@ -13,15 +13,15 @@ type MessageProcessor struct {
 	Bot       *Bot
 	Cooldowns *CooldownManager
 	Callbacks *CallbackManager
-	log       *zap.Logger
+	logger    *zap.Logger
 }
 
-func NewMessageProcessor(bot *Bot, log *zap.Logger) *MessageProcessor {
+func NewMessageProcessor(bot *Bot, logger *zap.Logger) *MessageProcessor {
 	return &MessageProcessor{
 		Bot:       bot,
 		Cooldowns: NewCooldownManager(),
 		Callbacks: bot.Callbacks,
-		log:       log.Named("MessageProcessor"),
+		logger:    logger.Named("MessageProcessor"),
 	}
 }
 
@@ -84,7 +84,7 @@ func (mp *MessageProcessor) ProcessCommand(cmd *ModuleCommand, msg *DiscordMessa
 func (mp *MessageProcessor) RunCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	defer func() {
 		if r := recover(); r != nil {
-			mp.log.Error("recovery needed", zap.Any("error", r))
+			mp.logger.Warn("Recovery needed", zap.Any("error", r))
 			mp.Bot.Emit(BotEventCommandPanicked, &CommandPanicked{cmd, msg, string(debug.Stack())})
 			_, _ = msg.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
 		}
@@ -92,11 +92,10 @@ func (mp *MessageProcessor) RunCommand(cmd *ModuleCommand, msg *DiscordMessage) 
 
 	cmd.Run(msg)
 	mp.Bot.Emit(BotEventCommandRan, &CommandRan{cmd, msg})
-	mp.log.Info("new command",
+	mp.logger.Info("Command",
 		zap.String("id", msg.ID()),
 		zap.String("content", msg.RawContent()),
-		zap.String("author ID", msg.AuthorID()),
-		zap.String("author username", msg.Author().String()),
+		zap.String("userID", msg.AuthorID()),
 	)
 }
 

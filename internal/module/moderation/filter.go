@@ -162,7 +162,7 @@ func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 	}
 	if err = m.db.DeleteGuildFilters(msg.GuildID()); err != nil {
 		_, _ = msg.Reply("There was an issue, please try again!")
-		m.Log.Error("unable to delete guild filters", zap.Any("message", msg))
+		m.Logger.Error("Deleting guild filters failed", zap.Any("message", msg))
 		return
 	}
 	_, _ = msg.Reply("All filters successfully deleted")
@@ -342,7 +342,7 @@ func newCheckFilterPassive(m *Module) *mio.ModulePassive {
 				warn.ClearedByID = &cu.ID
 				warn.ClearedAt = &t
 				if err := m.db.UpdateMemberWarn(warn); err != nil {
-					m.Log.Error("could not update warn", zap.Error(err), zap.Int("warn ID", warn.UID))
+					m.Logger.Error("Updating warn failed", zap.Error(err), zap.Int("warnID", warn.UID))
 				}
 			}
 			_, _ = msg.Reply(fmt.Sprintf("%v has been banned after acquiring too many warns. miss them.", msg.Message.Author.Mention()))

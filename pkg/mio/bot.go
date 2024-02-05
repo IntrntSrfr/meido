@@ -17,20 +17,21 @@ type Bot struct {
 	Callbacks        *CallbackManager
 	*EventManager
 
-	Log *zap.Logger
+	Logger *zap.Logger
 }
 
-func NewBot(config Configurable, log *zap.Logger) *Bot {
+func NewBot(config Configurable, logger *zap.Logger) *Bot {
+	logger = logger.Named("Mio")
 	bot := &Bot{
 		Config: config,
-		Log:    log,
+		Logger: logger,
 	}
 
 	bot.EventManager = NewEventManager()
 	bot.Callbacks = NewCallbackManager()
-	bot.ModuleManager = NewModuleManager(log)
-	bot.Discord = NewDiscord(config.GetString("token"), config.GetInt("shards"), log)
-	bot.MessageProcessor = NewMessageProcessor(bot, log)
+	bot.ModuleManager = NewModuleManager(logger)
+	bot.Discord = NewDiscord(config.GetString("token"), config.GetInt("shards"), logger)
+	bot.MessageProcessor = NewMessageProcessor(bot, logger)
 
 	return bot
 }
@@ -43,13 +44,18 @@ func (b *Bot) UseDefaultHandlers() {
 }
 
 func (b *Bot) Run(ctx context.Context) error {
-	b.Log.Info("starting bot")
+	b.Logger.Info("Starting up...")
 	go b.MessageProcessor.ListenMessages(ctx)
-	return b.Discord.Run()
+	if err := b.Discord.Run(); err != nil {
+		return err
+	}
+	b.Logger.Info("Running")
+	return nil
+
 }
 
 func (b *Bot) Close() {
-	b.Log.Info("stopping bot")
+	b.Logger.Info("Shutting down")
 	b.Discord.Close()
 }
 

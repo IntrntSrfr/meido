@@ -20,8 +20,9 @@ type FishMod struct {
 
 // New returns a new FishMod.
 func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
+	logger = logger.Named("Fishing")
 	return &FishMod{
-		ModuleBase: mio.NewModule(bot, "Fishing", logger.Named("fishing")),
+		ModuleBase: mio.NewModule(bot, "Fishing", logger),
 		db:         &AquariumDB{db},
 	}
 }
@@ -29,7 +30,7 @@ func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 // Hook will hook the Module into the Bot.
 func (m *FishMod) Hook() error {
 	var err error
-	if m.fs, err = newFishingService(m.db, m.Log); err != nil {
+	if m.fs, err = newFishingService(m.db, m.Logger); err != nil {
 		return err
 	}
 
@@ -62,7 +63,7 @@ func newFishCommand(m *FishMod) *mio.ModuleCommand {
 			creature, err := m.fs.goFishing(msg.AuthorID())
 			if err != nil {
 				_, _ = msg.Reply("There was an issue, please try again!")
-				m.Log.Error("could not fish", zap.Error(err))
+				m.Logger.Error("Going fishing failed", zap.Error(err))
 				return
 			}
 			_, _ = msg.Reply(creature.caption)
@@ -105,7 +106,7 @@ func (m *FishMod) aquariumCommand(msg *mio.DiscordMessage) {
 	aq, err := m.fs.getOrCreateAquarium(targetUser.ID)
 	if err != nil {
 		_, _ = msg.Reply("There was an issue, please try again!")
-		m.Log.Error("could not get aquarium", zap.Error(err))
+		m.Logger.Error("Getting aquarium failed", zap.Error(err))
 		return
 	}
 	embed := iutils.NewEmbed().
