@@ -20,8 +20,9 @@ type Discord struct {
 	Sessions []DiscordSession
 	shards   int
 
-	messageChan chan *DiscordMessage
-	logger      *zap.Logger
+	messageChan     chan *DiscordMessage
+	interactionChan chan *DiscordInteraction
+	logger          *zap.Logger
 }
 
 type DiscordSession interface {
@@ -95,10 +96,11 @@ func (s *SessionWrapper) State() *discordgo.State {
 func NewDiscord(token string, shards int, logger *zap.Logger) *Discord {
 	logger = logger.Named("Discord")
 	d := &Discord{
-		token:       token,
-		shards:      shards,
-		messageChan: make(chan *DiscordMessage, 256),
-		logger:      logger,
+		token:           token,
+		shards:          shards,
+		messageChan:     make(chan *DiscordMessage, 1),
+		interactionChan: make(chan *DiscordInteraction, 1),
+		logger:          logger,
 	}
 	discordgo.Logger = discordgoLogger(logger)
 	d.createSessions()
@@ -121,6 +123,7 @@ func (d *Discord) createSessions() {
 		s.AddHandler(d.onMessageCreate)
 		s.AddHandler(d.onMessageUpdate)
 		s.AddHandler(d.onMessageDelete)
+		s.AddHandler(d.onInteractionCreate)
 
 		d.Sessions[i] = &SessionWrapper{s}
 		d.logger.Info("Added session", zap.Int("sessionID", i))
@@ -176,8 +179,6 @@ func (d *Discord) botRecover(i interface{}) {
 	}
 }
 
-// onMessageCreate is the handler for the *discordgo.MessageCreate event.
-// It populates a DiscordMessage object and sends it to Discord.messageChan
 func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if m.Message == nil || m.Author == nil || m.Author.Bot {
 		return
@@ -203,8 +204,6 @@ func (d *Discord) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCrea
 	}
 }
 
-// onMessageUpdate is the handler for the *discordgo.MessageUpdate event.
-// It populates a DiscordMessage object and sends it to Discord.messageChan
 func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpdate) {
 	if m.Message == nil || m.Author == nil || m.Author.Bot {
 		return
@@ -229,14 +228,29 @@ func (d *Discord) onMessageUpdate(s *discordgo.Session, m *discordgo.MessageUpda
 	}
 }
 
-// onMessageDelete is the handler for the *discordgo.MessageDelete event.
-// It populates a DiscordMessage object and sends it to Discord.messageChan
 func (d *Discord) onMessageDelete(s *discordgo.Session, m *discordgo.MessageDelete) {
 	d.messageChan <- &DiscordMessage{
 		Sess:         d.Sess,
 		Discord:      d,
 		Message:      m.Message,
 		MessageType:  MessageTypeDelete,
+		TimeReceived: time.Now(),
+		Shard:        s.ShardID,
+	}
+}
+
+func (d *Discord) onInteractionCreate(s *discordgo.Session, m *discordgo.InteractionCreate) {
+	if m.GuildID != "" && m.Member == nil {
+		return
+	}
+	if m.GuildID == "" && m.User == nil {
+		return
+	}
+
+	d.interactionChan <- &DiscordInteraction{
+		Sess:         d.Sess,
+		Discord:      d,
+		Interaction:  m.Interaction,
 		TimeReceived: time.Now(),
 		Shard:        s.ShardID,
 	}
