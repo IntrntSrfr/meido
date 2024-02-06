@@ -13,8 +13,9 @@ type Bot struct {
 	Config  Configurable
 
 	*ModuleManager
-	MessageProcessor *MessageProcessor
-	Callbacks        *CallbackManager
+	MessageProcessor     *MessageProcessor
+	InteractionProcessor *InteractionProcessor
+	Callbacks            *CallbackManager
 	*EventManager
 
 	Logger *zap.Logger
@@ -32,6 +33,7 @@ func NewBot(config Configurable, logger *zap.Logger) *Bot {
 	bot.ModuleManager = NewModuleManager(logger)
 	bot.Discord = NewDiscord(config.GetString("token"), config.GetInt("shards"), logger)
 	bot.MessageProcessor = NewMessageProcessor(bot, logger)
+	bot.InteractionProcessor = NewInteractionProcessor(bot, logger)
 
 	return bot
 }
@@ -45,7 +47,8 @@ func (b *Bot) UseDefaultHandlers() {
 
 func (b *Bot) Run(ctx context.Context) error {
 	b.Logger.Info("Starting up...")
-	go b.MessageProcessor.ListenMessages(ctx)
+	go b.MessageProcessor.Listen(ctx)
+	go b.InteractionProcessor.Listen(ctx)
 	if err := b.Discord.Run(); err != nil {
 		return err
 	}

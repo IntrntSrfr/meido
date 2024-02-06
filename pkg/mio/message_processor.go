@@ -25,7 +25,8 @@ func NewMessageProcessor(bot *Bot, logger *zap.Logger) *MessageProcessor {
 	}
 }
 
-func (mp *MessageProcessor) ListenMessages(ctx context.Context) {
+func (mp *MessageProcessor) Listen(ctx context.Context) {
+	mp.logger.Info("Started listener")
 	for {
 		select {
 		case msg := <-mp.Bot.Discord.messageChan:
@@ -40,7 +41,7 @@ func (mp *MessageProcessor) ListenMessages(ctx context.Context) {
 func (mp *MessageProcessor) ProcessMessage(msg *DiscordMessage) {
 	for _, mod := range mp.Bot.Modules {
 		if !mod.AllowsMessage(msg) {
-			return
+			continue
 		}
 
 		for _, pas := range mod.Passives() {

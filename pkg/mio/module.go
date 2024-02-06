@@ -19,6 +19,7 @@ type Module interface {
 	AllowDMs() bool
 	Hook() error
 	AllowsMessage(*DiscordMessage) bool
+	AllowsInteraction(*DiscordInteraction) bool
 	RegisterCommand(*ModuleCommand) error
 	RegisterCommands([]*ModuleCommand) error
 	RegisterPassive(*ModulePassive) error
@@ -176,6 +177,10 @@ func (m *ModuleBase) AllowsMessage(msg *DiscordMessage) bool {
 		return false
 	}
 	return true
+}
+
+func (m *ModuleBase) AllowsInteraction(it *DiscordInteraction) bool {
+	return !(it.IsDM() && !m.allowDMs)
 }
 
 type CooldownScope int
