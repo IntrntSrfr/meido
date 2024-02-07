@@ -1,8 +1,10 @@
 package mio
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/mocks"
@@ -65,6 +67,15 @@ func TestDiscord_Run(t *testing.T) {
 	}
 }
 
+func receiveMessage(ch chan *DiscordMessage) error {
+	select {
+	case <-ch:
+	case <-time.After(time.Millisecond * 100):
+		return fmt.Errorf("got no messages; timed out")
+	}
+	return nil
+}
+
 func TestDiscord_onMessageCreate(t *testing.T) {
 	d := NewDiscord("asdf", 1, testLogger())
 
@@ -80,8 +91,8 @@ func TestDiscord_onMessageCreate(t *testing.T) {
 			Author: &discordgo.User{},
 		},
 	})
-	if got := len(d.messageChan); got != 1 {
-		t.Errorf("len(d.messageChan) = %v, want %v", got, 1)
+	if err := receiveMessage(d.messageChan); err != nil {
+		t.Errorf("%v", err.Error())
 	}
 
 	// has guild, but no member
@@ -91,8 +102,8 @@ func TestDiscord_onMessageCreate(t *testing.T) {
 			Author:  &discordgo.User{},
 		},
 	})
-	if got := len(d.messageChan); got != 1 {
-		t.Errorf("len(d.messageChan) = %v, want %v", got, 1)
+	if got := len(d.messageChan); got != 0 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 0)
 	}
 
 	// has guild and member
@@ -103,8 +114,8 @@ func TestDiscord_onMessageCreate(t *testing.T) {
 			Member:  &discordgo.Member{},
 		},
 	})
-	if got := len(d.messageChan); got != 2 {
-		t.Errorf("len(d.messageChan) = %v, want %v", got, 2)
+	if err := receiveMessage(d.messageChan); err != nil {
+		t.Errorf("%v", err.Error())
 	}
 }
 
@@ -123,8 +134,8 @@ func TestDiscord_onMessageUpdate(t *testing.T) {
 			Author: &discordgo.User{},
 		},
 	})
-	if got := len(d.messageChan); got != 1 {
-		t.Errorf("len(d.messageChan) = %v, want %v", got, 1)
+	if err := receiveMessage(d.messageChan); err != nil {
+		t.Errorf("%v", err.Error())
 	}
 
 	// has guild, but no member
@@ -134,8 +145,8 @@ func TestDiscord_onMessageUpdate(t *testing.T) {
 			Author:  &discordgo.User{},
 		},
 	})
-	if got := len(d.messageChan); got != 1 {
-		t.Errorf("len(d.messageChan) = %v, want %v", got, 1)
+	if got := len(d.messageChan); got != 0 {
+		t.Errorf("len(d.messageChan) = %v, want %v", got, 0)
 	}
 
 	// has guild and member
@@ -146,8 +157,8 @@ func TestDiscord_onMessageUpdate(t *testing.T) {
 			Member:  &discordgo.Member{},
 		},
 	})
-	if got := len(d.messageChan); got != 2 {
-		t.Errorf("len(d.messageChan) = %v, want %v", got, 2)
+	if err := receiveMessage(d.messageChan); err != nil {
+		t.Errorf("%v", err.Error())
 	}
 }
 
@@ -156,8 +167,8 @@ func TestDiscord_onMessageDelete(t *testing.T) {
 
 	// empty
 	d.onMessageDelete(&discordgo.Session{}, &discordgo.MessageDelete{})
-	if got := len(d.messageChan); got != 1 {
-		t.Errorf("len(d.messageChan) = %v, want %v", got, 1)
+	if err := receiveMessage(d.messageChan); err != nil {
+		t.Errorf("%v", err.Error())
 	}
 }
 
