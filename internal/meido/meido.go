@@ -73,12 +73,14 @@ func (m *Meido) registerModules() {
 func (m *Meido) listenMioEvents(ctx context.Context) {
 	for {
 		select {
-		case evt := <-m.Bot.EventChannel():
+		case evt := <-m.Bot.Events():
 			switch evt.Type {
 			case mio.BotEventCommandRan:
 				m.logCommand(evt.Data.(*mio.CommandRan))
 			case mio.BotEventCommandPanicked:
 				m.logCommandPanicked(evt.Data.(*mio.CommandPanicked))
+			case mio.BotEventPassivePanicked:
+				m.logPassivePanicked(evt.Data.(*mio.PassivePanicked))
 			}
 		case <-ctx.Done():
 			return
@@ -106,6 +108,14 @@ func (m *Meido) logCommandPanicked(cmd *mio.CommandPanicked) {
 		zap.Any("command", cmd.Command),
 		zap.Any("message", cmd.Message),
 		zap.String("stack trace", cmd.StackTrace),
+	)
+}
+
+func (m *Meido) logPassivePanicked(pas *mio.PassivePanicked) {
+	m.logger.Error("Passive panic",
+		zap.Any("passive", pas.Passive),
+		zap.Any("message", pas.Message),
+		zap.String("stack trace", pas.StackTrace),
 	)
 }
 

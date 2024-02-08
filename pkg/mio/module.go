@@ -3,6 +3,7 @@ package mio
 import (
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -17,7 +18,9 @@ type Module interface {
 	Commands() map[string]*ModuleCommand
 	AllowedTypes() MessageType
 	AllowDMs() bool
+
 	Hook() error
+	HandleMessage(*DiscordMessage)
 	AllowsMessage(*DiscordMessage) bool
 	AllowsInteraction(*DiscordInteraction) bool
 	RegisterCommand(*ModuleCommand) error
@@ -59,6 +62,89 @@ func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
 		allowedTypes: MessageTypeCreate,
 		allowDMs:     true,
 	}
+}
+
+func (m *ModuleBase) HandleMessage(msg *DiscordMessage) {
+	if !m.AllowsMessage(msg) {
+		return
+	}
+
+	for _, pas := range m.Passives() {
+		m.handlePassive(pas, msg)
+	}
+
+	if len(msg.Args()) <= 0 {
+		return
+	}
+
+	if cmd, err := m.FindCommandByTriggers(msg.RawContent()); err == nil {
+		m.handleCommand(cmd, msg)
+	}
+}
+
+func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *DiscordMessage) {
+	if !cmd.IsEnabled || !cmd.AllowsMessage(msg) {
+		return
+	}
+
+	if cmd.RequiresUserType == UserTypeBotOwner && !m.Bot.IsOwner(msg.AuthorID()) {
+		_, _ = msg.Reply("This command is owner only")
+		return
+	}
+
+	if cdKey := cmd.CooldownKey(msg); cdKey != "" {
+		if t, ok := m.Bot.Cooldowns.Check(cdKey); ok {
+			_, _ = msg.ReplyAndDelete(fmt.Sprintf("This command is on cooldown for another %v", t), time.Second*2)
+			return
+		}
+		m.Bot.Cooldowns.Set(cdKey, time.Duration(cmd.Cooldown))
+	}
+	go m.runCommand(cmd, msg)
+}
+
+func (m *ModuleBase) recoverCommand(cmd *ModuleCommand, msg *DiscordMessage) {
+	if r := recover(); r != nil {
+		m.Logger.Warn("Recovery needed", zap.Any("error", r))
+		m.Bot.Emit(BotEventCommandPanicked, &CommandPanicked{cmd, msg, string(debug.Stack())})
+		_, _ = msg.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
+	}
+}
+
+func (m *ModuleBase) runCommand(cmd *ModuleCommand, msg *DiscordMessage) {
+	defer m.recoverCommand(cmd, msg)
+
+	cmd.Run(msg)
+	m.Bot.Emit(BotEventCommandRan, &CommandRan{cmd, msg})
+	m.Logger.Info("Command",
+		zap.String("id", msg.ID()),
+		zap.String("channelID", msg.ChannelID()),
+		zap.String("userID", msg.AuthorID()),
+		zap.String("content", msg.RawContent()),
+	)
+}
+
+func (m *ModuleBase) handlePassive(pas *ModulePassive, msg *DiscordMessage) {
+	if !pas.Enabled || !pas.AllowsMessage(msg) {
+		return
+	}
+	go m.runPassive(pas, msg)
+}
+
+func (m *ModuleBase) recoverPassive(pas *ModulePassive, msg *DiscordMessage) {
+	if r := recover(); r != nil {
+		m.Logger.Warn("Recovery needed", zap.Any("error", r))
+		m.Bot.Emit(BotEventPassivePanicked, &PassivePanicked{pas, msg, string(debug.Stack())})
+	}
+}
+
+func (m *ModuleBase) runPassive(pas *ModulePassive, msg *DiscordMessage) {
+	defer m.recoverPassive(pas, msg)
+	pas.Run(msg)
+	m.Logger.Info("Passive",
+		zap.String("id", msg.ID()),
+		zap.String("channelID", msg.ChannelID()),
+		zap.String("userID", msg.AuthorID()),
+	)
 }
 
 func (m *ModuleBase) Name() string {
@@ -258,6 +344,36 @@ type ModulePassive struct {
 	Name         string
 	Description  string
 	AllowedTypes MessageType
+	AllowDMs     bool
 	Enabled      bool
 	Run          func(*DiscordMessage) `json:"-"`
+}
+
+func (pas *ModulePassive) AllowsMessage(msg *DiscordMessage) bool {
+	if msg.IsDM() && !pas.AllowDMs {
+		return false
+	}
+
+	if msg.Type()&pas.AllowedTypes == 0 {
+		return false
+	}
+	return true
+}
+
+type ModuleSlash struct {
+	Mod           Module
+	Name          string
+	Description   string
+	Cooldown      time.Duration
+	CooldownScope CooldownScope
+	Permissions   int64
+	UserType      UserType
+	CheckBotPerms bool
+	AllowDMs      bool
+	IsEnabled     bool
+	Run           func(*DiscordInteraction) `json:"-"`
+}
+
+func (s *ModuleSlash) AllowsMessage(it *DiscordInteraction) bool {
+	return !(it.IsDM() && !s.AllowDMs)
 }

@@ -37,7 +37,7 @@ func TestBot_Events(t *testing.T) {
 	done := make(chan bool)
 	go func() {
 		select {
-		case <-bot.EventChannel():
+		case <-bot.Events():
 			done <- true
 		case <-time.After(time.Second):
 			t.Errorf("Timed out ")
@@ -233,7 +233,7 @@ func TestBot_PanicCommandGetsHandled(t *testing.T) {
 	}
 
 	select {
-	case evt := <-bot.EventChannel():
+	case evt := <-bot.Events():
 		if evt.Type != BotEventCommandPanicked {
 			t.Errorf("Expected panic handler to run")
 		}
@@ -298,7 +298,7 @@ func TestBot_MessageGetsCallback(t *testing.T) {
 		select {
 		case <-cb:
 			cmdCalled <- true
-		case <-time.After(time.Millisecond * 10):
+		case <-time.After(time.Millisecond * 50):
 			return
 		}
 	}

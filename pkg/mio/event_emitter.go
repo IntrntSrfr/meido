@@ -1,6 +1,6 @@
 package mio
 
-type EventManager struct {
+type EventEmitter struct {
 	eventCh chan *BotEventData
 }
 
@@ -9,6 +9,7 @@ type BotEvent string
 const (
 	BotEventCommandRan      BotEvent = "command_ran"
 	BotEventCommandPanicked BotEvent = "command_panicked"
+	BotEventPassivePanicked BotEvent = "passive_panicked"
 )
 
 type BotEventData struct {
@@ -27,16 +28,22 @@ type CommandPanicked struct {
 	StackTrace string
 }
 
-func NewEventManager() *EventManager {
-	return &EventManager{
+type PassivePanicked struct {
+	Passive    *ModulePassive
+	Message    *DiscordMessage
+	StackTrace string
+}
+
+func NewEventEmitter() *EventEmitter {
+	return &EventEmitter{
 		eventCh: make(chan *BotEventData),
 	}
 }
 
-func (em *EventManager) Emit(event BotEvent, data interface{}) {
+func (em *EventEmitter) Emit(event BotEvent, data interface{}) {
 	em.eventCh <- &BotEventData{Type: event, Data: data}
 }
 
-func (em *EventManager) EventChannel() chan *BotEventData {
+func (em *EventEmitter) Events() chan *BotEventData {
 	return em.eventCh
 }

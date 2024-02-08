@@ -296,7 +296,7 @@ func (m *Module) helpCommand(msg *mio.DiscordMessage) {
 		for _, mod := range m.Bot.Modules {
 			desc.WriteString(fmt.Sprintf("- %v\n", mod.Name()))
 		}
-		embed.WithTitle("Plugins")
+		embed.WithTitle("Modules")
 		embed.WithDescription(desc.String())
 		_, _ = msg.ReplyEmbed(embed.Build())
 		return
