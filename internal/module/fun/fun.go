@@ -42,7 +42,7 @@ func newLifeCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			_ = msg.Discord.StartTyping(msg.ChannelID())
 			seedStr := msg.AuthorID()

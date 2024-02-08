@@ -41,7 +41,7 @@ func newTestCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			_, _ = msg.Reply("test")
 		},
@@ -63,7 +63,7 @@ func newMonkeyCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              m.monkeyCommand,
 	}
 }

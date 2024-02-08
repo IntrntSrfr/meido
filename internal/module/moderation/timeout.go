@@ -22,7 +22,7 @@ func newMuteCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              m.muteCommand,
 	}
 }
@@ -90,7 +90,7 @@ func newUnmuteCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              m.unmuteCommand,
 	}
 }

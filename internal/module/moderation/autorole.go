@@ -36,7 +36,7 @@ func newSetAutoRoleCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
@@ -77,7 +77,7 @@ func newRemoveAutoRoleCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			rpl, err := msg.Reply("Are you sure you want to REMOVE the autorole? Please answer `yes` if you are.")
 			if err != nil {

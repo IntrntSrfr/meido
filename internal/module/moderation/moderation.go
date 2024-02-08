@@ -116,7 +116,7 @@ func newBanCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              m.banCommand,
 	}
 }
@@ -227,7 +227,7 @@ func newUnbanCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              m.unbanCommand,
 	}
 }
@@ -272,7 +272,7 @@ func newHackbanCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
@@ -309,7 +309,7 @@ func newKickCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              m.kickCommand,
 	}
 }
@@ -391,7 +391,7 @@ func newPruneCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              m.pruneCommand,
 	}
 }

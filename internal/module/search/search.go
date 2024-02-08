@@ -51,7 +51,7 @@ func newWeatherCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
@@ -99,7 +99,7 @@ func newYouTubeCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
@@ -140,7 +140,7 @@ func newImageCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return

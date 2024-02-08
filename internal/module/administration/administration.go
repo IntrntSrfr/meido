@@ -53,7 +53,7 @@ func newMessageCommand(m *Module) *mio.ModuleCommand {
 		CheckBotPerms:    false,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 3 {
 				return
@@ -96,14 +96,14 @@ func newToggleCommandCommand(m *Module) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeBotOwner,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			if cmd, err := m.Bot.FindCommand(msg.RawContent()); err == nil {
 				if cmd.Name == "togglecommand" {
 					return
 				}
-				cmd.IsEnabled = !cmd.IsEnabled
-				if cmd.IsEnabled {
+				cmd.Enabled = !cmd.Enabled
+				if cmd.Enabled {
 					_, _ = msg.Reply(fmt.Sprintf("Enabled command %v", cmd.Name))
 					return
 				}

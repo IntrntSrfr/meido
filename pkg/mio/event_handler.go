@@ -27,6 +27,8 @@ func (mp *EventHandler) Listen(ctx context.Context) {
 		case msg := <-mp.Bot.Discord.messageChan:
 			go mp.DeliverCallbacks(msg)
 			go mp.HandleMessage(msg)
+		case it := <-mp.Bot.Discord.interactionChan:
+			go mp.HandleInteraction(it)
 		case <-ctx.Done():
 			return
 		}
@@ -36,6 +38,12 @@ func (mp *EventHandler) Listen(ctx context.Context) {
 func (mp *EventHandler) HandleMessage(msg *DiscordMessage) {
 	for _, mod := range mp.Bot.Modules {
 		mod.HandleMessage(msg)
+	}
+}
+
+func (mp *EventHandler) HandleInteraction(it *DiscordInteraction) {
+	for _, mod := range mp.Bot.Modules {
+		mod.HandleInteraction(it)
 	}
 }
 

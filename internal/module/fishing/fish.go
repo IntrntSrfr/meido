@@ -55,7 +55,7 @@ func newFishCommand(m *FishMod) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			if gc, err := m.db.GetGuild(msg.GuildID()); err != nil || msg.ChannelID() != gc.FishingChannelID {
 				return
@@ -85,7 +85,7 @@ func newAquariumCommand(m *FishMod) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              m.aquariumCommand,
 	}
 }
@@ -138,7 +138,7 @@ func newSetFishingSettingsCommand(m *FishMod) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return

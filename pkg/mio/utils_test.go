@@ -75,7 +75,7 @@ func testCommand(mod Module) *ModuleCommand {
 		RequiresUserType: UserTypeAny,
 		AllowedTypes:     MessageTypeCreate,
 		AllowDMs:         false,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              testCommandRun,
 	}
 }

@@ -91,7 +91,7 @@ func newMediaConvertCommand(m *MediaTransformMod) *mio.ModuleCommand {
 		RequiresUserType: mio.UserTypeAny,
 		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              m.mediaConvertCommand,
 	}
 }

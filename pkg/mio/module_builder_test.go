@@ -22,7 +22,7 @@ func TestModuleCommandBuilder(t *testing.T) {
 		CheckBotPerms:    true,
 		AllowedTypes:     MessageTypeUpdate,
 		AllowDMs:         true,
-		IsEnabled:        true,
+		Enabled:          true,
 		Run:              nil,
 	}
 

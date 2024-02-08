@@ -21,6 +21,7 @@ type Module interface {
 
 	Hook() error
 	HandleMessage(*DiscordMessage)
+	HandleInteraction(*DiscordInteraction)
 	AllowsMessage(*DiscordMessage) bool
 	AllowsInteraction(*DiscordInteraction) bool
 	RegisterCommand(*ModuleCommand) error
@@ -83,7 +84,7 @@ func (m *ModuleBase) HandleMessage(msg *DiscordMessage) {
 }
 
 func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *DiscordMessage) {
-	if !cmd.IsEnabled || !cmd.AllowsMessage(msg) {
+	if !cmd.Enabled || !cmd.AllowsMessage(msg) {
 		return
 	}
 
@@ -145,6 +146,10 @@ func (m *ModuleBase) runPassive(pas *ModulePassive, msg *DiscordMessage) {
 		zap.String("channelID", msg.ChannelID()),
 		zap.String("userID", msg.AuthorID()),
 	)
+}
+
+func (m *ModuleBase) HandleInteraction(it *DiscordInteraction) {
+	panic("not implemented")
 }
 
 func (m *ModuleBase) Name() string {
@@ -299,7 +304,7 @@ type ModuleCommand struct {
 	CheckBotPerms    bool
 	AllowedTypes     MessageType
 	AllowDMs         bool
-	IsEnabled        bool
+	Enabled          bool
 	Run              func(*DiscordMessage) `json:"-"`
 }
 
@@ -370,7 +375,7 @@ type ModuleSlash struct {
 	UserType      UserType
 	CheckBotPerms bool
 	AllowDMs      bool
-	IsEnabled     bool
+	Enabled       bool
 	Run           func(*DiscordInteraction) `json:"-"`
 }
 
