@@ -22,7 +22,7 @@ func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 
 // Hook will hook the Module into the Bot.
 func (m *Module) Hook() error {
-	return m.RegisterCommand(newTestCommand(m))
+	return m.RegisterCommands(newTestCommand(m))
 	//m.RegisterCommand(newMonkeyCommand(m))
 }
 

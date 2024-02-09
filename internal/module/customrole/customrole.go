@@ -36,12 +36,12 @@ func (m *Module) Hook() error {
 		go clearDeletedRoles(m)
 	})
 
-	return m.RegisterCommands([]*mio.ModuleCommand{
+	return m.RegisterCommands(
 		newSetCustomRoleCommand(m),
 		newRemoveCustomRoleCommand(m),
 		newMyRoleCommand(m),
 		newListCustomRolesCommand(m),
-	})
+	)
 }
 
 func clearDeletedRoles(m *Module) {

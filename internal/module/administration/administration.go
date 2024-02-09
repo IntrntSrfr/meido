@@ -30,13 +30,13 @@ func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 
 // Hook will hook the Module into the Bot.
 func (m *Module) Hook() error {
-	if err := m.RegisterPassive(newForwardDmsPassive(m)); err != nil {
+	if err := m.RegisterPassives(newForwardDmsPassive(m)); err != nil {
 		return err
 	}
-	return m.RegisterCommands([]*mio.ModuleCommand{
+	return m.RegisterCommands(
 		newToggleCommandCommand(m),
 		newMessageCommand(m),
-	})
+	)
 }
 
 func newMessageCommand(m *Module) *mio.ModuleCommand {

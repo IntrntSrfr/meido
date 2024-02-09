@@ -72,7 +72,7 @@ func setupTestBot() (*Bot, *zap.Logger, Module) {
 func executeTestCommand(bot *Bot, mod Module, cmd *ModuleCommand, message *DiscordMessage) (chan bool, context.CancelFunc) {
 	called := make(chan bool)
 
-	mod.RegisterCommand(cmd)
+	mod.RegisterCommands(cmd)
 	bot.RegisterModule(mod)
 	ctx, cancel := context.WithCancel(context.Background())
 	bot.Run(ctx)
@@ -97,8 +97,8 @@ func TestBot_MessageGetsHandled(t *testing.T) {
 	}
 
 	// register and run
-	mod.RegisterPassive(pas)
-	mod.RegisterCommand(cmd)
+	mod.RegisterPassives(pas)
+	mod.RegisterCommands(cmd)
 	bot.RegisterModule(mod)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -148,8 +148,8 @@ func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
 	pas.Run = func(dm *DiscordMessage) {
 		pasCalled <- true
 	}
-	mod.RegisterPassive(pas)
-	mod.RegisterCommand(cmd)
+	mod.RegisterPassives(pas)
+	mod.RegisterCommands(cmd)
 
 	mod2 := newTestModule(bot, "test2", testLogger())
 	pas2 := testPassive(mod)
@@ -157,7 +157,7 @@ func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
 	pas.Run = func(dm *DiscordMessage) {
 		pas2Called <- true
 	}
-	mod2.RegisterPassive(pas2)
+	mod2.RegisterPassives(pas2)
 
 	// register and run
 	bot.RegisterModule(mod)
@@ -208,7 +208,7 @@ func TestBot_PanicCommandGetsHandled(t *testing.T) {
 	}
 
 	// register and run
-	mod.RegisterCommand(cmd)
+	mod.RegisterCommands(cmd)
 	bot.RegisterModule(mod)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -252,7 +252,7 @@ func TestBot_MessageEmptyDoesNotTriggerCommand(t *testing.T) {
 	cmd.Run = func(dm *DiscordMessage) {
 		cmdCalled <- true
 	}
-	mod.RegisterCommand(cmd)
+	mod.RegisterCommands(cmd)
 
 	// register and run
 	bot.RegisterModule(mod)
@@ -302,7 +302,7 @@ func TestBot_MessageGetsCallback(t *testing.T) {
 			return
 		}
 	}
-	mod.RegisterCommand(cmd)
+	mod.RegisterCommands(cmd)
 
 	// register and run
 	bot.RegisterModule(mod)

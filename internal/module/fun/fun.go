@@ -25,7 +25,7 @@ func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 }
 
 func (m *Module) Hook() error {
-	return m.RegisterCommand(newLifeCommand(m))
+	return m.RegisterCommands(newLifeCommand(m))
 }
 
 func newLifeCommand(m *Module) *mio.ModuleCommand {

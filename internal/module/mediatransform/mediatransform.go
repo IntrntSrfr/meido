@@ -25,7 +25,7 @@ func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 }
 
 func (m *MediaTransformMod) Hook() error {
-	return m.RegisterPassive(newJpgLargeConvertPassive(m))
+	return m.RegisterPassives(newJpgLargeConvertPassive(m))
 }
 
 func newJpgLargeConvertPassive(m *MediaTransformMod) *mio.ModulePassive {

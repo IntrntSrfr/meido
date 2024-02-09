@@ -4,25 +4,25 @@ import (
 	"context"
 	"sync"
 
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 )
 
 type Bot struct {
 	sync.Mutex
 	Discord *Discord
-	Config  Configurable
+	Config  utils.Configurable
 
 	*ModuleManager
-	MessageProcessor     *EventHandler
-	InteractionProcessor *InteractionProcessor
-	Callbacks            *CallbackManager
-	Cooldowns            *CooldownManager
+	MessageProcessor *EventHandler
+	Callbacks        *CallbackManager
+	Cooldowns        *CooldownManager
 	*EventEmitter
 
 	Logger *zap.Logger
 }
 
-func NewBot(config Configurable, logger *zap.Logger) *Bot {
+func NewBot(config utils.Configurable, logger *zap.Logger) *Bot {
 	logger = logger.Named("Mio")
 	bot := &Bot{
 		Config: config,
@@ -34,7 +34,6 @@ func NewBot(config Configurable, logger *zap.Logger) *Bot {
 	bot.ModuleManager = NewModuleManager(logger)
 	bot.Discord = NewDiscord(config.GetString("token"), config.GetInt("shards"), logger)
 	bot.MessageProcessor = NewEventHandler(bot, logger)
-	bot.InteractionProcessor = NewInteractionProcessor(bot, logger)
 	bot.Cooldowns = NewCooldownManager()
 
 	return bot
@@ -50,7 +49,6 @@ func (b *Bot) UseDefaultHandlers() {
 func (b *Bot) Run(ctx context.Context) error {
 	b.Logger.Info("Starting up...")
 	go b.MessageProcessor.Listen(ctx)
-	go b.InteractionProcessor.Listen(ctx)
 	if err := b.Discord.Run(); err != nil {
 		return err
 	}

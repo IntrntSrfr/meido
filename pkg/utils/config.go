@@ -1,4 +1,4 @@
-package mio
+package utils
 
 // Configurable provides a config interface.
 // You are expected to implement it yourself

@@ -20,6 +20,7 @@ import (
 	"github.com/intrntsrfr/meido/internal/module/utility"
 	"github.com/intrntsrfr/meido/internal/structs"
 	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -30,7 +31,7 @@ type Meido struct {
 	logger *zap.Logger
 }
 
-func New(config mio.Configurable, db database.DB) *Meido {
+func New(config utils.Configurable, db database.DB) *Meido {
 	logger := newLogger().Named("Meido")
 	return &Meido{
 		Bot:    mio.NewBot(config, logger),

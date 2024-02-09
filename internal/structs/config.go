@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
 // Config is the config struct for the bot
 type Config struct {
-	*mio.ConfigBase
+	*utils.ConfigBase
 }
 
 type jsonConfig struct {
@@ -26,7 +26,7 @@ type jsonConfig struct {
 
 func NewConfig() *Config {
 	return &Config{
-		ConfigBase: mio.NewConfig(),
+		ConfigBase: utils.NewConfig(),
 	}
 }
 

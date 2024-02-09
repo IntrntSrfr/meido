@@ -4,12 +4,13 @@ import (
 	"errors"
 
 	"github.com/intrntsrfr/meido/pkg/mio/mocks"
+	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-func testConfig() Configurable {
-	conf := NewConfig()
+func testConfig() utils.Configurable {
+	conf := utils.NewConfig()
 	conf.Set("shards", 1)
 	conf.Set("token", "asdf")
 	return conf
@@ -48,7 +49,7 @@ func (m *testModule) Hook() error {
 	return nil
 }
 
-func testDiscord(conf Configurable, sess DiscordSession) *Discord {
+func testDiscord(conf utils.Configurable, sess DiscordSession) *Discord {
 	if conf == nil {
 		conf = testConfig()
 	}

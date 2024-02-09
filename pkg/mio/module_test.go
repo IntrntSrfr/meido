@@ -27,7 +27,7 @@ func TestModuleBase_Name(t *testing.T) {
 func TestModuleBase_Passives(t *testing.T) {
 	want := 1
 	base := NewModule(nil, "testing", testLogger())
-	base.RegisterPassive(&ModulePassive{Name: "testing"})
+	base.RegisterPassives(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
 	}
@@ -36,7 +36,7 @@ func TestModuleBase_Passives(t *testing.T) {
 func TestModuleBase_Commands(t *testing.T) {
 	want := 1
 	base := NewModule(nil, "testing", testLogger())
-	base.RegisterCommand(&ModuleCommand{Name: "testing"})
+	base.RegisterCommands(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
 	}
@@ -61,11 +61,11 @@ func TestModuleBase_AllowDMs(t *testing.T) {
 func TestModuleBase_RegisterPassive(t *testing.T) {
 	want := 1
 	base := NewModule(nil, "testing", testLogger())
-	base.RegisterPassive(&ModulePassive{Name: "testing"})
+	base.RegisterPassives(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
 	}
-	if err := base.RegisterPassive(&ModulePassive{Name: "testing"}); err == nil {
+	if err := base.RegisterPassives(&ModulePassive{Name: "testing"}); err == nil {
 		t.Errorf("ModuleBase.RegisterPassive() did not error on duplicate passive registration")
 	}
 }
@@ -73,11 +73,11 @@ func TestModuleBase_RegisterPassive(t *testing.T) {
 func TestModuleBase_RegisterPassives(t *testing.T) {
 	want := 1
 	base := NewModule(nil, "testing", testLogger())
-	base.RegisterPassives([]*ModulePassive{{Name: "testing"}})
+	base.RegisterPassives(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
 	}
-	if err := base.RegisterPassives([]*ModulePassive{{Name: "testing2"}, {Name: "testing2"}}); err == nil {
+	if err := base.RegisterPassives(&ModulePassive{Name: "testing2"}, &ModulePassive{Name: "testing2"}); err == nil {
 		t.Errorf("ModuleBase.RegisterPassives() did not error on duplicate passive registration")
 	}
 }
@@ -85,11 +85,11 @@ func TestModuleBase_RegisterPassives(t *testing.T) {
 func TestModuleBase_RegisterCommand(t *testing.T) {
 	want := 1
 	base := NewModule(nil, "testing", testLogger())
-	base.RegisterCommand(&ModuleCommand{Name: "testing"})
+	base.RegisterCommands(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
 	}
-	if err := base.RegisterCommand(&ModuleCommand{Name: "testing"}); err == nil {
+	if err := base.RegisterCommands(&ModuleCommand{Name: "testing"}); err == nil {
 		t.Errorf("ModuleBase.RegisterCommand() did not error on duplicate passive registration")
 	}
 }
@@ -97,11 +97,11 @@ func TestModuleBase_RegisterCommand(t *testing.T) {
 func TestModuleBase_RegisterCommands(t *testing.T) {
 	want := 1
 	base := NewModule(nil, "testing", testLogger())
-	base.RegisterCommands([]*ModuleCommand{{Name: "testing"}})
+	base.RegisterCommands(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
 	}
-	if err := base.RegisterCommands([]*ModuleCommand{{Name: "testing2"}, {Name: "testing2"}}); err == nil {
+	if err := base.RegisterCommands(&ModuleCommand{Name: "testing2"}, &ModuleCommand{Name: "testing2"}); err == nil {
 		t.Errorf("ModuleBase.RegisterCommands() did not error on duplicate passive registration")
 	}
 }
@@ -112,7 +112,7 @@ func TestModuleBase_FindCommandByName(t *testing.T) {
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
 	}
-	base.RegisterCommand(cmd)
+	base.RegisterCommands(cmd)
 
 	type args struct {
 		name string
@@ -148,7 +148,7 @@ func TestModuleBase_FindCommandByName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.FindCommandByName(tt.args.name)
+			got, err := tt.m.findCommandByName(tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ModuleBase.FindCommandByName() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -166,7 +166,7 @@ func TestModuleBase_FindCommandByTriggers(t *testing.T) {
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
 	}
-	base.RegisterCommand(cmd)
+	base.RegisterCommands(cmd)
 
 	type args struct {
 		name string
@@ -209,7 +209,7 @@ func TestModuleBase_FindCommandByTriggers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.FindCommandByTriggers(tt.args.name)
+			got, err := tt.m.findCommandByTriggers(tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ModuleBase.FindCommandByTriggers() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -227,7 +227,7 @@ func TestModuleBase_FindCommand(t *testing.T) {
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
 	}
-	base.RegisterCommand(cmd)
+	base.RegisterCommands(cmd)
 
 	type args struct {
 		name string
@@ -287,7 +287,7 @@ func TestModuleBase_FindPassive(t *testing.T) {
 	cmd := &ModulePassive{
 		Name: "test",
 	}
-	base.RegisterPassive(cmd)
+	base.RegisterPassives(cmd)
 
 	type args struct {
 		name string

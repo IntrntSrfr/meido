@@ -30,11 +30,11 @@ func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
 
 func (m *Module) Hook() error {
 	m.Bot.Discord.AddEventHandler(m.imageInteractionHandler)
-	return m.RegisterCommands([]*mio.ModuleCommand{
+	return m.RegisterCommands(
 		newWeatherCommand(m),
 		newYouTubeCommand(m),
 		newImageCommand(m),
-	})
+	)
 }
 
 func newWeatherCommand(m *Module) *mio.ModuleCommand {

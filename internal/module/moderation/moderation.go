@@ -31,14 +31,12 @@ func (m *Module) Hook() error {
 	m.Bot.Discord.AddEventHandlerOnce(checkWarnInterval(m))
 	m.Bot.Discord.AddEventHandler(addAutoRoleOnJoin(m))
 
-	err := m.RegisterPassives([]*mio.ModulePassive{
-		newCheckFilterPassive(m),
-	})
+	err := m.RegisterPassives(newCheckFilterPassive(m))
 	if err != nil {
 		return err
 	}
 
-	return m.RegisterCommands([]*mio.ModuleCommand{
+	return m.RegisterCommands(
 		newBanCommand(m),
 		newUnbanCommand(m),
 		newHackbanCommand(m),
@@ -59,7 +57,7 @@ func (m *Module) Hook() error {
 		newSetAutoRoleCommand(m),
 		newRemoveAutoRoleCommand(m),
 		newPruneCommand(m),
-	})
+	)
 }
 
 func checkWarnInterval(m *Module) func(s *discordgo.Session, r *discordgo.Ready) {

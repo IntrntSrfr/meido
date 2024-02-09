@@ -34,11 +34,11 @@ func (m *FishMod) Hook() error {
 		return err
 	}
 
-	return m.RegisterCommands([]*mio.ModuleCommand{
+	return m.RegisterCommands(
 		newFishCommand(m),
 		newAquariumCommand(m),
 		newSetFishingSettingsCommand(m),
-	})
+	)
 }
 
 // newFishCommand returns a new fish command.

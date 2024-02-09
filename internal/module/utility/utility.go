@@ -37,7 +37,7 @@ func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
 }
 
 func (m *Module) Hook() error {
-	return m.RegisterCommands([]*mio.ModuleCommand{
+	return m.RegisterCommands(
 		newPingCommand(m),
 		newAvatarCommand(m),
 		newBannerCommand(m),
@@ -52,7 +52,7 @@ func (m *Module) Hook() error {
 		newInviteCommand(m),
 		newUserInfoCommand(m),
 		newHelpCommand(m),
-	})
+	)
 }
 
 func NewConvertCommand(m *Module) *mio.ModuleCommand {

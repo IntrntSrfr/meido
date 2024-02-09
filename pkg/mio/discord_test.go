@@ -8,6 +8,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/mocks"
+	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
 func TestSessionWrapper_ShardID(t *testing.T) {
@@ -32,7 +33,7 @@ func TestSessionWrapper_State(t *testing.T) {
 func TestNewDiscord(t *testing.T) {
 	token := "Bot asdf"
 	shards := 1
-	conf := NewConfig()
+	conf := utils.NewConfig()
 	conf.Set("token", token)
 	conf.Set("shards", shards)
 	mockSess := mocks.NewDiscordSession(token, shards)

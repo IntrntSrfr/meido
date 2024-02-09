@@ -19,7 +19,7 @@ func TestModuleManager(t *testing.T) {
 	if _, err := mngr.FindCommand("test"); err == nil {
 		t.Errorf("ModuleManager.FindCommand() not returning error when not finding a command")
 	}
-	mod.RegisterCommand(&ModuleCommand{Name: "test"})
+	mod.RegisterCommands(&ModuleCommand{Name: "test"})
 	if _, err := mngr.FindCommand("test"); err != nil {
 		t.Errorf("ModuleManager.FindCommand() returning error when finding a command")
 	}
@@ -27,7 +27,7 @@ func TestModuleManager(t *testing.T) {
 	if _, err := mngr.FindPassive("test"); err == nil {
 		t.Errorf("ModuleManager.FindPassive() not returning error when not finding a passive")
 	}
-	mod.RegisterPassive(&ModulePassive{Name: "test"})
+	mod.RegisterPassives(&ModulePassive{Name: "test"})
 	if _, err := mngr.FindPassive("test"); err != nil {
 		t.Errorf("ModuleManager.FindPassive() returning error when finding a passive")
 	}

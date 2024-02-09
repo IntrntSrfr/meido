@@ -16,6 +16,7 @@ type Module interface {
 	Name() string
 	Passives() map[string]*ModulePassive
 	Commands() map[string]*ModuleCommand
+	Slashes() map[string]*ModuleSlash
 	AllowedTypes() MessageType
 	AllowDMs() bool
 
@@ -24,14 +25,13 @@ type Module interface {
 	HandleInteraction(*DiscordInteraction)
 	AllowsMessage(*DiscordMessage) bool
 	AllowsInteraction(*DiscordInteraction) bool
-	RegisterCommand(*ModuleCommand) error
-	RegisterCommands([]*ModuleCommand) error
-	RegisterPassive(*ModulePassive) error
-	RegisterPassives([]*ModulePassive) error
+
+	RegisterCommands(...*ModuleCommand) error
+	RegisterPassives(...*ModulePassive) error
+
 	FindCommand(name string) (*ModuleCommand, error)
-	FindCommandByName(name string) (*ModuleCommand, error)
-	FindCommandByTriggers(name string) (*ModuleCommand, error)
 	FindPassive(name string) (*ModulePassive, error)
+	FindSlash(name string) (*ModuleSlash, error)
 }
 
 var (
@@ -49,6 +49,7 @@ type ModuleBase struct {
 	name         string
 	commands     map[string]*ModuleCommand
 	passives     map[string]*ModulePassive
+	slashes      map[string]*ModuleSlash
 	allowedTypes MessageType
 	allowDMs     bool
 }
@@ -60,6 +61,7 @@ func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
 		name:         name,
 		commands:     make(map[string]*ModuleCommand),
 		passives:     make(map[string]*ModulePassive),
+		slashes:      make(map[string]*ModuleSlash),
 		allowedTypes: MessageTypeCreate,
 		allowDMs:     true,
 	}
@@ -78,7 +80,7 @@ func (m *ModuleBase) HandleMessage(msg *DiscordMessage) {
 		return
 	}
 
-	if cmd, err := m.FindCommandByTriggers(msg.RawContent()); err == nil {
+	if cmd, err := m.findCommandByTriggers(msg.RawContent()); err == nil {
 		m.handleCommand(cmd, msg)
 	}
 }
@@ -164,6 +166,10 @@ func (m *ModuleBase) Commands() map[string]*ModuleCommand {
 	return m.commands
 }
 
+func (m *ModuleBase) Slashes() map[string]*ModuleSlash {
+	return m.slashes
+}
+
 func (m *ModuleBase) AllowedTypes() MessageType {
 	return m.allowedTypes
 }
@@ -172,16 +178,16 @@ func (m *ModuleBase) AllowDMs() bool {
 	return m.allowDMs
 }
 
-func (m *ModuleBase) RegisterPassives(passives []*ModulePassive) error {
+func (m *ModuleBase) RegisterPassives(passives ...*ModulePassive) error {
 	for _, pas := range passives {
-		if err := m.RegisterPassive(pas); err != nil {
+		if err := m.registerPassive(pas); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (m *ModuleBase) RegisterPassive(pas *ModulePassive) error {
+func (m *ModuleBase) registerPassive(pas *ModulePassive) error {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.passives[pas.Name]; ok {
@@ -194,16 +200,16 @@ func (m *ModuleBase) RegisterPassive(pas *ModulePassive) error {
 	return nil
 }
 
-func (m *ModuleBase) RegisterCommands(commands []*ModuleCommand) error {
+func (m *ModuleBase) RegisterCommands(commands ...*ModuleCommand) error {
 	for _, cmd := range commands {
-		if err := m.RegisterCommand(cmd); err != nil {
+		if err := m.registerCommand(cmd); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (m *ModuleBase) RegisterCommand(cmd *ModuleCommand) error {
+func (m *ModuleBase) registerCommand(cmd *ModuleCommand) error {
 	m.Lock()
 	defer m.Unlock()
 	if _, ok := m.commands[cmd.Name]; ok {
@@ -216,7 +222,7 @@ func (m *ModuleBase) RegisterCommand(cmd *ModuleCommand) error {
 	return nil
 }
 
-func (m *ModuleBase) FindCommandByName(name string) (*ModuleCommand, error) {
+func (m *ModuleBase) findCommandByName(name string) (*ModuleCommand, error) {
 	for _, cmd := range m.Commands() {
 		if strings.EqualFold(cmd.Name, name) {
 			return cmd, nil
@@ -225,7 +231,7 @@ func (m *ModuleBase) FindCommandByName(name string) (*ModuleCommand, error) {
 	return nil, ErrCommandNotFound
 }
 
-func (m *ModuleBase) FindCommandByTriggers(name string) (*ModuleCommand, error) {
+func (m *ModuleBase) findCommandByTriggers(name string) (*ModuleCommand, error) {
 	for _, cmd := range m.Commands() {
 		for _, trig := range cmd.Triggers {
 			splitTrig := strings.Fields(trig)
@@ -242,10 +248,10 @@ func (m *ModuleBase) FindCommandByTriggers(name string) (*ModuleCommand, error) 
 }
 
 func (m *ModuleBase) FindCommand(name string) (*ModuleCommand, error) {
-	if cmd, err := m.FindCommandByName(name); err == nil {
+	if cmd, err := m.findCommandByName(name); err == nil {
 		return cmd, nil
 	}
-	if cmd, err := m.FindCommandByTriggers(name); err == nil {
+	if cmd, err := m.findCommandByTriggers(name); err == nil {
 		return cmd, nil
 	}
 	return nil, ErrCommandNotFound
@@ -255,6 +261,15 @@ func (m *ModuleBase) FindPassive(name string) (*ModulePassive, error) {
 	for _, cmd := range m.Passives() {
 		if strings.EqualFold(cmd.Name, name) {
 			return cmd, nil
+		}
+	}
+	return nil, ErrPassiveNotFound
+}
+
+func (m *ModuleBase) FindSlash(name string) (*ModuleSlash, error) {
+	for _, s := range m.Slashes() {
+		if strings.EqualFold(s.Name, name) {
+			return s, nil
 		}
 	}
 	return nil, ErrPassiveNotFound
