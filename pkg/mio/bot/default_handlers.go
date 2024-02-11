@@ -1,4 +1,4 @@
-package mio
+package bot
 
 import (
 	"github.com/bwmarrin/discordgo"

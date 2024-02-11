@@ -1,4 +1,4 @@
-package mio
+package discord
 
 import (
 	"errors"
@@ -149,6 +149,14 @@ func (d *Discord) Close() {
 			d.logger.Error("Failed to close session", zap.Int("shardID", sess.ShardID()), zap.Error(err))
 		}
 	}
+}
+
+func (d *Discord) Messages() chan *DiscordMessage {
+	return d.messageChan
+}
+
+func (d *Discord) Interactions() chan *DiscordInteraction {
+	return d.interactionChan
 }
 
 func discordgoLogger(logger *zap.Logger) func(msgL, caller int, format string, a ...interface{}) {

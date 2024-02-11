@@ -1,4 +1,4 @@
-package mio
+package discord
 
 import (
 	"fmt"
@@ -7,7 +7,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio/mocks"
+	"github.com/intrntsrfr/meido/pkg/mio/discord/mocks"
+	"github.com/intrntsrfr/meido/pkg/mio/test"
 	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
@@ -38,8 +39,8 @@ func TestNewDiscord(t *testing.T) {
 	conf.Set("shards", shards)
 	mockSess := mocks.NewDiscordSession(token, shards)
 
-	logger := testLogger()
-	d := testDiscord(conf, mockSess)
+	logger := test.NewTestLogger()
+	d := NewTestDiscord(conf, mockSess)
 
 	if got := d.token; d.token != token {
 		t.Errorf("SessionWrapper.token = %v, want %v", got, token)
@@ -56,8 +57,8 @@ func TestNewDiscord(t *testing.T) {
 	}
 }
 
-func TestDiscord_Run(t *testing.T) {
-	d := testDiscord(nil, nil)
+func NewTestDiscord_Run(t *testing.T) {
+	d := NewTestDiscord(nil, nil)
 	if got := d.Run(); got != nil {
 		t.Errorf("Discord.Run() error = %v, wantErr %v", got, false)
 	}
@@ -86,8 +87,8 @@ func expectNoMessage(ch chan *DiscordMessage) error {
 	return nil
 }
 
-func TestDiscord_onMessageCreate(t *testing.T) {
-	d := NewDiscord("asdf", 1, testLogger())
+func NewTestDiscord_onMessageCreate(t *testing.T) {
+	d := NewDiscord("asdf", 1, test.NewTestLogger())
 
 	// empty
 	d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{})
@@ -129,8 +130,8 @@ func TestDiscord_onMessageCreate(t *testing.T) {
 	}
 }
 
-func TestDiscord_onMessageUpdate(t *testing.T) {
-	d := NewDiscord("asdf", 1, testLogger())
+func NewTestDiscord_onMessageUpdate(t *testing.T) {
+	d := NewDiscord("asdf", 1, test.NewTestLogger())
 
 	// empty
 	d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{})
@@ -172,8 +173,8 @@ func TestDiscord_onMessageUpdate(t *testing.T) {
 	}
 }
 
-func TestDiscord_onMessageDelete(t *testing.T) {
-	d := NewDiscord("asdf", 1, testLogger())
+func NewTestDiscord_onMessageDelete(t *testing.T) {
+	d := NewDiscord("asdf", 1, test.NewTestLogger())
 
 	// empty
 	d.onMessageDelete(&discordgo.Session{}, &discordgo.MessageDelete{})
@@ -182,7 +183,7 @@ func TestDiscord_onMessageDelete(t *testing.T) {
 	}
 }
 
-func TestDiscord_BotUser(t *testing.T) {
+func NewTestDiscord_BotUser(t *testing.T) {
 	tests := []struct {
 		name string
 		d    *Discord
@@ -199,7 +200,7 @@ func TestDiscord_BotUser(t *testing.T) {
 	}
 }
 
-func TestDiscord_UserChannelPermissions(t *testing.T) {
+func NewTestDiscord_UserChannelPermissions(t *testing.T) {
 	type args struct {
 		userID    string
 		channelID string
@@ -227,7 +228,7 @@ func TestDiscord_UserChannelPermissions(t *testing.T) {
 	}
 }
 
-func TestDiscord_BotHasPermissions(t *testing.T) {
+func NewTestDiscord_BotHasPermissions(t *testing.T) {
 	type args struct {
 		channelID string
 		perm      int64
@@ -255,7 +256,7 @@ func TestDiscord_BotHasPermissions(t *testing.T) {
 	}
 }
 
-func TestDiscord_HasPermissions(t *testing.T) {
+func NewTestDiscord_HasPermissions(t *testing.T) {
 	type args struct {
 		channelID string
 		userID    string
@@ -284,7 +285,7 @@ func TestDiscord_HasPermissions(t *testing.T) {
 	}
 }
 
-func TestDiscord_HighestRole(t *testing.T) {
+func NewTestDiscord_HighestRole(t *testing.T) {
 	type args struct {
 		gid string
 		uid string
@@ -306,7 +307,7 @@ func TestDiscord_HighestRole(t *testing.T) {
 	}
 }
 
-func TestDiscord_HighestRolePosition(t *testing.T) {
+func NewTestDiscord_HighestRolePosition(t *testing.T) {
 	type args struct {
 		gid string
 		uid string
@@ -328,7 +329,7 @@ func TestDiscord_HighestRolePosition(t *testing.T) {
 	}
 }
 
-func TestDiscord_HighestColor(t *testing.T) {
+func NewTestDiscord_HighestColor(t *testing.T) {
 	type args struct {
 		gid string
 		uid string
@@ -408,7 +409,7 @@ func TestRoleByPos_Less(t *testing.T) {
 	}
 }
 
-func TestDiscord_AddEventHandler(t *testing.T) {
+func NewTestDiscord_AddEventHandler(t *testing.T) {
 	type args struct {
 		h interface{}
 	}
@@ -426,7 +427,7 @@ func TestDiscord_AddEventHandler(t *testing.T) {
 	}
 }
 
-func TestDiscord_AddEventHandlerOnce(t *testing.T) {
+func NewTestDiscord_AddEventHandlerOnce(t *testing.T) {
 	type args struct {
 		h interface{}
 	}
@@ -444,7 +445,7 @@ func TestDiscord_AddEventHandlerOnce(t *testing.T) {
 	}
 }
 
-func TestDiscord_Guilds(t *testing.T) {
+func NewTestDiscord_Guilds(t *testing.T) {
 	tests := []struct {
 		name string
 		d    *Discord
@@ -461,7 +462,7 @@ func TestDiscord_Guilds(t *testing.T) {
 	}
 }
 
-func TestDiscord_GuildCount(t *testing.T) {
+func NewTestDiscord_GuildCount(t *testing.T) {
 	tests := []struct {
 		name string
 		d    *Discord
@@ -478,7 +479,7 @@ func TestDiscord_GuildCount(t *testing.T) {
 	}
 }
 
-func TestDiscord_Guild(t *testing.T) {
+func NewTestDiscord_Guild(t *testing.T) {
 	type args struct {
 		guildID string
 	}
@@ -505,7 +506,7 @@ func TestDiscord_Guild(t *testing.T) {
 	}
 }
 
-func TestDiscord_Channel(t *testing.T) {
+func NewTestDiscord_Channel(t *testing.T) {
 	type args struct {
 		channelID string
 	}
@@ -532,7 +533,7 @@ func TestDiscord_Channel(t *testing.T) {
 	}
 }
 
-func TestDiscord_Member(t *testing.T) {
+func NewTestDiscord_Member(t *testing.T) {
 	type args struct {
 		guildID string
 		userID  string
@@ -560,7 +561,7 @@ func TestDiscord_Member(t *testing.T) {
 	}
 }
 
-func TestDiscord_Role(t *testing.T) {
+func NewTestDiscord_Role(t *testing.T) {
 	type args struct {
 		guildID string
 		roleID  string
@@ -588,7 +589,7 @@ func TestDiscord_Role(t *testing.T) {
 	}
 }
 
-func TestDiscord_GuildRoleByNameOrID(t *testing.T) {
+func NewTestDiscord_GuildRoleByNameOrID(t *testing.T) {
 	type args struct {
 		guildID string
 		name    string
@@ -617,7 +618,7 @@ func TestDiscord_GuildRoleByNameOrID(t *testing.T) {
 	}
 }
 
-func TestDiscord_StartTyping(t *testing.T) {
+func NewTestDiscord_StartTyping(t *testing.T) {
 	type args struct {
 		channelID string
 	}
@@ -638,7 +639,7 @@ func TestDiscord_StartTyping(t *testing.T) {
 	}
 }
 
-func TestDiscord_SendMessage(t *testing.T) {
+func NewTestDiscord_SendMessage(t *testing.T) {
 	type args struct {
 		channelID string
 		content   string
@@ -666,7 +667,7 @@ func TestDiscord_SendMessage(t *testing.T) {
 	}
 }
 
-func TestDiscord_UpdateStatus(t *testing.T) {
+func NewTestDiscord_UpdateStatus(t *testing.T) {
 	type args struct {
 		status       string
 		activityType discordgo.ActivityType

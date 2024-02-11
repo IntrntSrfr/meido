@@ -19,22 +19,22 @@ import (
 	"github.com/intrntsrfr/meido/internal/module/testing"
 	"github.com/intrntsrfr/meido/internal/module/utility"
 	"github.com/intrntsrfr/meido/internal/structs"
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 type Meido struct {
-	Bot    *mio.Bot
+	Bot    *bot.Bot
 	db     database.DB
 	logger *zap.Logger
 }
 
-func New(config utils.Configurable, db database.DB) *Meido {
+func New(config *utils.Config, db database.DB) *Meido {
 	logger := newLogger().Named("Meido")
 	return &Meido{
-		Bot:    mio.NewBot(config, logger),
+		Bot:    bot.NewBotBuilder(config, logger).Build(),
 		db:     db,
 		logger: logger,
 	}
@@ -76,12 +76,12 @@ func (m *Meido) listenMioEvents(ctx context.Context) {
 		select {
 		case evt := <-m.Bot.Events():
 			switch evt.Type {
-			case mio.BotEventCommandRan:
-				m.logCommand(evt.Data.(*mio.CommandRan))
-			case mio.BotEventCommandPanicked:
-				m.logCommandPanicked(evt.Data.(*mio.CommandPanicked))
-			case mio.BotEventPassivePanicked:
-				m.logPassivePanicked(evt.Data.(*mio.PassivePanicked))
+			case bot.BotEventCommandRan:
+				m.logCommand(evt.Data.(*bot.CommandRan))
+			case bot.BotEventCommandPanicked:
+				m.logCommandPanicked(evt.Data.(*bot.CommandPanicked))
+			case bot.BotEventPassivePanicked:
+				m.logPassivePanicked(evt.Data.(*bot.PassivePanicked))
 			}
 		case <-ctx.Done():
 			return
@@ -89,7 +89,7 @@ func (m *Meido) listenMioEvents(ctx context.Context) {
 	}
 }
 
-func (m *Meido) logCommand(cmd *mio.CommandRan) {
+func (m *Meido) logCommand(cmd *bot.CommandRan) {
 	err := m.db.CreateCommandLogEntry(&structs.CommandLogEntry{
 		Command:   cmd.Command.Name,
 		Args:      strings.Join(cmd.Message.Args(), " "),
@@ -104,7 +104,7 @@ func (m *Meido) logCommand(cmd *mio.CommandRan) {
 	}
 }
 
-func (m *Meido) logCommandPanicked(cmd *mio.CommandPanicked) {
+func (m *Meido) logCommandPanicked(cmd *bot.CommandPanicked) {
 	m.logger.Error("Command panic",
 		zap.Any("command", cmd.Command),
 		zap.Any("message", cmd.Message),
@@ -112,7 +112,7 @@ func (m *Meido) logCommandPanicked(cmd *mio.CommandPanicked) {
 	)
 }
 
-func (m *Meido) logPassivePanicked(pas *mio.PassivePanicked) {
+func (m *Meido) logPassivePanicked(pas *bot.PassivePanicked) {
 	m.logger.Error("Passive panic",
 		zap.Any("passive", pas.Passive),
 		zap.Any("message", pas.Message),

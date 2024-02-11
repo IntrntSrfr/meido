@@ -2,29 +2,30 @@ package moderation
 
 import (
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
-func newLockdownChannelCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newLockdownChannelCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "lockdown",
 		Description:      "Locks the current channel.",
 		Triggers:         []string{"m?lockdown"},
 		Usage:            "m?lockdown",
 		Cooldown:         10,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    discordgo.PermissionManageRoles,
 		CheckBotPerms:    true,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Run:              m.lockdownCommand,
 	}
 }
 
-func (m *Module) lockdownCommand(msg *mio.DiscordMessage) {
+func (m *Module) lockdownCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -95,26 +96,26 @@ func (m *Module) lockdownCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func newUnlockChannelCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newUnlockChannelCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "unlock",
 		Description:      "Unlocks a previously locked channel.",
 		Triggers:         []string{"m?unlock"},
 		Usage:            "m?unlock",
 		Cooldown:         10,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    discordgo.PermissionManageRoles,
 		CheckBotPerms:    true,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Run:              m.unlockCommand,
 	}
 }
 
-func (m *Module) unlockCommand(msg *mio.DiscordMessage) {
+func (m *Module) unlockCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}

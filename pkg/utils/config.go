@@ -1,30 +1,20 @@
 package utils
 
-// Configurable provides a config interface.
-// You are expected to implement it yourself
-type Configurable interface {
-	GetString(key string) string
-	GetInt(key string) int
-	GetStringSlice(key string) []string
-
-	Set(key string, value interface{})
-}
-
-type ConfigBase struct {
+type Config struct {
 	data map[string]interface{}
 }
 
-func NewConfig() *ConfigBase {
-	return &ConfigBase{
+func NewConfig() *Config {
+	return &Config{
 		data: make(map[string]interface{}),
 	}
 }
 
-func (c *ConfigBase) Set(key string, value interface{}) {
+func (c *Config) Set(key string, value interface{}) {
 	c.data[key] = value
 }
 
-func (c *ConfigBase) GetString(key string) string {
+func (c *Config) GetString(key string) string {
 	if v, found := c.data[key]; found {
 		if vt, ok := v.(string); ok {
 			return vt
@@ -33,7 +23,7 @@ func (c *ConfigBase) GetString(key string) string {
 	return ""
 }
 
-func (c *ConfigBase) GetInt(key string) int {
+func (c *Config) GetInt(key string) int {
 	if v, found := c.data[key]; found {
 		if vt, ok := v.(int); ok {
 			return vt
@@ -42,7 +32,7 @@ func (c *ConfigBase) GetInt(key string) int {
 	return -1
 }
 
-func (c *ConfigBase) GetStringSlice(key string) []string {
+func (c *Config) GetStringSlice(key string) []string {
 	if v, found := c.data[key]; found {
 		if vt, ok := v.([]string); ok {
 			return vt

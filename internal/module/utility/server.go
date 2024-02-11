@@ -5,26 +5,27 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	iutils "github.com/intrntsrfr/meido/internal/utils"
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
-func newServerCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newServerCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "server",
 		Description:      "Displays information about the server",
 		Triggers:         []string{"m?server"},
 		Usage:            "m?server",
 		Cooldown:         5,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -78,22 +79,22 @@ func newServerCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newServerSplashCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newServerSplashCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "serversplash",
 		Description:      "Displays server splash if one exists",
 		Triggers:         []string{"m?serversplash"},
 		Usage:            "m?serversplash",
 		Cooldown:         5,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -117,22 +118,22 @@ func newServerSplashCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newServerIconCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newServerIconCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "servericon",
 		Description:      "Displays server icon, if one exists",
 		Triggers:         []string{"m?servericon", "m?si", ">si"},
 		Usage:            "m?servericon",
 		Cooldown:         5,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -155,22 +156,22 @@ func newServerIconCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newServerBannerCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newServerBannerCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "serverbanner",
 		Description:      "Displays server banner if one exists",
 		Triggers:         []string{"m?serverbanner"},
 		Usage:            "m?serverbanner",
 		Cooldown:         5,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}

@@ -9,21 +9,22 @@ import (
 	"github.com/google/uuid"
 	"github.com/intrntsrfr/meido/internal/module/search/service"
 	iutils "github.com/intrntsrfr/meido/internal/utils"
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"go.uber.org/zap"
 )
 
 type Module struct {
-	*mio.ModuleBase
+	*bot.ModuleBase
 	search     *service.Service
 	imageCache *service.ImageSearchCache
 }
 
-func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
+func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Search")
 	return &Module{
-		ModuleBase: mio.NewModule(bot, "Search", logger),
-		search:     service.NewService(bot.Config.GetString("youtube_token"), bot.Config.GetString("open_weather_key")),
+		ModuleBase: bot.NewModule(b, "Search", logger),
+		search:     service.NewService(b.Config.GetString("youtube_token"), b.Config.GetString("open_weather_key")),
 		imageCache: service.NewImageSearchCache(),
 	}
 }
@@ -37,22 +38,22 @@ func (m *Module) Hook() error {
 	)
 }
 
-func newWeatherCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newWeatherCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "weather",
 		Description:      "Finds the weather at a provided location",
 		Triggers:         []string{"m?weather"},
 		Usage:            "m?weather [city]",
 		Cooldown:         0,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -85,22 +86,22 @@ func newWeatherCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newYouTubeCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newYouTubeCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "youtube",
 		Description:      "Search for a YouTube video",
 		Triggers:         []string{"m?youtube", "m?yt"},
 		Usage:            "m?yt [query]",
 		Cooldown:         2,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -126,22 +127,22 @@ func newYouTubeCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newImageCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newImageCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "image",
 		Description:      "Search for an image",
 		Triggers:         []string{"m?image", "m?img", "m?im"},
 		Usage:            "m?img [query]",
 		Cooldown:         2,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}

@@ -1,4 +1,4 @@
-package mio
+package util
 
 import (
 	"sync"

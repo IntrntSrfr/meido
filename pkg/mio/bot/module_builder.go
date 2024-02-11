@@ -1,6 +1,10 @@
-package mio
+package bot
 
-import "time"
+import (
+	"time"
+
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
+)
 
 type ModuleCommandBuilder struct {
 	cmd *ModuleCommand
@@ -55,7 +59,7 @@ func (b *ModuleCommandBuilder) WithCheckBotPerms() *ModuleCommandBuilder {
 	return b
 }
 
-func (b *ModuleCommandBuilder) WithAllowedTypes(msgType MessageType) *ModuleCommandBuilder {
+func (b *ModuleCommandBuilder) WithAllowedTypes(msgType discord.MessageType) *ModuleCommandBuilder {
 	b.cmd.AllowedTypes = msgType
 	return b
 }
@@ -65,7 +69,7 @@ func (b *ModuleCommandBuilder) WithAllowDMs() *ModuleCommandBuilder {
 	return b
 }
 
-func (b *ModuleCommandBuilder) WithRunFunc(run func(*DiscordMessage)) *ModuleCommandBuilder {
+func (b *ModuleCommandBuilder) WithRunFunc(run func(*discord.DiscordMessage)) *ModuleCommandBuilder {
 	b.cmd.Run = run
 	return b
 }
@@ -94,12 +98,12 @@ func (b *ModulePassiveBuilder) WithDescription(text string) *ModulePassiveBuilde
 	return b
 }
 
-func (b *ModulePassiveBuilder) WithAllowedTypes(msgType MessageType) *ModulePassiveBuilder {
+func (b *ModulePassiveBuilder) WithAllowedTypes(msgType discord.MessageType) *ModulePassiveBuilder {
 	b.cmd.AllowedTypes = msgType
 	return b
 }
 
-func (b *ModulePassiveBuilder) WithRunFunc(run func(*DiscordMessage)) *ModulePassiveBuilder {
+func (b *ModulePassiveBuilder) WithRunFunc(run func(*discord.DiscordMessage)) *ModulePassiveBuilder {
 	b.cmd.Run = run
 	return b
 }

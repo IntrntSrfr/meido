@@ -9,18 +9,19 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/gol"
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"go.uber.org/zap"
 )
 
 type Module struct {
-	*mio.ModuleBase
+	*bot.ModuleBase
 }
 
-func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
+func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Fun")
 	return &Module{
-		ModuleBase: mio.NewModule(bot, "Fun", logger),
+		ModuleBase: bot.NewModule(b, "Fun", logger),
 	}
 }
 
@@ -28,22 +29,22 @@ func (m *Module) Hook() error {
 	return m.RegisterCommands(newLifeCommand(m))
 }
 
-func newLifeCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newLifeCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "life",
 		Description:      "Shows a gif of Conway's Game of Life. If no seed is provided, it uses your user ID",
 		Triggers:         []string{"m?life"},
 		Usage:            "m?life | m?life <seed | user>",
 		Cooldown:         5,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			_ = msg.Discord.StartTyping(msg.ChannelID())
 			seedStr := msg.AuthorID()
 			if len(msg.Args()) > 1 {

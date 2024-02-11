@@ -10,30 +10,31 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	iutils "github.com/intrntsrfr/meido/internal/utils"
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 )
 
-func newFilterWordCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newFilterWordCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "filterword",
 		Description:      "Adds or removes a word or phrase to the server filter.",
 		Triggers:         []string{"m?fw", "m?filterword"},
 		Usage:            "m?fw jeff",
 		Cooldown:         2,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    discordgo.PermissionManageMessages,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Run:              m.filterwordCommand,
 	}
 }
-func (m *Module) filterwordCommand(msg *mio.DiscordMessage) {
+func (m *Module) filterwordCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -60,25 +61,25 @@ func (m *Module) filterwordCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func newFilterWordListCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newFilterWordListCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "filterwordlist",
 		Description:      "Lists of all filtered phrases for this server",
 		Triggers:         []string{"m?fwl", "m?filterwordlist"},
 		Usage:            "m?fwl",
 		Cooldown:         10,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    discordgo.PermissionManageMessages,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Run:              m.filterwordlistCommand,
 	}
 }
-func (m *Module) filterwordlistCommand(msg *mio.DiscordMessage) {
+func (m *Module) filterwordlistCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -109,26 +110,26 @@ func (m *Module) filterwordlistCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply(builder.String())
 }
 
-func newClearFilterCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newClearFilterCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "clearfilter",
 		Description:      "Removes all phrases from the server filter",
 		Triggers:         []string{"m?clearfilter"},
 		Usage:            "m?clearfilter",
 		Cooldown:         10,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    discordgo.PermissionAdministrator,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Run:              m.clearfilterCommand,
 	}
 }
 
-func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
+func (m *Module) clearfilterCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -144,7 +145,7 @@ func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 	}
 	defer m.Bot.Callbacks.Delete(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
 
-	var reply *mio.DiscordMessage
+	var reply *discord.DiscordMessage
 	t := time.NewTimer(time.Second * 15)
 	for {
 		select {
@@ -168,19 +169,19 @@ func (m *Module) clearfilterCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply("All filters successfully deleted")
 }
 
-func newModerationSettingsCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newModerationSettingsCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "moderationsettings",
 		Description:      "Moderation settings:\n- Toggle warn system [enable / disable]\n- Set max warns [0 - 10]\n- Set warn duration [0 (forever) - 365]",
 		Triggers:         []string{"m?settings moderation"},
 		Usage:            "m?settings moderation warns [enable / disable]\nm?settings moderation maxwarns [0 - 10]\nm?settings moderation warnduration [0 - 365]",
 		Cooldown:         2,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    discordgo.PermissionAdministrator,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Run:              m.moderationsettingsCommand,
@@ -192,7 +193,7 @@ var (
 	warnsEnabledSettings = map[string]bool{"enable": true, "disable": false}
 )
 
-func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
+func (m *Module) moderationsettingsCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -256,14 +257,14 @@ func (m *Module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 	}
 }
 
-func newCheckFilterPassive(m *Module) *mio.ModulePassive {
-	return &mio.ModulePassive{
+func newCheckFilterPassive(m *Module) *bot.ModulePassive {
+	return &bot.ModulePassive{
 		Mod:          m,
 		Name:         "checkfilter",
 		Description:  "checks if messages contain phrases found in the server filter",
 		Enabled:      true,
-		AllowedTypes: mio.MessageTypeCreate | mio.MessageTypeUpdate,
-		Run: func(msg *mio.DiscordMessage) {
+		AllowedTypes: discord.MessageTypeCreate | discord.MessageTypeUpdate,
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}

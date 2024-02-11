@@ -8,23 +8,24 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	iutils "github.com/intrntsrfr/meido/internal/utils"
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 )
 
 // Module represents the administration mod
 type Module struct {
-	*mio.ModuleBase
+	*bot.ModuleBase
 	dmLogChannels []string
 }
 
 // New returns a new AdministrationMod.
-func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
+func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Administration")
 	return &Module{
-		ModuleBase:    mio.NewModule(bot, "Administration", logger),
-		dmLogChannels: bot.Config.GetStringSlice("dm_log_channels"),
+		ModuleBase:    bot.NewModule(b, "Administration", logger),
+		dmLogChannels: b.Config.GetStringSlice("dm_log_channels"),
 	}
 }
 
@@ -39,22 +40,22 @@ func (m *Module) Hook() error {
 	)
 }
 
-func newMessageCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newMessageCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "message",
 		Description:      "Sends a message to a channel",
 		Triggers:         []string{"m?msg"},
 		Usage:            "m?msg [channelID] [message]",
 		Cooldown:         0,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
-		RequiresUserType: mio.UserTypeBotOwner,
+		RequiresUserType: bot.UserTypeBotOwner,
 		CheckBotPerms:    false,
-		AllowedTypes:     mio.MessageTypeCreate,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 3 {
 				return
 			}
@@ -82,22 +83,22 @@ func newMessageCommand(m *Module) *mio.ModuleCommand {
 }
 
 // newToggleCommandCommand returns a new ping command.
-func newToggleCommandCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newToggleCommandCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "togglecommand",
 		Description:      "Enables or disables a command. Bot owner only.",
 		Triggers:         []string{"m?togglecommand", "m?tc"},
 		Usage:            "m?tc ping",
 		Cooldown:         2,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeBotOwner,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeBotOwner,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if cmd, err := m.Bot.FindCommand(msg.RawContent()); err == nil {
 				if cmd.Name == "togglecommand" {
 					return
@@ -113,14 +114,14 @@ func newToggleCommandCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newForwardDmsPassive(m *Module) *mio.ModulePassive {
-	return &mio.ModulePassive{
+func newForwardDmsPassive(m *Module) *bot.ModulePassive {
+	return &bot.ModulePassive{
 		Mod:          m,
 		Name:         "forwarddms",
 		Description:  "Forwards all received DMs to channels specified by the bot owner",
-		AllowedTypes: mio.MessageTypeCreate,
+		AllowedTypes: discord.MessageTypeCreate,
 		Enabled:      true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if !msg.IsDM() {
 				return
 			}

@@ -6,23 +6,24 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
 	iutils "github.com/intrntsrfr/meido/internal/utils"
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 )
 
 // FishMod represents the ping mod
 type FishMod struct {
-	*mio.ModuleBase
+	*bot.ModuleBase
 	db IAquariumDB
 	fs *fishingService
 }
 
 // New returns a new FishMod.
-func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
+func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Fishing")
 	return &FishMod{
-		ModuleBase: mio.NewModule(bot, "Fishing", logger),
+		ModuleBase: bot.NewModule(b, "Fishing", logger),
 		db:         &AquariumDB{db},
 	}
 }
@@ -42,21 +43,21 @@ func (m *FishMod) Hook() error {
 }
 
 // newFishCommand returns a new fish command.
-func newFishCommand(m *FishMod) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newFishCommand(m *FishMod) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "fish",
 		Description:      "Go fishin'",
 		Triggers:         []string{"m?fish"},
 		Usage:            "m?fish",
 		Cooldown:         2,
-		CooldownScope:    mio.User,
+		CooldownScope:    bot.User,
 		RequiredPerms:    0,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if gc, err := m.db.GetGuild(msg.GuildID()); err != nil || msg.ChannelID() != gc.FishingChannelID {
 				return
 			}
@@ -72,25 +73,25 @@ func newFishCommand(m *FishMod) *mio.ModuleCommand {
 }
 
 // newAquariumCommand returns a new Aquarium command.
-func newAquariumCommand(m *FishMod) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newAquariumCommand(m *FishMod) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "aquarium",
 		Description:      "Displays your or someone else's aquarium",
 		Triggers:         []string{"m?aquarium", "m?aq"},
 		Usage:            "m?Aquarium <userID>",
 		Cooldown:         3,
-		CooldownScope:    mio.User,
+		CooldownScope:    bot.User,
 		RequiredPerms:    0,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
 		Run:              m.aquariumCommand,
 	}
 }
 
-func (m *FishMod) aquariumCommand(msg *mio.DiscordMessage) {
+func (m *FishMod) aquariumCommand(msg *discord.DiscordMessage) {
 	if gc, err := m.db.GetGuild(msg.GuildID()); err != nil || msg.ChannelID() != gc.FishingChannelID {
 		return
 	}
@@ -124,22 +125,22 @@ func (m *FishMod) aquariumCommand(msg *mio.DiscordMessage) {
 }
 
 // newSetFishingSettingsCommand returns a new fish command.
-func newSetFishingSettingsCommand(m *FishMod) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newSetFishingSettingsCommand(m *FishMod) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "fishingsettings",
 		Description:      "Fishing settings:\n- Set fishing channel [channelID]",
 		Triggers:         []string{"m?settings fishing"},
 		Usage:            "m?settings fishing fishingchannel [channelID]",
 		Cooldown:         2,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    discordgo.PermissionAdministrator,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}

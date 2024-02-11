@@ -1,8 +1,10 @@
-package mio
+package util
 
 import (
 	"errors"
 	"sync"
+
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
 var (
@@ -12,18 +14,18 @@ var (
 
 type CallbackManager struct {
 	sync.Mutex
-	ch map[string]chan *DiscordMessage
+	ch map[string]chan *discord.DiscordMessage
 }
 
 func NewCallbackManager() *CallbackManager {
 	return &CallbackManager{
-		ch: make(map[string]chan *DiscordMessage),
+		ch: make(map[string]chan *discord.DiscordMessage),
 	}
 }
 
 // Make makes a channel for future communication with a running command
-func (c *CallbackManager) Make(key string) (chan *DiscordMessage, error) {
-	ch := make(chan *DiscordMessage)
+func (c *CallbackManager) Make(key string) (chan *discord.DiscordMessage, error) {
+	ch := make(chan *discord.DiscordMessage)
 	c.Lock()
 	defer c.Unlock()
 	if _, ok := c.ch[key]; ok {
@@ -34,7 +36,7 @@ func (c *CallbackManager) Make(key string) (chan *DiscordMessage, error) {
 }
 
 // Get gets a channel for communication with a running command
-func (c *CallbackManager) Get(key string) (chan *DiscordMessage, error) {
+func (c *CallbackManager) Get(key string) (chan *discord.DiscordMessage, error) {
 	c.Lock()
 	defer c.Unlock()
 	ch, ok := c.ch[key]

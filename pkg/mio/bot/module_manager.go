@@ -1,4 +1,4 @@
-package mio
+package bot
 
 import (
 	"strings"

@@ -1,4 +1,4 @@
-package mio
+package discord
 
 import (
 	"time"

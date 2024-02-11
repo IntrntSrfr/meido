@@ -16,21 +16,22 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/internal/database"
 	iutils "github.com/intrntsrfr/meido/internal/utils"
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 )
 
 type Module struct {
-	*mio.ModuleBase
+	*bot.ModuleBase
 	db        database.DB
 	startTime time.Time
 }
 
-func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
+func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Utility")
 	return &Module{
-		ModuleBase: mio.NewModule(bot, "Utility", logger),
+		ModuleBase: bot.NewModule(b, "Utility", logger),
 		db:         db,
 		startTime:  time.Now(),
 	}
@@ -55,22 +56,22 @@ func (m *Module) Hook() error {
 	)
 }
 
-func NewConvertCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func NewConvertCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "convert",
 		Description:      "Converts between units",
 		Triggers:         []string{"m?convert"},
 		Usage:            "m?convert kg lb 50",
 		Cooldown:         0,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 4 {
 				return
 			}
@@ -79,22 +80,22 @@ func NewConvertCommand(m *Module) *mio.ModuleCommand {
 }
 
 // newPingCommand returns a new ping command.
-func newPingCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newPingCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "ping",
 		Description:      "Checks the bot ping against Discord",
 		Triggers:         []string{"m?ping"},
 		Usage:            "m?ping",
 		Cooldown:         2,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -109,22 +110,22 @@ func newPingCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newAboutCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newAboutCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "about",
 		Description:      "Displays Meido statistics",
 		Triggers:         []string{"m?about"},
 		Usage:            "m?about",
 		Cooldown:         5,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
+		RequiresUserType: bot.UserTypeAny,
 		AllowDMs:         true,
-		AllowedTypes:     mio.MessageTypeCreate,
+		AllowedTypes:     discord.MessageTypeCreate,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -168,22 +169,22 @@ func newAboutCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newColorCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newColorCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "color",
 		Description:      "Displays a small image of a provided color hex",
 		Triggers:         []string{"m?color"},
 		Usage:            "m?color [color hex]",
 		Cooldown:         1,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -217,22 +218,22 @@ func generateColorPNG(clrStr string) (*bytes.Buffer, error) {
 	return &buf, err
 }
 
-func newIdTimestampCmd(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newIdTimestampCmd(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "idtimestamp",
 		Description:      "Converts a Discord ID to a timestamp",
 		Triggers:         []string{"m?idt", "m?idts", "m?ts", "m?idtimestamp"},
 		Usage:            "m?idt [ID]",
 		Cooldown:         0,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			id := msg.AuthorID()
 			if len(msg.Args()) > 1 {
 				id = msg.Args()[1]
@@ -243,22 +244,22 @@ func newIdTimestampCmd(m *Module) *mio.ModuleCommand {
 
 }
 
-func newInviteCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newInviteCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "invite",
 		Description:      "Sends a bot invite link and support server invite link",
 		Triggers:         []string{"m?invite"},
 		Usage:            "m?invite",
 		Cooldown:         1,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			botLink := "<https://discordapp.com/oauth2/authorize?client_id=" + msg.Sess.State().User.ID + "&scope=bot>"
 			serverLink := "https://discord.gg/KgMEGK3"
 			_, _ = msg.Reply(fmt.Sprintf("Invite me to your server: %v\nSupport server: %v", botLink, serverLink))
@@ -266,26 +267,26 @@ func newInviteCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newHelpCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newHelpCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "help",
 		Description:      "Displays helpful things",
 		Triggers:         []string{"m?help", "m?h"},
 		Usage:            "m?help <module | command | passive>",
 		Cooldown:         1,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
 		Run:              m.helpCommand,
 	}
 }
 
-func (m *Module) helpCommand(msg *mio.DiscordMessage) {
+func (m *Module) helpCommand(msg *discord.DiscordMessage) {
 	embed := iutils.NewEmbed().
 		WithOkColor().
 		WithFooter("Use m?help [module] to see module commands.\nUse m?help [command] to see command info.\nArguments in [square brackets] are required, while arguments in <angle brackets> are optional.", "").
@@ -349,7 +350,7 @@ func (m *Module) helpCommand(msg *mio.DiscordMessage) {
 		info.WriteString(fmt.Sprintf("\n**Usage**: %v", cmd.Usage))
 		info.WriteString(fmt.Sprintf("\n**Aliases**: %v", strings.Join(cmd.Triggers, ", ")))
 		info.WriteString(fmt.Sprintf("\n**Cooldown**: %v second(s)", cmd.Cooldown))
-		info.WriteString(fmt.Sprintf("\n**Required permissions**: %v", mio.PermMap[cmd.RequiredPerms]))
+		info.WriteString(fmt.Sprintf("\n**Required permissions**: %v", discord.PermMap[cmd.RequiredPerms]))
 		if !cmd.AllowDMs {
 			info.WriteString(fmt.Sprintf("\n%v", "Cannot be used in DMs"))
 		}

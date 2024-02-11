@@ -1,4 +1,4 @@
-package mio
+package bot
 
 import (
 	"errors"
@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"go.uber.org/zap"
 )
 
@@ -17,14 +18,14 @@ type Module interface {
 	Passives() map[string]*ModulePassive
 	Commands() map[string]*ModuleCommand
 	Slashes() map[string]*ModuleSlash
-	AllowedTypes() MessageType
+	AllowedTypes() discord.MessageType
 	AllowDMs() bool
 
 	Hook() error
-	HandleMessage(*DiscordMessage)
-	HandleInteraction(*DiscordInteraction)
-	AllowsMessage(*DiscordMessage) bool
-	AllowsInteraction(*DiscordInteraction) bool
+	HandleMessage(*discord.DiscordMessage)
+	HandleInteraction(*discord.DiscordInteraction)
+	AllowsMessage(*discord.DiscordMessage) bool
+	AllowsInteraction(*discord.DiscordInteraction) bool
 
 	RegisterCommands(...*ModuleCommand) error
 	RegisterPassives(...*ModulePassive) error
@@ -50,7 +51,7 @@ type ModuleBase struct {
 	commands     map[string]*ModuleCommand
 	passives     map[string]*ModulePassive
 	slashes      map[string]*ModuleSlash
-	allowedTypes MessageType
+	allowedTypes discord.MessageType
 	allowDMs     bool
 }
 
@@ -62,12 +63,12 @@ func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
 		commands:     make(map[string]*ModuleCommand),
 		passives:     make(map[string]*ModulePassive),
 		slashes:      make(map[string]*ModuleSlash),
-		allowedTypes: MessageTypeCreate,
+		allowedTypes: discord.MessageTypeCreate,
 		allowDMs:     true,
 	}
 }
 
-func (m *ModuleBase) HandleMessage(msg *DiscordMessage) {
+func (m *ModuleBase) HandleMessage(msg *discord.DiscordMessage) {
 	if !m.AllowsMessage(msg) {
 		return
 	}
@@ -85,7 +86,7 @@ func (m *ModuleBase) HandleMessage(msg *DiscordMessage) {
 	}
 }
 
-func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *DiscordMessage) {
+func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
 	if !cmd.Enabled || !cmd.AllowsMessage(msg) {
 		return
 	}
@@ -105,7 +106,7 @@ func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	go m.runCommand(cmd, msg)
 }
 
-func (m *ModuleBase) recoverCommand(cmd *ModuleCommand, msg *DiscordMessage) {
+func (m *ModuleBase) recoverCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
 	if r := recover(); r != nil {
 		m.Logger.Warn("Recovery needed", zap.Any("error", r))
 		m.Bot.Emit(BotEventCommandPanicked, &CommandPanicked{cmd, msg, string(debug.Stack())})
@@ -113,7 +114,7 @@ func (m *ModuleBase) recoverCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	}
 }
 
-func (m *ModuleBase) runCommand(cmd *ModuleCommand, msg *DiscordMessage) {
+func (m *ModuleBase) runCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
 	defer m.recoverCommand(cmd, msg)
 
 	cmd.Run(msg)
@@ -126,21 +127,21 @@ func (m *ModuleBase) runCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	)
 }
 
-func (m *ModuleBase) handlePassive(pas *ModulePassive, msg *DiscordMessage) {
+func (m *ModuleBase) handlePassive(pas *ModulePassive, msg *discord.DiscordMessage) {
 	if !pas.Enabled || !pas.AllowsMessage(msg) {
 		return
 	}
 	go m.runPassive(pas, msg)
 }
 
-func (m *ModuleBase) recoverPassive(pas *ModulePassive, msg *DiscordMessage) {
+func (m *ModuleBase) recoverPassive(pas *ModulePassive, msg *discord.DiscordMessage) {
 	if r := recover(); r != nil {
 		m.Logger.Warn("Recovery needed", zap.Any("error", r))
 		m.Bot.Emit(BotEventPassivePanicked, &PassivePanicked{pas, msg, string(debug.Stack())})
 	}
 }
 
-func (m *ModuleBase) runPassive(pas *ModulePassive, msg *DiscordMessage) {
+func (m *ModuleBase) runPassive(pas *ModulePassive, msg *discord.DiscordMessage) {
 	defer m.recoverPassive(pas, msg)
 	pas.Run(msg)
 	m.Logger.Info("Passive",
@@ -150,7 +151,7 @@ func (m *ModuleBase) runPassive(pas *ModulePassive, msg *DiscordMessage) {
 	)
 }
 
-func (m *ModuleBase) HandleInteraction(it *DiscordInteraction) {
+func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
 	panic("not implemented")
 }
 
@@ -170,7 +171,7 @@ func (m *ModuleBase) Slashes() map[string]*ModuleSlash {
 	return m.slashes
 }
 
-func (m *ModuleBase) AllowedTypes() MessageType {
+func (m *ModuleBase) AllowedTypes() discord.MessageType {
 	return m.allowedTypes
 }
 
@@ -275,7 +276,7 @@ func (m *ModuleBase) FindSlash(name string) (*ModuleSlash, error) {
 	return nil, ErrPassiveNotFound
 }
 
-func (m *ModuleBase) AllowsMessage(msg *DiscordMessage) bool {
+func (m *ModuleBase) AllowsMessage(msg *discord.DiscordMessage) bool {
 	if msg.IsDM() && !m.allowDMs {
 		return false
 	}
@@ -285,7 +286,7 @@ func (m *ModuleBase) AllowsMessage(msg *DiscordMessage) bool {
 	return true
 }
 
-func (m *ModuleBase) AllowsInteraction(it *DiscordInteraction) bool {
+func (m *ModuleBase) AllowsInteraction(it *discord.DiscordInteraction) bool {
 	return !(it.IsDM() && !m.allowDMs)
 }
 
@@ -317,13 +318,13 @@ type ModuleCommand struct {
 	RequiredPerms    int64
 	RequiresUserType UserType
 	CheckBotPerms    bool
-	AllowedTypes     MessageType
+	AllowedTypes     discord.MessageType
 	AllowDMs         bool
 	Enabled          bool
-	Run              func(*DiscordMessage) `json:"-"`
+	Run              func(*discord.DiscordMessage) `json:"-"`
 }
 
-func (cmd *ModuleCommand) AllowsMessage(msg *DiscordMessage) bool {
+func (cmd *ModuleCommand) AllowsMessage(msg *discord.DiscordMessage) bool {
 	if msg.IsDM() && !cmd.AllowDMs {
 		return false
 	}
@@ -346,7 +347,7 @@ func (cmd *ModuleCommand) AllowsMessage(msg *DiscordMessage) bool {
 	return true
 }
 
-func (cmd *ModuleCommand) CooldownKey(msg *DiscordMessage) string {
+func (cmd *ModuleCommand) CooldownKey(msg *discord.DiscordMessage) string {
 	switch cmd.CooldownScope {
 	case User:
 		return fmt.Sprintf("user:%v:%v", msg.AuthorID(), cmd.Name)
@@ -363,13 +364,13 @@ type ModulePassive struct {
 	Mod          Module
 	Name         string
 	Description  string
-	AllowedTypes MessageType
+	AllowedTypes discord.MessageType
 	AllowDMs     bool
 	Enabled      bool
-	Run          func(*DiscordMessage) `json:"-"`
+	Run          func(*discord.DiscordMessage) `json:"-"`
 }
 
-func (pas *ModulePassive) AllowsMessage(msg *DiscordMessage) bool {
+func (pas *ModulePassive) AllowsMessage(msg *discord.DiscordMessage) bool {
 	if msg.IsDM() && !pas.AllowDMs {
 		return false
 	}
@@ -391,9 +392,9 @@ type ModuleSlash struct {
 	CheckBotPerms bool
 	AllowDMs      bool
 	Enabled       bool
-	Run           func(*DiscordInteraction) `json:"-"`
+	Run           func(*discord.DiscordInteraction) `json:"-"`
 }
 
-func (s *ModuleSlash) AllowsMessage(it *DiscordInteraction) bool {
+func (s *ModuleSlash) AllowsMessage(it *discord.DiscordInteraction) bool {
 	return !(it.IsDM() && !s.AllowDMs)
 }

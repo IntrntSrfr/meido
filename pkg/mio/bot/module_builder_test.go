@@ -1,13 +1,16 @@
-package mio
+package bot
 
 import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
+	"github.com/intrntsrfr/meido/pkg/mio/test"
 )
 
 func TestModuleCommandBuilder(t *testing.T) {
-	mod := newTestModule(nil, "test", testLogger())
+	mod := NewTestModule(nil, "test", test.NewTestLogger())
 
 	cmd := &ModuleCommand{
 		Mod:              mod,
@@ -20,7 +23,7 @@ func TestModuleCommandBuilder(t *testing.T) {
 		RequiredPerms:    123,
 		RequiresUserType: UserTypeBotOwner,
 		CheckBotPerms:    true,
-		AllowedTypes:     MessageTypeUpdate,
+		AllowedTypes:     discord.MessageTypeUpdate,
 		AllowDMs:         true,
 		Enabled:          true,
 		Run:              nil,
@@ -34,14 +37,14 @@ func TestModuleCommandBuilder(t *testing.T) {
 		WithRequiredPerms(123).
 		WithRequiresBotOwner().
 		WithCheckBotPerms().
-		WithAllowedTypes(MessageTypeUpdate).
+		WithAllowedTypes(discord.MessageTypeUpdate).
 		WithAllowDMs()
 
 	if built := cmdBuilder.Build(); !reflect.DeepEqual(cmd, built) {
 		t.Errorf("Built command is not equal to expected")
 	}
 
-	rf := func(*DiscordMessage) {}
+	rf := func(*discord.DiscordMessage) {}
 	cmdBuilder.WithRunFunc(rf)
 
 	if built := cmdBuilder.Build(); built.Run == nil {
@@ -50,26 +53,26 @@ func TestModuleCommandBuilder(t *testing.T) {
 }
 
 func TestModulePassiveBuilder(t *testing.T) {
-	mod := newTestModule(nil, "test", testLogger())
+	mod := NewTestModule(nil, "test", test.NewTestLogger())
 
 	cmd := &ModulePassive{
 		Mod:          mod,
 		Name:         "testing",
 		Description:  "i am testing",
-		AllowedTypes: MessageTypeUpdate,
+		AllowedTypes: discord.MessageTypeUpdate,
 		Enabled:      true,
 		Run:          nil,
 	}
 
 	cmdBuilder := NewModulePassiveBuilder(mod, "testing").
 		WithDescription("i am testing").
-		WithAllowedTypes(MessageTypeUpdate)
+		WithAllowedTypes(discord.MessageTypeUpdate)
 
 	if built := cmdBuilder.Build(); !reflect.DeepEqual(cmd, built) {
 		t.Errorf("Built passive is not equal to expected")
 	}
 
-	rf := func(*DiscordMessage) {}
+	rf := func(*discord.DiscordMessage) {}
 	cmdBuilder.WithRunFunc(rf)
 
 	if built := cmdBuilder.Build(); built.Run == nil {

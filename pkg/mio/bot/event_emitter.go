@@ -1,4 +1,8 @@
-package mio
+package bot
+
+import (
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
+)
 
 type EventEmitter struct {
 	eventCh chan *BotEventData
@@ -19,18 +23,18 @@ type BotEventData struct {
 
 type CommandRan struct {
 	Command *ModuleCommand
-	Message *DiscordMessage
+	Message *discord.DiscordMessage
 }
 
 type CommandPanicked struct {
 	Command    *ModuleCommand
-	Message    *DiscordMessage
+	Message    *discord.DiscordMessage
 	StackTrace string
 }
 
 type PassivePanicked struct {
 	Passive    *ModulePassive
-	Message    *DiscordMessage
+	Message    *discord.DiscordMessage
 	StackTrace string
 }
 

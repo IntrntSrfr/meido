@@ -1,4 +1,4 @@
-package mio
+package bot
 
 import (
 	"fmt"
@@ -6,11 +6,13 @@ import (
 	"testing"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
+	"github.com/intrntsrfr/meido/pkg/mio/test"
 )
 
 func TestNewModule(t *testing.T) {
 	want := "testing"
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	if got := base.Name(); got != want {
 		t.Errorf("ModuleBase.New() did not produce correct name; got = %v, want %v", got, want)
 	}
@@ -18,7 +20,7 @@ func TestNewModule(t *testing.T) {
 
 func TestModuleBase_Name(t *testing.T) {
 	want := "testing"
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	if got := base.Name(); got != "testing" {
 		t.Errorf("ModuleBase.Name() = %v, want %v", got, want)
 	}
@@ -26,7 +28,7 @@ func TestModuleBase_Name(t *testing.T) {
 
 func TestModuleBase_Passives(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	base.RegisterPassives(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
@@ -35,7 +37,7 @@ func TestModuleBase_Passives(t *testing.T) {
 
 func TestModuleBase_Commands(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	base.RegisterCommands(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
@@ -43,9 +45,9 @@ func TestModuleBase_Commands(t *testing.T) {
 }
 
 func TestModuleBase_AllowedTypes(t *testing.T) {
-	want := MessageTypeCreate | MessageTypeUpdate
-	base := &ModuleBase{allowedTypes: MessageTypeCreate}
-	if got := base.AllowedTypes(); got&MessageTypeCreate != MessageTypeCreate {
+	want := discord.MessageTypeCreate | discord.MessageTypeUpdate
+	base := &ModuleBase{allowedTypes: discord.MessageTypeCreate}
+	if got := base.AllowedTypes(); got&discord.MessageTypeCreate != discord.MessageTypeCreate {
 		t.Errorf("ModuleBase.AllowedTypes() = %v, want %v", got, want)
 	}
 }
@@ -60,7 +62,7 @@ func TestModuleBase_AllowDMs(t *testing.T) {
 
 func TestModuleBase_RegisterPassive(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	base.RegisterPassives(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
@@ -72,7 +74,7 @@ func TestModuleBase_RegisterPassive(t *testing.T) {
 
 func TestModuleBase_RegisterPassives(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	base.RegisterPassives(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
@@ -84,7 +86,7 @@ func TestModuleBase_RegisterPassives(t *testing.T) {
 
 func TestModuleBase_RegisterCommand(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	base.RegisterCommands(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
@@ -96,7 +98,7 @@ func TestModuleBase_RegisterCommand(t *testing.T) {
 
 func TestModuleBase_RegisterCommands(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	base.RegisterCommands(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
@@ -107,7 +109,7 @@ func TestModuleBase_RegisterCommands(t *testing.T) {
 }
 
 func TestModuleBase_FindCommandByName(t *testing.T) {
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	cmd := &ModuleCommand{
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
@@ -161,7 +163,7 @@ func TestModuleBase_FindCommandByName(t *testing.T) {
 }
 
 func TestModuleBase_FindCommandByTriggers(t *testing.T) {
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	cmd := &ModuleCommand{
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
@@ -222,7 +224,7 @@ func TestModuleBase_FindCommandByTriggers(t *testing.T) {
 }
 
 func TestModuleBase_FindCommand(t *testing.T) {
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	cmd := &ModuleCommand{
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
@@ -283,7 +285,7 @@ func TestModuleBase_FindCommand(t *testing.T) {
 }
 
 func TestModuleBase_FindPassive(t *testing.T) {
-	base := NewModule(nil, "testing", testLogger())
+	base := NewModule(nil, "testing", test.NewTestLogger())
 	cmd := &ModulePassive{
 		Name: "test",
 	}
@@ -336,10 +338,10 @@ func TestModuleBase_FindPassive(t *testing.T) {
 }
 
 func TestModuleBase_AllowsMessage(t *testing.T) {
-	m := NewModule(nil, "testing", testLogger())
-	msg := &DiscordMessage{
+	m := NewModule(nil, "testing", test.NewTestLogger())
+	msg := &discord.DiscordMessage{
 		Message:     &discordgo.Message{Type: discordgo.MessageTypeDefault, GuildID: ""},
-		MessageType: MessageTypeCreate,
+		MessageType: discord.MessageTypeCreate,
 	}
 
 	t.Run("dm ok if allows dms", func(t *testing.T) {
@@ -359,7 +361,7 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 
 	m.allowDMs = true
 	t.Run("ok if good type", func(t *testing.T) {
-		msg.MessageType = MessageTypeCreate | MessageTypeUpdate
+		msg.MessageType = discord.MessageTypeCreate | discord.MessageTypeUpdate
 		expected := true
 		if got := m.AllowsMessage(msg); got != true {
 			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
@@ -367,7 +369,7 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 	})
 
 	t.Run("not ok if not good type", func(t *testing.T) {
-		msg.MessageType = MessageTypeUpdate
+		msg.MessageType = discord.MessageTypeUpdate
 		expected := true
 		if got := m.AllowsMessage(msg); got != false {
 			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
@@ -376,10 +378,10 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 }
 
 func TestModuleCommand_AllowsMessage(t *testing.T) {
-	cmd := &ModuleCommand{AllowedTypes: MessageTypeCreate, RequiredPerms: 0, AllowDMs: true}
-	msg := &DiscordMessage{
+	cmd := &ModuleCommand{AllowedTypes: discord.MessageTypeCreate, RequiredPerms: 0, AllowDMs: true}
+	msg := &discord.DiscordMessage{
 		Message:     &discordgo.Message{Type: discordgo.MessageTypeDefault, GuildID: ""},
-		MessageType: MessageTypeCreate,
+		MessageType: discord.MessageTypeCreate,
 	}
 
 	t.Run("dm ok if allows dms", func(t *testing.T) {
@@ -399,7 +401,7 @@ func TestModuleCommand_AllowsMessage(t *testing.T) {
 
 	cmd.AllowDMs = true
 	t.Run("ok if good type", func(t *testing.T) {
-		msg.MessageType = MessageTypeCreate | MessageTypeUpdate
+		msg.MessageType = discord.MessageTypeCreate | discord.MessageTypeUpdate
 		expected := true
 		if got := cmd.AllowsMessage(msg); got != true {
 			t.Errorf("ModuleCommand.AllowsMessage(msg) = %v, want %v", got, expected)
@@ -407,7 +409,7 @@ func TestModuleCommand_AllowsMessage(t *testing.T) {
 	})
 
 	t.Run("not ok if not good type", func(t *testing.T) {
-		msg.MessageType = MessageTypeUpdate
+		msg.MessageType = discord.MessageTypeUpdate
 		expected := true
 		if got := cmd.AllowsMessage(msg); got != false {
 			t.Errorf("ModuleCommand.AllowsMessage(msg) = %v, want %v", got, expected)
@@ -418,13 +420,13 @@ func TestModuleCommand_AllowsMessage(t *testing.T) {
 func TestModuleCommand_CooldownKey(t *testing.T) {
 	gid, chid, uid := "1234", "2345", "3456"
 
-	msg := &DiscordMessage{
+	msg := &discord.DiscordMessage{
 		Message: &discordgo.Message{
 			GuildID:   gid,
 			ChannelID: chid,
 			Author:    &discordgo.User{ID: uid},
 		},
-		MessageType: MessageTypeCreate,
+		MessageType: discord.MessageTypeCreate,
 	}
 
 	tests := []struct {

@@ -10,7 +10,7 @@ import (
 
 // Config is the config struct for the bot
 type Config struct {
-	*utils.ConfigBase
+	*utils.Config
 }
 
 type jsonConfig struct {
@@ -24,45 +24,16 @@ type jsonConfig struct {
 	OpenWeatherKey   string   `json:"open_weather_api_key"`
 }
 
-func NewConfig() *Config {
-	return &Config{
-		ConfigBase: utils.NewConfig(),
-	}
-}
-
-func LoadConfig() (*Config, error) {
-	config := NewConfig()
-
-	if err := config.loadJson(); err != nil {
-		return nil, err
+func LoadConfig(cfg *utils.Config) error {
+	if err := loadJson(cfg); err != nil {
+		return err
 	}
 
-	if os.Getenv("USE_ENV_CONFIG") != "" {
-		config.loadEnvs()
-	}
-
-	return config, nil
+	loadEnvs(cfg)
+	return nil
 }
 
-func (c *Config) loadEnvs() {
-	c.Set("token", os.Getenv("DISCORD_TOKEN"))
-
-	dbUser := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbPort := os.Getenv("DB_PORT")
-	dbHost := os.Getenv("DB_HOST")
-	connStr := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
-		dbHost,
-		dbPort,
-		dbName,
-		dbUser,
-		dbPassword,
-	)
-	c.Set("connection_string", connStr)
-}
-
-func (c *Config) loadJson() error {
+func loadJson(cfg *utils.Config) error {
 	file, err := os.ReadFile("./config.json")
 	if err != nil {
 		return err
@@ -74,13 +45,35 @@ func (c *Config) loadJson() error {
 		return err
 	}
 
-	c.Set("shards", jsonCfg.Shards)
-	c.Set("token", jsonCfg.Token)
-	c.Set("connection_string", jsonCfg.ConnectionString)
-	c.Set("owner_ids", jsonCfg.OwnerIds)
-	c.Set("dm_log_channels", jsonCfg.DmLogChannels)
-	c.Set("owo_token", jsonCfg.OwoToken)
-	c.Set("youtube_token", jsonCfg.YouTubeToken)
-	c.Set("open_weather_key", jsonCfg.OpenWeatherKey)
+	cfg.Set("shards", jsonCfg.Shards)
+	cfg.Set("token", jsonCfg.Token)
+	cfg.Set("connection_string", jsonCfg.ConnectionString)
+	cfg.Set("owner_ids", jsonCfg.OwnerIds)
+	cfg.Set("dm_log_channels", jsonCfg.DmLogChannels)
+	cfg.Set("owo_token", jsonCfg.OwoToken)
+	cfg.Set("youtube_token", jsonCfg.YouTubeToken)
+	cfg.Set("open_weather_key", jsonCfg.OpenWeatherKey)
 	return nil
+}
+
+func loadEnvs(cfg *utils.Config) {
+	if e := os.Getenv("DISCORD_TOKEN"); e != "" {
+		cfg.Set("token", os.Getenv("DISCORD_TOKEN"))
+	}
+
+	dbHost := os.Getenv("DB_HOST")
+	dbPort := os.Getenv("DB_PORT")
+	dbName := os.Getenv("DB_NAME")
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	connStr := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=disable",
+		dbHost,
+		dbPort,
+		dbName,
+		dbUser,
+		dbPassword,
+	)
+	if dbHost != "" && dbPort != "" && dbName != "" && dbUser != "" && dbPassword != "" {
+		cfg.Set("connection_string", connStr)
+	}
 }

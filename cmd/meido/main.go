@@ -9,11 +9,12 @@ import (
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/internal/meido"
 	"github.com/intrntsrfr/meido/internal/structs"
+	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
 func main() {
-	cfg, err := structs.LoadConfig()
-	if err != nil {
+	cfg := utils.NewConfig()
+	if err := structs.LoadConfig(cfg); err != nil {
 		panic(err)
 	}
 

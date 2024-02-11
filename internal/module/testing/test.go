@@ -3,20 +3,21 @@ package testing
 import (
 	"math/rand"
 
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"go.uber.org/zap"
 )
 
 // Module represents the ping mod
 type Module struct {
-	*mio.ModuleBase
+	*bot.ModuleBase
 }
 
 // New returns a new Module.
-func New(bot *mio.Bot, logger *zap.Logger) mio.Module {
+func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Testing")
 	return &Module{
-		ModuleBase: mio.NewModule(bot, "Testing", logger),
+		ModuleBase: bot.NewModule(b, "Testing", logger),
 	}
 }
 
@@ -27,48 +28,48 @@ func (m *Module) Hook() error {
 }
 
 // newTestCommand returns a new ping command.
-func newTestCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newTestCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "test",
 		Description:      "This is an incredible test command",
 		Triggers:         []string{"m?test"},
 		Usage:            "m?test",
 		Cooldown:         2,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			_, _ = msg.Reply("test")
 		},
 	}
 }
 
 // NewMonkeyCommand returns a new monkey command.
-func newMonkeyCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newMonkeyCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "monkey",
 		Description:      "Monkey",
 		Triggers:         []string{"m?monkey", "m?monke", "m?monki", "m?monky"},
 		Usage:            "m?monkey",
 		Cooldown:         2,
-		CooldownScope:    mio.User,
+		CooldownScope:    bot.User,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
 		Run:              m.monkeyCommand,
 	}
 }
 
-func (m *Module) monkeyCommand(msg *mio.DiscordMessage) {
+func (m *Module) monkeyCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply(monkeys[rand.Intn(len(monkeys))])
 }
 

@@ -10,7 +10,8 @@ import (
 
 	"github.com/intrntsrfr/meido/internal/database"
 	iutils "github.com/intrntsrfr/meido/internal/utils"
-	"github.com/intrntsrfr/meido/pkg/mio"
+	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
 
 	"go.uber.org/zap"
@@ -19,14 +20,14 @@ import (
 )
 
 type Module struct {
-	*mio.ModuleBase
+	*bot.ModuleBase
 	db ICustomRoleDB
 }
 
-func New(bot *mio.Bot, db database.DB, logger *zap.Logger) mio.Module {
+func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 	logger = logger.Named("CustomRole")
 	return &Module{
-		ModuleBase: mio.NewModule(bot, "CustomRole", logger),
+		ModuleBase: bot.NewModule(b, "CustomRole", logger),
 		db:         &CustomRoleDB{db},
 	}
 }
@@ -79,22 +80,22 @@ func clearDeletedRoles(m *Module) {
 	}
 }
 
-func newSetCustomRoleCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newSetCustomRoleCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "setcustomrole",
 		Description:      "Sets or changes a custom role for a user",
 		Triggers:         []string{"m?setuserrole", "m?setcustomrole"},
 		Usage:            "m?setcustomrole [userID] [role]",
 		Cooldown:         3,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    discordgo.PermissionManageRoles,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 3 {
 				return
 			}
@@ -151,22 +152,22 @@ func newSetCustomRoleCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newRemoveCustomRoleCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newRemoveCustomRoleCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "removecustomrole",
 		Description:      "Removes a custom role that is bound to a user",
 		Triggers:         []string{"m?removeuserrole", "m?removecustomrole"},
 		Usage:            "m?removecustomrole [userID]",
 		Cooldown:         3,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    discordgo.PermissionManageRoles,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -193,26 +194,26 @@ func newRemoveCustomRoleCommand(m *Module) *mio.ModuleCommand {
 	}
 }
 
-func newMyRoleCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newMyRoleCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "myrole",
 		Description:      "Displays a users bound role, or lets the user change the name or color of their bound role",
 		Triggers:         []string{"m?myrole"},
 		Usage:            "m?myrole | m?myrole 123123123123 | m?myrole color c0ffee | m?myrole name jeff",
 		Cooldown:         3,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Run:              m.myroleCommand,
 	}
 }
 
-func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
+func (m *Module) myroleCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -337,22 +338,22 @@ func (m *Module) myroleCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newListCustomRolesCommand(m *Module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
+func newListCustomRolesCommand(m *Module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "listcustomroles",
 		Description:      "Returns a list of custom roles for the server. It also shows whether users with custom roles are in the server or not",
 		Triggers:         []string{"m?listuserroles", "m?listcustomroles"},
 		Usage:            "m?listcustomroles",
 		Cooldown:         30,
-		CooldownScope:    mio.Channel,
+		CooldownScope:    bot.Channel,
 		RequiredPerms:    discordgo.PermissionManageRoles,
 		CheckBotPerms:    false,
-		RequiresUserType: mio.UserTypeAny,
-		AllowedTypes:     mio.MessageTypeCreate,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *mio.DiscordMessage) {
+		Run: func(msg *discord.DiscordMessage) {
 			roles, err := m.db.GetCustomRolesByGuild(msg.GuildID())
 			if err != nil {
 				_, _ = msg.Reply("There was an issue, please try again!")
