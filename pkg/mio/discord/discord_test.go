@@ -87,103 +87,112 @@ func expectNoMessage(ch chan *DiscordMessage) error {
 	return nil
 }
 
-func NewTestDiscord_onMessageCreate(t *testing.T) {
+func TestDiscord_onMessageCreate(t *testing.T) {
 	d := NewDiscord("asdf", 1, test.NewTestLogger())
 
-	// empty
-	d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{})
-	if err := expectNoMessage(d.messageChan); err != nil {
-		t.Errorf("%v", err.Error())
-	}
-
-	// dm
-	d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{
-		Message: &discordgo.Message{
-			Author: &discordgo.User{},
-		},
+	t.Run("empty message does not go through", func(t *testing.T) {
+		d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{})
+		if err := expectNoMessage(d.Messages()); err != nil {
+			t.Errorf("%v", err.Error())
+		}
 	})
-	if err := expectMessage(d.messageChan); err != nil {
-		t.Errorf("%v", err.Error())
-	}
 
-	// has guild, but no member
-	d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{
-		Message: &discordgo.Message{
-			GuildID: "1234",
-			Author:  &discordgo.User{},
-		},
+	t.Run("DM goes through", func(t *testing.T) {
+		d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{
+			Message: &discordgo.Message{
+				Author: &discordgo.User{},
+			},
+		})
+		if err := expectMessage(d.Messages()); err != nil {
+			t.Errorf("%v", err.Error())
+		}
 	})
-	if err := expectNoMessage(d.messageChan); err != nil {
-		t.Errorf("%v", err.Error())
-	}
 
-	// has guild and member
-	d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{
-		Message: &discordgo.Message{
-			GuildID: "1234",
-			Author:  &discordgo.User{},
-			Member:  &discordgo.Member{},
-		},
+	t.Run("message with guild, but no member does not go through", func(t *testing.T) {
+		d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{
+			Message: &discordgo.Message{
+				GuildID: "1234",
+				Author:  &discordgo.User{},
+			},
+		})
+		if err := expectNoMessage(d.Messages()); err != nil {
+			t.Errorf("%v", err.Error())
+		}
 	})
-	if err := expectMessage(d.messageChan); err != nil {
-		t.Errorf("%v", err.Error())
-	}
+
+	t.Run("message with guild and member goes through", func(t *testing.T) {
+		d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{
+			Message: &discordgo.Message{
+				GuildID: "1234",
+				Author:  &discordgo.User{},
+				Member:  &discordgo.Member{},
+			},
+		})
+		if err := expectMessage(d.Messages()); err != nil {
+			t.Errorf("%v", err.Error())
+		}
+	})
 }
 
-func NewTestDiscord_onMessageUpdate(t *testing.T) {
+func TestDiscord_onMessageUpdate(t *testing.T) {
 	d := NewDiscord("asdf", 1, test.NewTestLogger())
 
-	// empty
-	d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{})
-	if err := expectNoMessage(d.messageChan); err != nil {
-		t.Errorf("%v", err.Error())
-	}
-
-	// dm
-	d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{
-		Message: &discordgo.Message{
-			Author: &discordgo.User{},
-		},
+	t.Run("empty message does not go through", func(t *testing.T) {
+		d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{})
+		if err := expectNoMessage(d.Messages()); err != nil {
+			t.Errorf("%v", err.Error())
+		}
 	})
-	if err := expectMessage(d.messageChan); err != nil {
-		t.Errorf("%v", err.Error())
-	}
 
-	// has guild, but no member
-	d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{
-		Message: &discordgo.Message{
-			GuildID: "1234",
-			Author:  &discordgo.User{},
-		},
+	t.Run("DM goes through", func(t *testing.T) {
+		d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{
+			Message: &discordgo.Message{
+				Author: &discordgo.User{},
+			},
+		})
+		if err := expectMessage(d.Messages()); err != nil {
+			t.Errorf("%v", err.Error())
+		}
 	})
-	if err := expectNoMessage(d.messageChan); err != nil {
-		t.Errorf("%v", err.Error())
-	}
 
-	// has guild and member
-	d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{
-		Message: &discordgo.Message{
-			GuildID: "1234",
-			Author:  &discordgo.User{},
-			Member:  &discordgo.Member{},
-		},
+	t.Run("message with guild, but no member does not go through", func(t *testing.T) {
+		d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{
+			Message: &discordgo.Message{
+				GuildID: "1234",
+				Author:  &discordgo.User{},
+			},
+		})
+		if err := expectNoMessage(d.Messages()); err != nil {
+			t.Errorf("%v", err.Error())
+		}
 	})
-	if err := expectMessage(d.messageChan); err != nil {
-		t.Errorf("%v", err.Error())
-	}
+
+	t.Run("message with guild and member goes through", func(t *testing.T) {
+		d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{
+			Message: &discordgo.Message{
+				GuildID: "1234",
+				Author:  &discordgo.User{},
+				Member:  &discordgo.Member{},
+			},
+		})
+		if err := expectMessage(d.Messages()); err != nil {
+			t.Errorf("%v", err.Error())
+		}
+	})
 }
 
-func NewTestDiscord_onMessageDelete(t *testing.T) {
+func TestDiscord_onMessageDelete(t *testing.T) {
 	d := NewDiscord("asdf", 1, test.NewTestLogger())
 
-	// empty
-	d.onMessageDelete(&discordgo.Session{}, &discordgo.MessageDelete{})
-	if err := expectMessage(d.messageChan); err != nil {
-		t.Errorf("%v", err.Error())
-	}
+	t.Run("empty message goes through", func(t *testing.T) {
+		d.onMessageDelete(&discordgo.Session{}, &discordgo.MessageDelete{})
+		if err := expectMessage(d.Messages()); err != nil {
+			t.Errorf("%v", err.Error())
+		}
+	})
 }
 
-func NewTestDiscord_BotUser(t *testing.T) {
+func TestDiscord_BotUser(t *testing.T) {
 	tests := []struct {
 		name string
 		d    *Discord
@@ -200,7 +209,7 @@ func NewTestDiscord_BotUser(t *testing.T) {
 	}
 }
 
-func NewTestDiscord_UserChannelPermissions(t *testing.T) {
+func TestDiscord_UserChannelPermissions(t *testing.T) {
 	type args struct {
 		userID    string
 		channelID string
@@ -228,7 +237,7 @@ func NewTestDiscord_UserChannelPermissions(t *testing.T) {
 	}
 }
 
-func NewTestDiscord_BotHasPermissions(t *testing.T) {
+func TestDiscord_BotHasPermissions(t *testing.T) {
 	type args struct {
 		channelID string
 		perm      int64
@@ -256,7 +265,7 @@ func NewTestDiscord_BotHasPermissions(t *testing.T) {
 	}
 }
 
-func NewTestDiscord_HasPermissions(t *testing.T) {
+func TestDiscord_HasPermissions(t *testing.T) {
 	type args struct {
 		channelID string
 		userID    string
@@ -285,7 +294,7 @@ func NewTestDiscord_HasPermissions(t *testing.T) {
 	}
 }
 
-func NewTestDiscord_HighestRole(t *testing.T) {
+func TestDiscord_HighestRole(t *testing.T) {
 	type args struct {
 		gid string
 		uid string
@@ -307,7 +316,7 @@ func NewTestDiscord_HighestRole(t *testing.T) {
 	}
 }
 
-func NewTestDiscord_HighestRolePosition(t *testing.T) {
+func TestDiscord_HighestRolePosition(t *testing.T) {
 	type args struct {
 		gid string
 		uid string
@@ -329,7 +338,7 @@ func NewTestDiscord_HighestRolePosition(t *testing.T) {
 	}
 }
 
-func NewTestDiscord_HighestColor(t *testing.T) {
+func TestDiscord_HighestColor(t *testing.T) {
 	type args struct {
 		gid string
 		uid string
