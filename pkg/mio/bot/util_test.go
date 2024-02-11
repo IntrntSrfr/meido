@@ -10,7 +10,7 @@ import (
 
 func NewTestbot() *Bot {
 	bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLogger()).
-		WithDiscord(discord.NewTestDiscord(nil, nil)).
+		WithDiscord(discord.NewTestDiscord(nil, nil, nil)).
 		Build()
 	bot.UseDefaultHandlers()
 	return bot

@@ -52,7 +52,7 @@ func TestBot_Events(t *testing.T) {
 func TestBot_Run(t *testing.T) {
 	bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLogger()).Build()
 	sessionMock := mocks.NewDiscordSession("asdf", 1)
-	bot.Discord = discord.NewTestDiscord(nil, sessionMock)
+	bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

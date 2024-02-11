@@ -1,8 +1,10 @@
 package discord
 
 import (
+	"bytes"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -40,7 +42,7 @@ func TestNewDiscord(t *testing.T) {
 	mockSess := mocks.NewDiscordSession(token, shards)
 
 	logger := test.NewTestLogger()
-	d := NewTestDiscord(conf, mockSess)
+	d := NewTestDiscord(conf, mockSess, nil)
 
 	if got := d.token; d.token != token {
 		t.Errorf("SessionWrapper.token = %v, want %v", got, token)
@@ -57,8 +59,8 @@ func TestNewDiscord(t *testing.T) {
 	}
 }
 
-func NewTestDiscord_Run(t *testing.T) {
-	d := NewTestDiscord(nil, nil)
+func TestDiscord_Run(t *testing.T) {
+	d := NewTestDiscord(nil, nil, nil)
 	if got := d.Run(); got != nil {
 		t.Errorf("Discord.Run() error = %v, wantErr %v", got, false)
 	}
@@ -66,6 +68,20 @@ func NewTestDiscord_Run(t *testing.T) {
 	// should fail second time
 	if got := d.Run(); got == nil {
 		t.Errorf("Discord.Run() error = %v, wantErr %v", got, true)
+	}
+}
+
+func TestDiscord_Close(t *testing.T) {
+	sess := mocks.NewDiscordSession("123", 1)
+	sess.CloseShouldFail = true
+
+	logBuf := bytes.Buffer{}
+	d := NewTestDiscord(nil, sess, test.NewTestLoggerWithBuffer(&logBuf))
+	d.Close()
+
+	expected := "Failed to close session"
+	if got := logBuf.String(); !strings.Contains(got, expected) {
+		t.Errorf("Discord.Close() log output = %v, want %v", got, expected)
 	}
 }
 
