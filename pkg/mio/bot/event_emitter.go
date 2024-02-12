@@ -11,9 +11,12 @@ type EventEmitter struct {
 type BotEvent string
 
 const (
-	BotEventCommandRan      BotEvent = "command_ran"
-	BotEventCommandPanicked BotEvent = "command_panicked"
-	BotEventPassivePanicked BotEvent = "passive_panicked"
+	BotEventCommandRan            BotEvent = "command_ran"
+	BotEventCommandPanicked       BotEvent = "command_panicked"
+	BotEventPassivePanicked       BotEvent = "passive_panicked"
+	BotEventApplicationCommandRan BotEvent = "application_command_ran"
+	BotEventModalSubmitRan        BotEvent = "modal_submit_ran"
+	BotEventMessageComponentRan   BotEvent = "message_component_ran"
 )
 
 type BotEventData struct {
@@ -36,6 +39,21 @@ type PassivePanicked struct {
 	Passive    *ModulePassive
 	Message    *discord.DiscordMessage
 	StackTrace string
+}
+
+type ApplicationCommandRan struct {
+	ApplicationCommand *ModuleApplicationCommand
+	Interaction        *discord.DiscordApplicationCommand
+}
+
+type ModalSubmitRan struct {
+	ModalSubmit *ModuleModalSubmit
+	Interaction *discord.DiscordModalSubmit
+}
+
+type MessageComponentRan struct {
+	MessageComponent *ModuleMessageComponent
+	Interaction      *discord.DiscordMessageComponent
 }
 
 func NewEventEmitter() *EventEmitter {

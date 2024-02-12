@@ -17,3 +17,18 @@ type DiscordInteraction struct {
 func (it *DiscordInteraction) IsDM() bool {
 	return it.Interaction.GuildID == ""
 }
+
+type DiscordApplicationCommand struct {
+	*DiscordInteraction
+	Data discordgo.ApplicationCommandInteractionData
+}
+
+type DiscordMessageComponent struct {
+	*DiscordInteraction
+	Data discordgo.MessageComponentInteractionData
+}
+
+type DiscordModalSubmit struct {
+	*DiscordInteraction
+	Data discordgo.ModalSubmitInteractionData
+}
