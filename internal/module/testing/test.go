@@ -1,8 +1,11 @@
 package testing
 
 import (
+	"fmt"
 	"math/rand"
+	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"go.uber.org/zap"
@@ -23,8 +26,13 @@ func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 
 // Hook will hook the Module into the Bot.
 func (m *Module) Hook() error {
-	return m.RegisterCommands(newTestCommand(m))
-	//m.RegisterCommand(newMonkeyCommand(m))
+	if err := m.RegisterCommands(newTestCommand(m)); err != nil {
+		return err
+	}
+	if err := m.RegisterApplicationCommand(newTestSlash(m)); err != nil {
+		return err
+	}
+	return nil
 }
 
 // newTestCommand returns a new ping command.
@@ -45,6 +53,30 @@ func newTestCommand(m *Module) *bot.ModuleCommand {
 		Enabled:          true,
 		Run: func(msg *discord.DiscordMessage) {
 			_, _ = msg.Reply("test")
+		},
+	}
+}
+
+func newTestSlash(m *Module) *bot.ModuleApplicationCommand {
+	return &bot.ModuleApplicationCommand{
+		Mod:           m,
+		Name:          "ping",
+		Description:   "pong",
+		Cooldown:      0,
+		CooldownScope: bot.Channel,
+		Permissions:   0,
+		UserType:      bot.UserTypeAny,
+		CheckBotPerms: false,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run: func(dac *discord.DiscordApplicationCommand) {
+			startTime := time.Now()
+			dac.Respond("Pong")
+			resp := fmt.Sprintf("Pong!\nDelay: %s", time.Since(startTime))
+			respData := &discordgo.WebhookEdit{
+				Content: &resp,
+			}
+			dac.Sess.Real().InteractionResponseEdit(dac.Interaction, respData)
 		},
 	}
 }
