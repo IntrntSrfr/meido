@@ -68,6 +68,10 @@ func (s *DiscordSessionMock) State() *discordgo.State {
 	return s.state
 }
 
+func (s *DiscordSessionMock) Real() *discordgo.Session {
+	return nil
+}
+
 func handlerForInterface(ifc interface{}) string {
 	switch ifc.(type) {
 	case func(s *discordgo.Session, r *discordgo.Ready):
@@ -306,4 +310,8 @@ func (s *DiscordSessionMock) UserChannelCreate(recipientID string, options ...di
 
 func (s *DiscordSessionMock) UpdateStatusComplex(usd discordgo.UpdateStatusData) (err error) {
 	panic("not implemented") // TODO: Implement
+}
+
+func (s *DiscordSessionMock) InteractionRespond(interaction *discordgo.Interaction, resp *discordgo.InteractionResponse, options ...discordgo.RequestOption) error {
+	panic("not implemented")
 }

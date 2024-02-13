@@ -30,6 +30,7 @@ type DiscordSession interface {
 	Close() error
 	ShardID() int
 	State() *discordgo.State
+	Real() *discordgo.Session
 
 	AddHandler(handler interface{}) func()
 	AddHandlerOnce(handler interface{}) func()
@@ -79,6 +80,7 @@ type DiscordSession interface {
 	User(userID string, options ...discordgo.RequestOption) (st *discordgo.User, err error)
 	UserChannelCreate(recipientID string, options ...discordgo.RequestOption) (st *discordgo.Channel, err error)
 	UpdateStatusComplex(usd discordgo.UpdateStatusData) (err error)
+	InteractionRespond(interaction *discordgo.Interaction, resp *discordgo.InteractionResponse, options ...discordgo.RequestOption) error
 }
 
 type SessionWrapper struct {
@@ -90,6 +92,10 @@ func (s *SessionWrapper) ShardID() int {
 }
 func (s *SessionWrapper) State() *discordgo.State {
 	return s.Session.State
+}
+
+func (s *SessionWrapper) Real() *discordgo.Session {
+	return s.Session
 }
 
 // NewDiscord takes in a token and creates a Discord object.
