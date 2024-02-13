@@ -32,6 +32,7 @@ type Module interface {
 
 	RegisterCommands(...*ModuleCommand) error
 	RegisterPassives(...*ModulePassive) error
+	RegisterApplicationCommand(...*ModuleApplicationCommand) error
 
 	FindCommand(name string) (*ModuleCommand, error)
 	FindPassive(name string) (*ModulePassive, error)
@@ -300,6 +301,28 @@ func (m *ModuleBase) registerCommand(cmd *ModuleCommand) error {
 	m.commands[cmd.Name] = cmd
 	if m.Logger != nil {
 		m.Logger.Info("Registered command", zap.String("name", cmd.Name))
+	}
+	return nil
+}
+
+func (m *ModuleBase) RegisterApplicationCommand(commands ...*ModuleApplicationCommand) error {
+	for _, cmd := range commands {
+		if err := m.registerApplicationCommand(cmd); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *ModuleBase) registerApplicationCommand(command *ModuleApplicationCommand) error {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.commands[command.Name]; ok {
+		return fmt.Errorf("application command '%v' already exists in %v", command.Name, m.Name())
+	}
+	m.applicationCommands[command.Name] = command
+	if m.Logger != nil {
+		m.Logger.Info("Registered application command", zap.String("name", command.Name))
 	}
 	return nil
 }
