@@ -11,12 +11,15 @@ type EventEmitter struct {
 type BotEvent string
 
 const (
-	BotEventCommandRan            BotEvent = "command_ran"
-	BotEventCommandPanicked       BotEvent = "command_panicked"
-	BotEventPassivePanicked       BotEvent = "passive_panicked"
-	BotEventApplicationCommandRan BotEvent = "application_command_ran"
-	BotEventModalSubmitRan        BotEvent = "modal_submit_ran"
-	BotEventMessageComponentRan   BotEvent = "message_component_ran"
+	BotEventCommandRan                 BotEvent = "command_ran"
+	BotEventCommandPanicked            BotEvent = "command_panicked"
+	BotEventPassivePanicked            BotEvent = "passive_panicked"
+	BotEventApplicationCommandRan      BotEvent = "application_command_ran"
+	BotEventApplicationCommandPanicked BotEvent = "application_command_panicked"
+	BotEventModalSubmitRan             BotEvent = "modal_submit_ran"
+	BotEventModalSubmitPanicked        BotEvent = "modal_submit_panicked"
+	BotEventMessageComponentRan        BotEvent = "message_component_ran"
+	BotEventMessageComponentPanicked   BotEvent = "message_component_panicked"
 )
 
 type BotEventData struct {
@@ -30,15 +33,15 @@ type CommandRan struct {
 }
 
 type CommandPanicked struct {
-	Command    *ModuleCommand
-	Message    *discord.DiscordMessage
-	StackTrace string
+	Command *ModuleCommand
+	Message *discord.DiscordMessage
+	Reason  any
 }
 
 type PassivePanicked struct {
-	Passive    *ModulePassive
-	Message    *discord.DiscordMessage
-	StackTrace string
+	Passive *ModulePassive
+	Message *discord.DiscordMessage
+	Reason  any
 }
 
 type ApplicationCommandRan struct {
@@ -46,14 +49,31 @@ type ApplicationCommandRan struct {
 	Interaction        *discord.DiscordApplicationCommand
 }
 
+type ApplicationCommandPanicked struct {
+	ApplicationCommand *ModuleApplicationCommand
+	Interaction        *discord.DiscordApplicationCommand
+	Reason             any
+}
+
 type ModalSubmitRan struct {
 	ModalSubmit *ModuleModalSubmit
 	Interaction *discord.DiscordModalSubmit
+}
+type ModalSubmitPanicked struct {
+	ModalSubmit *ModuleModalSubmit
+	Interaction *discord.DiscordModalSubmit
+	Reason      any
 }
 
 type MessageComponentRan struct {
 	MessageComponent *ModuleMessageComponent
 	Interaction      *discord.DiscordMessageComponent
+}
+
+type MessageComponentPanicked struct {
+	MessageComponent *ModuleMessageComponent
+	Interaction      *discord.DiscordMessageComponent
+	Reason           any
 }
 
 func NewEventEmitter() *EventEmitter {

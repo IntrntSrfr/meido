@@ -3,7 +3,6 @@ package bot
 import (
 	"errors"
 	"fmt"
-	"runtime/debug"
 	"strings"
 	"sync"
 	"time"
@@ -118,8 +117,8 @@ func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *discord.DiscordMessa
 
 func (m *ModuleBase) recoverCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
 	if r := recover(); r != nil {
-		m.Logger.Warn("Recovery needed", zap.Any("error", r))
-		m.Bot.Emit(BotEventCommandPanicked, &CommandPanicked{cmd, msg, string(debug.Stack())})
+		m.Bot.Emit(BotEventCommandPanicked, &CommandPanicked{cmd, msg, r})
+		m.Logger.Error("Panic", zap.Any("reason", r), zap.Any("message", msg))
 		_, _ = msg.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
 	}
 }
@@ -146,8 +145,8 @@ func (m *ModuleBase) handlePassive(pas *ModulePassive, msg *discord.DiscordMessa
 
 func (m *ModuleBase) recoverPassive(pas *ModulePassive, msg *discord.DiscordMessage) {
 	if r := recover(); r != nil {
-		m.Logger.Warn("Recovery needed", zap.Any("error", r))
-		m.Bot.Emit(BotEventPassivePanicked, &PassivePanicked{pas, msg, string(debug.Stack())})
+		m.Bot.Emit(BotEventPassivePanicked, &PassivePanicked{pas, msg, r})
+		m.Logger.Error("Panic", zap.Any("reason", r), zap.Any("message", msg))
 	}
 }
 
@@ -200,33 +199,51 @@ func (m *ModuleBase) handleApplicationCommand(c *ModuleApplicationCommand, it *d
 	go m.runApplicationCommand(c, it)
 }
 
+func (m *ModuleBase) recoverApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
+	if r := recover(); r != nil {
+		m.Bot.Emit(BotEventApplicationCommandPanicked, &ApplicationCommandPanicked{c, it, r})
+		m.Logger.Error("Panic", zap.Any("reason", r), zap.Any("interaction", it))
+	}
+}
+
 func (m *ModuleBase) runApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
-	// add defer
+	defer m.recoverApplicationCommand(c, it)
 	c.Run(it)
 	m.Bot.Emit(BotEventApplicationCommandRan, &ApplicationCommandRan{c, it})
-	panic("not implemented")
 }
 
 func (m *ModuleBase) handleMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
 	go m.runMessageComponent(c, it)
 }
 
+func (m *ModuleBase) recoverMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
+	if r := recover(); r != nil {
+		m.Bot.Emit(BotEventMessageComponentPanicked, &MessageComponentPanicked{c, it, r})
+		m.Logger.Error("Panic", zap.Any("reason", r), zap.Any("interaction", it))
+	}
+}
+
 func (m *ModuleBase) runMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
-	// add defer
+	defer m.recoverMessageComponent(c, it)
 	c.Run(it)
 	m.Bot.Emit(BotEventMessageComponentRan, &MessageComponentRan{c, it})
-	panic("not implemented")
 }
 
 func (m *ModuleBase) handleModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
 	go m.runModalSubmit(s, it)
 }
 
+func (m *ModuleBase) recoverModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
+	if r := recover(); r != nil {
+		m.Bot.Emit(BotEventModalSubmitPanicked, &ModalSubmitPanicked{s, it, r})
+		m.Logger.Error("Panic", zap.Any("reason", r), zap.Any("interaction", it))
+	}
+}
+
 func (m *ModuleBase) runModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
-	// add defer
+	defer m.recoverModalSubmit(s, it)
 	s.Run(it)
 	m.Bot.Emit(BotEventMessageComponentRan, &ModalSubmitRan{s, it})
-	panic("not implemented")
 }
 
 func (m *ModuleBase) Name() string {
