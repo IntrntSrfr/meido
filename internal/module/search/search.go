@@ -158,7 +158,7 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 			}
 
 			embed := iutils.NewEmbed().
-				WithTitle("Google Images search result").
+				WithTitle("Google Images search results").
 				WithOkColor().
 				WithImageUrl(links[0]).
 				WithFooter(fmt.Sprintf("Image [ %v / %v ]", 1, len(links)), "")
@@ -166,6 +166,7 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 			nextID := uuid.New().String()
 			prevID := uuid.New().String()
 			stopID := uuid.New().String()
+
 			replyData := &discordgo.MessageSend{
 				Components: []discordgo.MessageComponent{
 					&discordgo.ActionsRow{
@@ -255,37 +256,3 @@ func (m *Module) imageInteractionHandler(s *discordgo.Session, i *discordgo.Inte
 	}
 	msg.UpdateCh <- i.Interaction.MessageComponentData().CustomID
 }
-
-/*
-func (m *SearchMod) MessageReactionAddHandler(s *discordgo.Session, msg *discordgo.MessageReactionAdd) {
-	m.reactionHandler(s, msg.MessageReaction)
-}
-
-func (m *SearchMod) MessageReactionRemoveHandler(s *discordgo.Session, msg *discordgo.MessageReactionRemove) {
-	m.reactionHandler(s, msg.MessageReaction)
-}
-
-func (m *SearchMod) reactionHandler(s *discordgo.Session, msg *discordgo.MessageReaction) {
-	srch, ok := m.imageCache.Get(msg.MessageID)
-	if !ok {
-		return
-	}
-
-	if msg.UserID != srch.AuthorID() {
-		return
-	}
-
-	switch msg.Emoji.Name {
-	case "⬅":
-		emb := srch.UpdateEmbed(-1)
-		_, _ = s.ChannelMessageEditEmbed(msg.ChannelID, srch.BotMsgID(), emb)
-	case "➡":
-		emb := srch.UpdateEmbed(1)
-		_, _ = s.ChannelMessageEditEmbed(msg.ChannelID, srch.BotMsgID(), emb)
-	case "⏹":
-		_ = s.ChannelMessageDelete(msg.ChannelID, srch.BotMsgID())
-		_ = s.ChannelMessageDelete(msg.ChannelID, srch.AuthorMsgID())
-		m.imageCache.Delete(srch.BotMsgID())
-	}
-}
-*/

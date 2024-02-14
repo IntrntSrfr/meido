@@ -32,6 +32,7 @@ type Module interface {
 	RegisterCommands(...*ModuleCommand) error
 	RegisterPassives(...*ModulePassive) error
 	RegisterApplicationCommand(...*ModuleApplicationCommand) error
+	RegisterMessageComponent(...*ModuleMessageComponent) error
 
 	FindCommand(name string) (*ModuleCommand, error)
 	FindPassive(name string) (*ModulePassive, error)
@@ -50,16 +51,17 @@ var (
 // not have to reimplement the methods that are all the same.
 type ModuleBase struct {
 	sync.Mutex
-	Bot                 *Bot
-	Logger              *zap.Logger
-	name                string
+	Bot          *Bot
+	Logger       *zap.Logger
+	name         string
+	allowedTypes discord.MessageType
+	allowDMs     bool
+
 	commands            map[string]*ModuleCommand
 	passives            map[string]*ModulePassive
 	applicationCommands map[string]*ModuleApplicationCommand
 	modalSubmits        map[string]*ModuleModalSubmit
 	messageComponents   map[string]*ModuleMessageComponent
-	allowedTypes        discord.MessageType
-	allowDMs            bool
 }
 
 func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
@@ -344,6 +346,28 @@ func (m *ModuleBase) registerApplicationCommand(command *ModuleApplicationComman
 	return nil
 }
 
+func (m *ModuleBase) RegisterMessageComponent(components ...*ModuleMessageComponent) error {
+	for _, comp := range components {
+		if err := m.registerMessageComponent(comp); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *ModuleBase) registerMessageComponent(component *ModuleMessageComponent) error {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.commands[component.Name]; ok {
+		return fmt.Errorf("message component '%v' already exists in %v", component.Name, m.Name())
+	}
+	m.messageComponents[component.Name] = component
+	if m.Logger != nil {
+		m.Logger.Info("Registered message component", zap.String("name", component.Name))
+	}
+	return nil
+}
+
 func (m *ModuleBase) findCommandByName(name string) (*ModuleCommand, error) {
 	for _, cmd := range m.Commands() {
 		if strings.EqualFold(cmd.Name, name) {
@@ -408,7 +432,7 @@ func (m *ModuleBase) FindModalSubmit(name string) (*ModuleModalSubmit, error) {
 
 func (m *ModuleBase) FindMessageComponent(name string) (*ModuleMessageComponent, error) {
 	for _, s := range m.MessageComponents() {
-		if strings.EqualFold(s.ID, name) {
+		if strings.EqualFold(s.Name, name) {
 			return s, nil
 		}
 	}
@@ -551,7 +575,7 @@ func (s *ModuleModalSubmit) AllowsMessage(it *discord.DiscordModalSubmit) bool {
 
 type ModuleMessageComponent struct {
 	Mod           Module
-	ID            string
+	Name          string
 	Cooldown      time.Duration
 	CooldownScope CooldownScope
 	Permissions   int64
