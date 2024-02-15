@@ -29,7 +29,7 @@ func (m *Module) Hook() error {
 	if err := m.RegisterCommands(newTestCommand(m)); err != nil {
 		return err
 	}
-	if err := m.RegisterApplicationCommand(newTestSlash(m)); err != nil {
+	if err := m.RegisterApplicationCommands(newTestSlash(m)); err != nil {
 		return err
 	}
 	return nil

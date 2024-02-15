@@ -46,8 +46,8 @@ type PassiveHandler interface {
 }
 
 type ApplicationCommandHandler interface {
-	Slashes() map[string]*ModuleApplicationCommand
-	RegisterApplicationCommand(...*ModuleApplicationCommand) error
+	ApplicationCommands() map[string]*ModuleApplicationCommand
+	RegisterApplicationCommands(...*ModuleApplicationCommand) error
 	FindApplicationCommand(name string) (*ModuleApplicationCommand, error)
 }
 
@@ -58,8 +58,10 @@ type ModalSubmitHandler interface {
 
 type MessageComponentHandler interface {
 	MessageComponents() map[string]*ModuleMessageComponent
-	RegisterMessageComponent(...*ModuleMessageComponent) error
+	RegisterMessageComponents(...*ModuleMessageComponent) error
 	FindMessageComponent(name string) (*ModuleMessageComponent, error)
+	SetMessageComponentCallback(id, name string)
+	RemoveMessageComponentCallback(id string)
 }
 
 type InteractionHandler interface {
@@ -93,6 +95,8 @@ type ModuleBase struct {
 	applicationCommands map[string]*ModuleApplicationCommand
 	modalSubmits        map[string]*ModuleModalSubmit
 	messageComponents   map[string]*ModuleMessageComponent
+
+	messageComponentCallbacks map[string]*ModuleMessageComponent
 }
 
 func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
@@ -217,7 +221,7 @@ func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
 		}
 	case discordgo.InteractionMessageComponent:
 		data := it.Interaction.MessageComponentData()
-		if cmd, err := m.FindMessageComponent(data.CustomID); err == nil {
+		if cmd, ok := m.messageComponentCallbacks[data.CustomID]; ok {
 			m.handleMessageComponent(cmd, &discord.DiscordMessageComponent{
 				DiscordInteraction: it,
 				Data:               data,
@@ -291,7 +295,7 @@ func (m *ModuleBase) Commands() map[string]*ModuleCommand {
 	return m.commands
 }
 
-func (m *ModuleBase) Slashes() map[string]*ModuleApplicationCommand {
+func (m *ModuleBase) ApplicationCommands() map[string]*ModuleApplicationCommand {
 	return m.applicationCommands
 }
 
@@ -355,7 +359,7 @@ func (m *ModuleBase) registerCommand(cmd *ModuleCommand) error {
 	return nil
 }
 
-func (m *ModuleBase) RegisterApplicationCommand(commands ...*ModuleApplicationCommand) error {
+func (m *ModuleBase) RegisterApplicationCommands(commands ...*ModuleApplicationCommand) error {
 	for _, cmd := range commands {
 		if err := m.registerApplicationCommand(cmd); err != nil {
 			return err
@@ -377,7 +381,7 @@ func (m *ModuleBase) registerApplicationCommand(command *ModuleApplicationComman
 	return nil
 }
 
-func (m *ModuleBase) RegisterMessageComponent(components ...*ModuleMessageComponent) error {
+func (m *ModuleBase) RegisterMessageComponents(components ...*ModuleMessageComponent) error {
 	for _, comp := range components {
 		if err := m.registerMessageComponent(comp); err != nil {
 			return err
@@ -444,7 +448,7 @@ func (m *ModuleBase) FindPassive(name string) (*ModulePassive, error) {
 }
 
 func (m *ModuleBase) FindApplicationCommand(name string) (*ModuleApplicationCommand, error) {
-	for _, s := range m.Slashes() {
+	for _, s := range m.ApplicationCommands() {
 		if strings.EqualFold(s.Name, name) {
 			return s, nil
 		}
@@ -468,6 +472,20 @@ func (m *ModuleBase) FindMessageComponent(name string) (*ModuleMessageComponent,
 		}
 	}
 	return nil, ErrPassiveNotFound
+}
+
+func (m *ModuleBase) SetMessageComponentCallback(id, name string) {
+	m.Lock()
+	defer m.Unlock()
+	if comp, err := m.FindMessageComponent(name); err == nil {
+		m.messageComponentCallbacks[id] = comp
+	}
+}
+
+func (m *ModuleBase) RemoveMessageComponentCallback(id string) {
+	if _, ok := m.messageComponentCallbacks[id]; ok {
+		delete(m.messageComponentCallbacks, id)
+	}
 }
 
 func (m *ModuleBase) AllowsMessage(msg *discord.DiscordMessage) bool {
