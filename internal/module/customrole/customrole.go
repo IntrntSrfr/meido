@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/intrntsrfr/meido/internal/database"
-	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
+	"github.com/intrntsrfr/meido/pkg/utils/builders"
 
 	"go.uber.org/zap"
 
@@ -270,7 +270,7 @@ func (m *Module) myroleCommand(msg *discord.DiscordMessage) {
 				m.Logger.Error("Editing custom role name failed", zap.Error(err))
 				return
 			}
-			embed := iutils.NewEmbed().
+			embed := builders.NewEmbedBuilder().
 				WithColor(oldRole.Color).
 				WithDescription(fmt.Sprintf("Role name changed from %v to %v", oldRole.Name, newName))
 			_, _ = msg.ReplyEmbed(embed.Build())
@@ -288,7 +288,7 @@ func (m *Module) myroleCommand(msg *discord.DiscordMessage) {
 				m.Logger.Error("Editing custom role color failed", zap.Error(err))
 				return
 			}
-			embed := iutils.NewEmbed().
+			embed := builders.NewEmbedBuilder().
 				WithColor(int(color)).
 				WithDescription(fmt.Sprintf("Color changed from #%v to #%v", oldRole.Color, color))
 			_, _ = msg.ReplyEmbed(embed.Build())
@@ -330,7 +330,7 @@ func (m *Module) myroleCommand(msg *discord.DiscordMessage) {
 		return
 	}
 
-	embed := iutils.NewEmbed().
+	embed := builders.NewEmbedBuilder().
 		WithTitle(fmt.Sprintf("Custom role for %v", target.User.String())).
 		WithColor(customRole.Color).
 		AddField("Name", customRole.Name, true).

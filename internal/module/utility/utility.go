@@ -15,10 +15,10 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
 	"github.com/intrntsrfr/meido/internal/database"
-	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
+	"github.com/intrntsrfr/meido/pkg/utils/builders"
 	"go.uber.org/zap"
 )
 
@@ -154,7 +154,7 @@ func newAboutCommand(m *Module) *bot.ModuleCommand {
 			if err != nil {
 				return
 			}
-			embed := iutils.NewEmbed().
+			embed := builders.NewEmbedBuilder().
 				WithTitle("About").
 				WithOkColor().
 				AddField("Uptime", uptime.String(), true).
@@ -287,7 +287,7 @@ func newHelpCommand(m *Module) *bot.ModuleCommand {
 }
 
 func (m *Module) helpCommand(msg *discord.DiscordMessage) {
-	embed := iutils.NewEmbed().
+	embed := builders.NewEmbedBuilder().
 		WithOkColor().
 		WithFooter("Use m?help [module] to see module commands.\nUse m?help [command] to see command info.\nArguments in [square brackets] are required, while arguments in <angle brackets> are optional.", "").
 		WithThumbnail(msg.Sess.State().User.AvatarURL("256"))

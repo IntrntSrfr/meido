@@ -101,16 +101,17 @@ type ModuleBase struct {
 
 func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
 	return &ModuleBase{
-		Bot:                 bot,
-		Logger:              logger,
-		name:                name,
-		commands:            make(map[string]*ModuleCommand),
-		passives:            make(map[string]*ModulePassive),
-		applicationCommands: make(map[string]*ModuleApplicationCommand),
-		modalSubmits:        make(map[string]*ModuleModalSubmit),
-		messageComponents:   make(map[string]*ModuleMessageComponent),
-		allowedTypes:        discord.MessageTypeCreate,
-		allowDMs:            true,
+		Bot:                       bot,
+		Logger:                    logger,
+		name:                      name,
+		allowedTypes:              discord.MessageTypeCreate,
+		allowDMs:                  true,
+		commands:                  make(map[string]*ModuleCommand),
+		passives:                  make(map[string]*ModulePassive),
+		applicationCommands:       make(map[string]*ModuleApplicationCommand),
+		modalSubmits:              make(map[string]*ModuleModalSubmit),
+		messageComponents:         make(map[string]*ModuleMessageComponent),
+		messageComponentCallbacks: make(map[string]*ModuleMessageComponent),
 	}
 }
 

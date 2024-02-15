@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
+	"github.com/intrntsrfr/meido/pkg/utils/builders"
 	"go.uber.org/zap"
 )
 
@@ -205,7 +205,7 @@ func (m *Module) moderationsettingsCommand(msg *discord.DiscordMessage) {
 
 	switch len(msg.Args()) {
 	case 2:
-		embed := iutils.NewEmbed().
+		embed := builders.NewEmbedBuilder().
 			WithTitle("Moderation settings").
 			WithOkColor().
 			AddField("Warnings", warnsEnabledText[gc.UseWarns], true).

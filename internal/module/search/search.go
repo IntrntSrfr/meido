@@ -11,6 +11,7 @@ import (
 	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
+	"github.com/intrntsrfr/meido/pkg/utils/builders"
 	"go.uber.org/zap"
 )
 
@@ -73,7 +74,7 @@ func newWeatherCommand(m *Module) *bot.ModuleCommand {
 				return
 			}
 			f := iutils.CelsiusToFahrenheit
-			embed := iutils.NewEmbed().
+			embed := builders.NewEmbedBuilder().
 				WithDescription(fmt.Sprintf("Weather in [%v, %v](https://openweathermap.org/city/%v)", d.Name, d.Sys.Country, d.ID)).
 				WithOkColor()
 
@@ -163,7 +164,7 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 				return
 			}
 
-			embed := iutils.NewEmbed().
+			embed := builders.NewEmbedBuilder().
 				WithTitle("Google Images search results").
 				WithOkColor().
 				WithImageUrl(links[0]).

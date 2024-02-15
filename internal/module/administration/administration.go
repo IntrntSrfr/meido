@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
+	"github.com/intrntsrfr/meido/pkg/utils/builders"
 	"go.uber.org/zap"
 )
 
@@ -125,7 +125,7 @@ func newForwardDmsPassive(m *Module) *bot.ModulePassive {
 			if !msg.IsDM() {
 				return
 			}
-			embed := iutils.NewEmbed().
+			embed := builders.NewEmbedBuilder().
 				WithTitle(fmt.Sprintf("Message from %v", msg.Message.Author.String())).
 				WithOkColor().
 				WithDescription(msg.Message.Content).

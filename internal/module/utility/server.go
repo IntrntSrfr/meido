@@ -4,10 +4,10 @@ import (
 	"fmt"
 
 	"github.com/bwmarrin/discordgo"
-	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
+	"github.com/intrntsrfr/meido/pkg/utils/builders"
 )
 
 func newServerCommand(m *Module) *bot.ModuleCommand {
@@ -60,7 +60,7 @@ func newServerCommand(m *Module) *bot.ModuleCommand {
 				return
 			}
 
-			embed := iutils.NewEmbed().
+			embed := builders.NewEmbedBuilder().
 				WithAuthor(g.Name, "").
 				WithOkColor().
 				AddField("Owner", fmt.Sprintf("%v\n(%v)", owner.Mention(), owner.User.ID), false).
@@ -109,7 +109,7 @@ func newServerSplashCommand(m *Module) *bot.ModuleCommand {
 				return
 			}
 
-			embed := iutils.NewEmbed().
+			embed := builders.NewEmbedBuilder().
 				WithTitle(g.Name).
 				WithOkColor().
 				WithImageUrl(fmt.Sprintf("https://cdn.discordapp.com/splashes/%v/%v.png?size=2048", g.ID, g.Splash))
@@ -147,7 +147,7 @@ func newServerIconCommand(m *Module) *bot.ModuleCommand {
 				return
 			}
 
-			embed := iutils.NewEmbed().
+			embed := builders.NewEmbedBuilder().
 				WithTitle(g.Name).
 				WithOkColor().
 				WithImageUrl(g.IconURL("1024"))
@@ -186,7 +186,7 @@ func newServerBannerCommand(m *Module) *bot.ModuleCommand {
 				return
 			}
 
-			embed := iutils.NewEmbed().
+			embed := builders.NewEmbedBuilder().
 				WithTitle(g.Name).
 				WithOkColor().
 				WithImageUrl(fmt.Sprintf("https://cdn.discordapp.com/banners/%v/%v.png?size=2048", g.ID, g.Banner))

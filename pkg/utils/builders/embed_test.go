@@ -1,4 +1,4 @@
-package utils
+package builders
 
 import (
 	"testing"
@@ -7,14 +7,14 @@ import (
 )
 
 func TestNewEmbed(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	if embed == nil {
 		t.Error("NewEmbed returned nil")
 	}
 }
 
 func TestEmbed_AddField(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	embed.AddField("TestName", "TestValue", true)
 
 	if len(embed.Fields) != 1 {
@@ -28,7 +28,7 @@ func TestEmbed_AddField(t *testing.T) {
 }
 
 func TestEmbed_WithThumbnail(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	url := "http://example.com/thumbnail.jpg"
 	embed.WithThumbnail(url)
 
@@ -38,7 +38,7 @@ func TestEmbed_WithThumbnail(t *testing.T) {
 }
 
 func TestEmbed_WithFooter(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	text, iconURL := "Test Footer", "http://example.com/icon.jpg"
 	embed.WithFooter(text, iconURL)
 
@@ -48,7 +48,7 @@ func TestEmbed_WithFooter(t *testing.T) {
 }
 
 func TestEmbed_WithAuthor(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	name, url := "Author Name", "http://example.com"
 	embed.WithAuthor(name, url)
 
@@ -58,7 +58,7 @@ func TestEmbed_WithAuthor(t *testing.T) {
 }
 
 func TestEmbed_WithUrl(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	url := "http://example.com"
 	embed.WithUrl(url)
 
@@ -68,7 +68,7 @@ func TestEmbed_WithUrl(t *testing.T) {
 }
 
 func TestEmbed_WithImageUrl(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	url := "http://example.com/image.jpg"
 	embed.WithImageUrl(url)
 
@@ -78,7 +78,7 @@ func TestEmbed_WithImageUrl(t *testing.T) {
 }
 
 func TestEmbed_WithTitle(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	title := "Test Title"
 	embed.WithTitle(title)
 
@@ -88,7 +88,7 @@ func TestEmbed_WithTitle(t *testing.T) {
 }
 
 func TestEmbed_WithDescription(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	description := "Test Description"
 	embed.WithDescription(description)
 
@@ -98,7 +98,7 @@ func TestEmbed_WithDescription(t *testing.T) {
 }
 
 func TestEmbed_WithTimestamp(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	timestamp := "2024-01-01T12:00:00Z"
 	embed.WithTimestamp(timestamp)
 
@@ -108,7 +108,7 @@ func TestEmbed_WithTimestamp(t *testing.T) {
 }
 
 func TestEmbed_WithOkColor(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	embed.WithOkColor()
 
 	// Assuming utils.ColorInfo is a predefined constant
@@ -118,7 +118,7 @@ func TestEmbed_WithOkColor(t *testing.T) {
 }
 
 func TestEmbed_WithErrorColor(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	embed.WithErrorColor()
 
 	// Assuming utils.ColorCritical is a predefined constant
@@ -128,7 +128,7 @@ func TestEmbed_WithErrorColor(t *testing.T) {
 }
 
 func TestEmbed_WithColor(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	color := 123456
 	embed.WithColor(color)
 
@@ -138,7 +138,7 @@ func TestEmbed_WithColor(t *testing.T) {
 }
 
 func TestEmbed_Build(t *testing.T) {
-	embed := NewEmbed()
+	embed := NewEmbedBuilder()
 	if embed.Build() != embed.MessageEmbed {
 		t.Error("Build does not return the correct MessageEmbed instance")
 	}

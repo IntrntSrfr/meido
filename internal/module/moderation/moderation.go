@@ -8,10 +8,10 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
-	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
+	"github.com/intrntsrfr/meido/pkg/utils/builders"
 	"go.uber.org/zap"
 )
 
@@ -204,7 +204,7 @@ func (m *Module) banCommand(msg *discord.DiscordMessage) {
 		}
 	}
 
-	embed := iutils.NewEmbed().
+	embed := builders.NewEmbedBuilder().
 		WithTitle("User banned").
 		WithOkColor().
 		AddField("Username", targetUser.Mention(), true).
@@ -251,7 +251,7 @@ func (m *Module) unbanCommand(msg *discord.DiscordMessage) {
 		return
 	}
 
-	embed := iutils.NewEmbed().
+	embed := builders.NewEmbedBuilder().
 		WithDescription(fmt.Sprintf("**Unbanned** %v - %v#%v (%v)", targetUser.Mention(), targetUser.Username, targetUser.Discriminator, targetUser.ID)).
 		WithOkColor()
 	_, _ = msg.ReplyEmbed(embed.Build())
@@ -368,7 +368,7 @@ func (m *Module) kickCommand(msg *discord.DiscordMessage) {
 		return
 	}
 
-	embed := iutils.NewEmbed().
+	embed := builders.NewEmbedBuilder().
 		WithTitle("User kicked").
 		WithOkColor().
 		AddField("Username", targetUser.Mention(), true).
