@@ -484,9 +484,7 @@ func (m *ModuleBase) SetMessageComponentCallback(id, name string) {
 }
 
 func (m *ModuleBase) RemoveMessageComponentCallback(id string) {
-	if _, ok := m.messageComponentCallbacks[id]; ok {
-		delete(m.messageComponentCallbacks, id)
-	}
+	delete(m.messageComponentCallbacks, id)
 }
 
 func (m *ModuleBase) AllowsMessage(msg *discord.DiscordMessage) bool {

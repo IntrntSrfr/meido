@@ -21,6 +21,10 @@ type Module struct {
 	imageCache *service.ImageSearchCache
 }
 
+const (
+	imageSearchHandler string = "image_search"
+)
+
 func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Search")
 	return &Module{
@@ -164,44 +168,31 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 				return
 			}
 
-			embed := builders.NewEmbedBuilder().
-				WithTitle("Google Images search results").
-				WithOkColor().
-				WithImageUrl(links[0]).
-				WithFooter(fmt.Sprintf("Image [ %v / %v ]", 1, len(links)), "")
-
 			nextID := uuid.New().String()
 			prevID := uuid.New().String()
 			stopID := uuid.New().String()
 
-			replyData := &discordgo.MessageSend{
-				Components: []discordgo.MessageComponent{
-					&discordgo.ActionsRow{
-						Components: []discordgo.MessageComponent{
-							&discordgo.Button{
-								Label:    "⬅️",
-								Style:    discordgo.PrimaryButton,
-								CustomID: prevID,
-							},
-							&discordgo.Button{
-								Label:    "➡️",
-								Style:    discordgo.PrimaryButton,
-								CustomID: nextID,
-							},
-							&discordgo.Button{
-								Label:    "⏹️",
-								Style:    discordgo.PrimaryButton,
-								CustomID: stopID,
-							},
-						},
-					},
-				},
-				Embed: embed.Build(),
-			}
+			embed := builders.NewEmbedBuilder().
+				WithTitle("Google Images search results").
+				WithOkColor().
+				WithImageUrl(links[0]).
+				WithFooter(fmt.Sprintf("Image [ %v / %v ]", 1, len(links)), "").
+				Build()
 
-			m.SetMessageComponentCallback(prevID, "image_handler")
-			m.SetMessageComponentCallback(nextID, "image_handler")
-			m.SetMessageComponentCallback(stopID, "image_handler")
+			buttons := builders.NewActionRowBuilder().
+				AddButton("⬅️", discordgo.PrimaryButton, prevID).
+				AddButton("➡️", discordgo.PrimaryButton, nextID).
+				AddButton("⏹️", discordgo.PrimaryButton, stopID).
+				Build()
+
+			replyData := builders.NewMessageSendBuilder().
+				Embed(embed).
+				AddActionRow(buttons).
+				Build()
+
+			m.SetMessageComponentCallback(prevID, imageSearchHandler)
+			m.SetMessageComponentCallback(nextID, imageSearchHandler)
+			m.SetMessageComponentCallback(stopID, imageSearchHandler)
 
 			reply, err := msg.ReplyComplex(replyData)
 			if err != nil {
@@ -209,6 +200,7 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 			}
 			searchData := service.NewImageSearch(msg.Message, reply, links, nextID, prevID, stopID)
 			m.imageCache.Set(searchData)
+
 			defer func() {
 				m.imageCache.Delete(reply.ID)
 				reply.Components = nil
@@ -221,6 +213,7 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 					})
 				}
 			}()
+
 			for {
 				select {
 				case id := <-searchData.UpdateCh:
@@ -248,7 +241,7 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 func newImageComponentHandler(m *Module) *bot.ModuleMessageComponent {
 	return &bot.ModuleMessageComponent{
 		Mod:           m,
-		Name:          "image_handler",
+		Name:          imageSearchHandler,
 		Cooldown:      0,
 		CooldownScope: bot.Channel,
 		Permissions:   0,
