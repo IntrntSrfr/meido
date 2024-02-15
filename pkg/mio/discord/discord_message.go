@@ -83,15 +83,10 @@ type DiscordMessage struct {
 
 // Reply replies directly to a DiscordMessage
 func (m *DiscordMessage) Reply(data string) (*discordgo.Message, error) {
-	return m.Sess.ChannelMessageSendComplex(m.ChannelID(), &discordgo.MessageSend{
-		Content:         data,
-		AllowedMentions: &discordgo.MessageAllowedMentions{},
-		Reference: &discordgo.MessageReference{
-			MessageID: m.ID(),
-			ChannelID: m.ChannelID(),
-			GuildID:   m.GuildID(),
-		},
-	})
+	repl := &discordgo.MessageSend{
+		Content: data,
+	}
+	return m.ReplyComplex(repl)
 }
 
 // ReplyAndDelete sends a message to a channel, then deletes it after a duration d
@@ -110,18 +105,19 @@ func (m *DiscordMessage) ReplyAndDelete(data string, d time.Duration) (*discordg
 
 // ReplyEmbed replies directly to a DiscordMessage with an embed.
 func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
-	return m.Sess.ChannelMessageSendComplex(m.ChannelID(), &discordgo.MessageSend{
-		Embed:           embed,
-		AllowedMentions: &discordgo.MessageAllowedMentions{},
-		Reference: &discordgo.MessageReference{
-			MessageID: m.ID(),
-			ChannelID: m.ChannelID(),
-			GuildID:   m.GuildID(),
-		},
-	})
+	repl := &discordgo.MessageSend{
+		Embed: embed,
+	}
+	return m.ReplyComplex(repl)
 }
 
 func (m *DiscordMessage) ReplyComplex(data *discordgo.MessageSend) (*discordgo.Message, error) {
+	data.Reference = &discordgo.MessageReference{
+		MessageID: m.ID(),
+		ChannelID: m.ChannelID(),
+		GuildID:   m.GuildID(),
+	}
+	data.AllowedMentions = &discordgo.MessageAllowedMentions{}
 	return m.Sess.ChannelMessageSendComplex(m.ChannelID(), data)
 }
 
