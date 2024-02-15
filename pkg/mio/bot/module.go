@@ -12,33 +12,64 @@ import (
 	"go.uber.org/zap"
 )
 
-// Module represents a collection of commands and passives.
 type Module interface {
+	ModuleInfo
+	CommandHandler
+	PassiveHandler
+	ApplicationCommandHandler
+	ModalSubmitHandler
+	MessageComponentHandler
+	InteractionHandler
+	MessageHandler
+
+	// Hook should register callbacks and do additional required
+	// module setup. It must be user-defined on a per-module basis.
+	Hook() error
+}
+
+type ModuleInfo interface {
 	Name() string
-	Passives() map[string]*ModulePassive
-	Commands() map[string]*ModuleCommand
-	Slashes() map[string]*ModuleApplicationCommand
-	ModalSubmits() map[string]*ModuleModalSubmit
-	MessageComponents() map[string]*ModuleMessageComponent
 	AllowedTypes() discord.MessageType
 	AllowDMs() bool
+}
 
-	Hook() error
-	HandleMessage(*discord.DiscordMessage)
-	HandleInteraction(*discord.DiscordInteraction)
-	AllowsMessage(*discord.DiscordMessage) bool
-	AllowsInteraction(*discord.DiscordInteraction) bool
-
+type CommandHandler interface {
+	Commands() map[string]*ModuleCommand
 	RegisterCommands(...*ModuleCommand) error
-	RegisterPassives(...*ModulePassive) error
-	RegisterApplicationCommand(...*ModuleApplicationCommand) error
-	RegisterMessageComponent(...*ModuleMessageComponent) error
-
 	FindCommand(name string) (*ModuleCommand, error)
+}
+
+type PassiveHandler interface {
+	Passives() map[string]*ModulePassive
+	RegisterPassives(...*ModulePassive) error
 	FindPassive(name string) (*ModulePassive, error)
+}
+
+type ApplicationCommandHandler interface {
+	Slashes() map[string]*ModuleApplicationCommand
+	RegisterApplicationCommand(...*ModuleApplicationCommand) error
 	FindApplicationCommand(name string) (*ModuleApplicationCommand, error)
+}
+
+type ModalSubmitHandler interface {
+	ModalSubmits() map[string]*ModuleModalSubmit
 	FindModalSubmit(name string) (*ModuleModalSubmit, error)
+}
+
+type MessageComponentHandler interface {
+	MessageComponents() map[string]*ModuleMessageComponent
+	RegisterMessageComponent(...*ModuleMessageComponent) error
 	FindMessageComponent(name string) (*ModuleMessageComponent, error)
+}
+
+type InteractionHandler interface {
+	HandleInteraction(*discord.DiscordInteraction)
+	AllowsInteraction(*discord.DiscordInteraction) bool
+}
+
+type MessageHandler interface {
+	HandleMessage(*discord.DiscordMessage)
+	AllowsMessage(*discord.DiscordMessage) bool
 }
 
 var (
