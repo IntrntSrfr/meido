@@ -30,12 +30,18 @@ func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 }
 
 func (m *Module) Hook() error {
-	m.Bot.Discord.AddEventHandler(m.imageInteractionHandler)
-	return m.RegisterCommands(
+	if err := m.RegisterMessageComponents(newImageComponentHandler(m)); err != nil {
+		return err
+	}
+
+	if err := m.RegisterCommands(
 		newWeatherCommand(m),
 		newYouTubeCommand(m),
 		newImageCommand(m),
-	)
+	); err != nil {
+		return err
+	}
+	return nil
 }
 
 func newWeatherCommand(m *Module) *bot.ModuleCommand {
@@ -189,10 +195,12 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 						},
 					},
 				},
-				Reference:       &discordgo.MessageReference{MessageID: msg.ID(), ChannelID: msg.ChannelID(), GuildID: msg.GuildID()},
-				AllowedMentions: &discordgo.MessageAllowedMentions{},
-				Embed:           embed.Build(),
+				Embed: embed.Build(),
 			}
+
+			m.SetMessageComponentCallback(prevID, "image_handler")
+			m.SetMessageComponentCallback(nextID, "image_handler")
+			m.SetMessageComponentCallback(stopID, "image_handler")
 
 			reply, err := msg.ReplyComplex(replyData)
 			if err != nil {
@@ -236,23 +244,35 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) imageInteractionHandler(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	if i.Message == nil || i.Data == nil || i.Data.Type() != discordgo.InteractionMessageComponent {
-		return
+func newImageComponentHandler(m *Module) *bot.ModuleMessageComponent {
+	return &bot.ModuleMessageComponent{
+		Mod:           m,
+		Name:          "image_handler",
+		Cooldown:      0,
+		CooldownScope: bot.Channel,
+		Permissions:   0,
+		UserType:      bot.UserTypeAny,
+		CheckBotPerms: false,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run: func(dmc *discord.DiscordMessageComponent) {
+			msg, ok := m.imageCache.Get(dmc.Interaction.Message.ID)
+			if !ok {
+				return
+			}
+			resp := &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseUpdateMessage,
+				Data: nil,
+			}
+			dmc.Sess.InteractionRespond(dmc.Interaction, resp)
+
+			if dmc.Interaction.GuildID != "" && dmc.Interaction.Member.User.ID != msg.AuthorID() {
+				return
+			}
+			if dmc.Interaction.GuildID == "" && dmc.Interaction.User.ID != msg.AuthorID() {
+				return
+			}
+			msg.UpdateCh <- dmc.Interaction.MessageComponentData().CustomID
+		},
 	}
-	msg, ok := m.imageCache.Get(i.Message.ID)
-	if !ok {
-		return
-	}
-	_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseUpdateMessage,
-		Data: nil,
-	})
-	if i.GuildID != "" && i.Member.User.ID != msg.AuthorID() {
-		return
-	}
-	if i.GuildID == "" && i.User.ID != msg.AuthorID() {
-		return
-	}
-	msg.UpdateCh <- i.Interaction.MessageComponentData().CustomID
 }
