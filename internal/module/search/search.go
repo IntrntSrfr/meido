@@ -194,6 +194,12 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 			m.SetMessageComponentCallback(nextID, imageSearchHandler)
 			m.SetMessageComponentCallback(stopID, imageSearchHandler)
 
+			defer func() {
+				m.RemoveMessageComponentCallback(prevID)
+				m.RemoveMessageComponentCallback(nextID)
+				m.RemoveMessageComponentCallback(stopID)
+			}()
+
 			reply, err := msg.ReplyComplex(replyData)
 			if err != nil {
 				return
