@@ -122,7 +122,7 @@ func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
 }
 
 func (m *ModuleBase) HandleMessage(msg *discord.DiscordMessage) {
-	if !m.AllowsMessage(msg) {
+	if !m.allowsMessage(msg) {
 		return
 	}
 
@@ -140,7 +140,7 @@ func (m *ModuleBase) HandleMessage(msg *discord.DiscordMessage) {
 }
 
 func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
-	if !cmd.Enabled || !cmd.AllowsMessage(msg) {
+	if !cmd.Enabled || !cmd.allowsMessage(msg) {
 		return
 	}
 
@@ -181,7 +181,7 @@ func (m *ModuleBase) runCommand(cmd *ModuleCommand, msg *discord.DiscordMessage)
 }
 
 func (m *ModuleBase) handlePassive(pas *ModulePassive, msg *discord.DiscordMessage) {
-	if !pas.Enabled || !pas.AllowsMessage(msg) {
+	if !pas.Enabled || !pas.allowsMessage(msg) {
 		return
 	}
 	go m.runPassive(pas, msg)
@@ -205,7 +205,7 @@ func (m *ModuleBase) runPassive(pas *ModulePassive, msg *discord.DiscordMessage)
 }
 
 func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
-	if !m.AllowsInteraction(it) {
+	if !m.allowsInteraction(it) {
 		return
 	}
 
@@ -240,7 +240,7 @@ func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
 }
 
 func (m *ModuleBase) handleApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
-	if !c.Enabled || !c.AllowsInteraction(it) {
+	if !c.Enabled || !c.allowsInteraction(it) {
 		return
 	}
 	go m.runApplicationCommand(c, it)
@@ -260,7 +260,7 @@ func (m *ModuleBase) runApplicationCommand(c *ModuleApplicationCommand, it *disc
 }
 
 func (m *ModuleBase) handleMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
-	if !c.Enabled || !c.AllowsInteraction(it) {
+	if !c.Enabled || !c.allowsInteraction(it) {
 		return
 	}
 	go m.runMessageComponent(c, it)
@@ -280,7 +280,7 @@ func (m *ModuleBase) runMessageComponent(c *ModuleMessageComponent, it *discord.
 }
 
 func (m *ModuleBase) handleModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
-	if !s.Enabled || !s.AllowsInteraction(it) {
+	if !s.Enabled || !s.allowsInteraction(it) {
 		return
 	}
 	go m.runModalSubmit(s, it)
@@ -536,7 +536,7 @@ func (m *ModuleBase) RemoveModalSubmitCallback(id string) {
 	delete(m.modalSubmitCallbacks, id)
 }
 
-func (m *ModuleBase) AllowsMessage(msg *discord.DiscordMessage) bool {
+func (m *ModuleBase) allowsMessage(msg *discord.DiscordMessage) bool {
 	if msg.IsDM() && !m.allowDMs {
 		return false
 	}
@@ -546,7 +546,7 @@ func (m *ModuleBase) AllowsMessage(msg *discord.DiscordMessage) bool {
 	return true
 }
 
-func (m *ModuleBase) AllowsInteraction(it *discord.DiscordInteraction) bool {
+func (m *ModuleBase) allowsInteraction(it *discord.DiscordInteraction) bool {
 	return !(it.IsDM() && !m.allowDMs)
 }
 
@@ -584,7 +584,7 @@ type ModuleCommand struct {
 	Run              func(*discord.DiscordMessage) `json:"-"`
 }
 
-func (cmd *ModuleCommand) AllowsMessage(msg *discord.DiscordMessage) bool {
+func (cmd *ModuleCommand) allowsMessage(msg *discord.DiscordMessage) bool {
 	if msg.IsDM() && !cmd.AllowDMs {
 		return false
 	}
@@ -630,7 +630,7 @@ type ModulePassive struct {
 	Run          func(*discord.DiscordMessage) `json:"-"`
 }
 
-func (pas *ModulePassive) AllowsMessage(msg *discord.DiscordMessage) bool {
+func (pas *ModulePassive) allowsMessage(msg *discord.DiscordMessage) bool {
 	if msg.IsDM() && !pas.AllowDMs {
 		return false
 	}
@@ -655,7 +655,7 @@ type ModuleApplicationCommand struct {
 	Run           func(*discord.DiscordApplicationCommand) `json:"-"`
 }
 
-func (s *ModuleApplicationCommand) AllowsInteraction(it *discord.DiscordApplicationCommand) bool {
+func (s *ModuleApplicationCommand) allowsInteraction(it *discord.DiscordApplicationCommand) bool {
 	return !(it.IsDM() && !s.AllowDMs)
 }
 
@@ -666,7 +666,7 @@ type ModuleModalSubmit struct {
 	Run     func(*discord.DiscordModalSubmit) `json:"-"`
 }
 
-func (s *ModuleModalSubmit) AllowsInteraction(it *discord.DiscordModalSubmit) bool {
+func (s *ModuleModalSubmit) allowsInteraction(it *discord.DiscordModalSubmit) bool {
 	return true
 }
 
@@ -682,6 +682,6 @@ type ModuleMessageComponent struct {
 	Run           func(*discord.DiscordMessageComponent) `json:"-"`
 }
 
-func (s *ModuleMessageComponent) AllowsInteraction(it *discord.DiscordMessageComponent) bool {
+func (s *ModuleMessageComponent) allowsInteraction(it *discord.DiscordMessageComponent) bool {
 	return true
 }

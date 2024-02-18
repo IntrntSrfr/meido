@@ -208,7 +208,7 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 
 	t.Run("dm ok if allows dms", func(t *testing.T) {
 		expected := true
-		if got := m.AllowsMessage(msg); got != true {
+		if got := m.allowsMessage(msg); got != true {
 			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
 		}
 	})
@@ -216,7 +216,7 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 	t.Run("dm not ok if not allows dms", func(t *testing.T) {
 		m.allowDMs = false
 		expected := true
-		if got := m.AllowsMessage(msg); got != false {
+		if got := m.allowsMessage(msg); got != false {
 			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
 		}
 	})
@@ -225,7 +225,7 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 	t.Run("ok if good type", func(t *testing.T) {
 		msg.MessageType = discord.MessageTypeCreate | discord.MessageTypeUpdate
 		expected := true
-		if got := m.AllowsMessage(msg); got != true {
+		if got := m.allowsMessage(msg); got != true {
 			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
 		}
 	})
@@ -233,7 +233,7 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 	t.Run("not ok if not good type", func(t *testing.T) {
 		msg.MessageType = discord.MessageTypeUpdate
 		expected := true
-		if got := m.AllowsMessage(msg); got != false {
+		if got := m.allowsMessage(msg); got != false {
 			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
 		}
 	})
