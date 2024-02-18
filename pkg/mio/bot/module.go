@@ -12,15 +12,17 @@ import (
 	"go.uber.org/zap"
 )
 
+// Module is a collection of interactivity which can be plugged
+// into a Bot
 type Module interface {
 	ModuleInfo
+	MessageHandler
+	InteractionHandler
 	CommandHandler
 	PassiveHandler
 	ApplicationCommandHandler
-	ModalSubmitHandler
 	MessageComponentHandler
-	InteractionHandler
-	MessageHandler
+	ModalSubmitHandler
 
 	// Hook should register callbacks and do additional required
 	// module setup. It must be user-defined on a per-module basis.
@@ -31,6 +33,14 @@ type ModuleInfo interface {
 	Name() string
 	AllowedTypes() discord.MessageType
 	AllowDMs() bool
+}
+
+type MessageHandler interface {
+	HandleMessage(*discord.DiscordMessage)
+}
+
+type InteractionHandler interface {
+	HandleInteraction(*discord.DiscordInteraction)
 }
 
 type CommandHandler interface {
@@ -51,14 +61,6 @@ type ApplicationCommandHandler interface {
 	FindApplicationCommand(name string) (*ModuleApplicationCommand, error)
 }
 
-type ModalSubmitHandler interface {
-	ModalSubmits() map[string]*ModuleModalSubmit
-	RegisterModalSubmits(...*ModuleModalSubmit) error
-	FindModalSubmit(name string) (*ModuleModalSubmit, error)
-	SetModalSubmitCallback(id, name string)
-	RemoveModalSubmitCallback(id string)
-}
-
 type MessageComponentHandler interface {
 	MessageComponents() map[string]*ModuleMessageComponent
 	RegisterMessageComponents(...*ModuleMessageComponent) error
@@ -67,12 +69,12 @@ type MessageComponentHandler interface {
 	RemoveMessageComponentCallback(id string)
 }
 
-type InteractionHandler interface {
-	HandleInteraction(*discord.DiscordInteraction)
-}
-
-type MessageHandler interface {
-	HandleMessage(*discord.DiscordMessage)
+type ModalSubmitHandler interface {
+	ModalSubmits() map[string]*ModuleModalSubmit
+	RegisterModalSubmits(...*ModuleModalSubmit) error
+	FindModalSubmit(name string) (*ModuleModalSubmit, error)
+	SetModalSubmitCallback(id, name string)
+	RemoveModalSubmitCallback(id string)
 }
 
 var (
@@ -84,8 +86,7 @@ var (
 	ErrModalSubmitNotFound        = errors.New("modal submit not found")
 )
 
-// ModuleBase serves as a base for every other module, so every Module does
-// not have to reimplement the methods that are all the same.
+// ModuleBase serves as a base for other modules
 type ModuleBase struct {
 	sync.Mutex
 	Bot          *Bot
@@ -121,6 +122,18 @@ func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
 	}
 }
 
+func (m *ModuleBase) Name() string {
+	return m.name
+}
+
+func (m *ModuleBase) AllowedTypes() discord.MessageType {
+	return m.allowedTypes
+}
+
+func (m *ModuleBase) AllowDMs() bool {
+	return m.allowDMs
+}
+
 func (m *ModuleBase) HandleMessage(msg *discord.DiscordMessage) {
 	if !m.allowsMessage(msg) {
 		return
@@ -137,6 +150,16 @@ func (m *ModuleBase) HandleMessage(msg *discord.DiscordMessage) {
 	if cmd, err := m.findCommandByTriggers(msg.RawContent()); err == nil {
 		m.handleCommand(cmd, msg)
 	}
+}
+
+func (m *ModuleBase) allowsMessage(msg *discord.DiscordMessage) bool {
+	if msg.IsDM() && !m.allowDMs {
+		return false
+	}
+	if msg.Type()&m.allowedTypes == 0 {
+		return false
+	}
+	return true
 }
 
 func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
@@ -239,6 +262,10 @@ func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
 	}
 }
 
+func (m *ModuleBase) allowsInteraction(it *discord.DiscordInteraction) bool {
+	return !(it.IsDM() && !m.allowDMs)
+}
+
 func (m *ModuleBase) handleApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
 	if !c.Enabled || !c.allowsInteraction(it) {
 		return
@@ -299,58 +326,8 @@ func (m *ModuleBase) runModalSubmit(s *ModuleModalSubmit, it *discord.DiscordMod
 	m.Bot.Emit(BotEventMessageComponentRan, &ModalSubmitRan{s, it})
 }
 
-func (m *ModuleBase) Name() string {
-	return m.name
-}
-
-func (m *ModuleBase) Passives() map[string]*ModulePassive {
-	return m.passives
-}
-
 func (m *ModuleBase) Commands() map[string]*ModuleCommand {
 	return m.commands
-}
-
-func (m *ModuleBase) ApplicationCommands() map[string]*ModuleApplicationCommand {
-	return m.applicationCommands
-}
-
-func (m *ModuleBase) ModalSubmits() map[string]*ModuleModalSubmit {
-	return m.modalSubmits
-}
-
-func (m *ModuleBase) MessageComponents() map[string]*ModuleMessageComponent {
-	return m.messageComponents
-}
-
-func (m *ModuleBase) AllowedTypes() discord.MessageType {
-	return m.allowedTypes
-}
-
-func (m *ModuleBase) AllowDMs() bool {
-	return m.allowDMs
-}
-
-func (m *ModuleBase) RegisterPassives(passives ...*ModulePassive) error {
-	for _, pas := range passives {
-		if err := m.registerPassive(pas); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (m *ModuleBase) registerPassive(pas *ModulePassive) error {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.passives[pas.Name]; ok {
-		return fmt.Errorf("passive '%v' already exists in %v", pas.Name, m.Name())
-	}
-	m.passives[pas.Name] = pas
-	if m.Logger != nil {
-		m.Logger.Info("Registered passive", zap.String("name", pas.Name))
-	}
-	return nil
 }
 
 func (m *ModuleBase) RegisterCommands(commands ...*ModuleCommand) error {
@@ -375,70 +352,14 @@ func (m *ModuleBase) registerCommand(cmd *ModuleCommand) error {
 	return nil
 }
 
-func (m *ModuleBase) RegisterApplicationCommands(commands ...*ModuleApplicationCommand) error {
-	for _, cmd := range commands {
-		if err := m.registerApplicationCommand(cmd); err != nil {
-			return err
-		}
+func (m *ModuleBase) FindCommand(name string) (*ModuleCommand, error) {
+	if cmd, err := m.findCommandByName(name); err == nil {
+		return cmd, nil
 	}
-	return nil
-}
-
-func (m *ModuleBase) registerApplicationCommand(command *ModuleApplicationCommand) error {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.commands[command.Name]; ok {
-		return fmt.Errorf("application command '%v' already exists in %v", command.Name, m.Name())
+	if cmd, err := m.findCommandByTriggers(name); err == nil {
+		return cmd, nil
 	}
-	m.applicationCommands[command.Name] = command
-	if m.Logger != nil {
-		m.Logger.Info("Registered application command", zap.String("name", command.Name))
-	}
-	return nil
-}
-
-func (m *ModuleBase) RegisterMessageComponents(components ...*ModuleMessageComponent) error {
-	for _, comp := range components {
-		if err := m.registerMessageComponent(comp); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (m *ModuleBase) registerMessageComponent(component *ModuleMessageComponent) error {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.commands[component.Name]; ok {
-		return fmt.Errorf("message component '%v' already exists in %v", component.Name, m.Name())
-	}
-	m.messageComponents[component.Name] = component
-	if m.Logger != nil {
-		m.Logger.Info("Registered message component", zap.String("name", component.Name))
-	}
-	return nil
-}
-
-func (m *ModuleBase) RegisterModalSubmits(components ...*ModuleModalSubmit) error {
-	for _, comp := range components {
-		if err := m.registerModalSubmit(comp); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (m *ModuleBase) registerModalSubmit(component *ModuleModalSubmit) error {
-	m.Lock()
-	defer m.Unlock()
-	if _, ok := m.commands[component.Name]; ok {
-		return fmt.Errorf("modal submit '%v' already exists in %v", component.Name, m.Name())
-	}
-	m.modalSubmits[component.Name] = component
-	if m.Logger != nil {
-		m.Logger.Info("Registered message component", zap.String("name", component.Name))
-	}
-	return nil
+	return nil, ErrCommandNotFound
 }
 
 func (m *ModuleBase) findCommandByName(name string) (*ModuleCommand, error) {
@@ -466,14 +387,29 @@ func (m *ModuleBase) findCommandByTriggers(name string) (*ModuleCommand, error) 
 	return nil, ErrCommandNotFound
 }
 
-func (m *ModuleBase) FindCommand(name string) (*ModuleCommand, error) {
-	if cmd, err := m.findCommandByName(name); err == nil {
-		return cmd, nil
+func (m *ModuleBase) Passives() map[string]*ModulePassive {
+	return m.passives
+}
+func (m *ModuleBase) RegisterPassives(passives ...*ModulePassive) error {
+	for _, pas := range passives {
+		if err := m.registerPassive(pas); err != nil {
+			return err
+		}
 	}
-	if cmd, err := m.findCommandByTriggers(name); err == nil {
-		return cmd, nil
+	return nil
+}
+
+func (m *ModuleBase) registerPassive(pas *ModulePassive) error {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.passives[pas.Name]; ok {
+		return fmt.Errorf("passive '%v' already exists in %v", pas.Name, m.Name())
 	}
-	return nil, ErrCommandNotFound
+	m.passives[pas.Name] = pas
+	if m.Logger != nil {
+		m.Logger.Info("Registered passive", zap.String("name", pas.Name))
+	}
+	return nil
 }
 
 func (m *ModuleBase) FindPassive(name string) (*ModulePassive, error) {
@@ -485,6 +421,32 @@ func (m *ModuleBase) FindPassive(name string) (*ModulePassive, error) {
 	return nil, ErrPassiveNotFound
 }
 
+func (m *ModuleBase) ApplicationCommands() map[string]*ModuleApplicationCommand {
+	return m.applicationCommands
+}
+
+func (m *ModuleBase) RegisterApplicationCommands(commands ...*ModuleApplicationCommand) error {
+	for _, cmd := range commands {
+		if err := m.registerApplicationCommand(cmd); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *ModuleBase) registerApplicationCommand(command *ModuleApplicationCommand) error {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.commands[command.Name]; ok {
+		return fmt.Errorf("application command '%v' already exists in %v", command.Name, m.Name())
+	}
+	m.applicationCommands[command.Name] = command
+	if m.Logger != nil {
+		m.Logger.Info("Registered application command", zap.String("name", command.Name))
+	}
+	return nil
+}
+
 func (m *ModuleBase) FindApplicationCommand(name string) (*ModuleApplicationCommand, error) {
 	for _, s := range m.ApplicationCommands() {
 		if strings.EqualFold(s.Name, name) {
@@ -494,13 +456,30 @@ func (m *ModuleBase) FindApplicationCommand(name string) (*ModuleApplicationComm
 	return nil, ErrApplicationCommandNotFound
 }
 
-func (m *ModuleBase) FindModalSubmit(name string) (*ModuleModalSubmit, error) {
-	for _, s := range m.ModalSubmits() {
-		if strings.EqualFold(s.Name, name) {
-			return s, nil
+func (m *ModuleBase) MessageComponents() map[string]*ModuleMessageComponent {
+	return m.messageComponents
+}
+
+func (m *ModuleBase) RegisterMessageComponents(components ...*ModuleMessageComponent) error {
+	for _, comp := range components {
+		if err := m.registerMessageComponent(comp); err != nil {
+			return err
 		}
 	}
-	return nil, ErrModalSubmitNotFound
+	return nil
+}
+
+func (m *ModuleBase) registerMessageComponent(component *ModuleMessageComponent) error {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.commands[component.Name]; ok {
+		return fmt.Errorf("message component '%v' already exists in %v", component.Name, m.Name())
+	}
+	m.messageComponents[component.Name] = component
+	if m.Logger != nil {
+		m.Logger.Info("Registered message component", zap.String("name", component.Name))
+	}
+	return nil
 }
 
 func (m *ModuleBase) FindMessageComponent(name string) (*ModuleMessageComponent, error) {
@@ -524,6 +503,41 @@ func (m *ModuleBase) RemoveMessageComponentCallback(id string) {
 	delete(m.messageComponentCallbacks, id)
 }
 
+func (m *ModuleBase) ModalSubmits() map[string]*ModuleModalSubmit {
+	return m.modalSubmits
+}
+
+func (m *ModuleBase) RegisterModalSubmits(components ...*ModuleModalSubmit) error {
+	for _, comp := range components {
+		if err := m.registerModalSubmit(comp); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (m *ModuleBase) registerModalSubmit(component *ModuleModalSubmit) error {
+	m.Lock()
+	defer m.Unlock()
+	if _, ok := m.commands[component.Name]; ok {
+		return fmt.Errorf("modal submit '%v' already exists in %v", component.Name, m.Name())
+	}
+	m.modalSubmits[component.Name] = component
+	if m.Logger != nil {
+		m.Logger.Info("Registered message component", zap.String("name", component.Name))
+	}
+	return nil
+}
+
+func (m *ModuleBase) FindModalSubmit(name string) (*ModuleModalSubmit, error) {
+	for _, s := range m.ModalSubmits() {
+		if strings.EqualFold(s.Name, name) {
+			return s, nil
+		}
+	}
+	return nil, ErrModalSubmitNotFound
+}
+
 func (m *ModuleBase) SetModalSubmitCallback(id, name string) {
 	m.Lock()
 	defer m.Unlock()
@@ -534,20 +548,6 @@ func (m *ModuleBase) SetModalSubmitCallback(id, name string) {
 
 func (m *ModuleBase) RemoveModalSubmitCallback(id string) {
 	delete(m.modalSubmitCallbacks, id)
-}
-
-func (m *ModuleBase) allowsMessage(msg *discord.DiscordMessage) bool {
-	if msg.IsDM() && !m.allowDMs {
-		return false
-	}
-	if msg.Type()&m.allowedTypes == 0 {
-		return false
-	}
-	return true
-}
-
-func (m *ModuleBase) allowsInteraction(it *discord.DiscordInteraction) bool {
-	return !(it.IsDM() && !m.allowDMs)
 }
 
 type CooldownScope int
