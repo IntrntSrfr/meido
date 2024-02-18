@@ -253,7 +253,6 @@ func newImageComponentHandler(m *Module) *bot.ModuleMessageComponent {
 		Permissions:   0,
 		UserType:      bot.UserTypeAny,
 		CheckBotPerms: false,
-		AllowDMs:      true,
 		Enabled:       true,
 		Run: func(dmc *discord.DiscordMessageComponent) {
 			msg, ok := m.imageCache.Get(dmc.Interaction.Message.ID)

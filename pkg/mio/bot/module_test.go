@@ -361,7 +361,7 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestApplicationCommand(mod)
-		cmd.Run = func(dac *discord.DiscordApplicationCommand) {
+		cmd.Run = func(*discord.DiscordApplicationCommand) {
 			cmdCalled <- true
 		}
 		mod.RegisterApplicationCommands(cmd)
@@ -379,7 +379,7 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		bot := NewTestBot()
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmd := NewTestApplicationCommand(mod)
-		cmd.Run = func(dac *discord.DiscordApplicationCommand) {
+		cmd.Run = func(*discord.DiscordApplicationCommand) {
 			panic("application command panic")
 		}
 		mod.RegisterApplicationCommands(cmd)
@@ -399,7 +399,7 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		cmd := NewTestApplicationCommand(mod)
 		cmd.AllowDMs = false
 		cmdCalled := make(chan bool, 1)
-		cmd.Run = func(dac *discord.DiscordApplicationCommand) {
+		cmd.Run = func(*discord.DiscordApplicationCommand) {
 			cmdCalled <- true
 		}
 		mod.RegisterApplicationCommands(cmd)
@@ -420,7 +420,7 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestMessageComponent(mod)
-		cmd.Run = func(dac *discord.DiscordMessageComponent) {
+		cmd.Run = func(*discord.DiscordMessageComponent) {
 			cmdCalled <- true
 		}
 		mod.RegisterMessageComponents(cmd)
@@ -440,7 +440,7 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 		bot := NewTestBot()
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmd := NewTestMessageComponent(mod)
-		cmd.Run = func(dac *discord.DiscordMessageComponent) {
+		cmd.Run = func(*discord.DiscordMessageComponent) {
 			panic("message component panic")
 		}
 		mod.RegisterMessageComponents(cmd)
@@ -455,26 +455,47 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 			t.Error("Expected event, but timed out")
 		}
 	})
+}
 
-	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
+func TestModuleBase_HandleModalSubmit(t *testing.T) {
+	t.Run("it runs correctly", func(t *testing.T) {
 		bot := NewTestBot()
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmdCalled := make(chan bool, 1)
-		cmd := NewTestMessageComponent(mod)
-		cmd.AllowDMs = false
-		cmd.Run = func(dac *discord.DiscordMessageComponent) {
+		cmd := NewTestModalSubmit(mod)
+		cmd.Run = func(*discord.DiscordModalSubmit) {
 			cmdCalled <- true
 		}
-		mod.RegisterMessageComponents(cmd)
+		mod.RegisterModalSubmits(cmd)
 		customID := "key"
-		mod.SetMessageComponentCallback(customID, "test")
+		mod.SetModalSubmitCallback(customID, "test")
 
-		it := NewTestMessageComponentInteraction(bot, "", customID)
+		it := NewTestModalSubmitInteraction(bot, "1", customID)
 		mod.HandleInteraction(it)
 		select {
 		case <-cmdCalled:
-			t.Errorf("Message component was not expected to be called")
 		case <-time.After(time.Millisecond * 50):
+			t.Error("Expected event, but timed out")
+		}
+	})
+
+	t.Run("panic gets handled", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmd := NewTestModalSubmit(mod)
+		cmd.Run = func(*discord.DiscordModalSubmit) {
+			panic("modal submit panic")
+		}
+		mod.RegisterModalSubmits(cmd)
+		customID := "key"
+		mod.SetModalSubmitCallback(customID, "test")
+
+		it := NewTestModalSubmitInteraction(bot, "1", customID)
+		mod.HandleInteraction(it)
+		select {
+		case <-bot.eventCh:
+		case <-time.After(time.Second):
+			t.Error("Expected event, but timed out")
 		}
 	})
 }

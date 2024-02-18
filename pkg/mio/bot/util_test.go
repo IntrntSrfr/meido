@@ -96,7 +96,6 @@ func NewTestMessageComponent(mod Module) *ModuleMessageComponent {
 		Cooldown:      0,
 		CooldownScope: Channel,
 		CheckBotPerms: false,
-		AllowDMs:      false,
 		Enabled:       true,
 		Run:           testMessageComponentRun,
 	}
