@@ -2,7 +2,7 @@ package bot
 
 import (
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	"github.com/intrntsrfr/meido/pkg/mio/util"
+	mutils "github.com/intrntsrfr/meido/pkg/mio/utils"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 )
@@ -10,8 +10,8 @@ import (
 type BotBuilder struct {
 	discord      *discord.Discord
 	modules      *ModuleManager
-	callbacks    *util.CallbackManager
-	cooldowns    *util.CooldownManager
+	callbacks    *mutils.CallbackManager
+	cooldowns    *mutils.CooldownManager
 	eventHandler *EventHandler
 	eventEmitter *EventEmitter
 
@@ -41,10 +41,10 @@ func (b *BotBuilder) Build() *Bot {
 		b.modules = NewModuleManager(b.logger)
 	}
 	if b.callbacks == nil {
-		b.callbacks = util.NewCallbackManager()
+		b.callbacks = mutils.NewCallbackManager()
 	}
 	if b.cooldowns == nil {
-		b.cooldowns = util.NewCooldownManager()
+		b.cooldowns = mutils.NewCooldownManager()
 	}
 	if b.eventHandler == nil {
 		b.eventHandler = NewEventHandler(b.discord, b.modules, b.callbacks, b.logger)

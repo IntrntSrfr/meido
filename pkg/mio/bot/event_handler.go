@@ -4,18 +4,18 @@ import (
 	"context"
 
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	"github.com/intrntsrfr/meido/pkg/mio/util"
+	"github.com/intrntsrfr/meido/pkg/mio/utils"
 	"go.uber.org/zap"
 )
 
 type EventHandler struct {
 	discord   *discord.Discord
 	modules   *ModuleManager
-	callbacks *util.CallbackManager
+	callbacks *utils.CallbackManager
 	logger    *zap.Logger
 }
 
-func NewEventHandler(d *discord.Discord, m *ModuleManager, c *util.CallbackManager, logger *zap.Logger) *EventHandler {
+func NewEventHandler(d *discord.Discord, m *ModuleManager, c *utils.CallbackManager, logger *zap.Logger) *EventHandler {
 	return &EventHandler{
 		discord:   d,
 		modules:   m,

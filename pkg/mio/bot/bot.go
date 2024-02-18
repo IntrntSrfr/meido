@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	"github.com/intrntsrfr/meido/pkg/mio/util"
+	mutils "github.com/intrntsrfr/meido/pkg/mio/utils"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 )
@@ -17,8 +17,8 @@ type Bot struct {
 
 	*ModuleManager
 	EventHandler *EventHandler
-	Callbacks    *util.CallbackManager
-	Cooldowns    *util.CooldownManager
+	Callbacks    *mutils.CallbackManager
+	Cooldowns    *mutils.CooldownManager
 	*EventEmitter
 
 	Logger *zap.Logger

@@ -65,7 +65,7 @@ func TestBot_Run(t *testing.T) {
 }
 
 func setupTestBot() (*Bot, *zap.Logger, Module) {
-	bot := NewTestbot()
+	bot := NewTestBot()
 	logger := test.NewTestLogger()
 	mod := NewTestModule(bot, "testing", logger)
 	return bot, logger, mod
@@ -198,7 +198,7 @@ func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
 
 func TestBot_PanicCommandGetsHandled(t *testing.T) {
 	var (
-		bot    = NewTestbot()
+		bot    = NewTestBot()
 		logger = test.NewTestLogger()
 		mod    = NewTestModule(bot, "testing", logger)
 		cmd    = NewTestCommand(mod)

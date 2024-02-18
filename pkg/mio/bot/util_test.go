@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewTestbot() *Bot {
+func NewTestBot() *Bot {
 	bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLogger()).
 		WithDiscord(discord.NewTestDiscord(nil, nil, nil)).
 		Build()
@@ -67,5 +67,23 @@ func NewTestPassive(mod Module) *ModulePassive {
 }
 
 func testPassiveRun(msg *discord.DiscordMessage) {
+
+}
+
+func NewTestApplicationCommand(mod Module) *ModuleApplicationCommand {
+	return &ModuleApplicationCommand{
+		Mod:           mod,
+		Name:          "test",
+		Description:   "testing",
+		Cooldown:      0,
+		CooldownScope: Channel,
+		CheckBotPerms: false,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           testApplicationCommandRun,
+	}
+}
+
+func testApplicationCommandRun(msg *discord.DiscordApplicationCommand) {
 
 }
