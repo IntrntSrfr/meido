@@ -66,12 +66,10 @@ type MessageComponentHandler interface {
 
 type InteractionHandler interface {
 	HandleInteraction(*discord.DiscordInteraction)
-	AllowsInteraction(*discord.DiscordInteraction) bool
 }
 
 type MessageHandler interface {
 	HandleMessage(*discord.DiscordMessage)
-	AllowsMessage(*discord.DiscordMessage) bool
 }
 
 var (
@@ -234,6 +232,9 @@ func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
 }
 
 func (m *ModuleBase) handleApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
+	if !c.Enabled || !c.AllowsInteraction(it) {
+		return
+	}
 	go m.runApplicationCommand(c, it)
 }
 
@@ -251,6 +252,9 @@ func (m *ModuleBase) runApplicationCommand(c *ModuleApplicationCommand, it *disc
 }
 
 func (m *ModuleBase) handleMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
+	if !c.Enabled || !c.AllowsInteraction(it) {
+		return
+	}
 	go m.runMessageComponent(c, it)
 }
 
@@ -268,6 +272,9 @@ func (m *ModuleBase) runMessageComponent(c *ModuleMessageComponent, it *discord.
 }
 
 func (m *ModuleBase) handleModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
+	if !s.Enabled || !s.AllowsInteraction(it) {
+		return
+	}
 	go m.runModalSubmit(s, it)
 }
 
@@ -606,7 +613,7 @@ type ModuleApplicationCommand struct {
 	Run           func(*discord.DiscordApplicationCommand) `json:"-"`
 }
 
-func (s *ModuleApplicationCommand) AllowsMessage(it *discord.DiscordInteraction) bool {
+func (s *ModuleApplicationCommand) AllowsInteraction(it *discord.DiscordApplicationCommand) bool {
 	return !(it.IsDM() && !s.AllowDMs)
 }
 
@@ -617,7 +624,7 @@ type ModuleModalSubmit struct {
 	Run     func(*discord.DiscordModalSubmit) `json:"-"`
 }
 
-func (s *ModuleModalSubmit) AllowsMessage(it *discord.DiscordModalSubmit) bool {
+func (s *ModuleModalSubmit) AllowsInteraction(it *discord.DiscordModalSubmit) bool {
 	return true
 }
 
@@ -634,6 +641,6 @@ type ModuleMessageComponent struct {
 	Run           func(*discord.DiscordMessageComponent) `json:"-"`
 }
 
-func (s *ModuleMessageComponent) AllowsMessage(it *discord.DiscordMessageComponent) bool {
+func (s *ModuleMessageComponent) AllowsInteraction(it *discord.DiscordMessageComponent) bool {
 	return !(it.IsDM() && !s.AllowDMs)
 }
