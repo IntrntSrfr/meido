@@ -277,7 +277,7 @@ func TestModuleBase_HandleCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("none called by DM if DMs not allowed", func(t *testing.T) {
+	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
 		bot := NewTestBot()
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmdCalled := make(chan bool, 1)
@@ -335,7 +335,7 @@ func TestModuleBase_HandlePassive(t *testing.T) {
 		}
 	})
 
-	t.Run("none called by DM if DMs not allowed", func(t *testing.T) {
+	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
 		bot := NewTestBot()
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		pasCalled := make(chan bool, 1)
@@ -366,7 +366,7 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		}
 		mod.RegisterApplicationCommands(cmd)
 
-		it := NewTestInteraction(bot, "1")
+		it := NewTestApplicationCommandInteraction(bot, "1")
 		mod.HandleInteraction(it)
 		select {
 		case <-cmdCalled:
@@ -379,13 +379,12 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		bot := NewTestBot()
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmd := NewTestApplicationCommand(mod)
-		cmd.AllowDMs = false
 		cmd.Run = func(dac *discord.DiscordApplicationCommand) {
 			panic("application command panic")
 		}
 		mod.RegisterApplicationCommands(cmd)
 
-		it := NewTestInteraction(bot, "1")
+		it := NewTestApplicationCommandInteraction(bot, "1")
 		mod.HandleInteraction(it)
 		select {
 		case <-bot.eventCh:
@@ -405,11 +404,76 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		}
 		mod.RegisterApplicationCommands(cmd)
 
-		it := NewTestInteraction(bot, "")
+		it := NewTestApplicationCommandInteraction(bot, "")
 		mod.HandleInteraction(it)
 		select {
 		case <-cmdCalled:
 			t.Errorf("Command was not expected to be called")
+		case <-time.After(time.Millisecond * 50):
+		}
+	})
+}
+
+func TestModuleBase_HandleMessageComponent(t *testing.T) {
+	t.Run("it runs correctly", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmdCalled := make(chan bool, 1)
+		cmd := NewTestMessageComponent(mod)
+		cmd.Run = func(dac *discord.DiscordMessageComponent) {
+			cmdCalled <- true
+		}
+		mod.RegisterMessageComponents(cmd)
+		customID := "key"
+		mod.SetMessageComponentCallback(customID, "test")
+
+		it := NewTestMessageComponentInteraction(bot, "1", customID)
+		mod.HandleInteraction(it)
+		select {
+		case <-cmdCalled:
+		case <-time.After(time.Millisecond * 50):
+			t.Error("Expected event, but timed out")
+		}
+	})
+
+	t.Run("panic gets handled", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmd := NewTestMessageComponent(mod)
+		cmd.Run = func(dac *discord.DiscordMessageComponent) {
+			panic("message component panic")
+		}
+		mod.RegisterMessageComponents(cmd)
+		customID := "key"
+		mod.SetMessageComponentCallback(customID, "test")
+
+		it := NewTestMessageComponentInteraction(bot, "1", customID)
+		mod.HandleInteraction(it)
+		select {
+		case <-bot.eventCh:
+		case <-time.After(time.Second):
+			t.Error("Expected event, but timed out")
+		}
+	})
+
+	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmdCalled := make(chan bool, 1)
+		cmd := NewTestMessageComponent(mod)
+		cmd.AllowDMs = false
+		cmd.Run = func(dac *discord.DiscordMessageComponent) {
+			cmdCalled <- true
+		}
+		mod.RegisterMessageComponents(cmd)
+		customID := "key"
+		mod.SetMessageComponentCallback(customID, "test")
+
+		it := NewTestMessageComponentInteraction(bot, "", customID)
+		mod.HandleInteraction(it)
+		select {
+		case <-cmdCalled:
+			t.Errorf("Message component was not expected to be called")
 		case <-time.After(time.Millisecond * 50):
 		}
 	})

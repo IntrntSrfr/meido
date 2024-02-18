@@ -89,6 +89,36 @@ func testApplicationCommandRun(msg *discord.DiscordApplicationCommand) {
 
 }
 
+func NewTestMessageComponent(mod Module) *ModuleMessageComponent {
+	return &ModuleMessageComponent{
+		Mod:           mod,
+		Name:          "test",
+		Cooldown:      0,
+		CooldownScope: Channel,
+		CheckBotPerms: false,
+		AllowDMs:      false,
+		Enabled:       true,
+		Run:           testMessageComponentRun,
+	}
+}
+
+func testMessageComponentRun(msg *discord.DiscordMessageComponent) {
+
+}
+
+func NewTestModalSubmit(mod Module) *ModuleModalSubmit {
+	return &ModuleModalSubmit{
+		Mod:     mod,
+		Name:    "test",
+		Enabled: true,
+		Run:     testModalSubmitRun,
+	}
+}
+
+func testModalSubmitRun(msg *discord.DiscordModalSubmit) {
+
+}
+
 func NewTestMessage(bot *Bot, guildID string) *discord.DiscordMessage {
 	author := &discordgo.User{Username: "jeff"}
 	msg := &discord.DiscordMessage{
@@ -109,17 +139,40 @@ func NewTestMessage(bot *Bot, guildID string) *discord.DiscordMessage {
 	return msg
 }
 
+func NewTestApplicationCommandInteraction(bot *Bot, guildID string) *discord.DiscordInteraction {
+	it := NewTestInteraction(bot, guildID)
+	it.Interaction.Type = discordgo.InteractionApplicationCommand
+	it.Interaction.Data = discordgo.ApplicationCommandInteractionData{
+		Name:        "test",
+		CommandType: discordgo.ChatApplicationCommand,
+	}
+	return it
+}
+
+func NewTestMessageComponentInteraction(bot *Bot, guildID, customID string) *discord.DiscordInteraction {
+	it := NewTestInteraction(bot, guildID)
+	it.Interaction.Type = discordgo.InteractionMessageComponent
+	it.Interaction.Data = discordgo.MessageComponentInteractionData{
+		CustomID: customID,
+	}
+	return it
+}
+
+func NewTestModalSubmitInteraction(bot *Bot, guildID, customID string) *discord.DiscordInteraction {
+	it := NewTestInteraction(bot, guildID)
+	it.Interaction.Type = discordgo.InteractionModalSubmit
+	it.Interaction.Data = discordgo.ModalSubmitInteractionData{
+		CustomID: customID,
+	}
+	return it
+}
+
 func NewTestInteraction(bot *Bot, guildID string) *discord.DiscordInteraction {
 	author := &discordgo.User{Username: "jeff"}
 	it := &discord.DiscordInteraction{
 		Sess:    bot.Discord.Sess,
 		Discord: bot.Discord,
 		Interaction: &discordgo.Interaction{
-			Type: discordgo.InteractionApplicationCommand,
-			Data: discordgo.ApplicationCommandInteractionData{
-				Name:        "test",
-				CommandType: discordgo.ChatApplicationCommand,
-			},
 			ChannelID: "1",
 			GuildID:   guildID,
 			ID:        "1",

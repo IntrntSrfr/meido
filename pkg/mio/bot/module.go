@@ -466,7 +466,7 @@ func (m *ModuleBase) FindApplicationCommand(name string) (*ModuleApplicationComm
 
 func (m *ModuleBase) FindModalSubmit(name string) (*ModuleModalSubmit, error) {
 	for _, s := range m.ModalSubmits() {
-		if strings.EqualFold(s.ID, name) {
+		if strings.EqualFold(s.Name, name) {
 			return s, nil
 		}
 	}
@@ -619,7 +619,7 @@ func (s *ModuleApplicationCommand) AllowsInteraction(it *discord.DiscordApplicat
 
 type ModuleModalSubmit struct {
 	Mod     Module
-	ID      string
+	Name    string
 	Enabled bool
 	Run     func(*discord.DiscordModalSubmit) `json:"-"`
 }
