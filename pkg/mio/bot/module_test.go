@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
@@ -60,18 +61,6 @@ func TestModuleBase_AllowDMs(t *testing.T) {
 	}
 }
 
-func TestModuleBase_RegisterPassive(t *testing.T) {
-	want := 1
-	base := NewModule(nil, "testing", test.NewTestLogger())
-	base.RegisterPassives(&ModulePassive{Name: "testing"})
-	if got := len(base.Passives()); got != 1 {
-		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
-	}
-	if err := base.RegisterPassives(&ModulePassive{Name: "testing"}); err == nil {
-		t.Errorf("ModuleBase.RegisterPassive() did not error on duplicate passive registration")
-	}
-}
-
 func TestModuleBase_RegisterPassives(t *testing.T) {
 	want := 1
 	base := NewModule(nil, "testing", test.NewTestLogger())
@@ -84,18 +73,6 @@ func TestModuleBase_RegisterPassives(t *testing.T) {
 	}
 }
 
-func TestModuleBase_RegisterCommand(t *testing.T) {
-	want := 1
-	base := NewModule(nil, "testing", test.NewTestLogger())
-	base.RegisterCommands(&ModuleCommand{Name: "testing"})
-	if got := len(base.Commands()); got != 1 {
-		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
-	}
-	if err := base.RegisterCommands(&ModuleCommand{Name: "testing"}); err == nil {
-		t.Errorf("ModuleBase.RegisterCommand() did not error on duplicate passive registration")
-	}
-}
-
 func TestModuleBase_RegisterCommands(t *testing.T) {
 	want := 1
 	base := NewModule(nil, "testing", test.NewTestLogger())
@@ -105,121 +82,6 @@ func TestModuleBase_RegisterCommands(t *testing.T) {
 	}
 	if err := base.RegisterCommands(&ModuleCommand{Name: "testing2"}, &ModuleCommand{Name: "testing2"}); err == nil {
 		t.Errorf("ModuleBase.RegisterCommands() did not error on duplicate passive registration")
-	}
-}
-
-func TestModuleBase_FindCommandByName(t *testing.T) {
-	base := NewModule(nil, "testing", test.NewTestLogger())
-	cmd := &ModuleCommand{
-		Name:     "test",
-		Triggers: []string{"m?test", "m?settings test"},
-	}
-	base.RegisterCommands(cmd)
-
-	type args struct {
-		name string
-	}
-	tests := []struct {
-		name    string
-		m       *ModuleBase
-		args    args
-		want    *ModuleCommand
-		wantErr bool
-	}{
-		{
-			name:    "positive test 1",
-			m:       base,
-			args:    args{"test"},
-			want:    cmd,
-			wantErr: false,
-		},
-		{
-			name:    "negative test 1",
-			m:       base,
-			args:    args{"m?test"},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name:    "negative test 2",
-			m:       base,
-			args:    args{"testing"},
-			want:    nil,
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.findCommandByName(tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ModuleBase.FindCommandByName() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ModuleBase.FindCommandByName() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestModuleBase_FindCommandByTriggers(t *testing.T) {
-	base := NewModule(nil, "testing", test.NewTestLogger())
-	cmd := &ModuleCommand{
-		Name:     "test",
-		Triggers: []string{"m?test", "m?settings test"},
-	}
-	base.RegisterCommands(cmd)
-
-	type args struct {
-		name string
-	}
-	tests := []struct {
-		name    string
-		m       *ModuleBase
-		args    args
-		want    *ModuleCommand
-		wantErr bool
-	}{
-		{
-			name:    "positive test 1",
-			m:       base,
-			args:    args{"m?test"},
-			want:    cmd,
-			wantErr: false,
-		},
-		{
-			name:    "positive test 2",
-			m:       base,
-			args:    args{"m?settings test abc"},
-			want:    cmd,
-			wantErr: false,
-		},
-		{
-			name:    "negative test 1",
-			m:       base,
-			args:    args{"test"},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name:    "negative test 2",
-			m:       base,
-			args:    args{"m?testing"},
-			want:    nil,
-			wantErr: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.m.findCommandByTriggers(tt.args.name)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ModuleBase.FindCommandByTriggers() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ModuleBase.FindCommandByTriggers() = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }
 
@@ -377,46 +239,217 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 	})
 }
 
-func TestModuleCommand_AllowsMessage(t *testing.T) {
-	cmd := &ModuleCommand{AllowedTypes: discord.MessageTypeCreate, RequiredPerms: 0, AllowDMs: true}
+func TestModuleBase_HandleMessage(t *testing.T) {
+	bot := NewTestBot()
+	mod := NewTestModule(bot, "testing", test.NewTestLogger())
+
+	cmdCalled := make(chan bool)
+	cmd := NewTestCommand(mod)
+	cmd.Run = func(dm *discord.DiscordMessage) {
+		cmdCalled <- true
+	}
+	mod.RegisterCommands(cmd)
+
+	pasCalled := make(chan bool)
+	pas := NewTestPassive(mod)
+	pas.Run = func(dm *discord.DiscordMessage) {
+		pasCalled <- true
+	}
+	mod.RegisterPassives(pas)
+
 	msg := &discord.DiscordMessage{
-		Message:     &discordgo.Message{Type: discordgo.MessageTypeDefault, GuildID: ""},
-		MessageType: discord.MessageTypeCreate,
+		Sess:         bot.Discord.Sess,
+		Discord:      bot.Discord,
+		MessageType:  discord.MessageTypeCreate,
+		TimeReceived: time.Now(),
+		Message: &discordgo.Message{
+			Content: ".test hello",
+			GuildID: "1",
+			Author: &discordgo.User{
+				Username: "jeff",
+			},
+			ChannelID: "1",
+			ID:        "1",
+		},
 	}
 
-	t.Run("dm ok if allows dms", func(t *testing.T) {
-		expected := true
-		if got := cmd.AllowsMessage(msg); got != expected {
-			t.Errorf("ModuleCommand.AllowsMessage(msg) = %v, want %v", got, expected)
+	t.Run("both called by guild message", func(t *testing.T) {
+		mod.HandleMessage(msg)
+		for range 2 {
+			select {
+			case <-pasCalled:
+				continue
+			case <-cmdCalled:
+				continue
+			case <-time.After(time.Millisecond * 50):
+				t.Error("Expected signal, but timed out")
+			}
 		}
 	})
 
-	t.Run("dm not ok if not allows dms", func(t *testing.T) {
+	t.Run("both called by DM", func(t *testing.T) {
+		msg.Message.GuildID = ""
+		pas.AllowDMs = true
+		cmd.AllowDMs = true
+		mod.HandleMessage(msg)
+		for range 2 {
+			select {
+			case <-pasCalled:
+				continue
+			case <-cmdCalled:
+				continue
+			case <-time.After(time.Millisecond * 50):
+				t.Error("Expected signal, but timed out")
+			}
+		}
+	})
+
+	t.Run("none called by DM if DMs not allowed", func(t *testing.T) {
+		msg.Message.GuildID = ""
+		pas.AllowDMs = false
 		cmd.AllowDMs = false
-		expected := true
-		if got := cmd.AllowsMessage(msg); got != false {
-			t.Errorf("ModuleCommand.AllowsMessage(msg) = %v, want %v", got, expected)
+		mod.HandleMessage(msg)
+		for range 2 {
+			select {
+			case <-pasCalled:
+				t.Errorf("Passive was not expected to be called")
+			case <-cmdCalled:
+				t.Errorf("Command was not expected to be called")
+			case <-time.After(time.Millisecond * 50):
+				continue
+			}
 		}
 	})
-
-	cmd.AllowDMs = true
-	t.Run("ok if good type", func(t *testing.T) {
-		msg.MessageType = discord.MessageTypeCreate | discord.MessageTypeUpdate
-		expected := true
-		if got := cmd.AllowsMessage(msg); got != true {
-			t.Errorf("ModuleCommand.AllowsMessage(msg) = %v, want %v", got, expected)
-		}
-	})
-
-	t.Run("not ok if not good type", func(t *testing.T) {
-		msg.MessageType = discord.MessageTypeUpdate
-		expected := true
-		if got := cmd.AllowsMessage(msg); got != false {
-			t.Errorf("ModuleCommand.AllowsMessage(msg) = %v, want %v", got, expected)
-		}
-	})
-
 }
+
+func TestModuleBase_HandleMessageWithPanicks(t *testing.T) {
+	bot := NewTestBot()
+	mod := NewTestModule(bot, "testing", test.NewTestLogger())
+
+	cmd := NewTestCommand(mod)
+	cmd.Run = func(dm *discord.DiscordMessage) {
+		panic("command panic")
+	}
+	mod.RegisterCommands(cmd)
+
+	pas := NewTestPassive(mod)
+	pas.Run = func(dm *discord.DiscordMessage) {
+		panic("passive panic")
+	}
+	mod.RegisterPassives(pas)
+
+	msg := &discord.DiscordMessage{
+		Sess:        bot.Discord.Sess,
+		Discord:     bot.Discord,
+		MessageType: discord.MessageTypeCreate,
+		Message: &discordgo.Message{
+			Content: ".test hello",
+			GuildID: "1",
+			Author: &discordgo.User{
+				Username: "jeff",
+			},
+			ChannelID: "1",
+			ID:        "1",
+		},
+	}
+
+	t.Run("both panicks by guild message get handled", func(t *testing.T) {
+		mod.HandleMessage(msg)
+		for range 2 {
+			select {
+			case <-bot.eventCh:
+				continue
+			case <-time.After(time.Millisecond * 50):
+				t.Error("Expected signal, but timed out")
+			}
+		}
+	})
+}
+
+func TestModuleBase_HandleApplicationCommand(t *testing.T) {
+	newInteraction := func(bot *Bot, guildID string) *discord.DiscordInteraction {
+		author := &discordgo.User{Username: "jeff"}
+		it := &discord.DiscordInteraction{
+			Sess:    bot.Discord.Sess,
+			Discord: bot.Discord,
+			Interaction: &discordgo.Interaction{
+				Type: discordgo.InteractionApplicationCommand,
+				Data: discordgo.ApplicationCommandInteractionData{
+					Name:        "test",
+					CommandType: discordgo.ChatApplicationCommand,
+				},
+				ChannelID: "1",
+				GuildID:   guildID,
+				ID:        "1",
+			},
+		}
+		if guildID == "" {
+			it.Interaction.User = author
+		} else {
+			it.Interaction.Member = &discordgo.Member{User: author}
+		}
+		return it
+	}
+
+	t.Run("it runs correctly", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmdCalled := make(chan bool, 1)
+		cmd := NewTestApplicationCommand(mod)
+		cmd.Run = func(dac *discord.DiscordApplicationCommand) {
+			cmdCalled <- true
+		}
+		mod.RegisterApplicationCommands(cmd)
+
+		it := newInteraction(bot, "1")
+		mod.HandleInteraction(it)
+		select {
+		case <-cmdCalled:
+		case <-time.After(time.Millisecond * 50):
+			t.Error("Expected signal, but timed out")
+		}
+	})
+
+	t.Run("panic gets handled", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmd := NewTestApplicationCommand(mod)
+		cmd.AllowDMs = false
+		cmd.Run = func(dac *discord.DiscordApplicationCommand) {
+			panic("application command panic")
+		}
+		mod.RegisterApplicationCommands(cmd)
+
+		it := newInteraction(bot, "1")
+		mod.HandleInteraction(it)
+		select {
+		case <-bot.eventCh:
+		case <-time.After(time.Second):
+			t.Error("Expected signal, but timed out")
+		}
+	})
+
+	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmd := NewTestApplicationCommand(mod)
+		cmd.AllowDMs = false
+		cmdCalled := make(chan bool, 1)
+		cmd.Run = func(dac *discord.DiscordApplicationCommand) {
+			cmdCalled <- true
+		}
+		mod.RegisterApplicationCommands(cmd)
+
+		it := newInteraction(bot, "")
+		mod.HandleInteraction(it)
+		select {
+		case <-cmdCalled:
+			t.Errorf("Command was not expected to be called")
+		case <-time.After(time.Millisecond * 50):
+		}
+	})
+}
+
 func TestModuleCommand_CooldownKey(t *testing.T) {
 	gid, chid, uid := "1234", "2345", "3456"
 
