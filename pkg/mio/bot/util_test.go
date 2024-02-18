@@ -3,6 +3,7 @@ package bot
 import (
 	"errors"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/mio/test"
 	"go.uber.org/zap"
@@ -86,4 +87,48 @@ func NewTestApplicationCommand(mod Module) *ModuleApplicationCommand {
 
 func testApplicationCommandRun(msg *discord.DiscordApplicationCommand) {
 
+}
+
+func NewTestMessage(bot *Bot, guildID string) *discord.DiscordMessage {
+	author := &discordgo.User{Username: "jeff"}
+	msg := &discord.DiscordMessage{
+		Sess:        bot.Discord.Sess,
+		Discord:     bot.Discord,
+		MessageType: discord.MessageTypeCreate,
+		Message: &discordgo.Message{
+			Content:   ".test hello",
+			GuildID:   guildID,
+			Author:    author,
+			ChannelID: "1",
+			ID:        "1",
+		},
+	}
+	if guildID != "" {
+		msg.Message.Member = &discordgo.Member{User: author}
+	}
+	return msg
+}
+
+func NewTestInteraction(bot *Bot, guildID string) *discord.DiscordInteraction {
+	author := &discordgo.User{Username: "jeff"}
+	it := &discord.DiscordInteraction{
+		Sess:    bot.Discord.Sess,
+		Discord: bot.Discord,
+		Interaction: &discordgo.Interaction{
+			Type: discordgo.InteractionApplicationCommand,
+			Data: discordgo.ApplicationCommandInteractionData{
+				Name:        "test",
+				CommandType: discordgo.ChatApplicationCommand,
+			},
+			ChannelID: "1",
+			GuildID:   guildID,
+			ID:        "1",
+		},
+	}
+	if guildID == "" {
+		it.Interaction.User = author
+	} else {
+		it.Interaction.Member = &discordgo.Member{User: author}
+	}
+	return it
 }

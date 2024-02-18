@@ -239,158 +239,123 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 	})
 }
 
-func TestModuleBase_HandleMessage(t *testing.T) {
-	bot := NewTestBot()
-	mod := NewTestModule(bot, "testing", test.NewTestLogger())
+func TestModuleBase_HandleCommand(t *testing.T) {
+	t.Run("it runs correctly", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmdCalled := make(chan bool, 1)
+		cmd := NewTestCommand(mod)
+		cmd.Run = func(dm *discord.DiscordMessage) {
+			cmdCalled <- true
+		}
+		mod.RegisterCommands(cmd)
 
-	cmdCalled := make(chan bool)
-	cmd := NewTestCommand(mod)
-	cmd.Run = func(dm *discord.DiscordMessage) {
-		cmdCalled <- true
-	}
-	mod.RegisterCommands(cmd)
-
-	pasCalled := make(chan bool)
-	pas := NewTestPassive(mod)
-	pas.Run = func(dm *discord.DiscordMessage) {
-		pasCalled <- true
-	}
-	mod.RegisterPassives(pas)
-
-	msg := &discord.DiscordMessage{
-		Sess:         bot.Discord.Sess,
-		Discord:      bot.Discord,
-		MessageType:  discord.MessageTypeCreate,
-		TimeReceived: time.Now(),
-		Message: &discordgo.Message{
-			Content: ".test hello",
-			GuildID: "1",
-			Author: &discordgo.User{
-				Username: "jeff",
-			},
-			ChannelID: "1",
-			ID:        "1",
-		},
-	}
-
-	t.Run("both called by guild message", func(t *testing.T) {
+		msg := NewTestMessage(bot, "1")
 		mod.HandleMessage(msg)
-		for range 2 {
-			select {
-			case <-pasCalled:
-				continue
-			case <-cmdCalled:
-				continue
-			case <-time.After(time.Millisecond * 50):
-				t.Error("Expected signal, but timed out")
-			}
+		select {
+		case <-cmdCalled:
+		case <-time.After(time.Millisecond * 50):
+			t.Error("Expected event, but timed out")
 		}
 	})
 
-	t.Run("both called by DM", func(t *testing.T) {
-		msg.Message.GuildID = ""
-		pas.AllowDMs = true
-		cmd.AllowDMs = true
+	t.Run("panic gets handled", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmd := NewTestCommand(mod)
+		cmd.Run = func(dm *discord.DiscordMessage) {
+			panic("command panic")
+		}
+		mod.RegisterCommands(cmd)
+
+		msg := NewTestMessage(bot, "1")
 		mod.HandleMessage(msg)
-		for range 2 {
-			select {
-			case <-pasCalled:
-				continue
-			case <-cmdCalled:
-				continue
-			case <-time.After(time.Millisecond * 50):
-				t.Error("Expected signal, but timed out")
-			}
+		select {
+		case <-bot.eventCh:
+		case <-time.After(time.Millisecond * 50):
+			t.Error("Expected event, but timed out")
 		}
 	})
 
 	t.Run("none called by DM if DMs not allowed", func(t *testing.T) {
-		msg.Message.GuildID = ""
-		pas.AllowDMs = false
-		cmd.AllowDMs = false
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmdCalled := make(chan bool, 1)
+		cmd := NewTestCommand(mod)
+		cmd.Run = func(dm *discord.DiscordMessage) {
+			cmdCalled <- true
+		}
+		mod.RegisterCommands(cmd)
+
+		msg := NewTestMessage(bot, "")
 		mod.HandleMessage(msg)
-		for range 2 {
-			select {
-			case <-pasCalled:
-				t.Errorf("Passive was not expected to be called")
-			case <-cmdCalled:
-				t.Errorf("Command was not expected to be called")
-			case <-time.After(time.Millisecond * 50):
-				continue
-			}
+		select {
+		case <-cmdCalled:
+			t.Errorf("Command was not expected to be called")
+		case <-time.After(time.Millisecond * 50):
 		}
 	})
 }
 
-func TestModuleBase_HandleMessageWithPanicks(t *testing.T) {
-	bot := NewTestBot()
-	mod := NewTestModule(bot, "testing", test.NewTestLogger())
+func TestModuleBase_HandlePassive(t *testing.T) {
+	t.Run("it runs correctly", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		pasCalled := make(chan bool, 1)
+		pas := NewTestPassive(mod)
+		pas.Run = func(dm *discord.DiscordMessage) {
+			pasCalled <- true
+		}
+		mod.RegisterPassives(pas)
 
-	cmd := NewTestCommand(mod)
-	cmd.Run = func(dm *discord.DiscordMessage) {
-		panic("command panic")
-	}
-	mod.RegisterCommands(cmd)
-
-	pas := NewTestPassive(mod)
-	pas.Run = func(dm *discord.DiscordMessage) {
-		panic("passive panic")
-	}
-	mod.RegisterPassives(pas)
-
-	msg := &discord.DiscordMessage{
-		Sess:        bot.Discord.Sess,
-		Discord:     bot.Discord,
-		MessageType: discord.MessageTypeCreate,
-		Message: &discordgo.Message{
-			Content: ".test hello",
-			GuildID: "1",
-			Author: &discordgo.User{
-				Username: "jeff",
-			},
-			ChannelID: "1",
-			ID:        "1",
-		},
-	}
-
-	t.Run("both panicks by guild message get handled", func(t *testing.T) {
+		msg := NewTestMessage(bot, "1")
 		mod.HandleMessage(msg)
-		for range 2 {
-			select {
-			case <-bot.eventCh:
-				continue
-			case <-time.After(time.Millisecond * 50):
-				t.Error("Expected signal, but timed out")
-			}
+		select {
+		case <-pasCalled:
+		case <-time.After(time.Millisecond * 50):
+			t.Error("Expected event, but timed out")
+		}
+	})
+
+	t.Run("panic gets handled", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		pas := NewTestPassive(mod)
+		pas.Run = func(dm *discord.DiscordMessage) {
+			panic("passive panic")
+		}
+		mod.RegisterPassives(pas)
+
+		msg := NewTestMessage(bot, "1")
+		mod.HandleMessage(msg)
+		select {
+		case <-bot.eventCh:
+		case <-time.After(time.Millisecond * 50):
+			t.Error("Expected event, but timed out")
+		}
+	})
+
+	t.Run("none called by DM if DMs not allowed", func(t *testing.T) {
+		bot := NewTestBot()
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		pasCalled := make(chan bool, 1)
+		pas := NewTestPassive(mod)
+		pas.Run = func(dm *discord.DiscordMessage) {
+			pasCalled <- true
+		}
+		mod.RegisterPassives(pas)
+
+		msg := NewTestMessage(bot, "")
+		mod.HandleMessage(msg)
+		select {
+		case <-pasCalled:
+			t.Errorf("Passive was not expected to be called")
+		case <-time.After(time.Millisecond * 50):
 		}
 	})
 }
 
 func TestModuleBase_HandleApplicationCommand(t *testing.T) {
-	newInteraction := func(bot *Bot, guildID string) *discord.DiscordInteraction {
-		author := &discordgo.User{Username: "jeff"}
-		it := &discord.DiscordInteraction{
-			Sess:    bot.Discord.Sess,
-			Discord: bot.Discord,
-			Interaction: &discordgo.Interaction{
-				Type: discordgo.InteractionApplicationCommand,
-				Data: discordgo.ApplicationCommandInteractionData{
-					Name:        "test",
-					CommandType: discordgo.ChatApplicationCommand,
-				},
-				ChannelID: "1",
-				GuildID:   guildID,
-				ID:        "1",
-			},
-		}
-		if guildID == "" {
-			it.Interaction.User = author
-		} else {
-			it.Interaction.Member = &discordgo.Member{User: author}
-		}
-		return it
-	}
-
 	t.Run("it runs correctly", func(t *testing.T) {
 		bot := NewTestBot()
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
@@ -401,12 +366,12 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		}
 		mod.RegisterApplicationCommands(cmd)
 
-		it := newInteraction(bot, "1")
+		it := NewTestInteraction(bot, "1")
 		mod.HandleInteraction(it)
 		select {
 		case <-cmdCalled:
 		case <-time.After(time.Millisecond * 50):
-			t.Error("Expected signal, but timed out")
+			t.Error("Expected event, but timed out")
 		}
 	})
 
@@ -420,12 +385,12 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		}
 		mod.RegisterApplicationCommands(cmd)
 
-		it := newInteraction(bot, "1")
+		it := NewTestInteraction(bot, "1")
 		mod.HandleInteraction(it)
 		select {
 		case <-bot.eventCh:
 		case <-time.After(time.Second):
-			t.Error("Expected signal, but timed out")
+			t.Error("Expected event, but timed out")
 		}
 	})
 
@@ -440,7 +405,7 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		}
 		mod.RegisterApplicationCommands(cmd)
 
-		it := newInteraction(bot, "")
+		it := NewTestInteraction(bot, "")
 		mod.HandleInteraction(it)
 		select {
 		case <-cmdCalled:
