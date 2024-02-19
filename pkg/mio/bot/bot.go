@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	mutils "github.com/intrntsrfr/meido/pkg/mio/utils"
 	"github.com/intrntsrfr/meido/pkg/utils"
@@ -33,18 +34,34 @@ func (b *Bot) UseDefaultHandlers() {
 
 func (b *Bot) Run(ctx context.Context) error {
 	b.Logger.Info("Starting up...")
+
 	go b.EventHandler.Listen(ctx)
 	if err := b.Discord.Run(); err != nil {
 		return err
 	}
 	b.Logger.Info("Running")
+	b.setApplicationCommands()
 	return nil
-
 }
 
 func (b *Bot) Close() {
 	b.Logger.Info("Shutting down")
 	b.Discord.Close()
+}
+
+func (b *Bot) setApplicationCommands() {
+	var allCommands []*discordgo.ApplicationCommand
+	for _, m := range b.Modules {
+		allCommands = append(allCommands, m.ApplicationCommandStructs()...)
+	}
+
+	created, err := b.Discord.Sess.Real().ApplicationCommandBulkOverwrite(b.Discord.Sess.Real().State.User.ID, "", allCommands)
+	if err != nil {
+		b.logger.Error("could not overwrite commands", zap.Error(err))
+	}
+	for _, c := range created {
+		b.logger.Info("created/updated command", zap.String("name", c.Name))
+	}
 }
 
 func (b *Bot) IsOwner(userID string) bool {

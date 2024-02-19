@@ -59,6 +59,8 @@ type ApplicationCommandHandler interface {
 	ApplicationCommands() map[string]*ModuleApplicationCommand
 	RegisterApplicationCommands(...*ModuleApplicationCommand) error
 	FindApplicationCommand(name string) (*ModuleApplicationCommand, error)
+	SetApplicationCommandStructs([]*discordgo.ApplicationCommand)
+	ApplicationCommandStructs() []*discordgo.ApplicationCommand
 }
 
 type MessageComponentHandler interface {
@@ -103,6 +105,8 @@ type ModuleBase struct {
 
 	messageComponentCallbacks map[string]*ModuleMessageComponent
 	modalSubmitCallbacks      map[string]*ModuleModalSubmit
+
+	applicationCommandStructs []*discordgo.ApplicationCommand
 }
 
 func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
@@ -119,6 +123,7 @@ func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
 		messageComponents:         make(map[string]*ModuleMessageComponent),
 		messageComponentCallbacks: make(map[string]*ModuleMessageComponent),
 		modalSubmitCallbacks:      make(map[string]*ModuleModalSubmit),
+		applicationCommandStructs: make([]*discordgo.ApplicationCommand, 0),
 	}
 }
 
@@ -454,6 +459,14 @@ func (m *ModuleBase) FindApplicationCommand(name string) (*ModuleApplicationComm
 		}
 	}
 	return nil, ErrApplicationCommandNotFound
+}
+
+func (m *ModuleBase) SetApplicationCommandStructs(s []*discordgo.ApplicationCommand) {
+	m.applicationCommandStructs = s
+}
+
+func (m *ModuleBase) ApplicationCommandStructs() []*discordgo.ApplicationCommand {
+	return m.applicationCommandStructs
 }
 
 func (m *ModuleBase) MessageComponents() map[string]*ModuleMessageComponent {
