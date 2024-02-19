@@ -56,7 +56,33 @@ func (it *DiscordInteraction) RespondFile(text, name string, reader io.Reader) e
 
 type DiscordApplicationCommand struct {
 	*DiscordInteraction
-	Data discordgo.ApplicationCommandInteractionData
+	Data    discordgo.ApplicationCommandInteractionData
+	options map[string]*discordgo.ApplicationCommandInteractionDataOption
+}
+
+// Options returns a *discordgo.ApplicationCommandInteractionDataOption given
+// by key. It assumes that the value for the key exists.
+func (d *DiscordApplicationCommand) Options(key string) *discordgo.ApplicationCommandInteractionDataOption {
+	if d.options == nil {
+		d.options = FlattenOptions(d.Data.Options)
+	}
+	return d.options[key]
+}
+
+func FlattenOptions(options []*discordgo.ApplicationCommandInteractionDataOption) map[string]*discordgo.ApplicationCommandInteractionDataOption {
+	result := make(map[string]*discordgo.ApplicationCommandInteractionDataOption)
+	flattenOptions(options, result)
+	return result
+}
+
+func flattenOptions(options []*discordgo.ApplicationCommandInteractionDataOption, result map[string]*discordgo.ApplicationCommandInteractionDataOption) {
+	for _, option := range options {
+		if option.Options != nil {
+			flattenOptions(option.Options, result)
+		} else {
+			result[option.Name] = option
+		}
+	}
 }
 
 type DiscordMessageComponent struct {

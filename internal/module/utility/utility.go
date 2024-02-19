@@ -216,7 +216,7 @@ func newColorSlash(m *Module) *bot.ModuleApplicationCommand {
 	return &bot.ModuleApplicationCommand{
 		Mod:           m,
 		Name:          "color",
-		Description:   "Displays a small image of a provided color hex",
+		Description:   "Show the color of a provided hex",
 		Cooldown:      1,
 		CooldownScope: bot.Channel,
 		CheckBotPerms: false,
@@ -227,7 +227,7 @@ func newColorSlash(m *Module) *bot.ModuleApplicationCommand {
 				return
 			}
 
-			clrStr := d.Data.Options[0].StringValue()
+			clrStr := d.Options("hex").StringValue()
 			if !strings.HasPrefix(clrStr, "#") {
 				clrStr = "#" + strings.TrimSpace(clrStr)
 			}
