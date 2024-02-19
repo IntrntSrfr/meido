@@ -26,6 +26,7 @@ func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 
 // Hook will hook the Module into the Bot.
 func (m *Module) Hook() error {
+	m.SetApplicationCommandStructs(commands)
 	if err := m.RegisterCommands(newTestCommand(m)); err != nil {
 		return err
 	}
@@ -60,8 +61,8 @@ func newTestCommand(m *Module) *bot.ModuleCommand {
 func newTestSlash(m *Module) *bot.ModuleApplicationCommand {
 	return &bot.ModuleApplicationCommand{
 		Mod:           m,
-		Name:          "ping",
-		Description:   "pong",
+		Name:          "pingo",
+		Description:   "pongo",
 		Cooldown:      0,
 		CooldownScope: bot.Channel,
 		Permissions:   0,
@@ -71,8 +72,8 @@ func newTestSlash(m *Module) *bot.ModuleApplicationCommand {
 		Enabled:       true,
 		Run: func(dac *discord.DiscordApplicationCommand) {
 			startTime := time.Now()
-			dac.Respond("Pong")
-			resp := fmt.Sprintf("Pong!\nDelay: %s", time.Since(startTime))
+			dac.Respond("Pongo")
+			resp := fmt.Sprintf("Pongo!\nDelay: %s", time.Since(startTime))
 			respData := &discordgo.WebhookEdit{
 				Content: &resp,
 			}

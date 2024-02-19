@@ -4,16 +4,15 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/color"
 	"image/draw"
 	"image/png"
 	"runtime"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
+	"github.com/g4s8/hexcolor"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
@@ -38,7 +37,15 @@ func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 }
 
 func (m *Module) Hook() error {
-	return m.RegisterCommands(
+	m.SetApplicationCommandStructs(commands)
+
+	if err := m.RegisterApplicationCommands(
+		newColorSlash(m),
+	); err != nil {
+		return err
+	}
+
+	if err := m.RegisterCommands(
 		newPingCommand(m),
 		newAvatarCommand(m),
 		newBannerCommand(m),
@@ -53,7 +60,11 @@ func (m *Module) Hook() error {
 		newInviteCommand(m),
 		newUserInfoCommand(m),
 		newHelpCommand(m),
-	)
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func NewConvertCommand(m *Module) *bot.ModuleCommand {
@@ -189,9 +200,9 @@ func newColorCommand(m *Module) *bot.ModuleCommand {
 				return
 			}
 
-			colorStr := msg.Args()[1]
-			colorStr = strings.TrimPrefix(colorStr, "#")
-			buf, err := generateColorPNG(colorStr)
+			clrStr := msg.Args()[1]
+			clrStr = strings.TrimPrefix(clrStr, "#")
+			buf, err := generateColorPNG(clrStr)
 			if err != nil {
 				_, _ = msg.Reply("Invalid hex code")
 				return
@@ -201,18 +212,47 @@ func newColorCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
+func newColorSlash(m *Module) *bot.ModuleApplicationCommand {
+	return &bot.ModuleApplicationCommand{
+		Mod:           m,
+		Name:          "color",
+		Description:   "Displays a small image of a provided color hex",
+		Cooldown:      1,
+		CooldownScope: bot.Channel,
+		CheckBotPerms: false,
+		AllowDMs:      true,
+		Enabled:       true,
+		Run: func(d *discord.DiscordApplicationCommand) {
+			if len(d.Data.Options) < 1 {
+				return
+			}
+
+			clrStr := d.Data.Options[0].StringValue()
+			if !strings.HasPrefix(clrStr, "#") {
+				clrStr = "#" + strings.TrimSpace(clrStr)
+			}
+			buf, err := generateColorPNG(clrStr)
+			if err != nil {
+				d.RespondEphemeral("Invalid hex code")
+				return
+			}
+			d.RespondFile(
+				fmt.Sprintf("Color hex: `%v`", strings.ToUpper(clrStr)),
+				"color.png",
+				buf,
+			)
+		},
+	}
+}
+
 func generateColorPNG(clrStr string) (*bytes.Buffer, error) {
-	clr, err := strconv.ParseInt(clrStr, 16, 32)
-	if err != nil || clr < 0 || clr > 0xffffff {
+	clr, err := hexcolor.Parse(clrStr)
+	if err != nil {
 		return nil, err
 	}
 
-	red := clr >> 16
-	green := (clr >> 8) & 0xff
-	blue := clr & 0xff
-
 	img := image.NewRGBA(image.Rect(0, 0, 64, 64))
-	draw.Draw(img, img.Bounds(), &image.Uniform{C: color.RGBA{R: uint8(red), G: uint8(green), B: uint8(blue), A: 255}}, image.Point{}, draw.Src)
+	draw.Draw(img, img.Bounds(), &image.Uniform{C: clr}, image.Point{}, draw.Src)
 	buf := bytes.Buffer{}
 	err = png.Encode(&buf, img)
 	return &buf, err
