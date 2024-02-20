@@ -43,10 +43,7 @@ Features include:
 The feature list will increase as time goes.
 Some ideas for more features include:
 
-* Raid protection (will be added)
-* More media conversion such as webm to mp4
 * Gambling
-* XP and level system (maybe, as there are already tons of other bots with this feature)
 * Autoroles
 
 Ideas for other features are more than welcome!
