@@ -39,8 +39,10 @@ func (b *Bot) Run(ctx context.Context) error {
 	if err := b.Discord.Run(); err != nil {
 		return err
 	}
+	if err := b.setApplicationCommands(); err != nil {
+		return err
+	}
 	b.Logger.Info("Running")
-	b.setApplicationCommands()
 	return nil
 }
 
@@ -49,19 +51,21 @@ func (b *Bot) Close() {
 	b.Discord.Close()
 }
 
-func (b *Bot) setApplicationCommands() {
+func (b *Bot) setApplicationCommands() error {
 	var allCommands []*discordgo.ApplicationCommand
 	for _, m := range b.Modules {
 		allCommands = append(allCommands, m.ApplicationCommandStructs()...)
 	}
 
-	created, err := b.Discord.Sess.Real().ApplicationCommandBulkOverwrite(b.Discord.Sess.Real().State.User.ID, "", allCommands)
+	created, err := b.Discord.Sess.ApplicationCommandBulkOverwrite(b.Discord.Sess.State().User.ID, "", allCommands)
 	if err != nil {
 		b.logger.Error("could not overwrite commands", zap.Error(err))
+		return err
 	}
 	for _, c := range created {
 		b.logger.Info("created/updated command", zap.String("name", c.Name))
 	}
+	return nil
 }
 
 func (b *Bot) IsOwner(userID string) bool {

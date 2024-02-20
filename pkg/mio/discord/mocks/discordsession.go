@@ -6,6 +6,7 @@ import (
 	"image"
 	"io"
 	"math/rand"
+	"strings"
 	"sync"
 	"time"
 
@@ -102,6 +103,16 @@ func (s *DiscordSessionMock) AddHandlerOnce(handler interface{}) func() {
 
 	s.onceHandlers[typeStr] = append(s.onceHandlers[typeStr], handler)
 	return func() {}
+}
+
+func (s *DiscordSessionMock) ApplicationCommandBulkOverwrite(appID string, guildID string, commands []*discordgo.ApplicationCommand, options ...discordgo.RequestOption) (createdCommands []*discordgo.ApplicationCommand, err error) {
+	for _, c := range commands {
+		if strings.ToLower(c.Name) != c.Name {
+			return nil, errors.New("lower case name")
+		}
+		// can check options too, but im lazy
+	}
+	return commands, nil
 }
 
 func (s *DiscordSessionMock) Channel(channelID string, options ...discordgo.RequestOption) (st *discordgo.Channel, err error) {

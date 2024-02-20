@@ -34,6 +34,7 @@ type DiscordSession interface {
 
 	AddHandler(handler interface{}) func()
 	AddHandlerOnce(handler interface{}) func()
+	ApplicationCommandBulkOverwrite(appID string, guildID string, commands []*discordgo.ApplicationCommand, options ...discordgo.RequestOption) (createdCommands []*discordgo.ApplicationCommand, err error)
 	Channel(channelID string, options ...discordgo.RequestOption) (st *discordgo.Channel, err error)
 	ChannelFileSend(channelID, name string, r io.Reader, options ...discordgo.RequestOption) (*discordgo.Message, error)
 	ChannelMessageDelete(channelID string, messageID string, options ...discordgo.RequestOption) (err error)
