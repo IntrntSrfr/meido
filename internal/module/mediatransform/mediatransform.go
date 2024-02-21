@@ -86,7 +86,7 @@ func newMediaConvertCommand(m *MediaTransformMod) *bot.ModuleCommand {
 		Triggers:         []string{"m?mediaconvert"},
 		Usage:            "m?mediaconvert [url] [target format]",
 		Cooldown:         30,
-		CooldownScope:    bot.Channel,
+		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
 		RequiresUserType: bot.UserTypeAny,

@@ -37,7 +37,7 @@ func newLifeCommand(m *Module) *bot.ModuleCommand {
 		Triggers:         []string{"m?life"},
 		Usage:            "m?life | m?life <seed | user>",
 		Cooldown:         5,
-		CooldownScope:    bot.Channel,
+		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
 		RequiresUserType: bot.UserTypeAny,

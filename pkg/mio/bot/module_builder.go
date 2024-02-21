@@ -17,7 +17,7 @@ func NewModuleCommandBuilder(mod Module, name string) *ModuleCommandBuilder {
 			Mod:              mod,
 			Name:             name,
 			Triggers:         make([]string, 0),
-			CooldownScope:    None,
+			CooldownScope:    CooldownScopeNone,
 			RequiresUserType: UserTypeAny,
 			Enabled:          true,
 		},

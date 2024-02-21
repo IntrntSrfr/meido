@@ -73,7 +73,7 @@ func NewConvertCommand(m *Module) *bot.ModuleCommand {
 		Triggers:         []string{"m?convert"},
 		Usage:            "m?convert kg lb 50",
 		Cooldown:         0,
-		CooldownScope:    bot.Channel,
+		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
 		RequiresUserType: bot.UserTypeAny,
@@ -97,7 +97,7 @@ func newPingCommand(m *Module) *bot.ModuleCommand {
 		Triggers:         []string{"m?ping"},
 		Usage:            "m?ping",
 		Cooldown:         2,
-		CooldownScope:    bot.Channel,
+		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
 		RequiresUserType: bot.UserTypeAny,
@@ -127,7 +127,7 @@ func newAboutCommand(m *Module) *bot.ModuleCommand {
 		Triggers:         []string{"m?about"},
 		Usage:            "m?about",
 		Cooldown:         5,
-		CooldownScope:    bot.Channel,
+		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
 		RequiresUserType: bot.UserTypeAny,
@@ -186,7 +186,7 @@ func newColorCommand(m *Module) *bot.ModuleCommand {
 		Triggers:         []string{"m?color"},
 		Usage:            "m?color [color hex]",
 		Cooldown:         1,
-		CooldownScope:    bot.Channel,
+		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
 		RequiresUserType: bot.UserTypeAny,
@@ -215,7 +215,7 @@ func newColorSlash(m *Module) *bot.ModuleApplicationCommand {
 		Type(discordgo.ChatApplicationCommand).
 		Name("color").
 		Description("Show the color of a provided hex").
-		Cooldown(time.Second, bot.Channel).
+		Cooldown(time.Second, bot.CooldownScopeChannel).
 		AddOption(&discordgo.ApplicationCommandOption{
 			Name:        "hex",
 			Description: "The hex string of the desired color",
@@ -268,7 +268,7 @@ func newIdTimestampCmd(m *Module) *bot.ModuleCommand {
 		Triggers:         []string{"m?idt", "m?idts", "m?ts", "m?idtimestamp"},
 		Usage:            "m?idt [ID]",
 		Cooldown:         0,
-		CooldownScope:    bot.Channel,
+		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
 		RequiresUserType: bot.UserTypeAny,
@@ -294,7 +294,7 @@ func newInviteCommand(m *Module) *bot.ModuleCommand {
 		Triggers:         []string{"m?invite"},
 		Usage:            "m?invite",
 		Cooldown:         1,
-		CooldownScope:    bot.Channel,
+		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
 		RequiresUserType: bot.UserTypeAny,
@@ -317,7 +317,7 @@ func newHelpCommand(m *Module) *bot.ModuleCommand {
 		Triggers:         []string{"m?help", "m?h"},
 		Usage:            "m?help <module | command | passive>",
 		Cooldown:         1,
-		CooldownScope:    bot.Channel,
+		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
 		RequiresUserType: bot.UserTypeAny,

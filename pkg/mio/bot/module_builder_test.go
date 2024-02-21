@@ -19,7 +19,7 @@ func TestModuleCommandBuilder(t *testing.T) {
 		Triggers:         []string{"test1", "test2"},
 		Usage:            ".testing",
 		Cooldown:         time.Second,
-		CooldownScope:    Channel,
+		CooldownScope:    CooldownScopeChannel,
 		RequiredPerms:    123,
 		RequiresUserType: UserTypeBotOwner,
 		CheckBotPerms:    true,
@@ -33,7 +33,7 @@ func TestModuleCommandBuilder(t *testing.T) {
 		WithDescription("i am testing").
 		WithTriggers("test1", "test2").
 		WithUsage(".testing").
-		WithCooldown(time.Second, Channel).
+		WithCooldown(time.Second, CooldownScopeChannel).
 		WithRequiredPerms(123).
 		WithRequiresBotOwner().
 		WithCheckBotPerms().

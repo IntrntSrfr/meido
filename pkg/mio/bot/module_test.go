@@ -498,9 +498,9 @@ func TestModuleCommand_CooldownKey(t *testing.T) {
 		want string
 	}{
 		{"empty", &ModuleCommand{CooldownScope: -1, Name: "test"}, ""},
-		{"user", &ModuleCommand{CooldownScope: User, Name: "test"}, fmt.Sprintf("user:%v:%v", uid, "test")},
-		{"channel", &ModuleCommand{CooldownScope: Channel, Name: "test"}, fmt.Sprintf("channel:%v:%v", chid, "test")},
-		{"guild", &ModuleCommand{CooldownScope: Guild, Name: "test"}, fmt.Sprintf("guild:%v:%v", gid, "test")},
+		{"user", &ModuleCommand{CooldownScope: CooldownScopeUser, Name: "test"}, fmt.Sprintf("user:%v:%v", uid, "test")},
+		{"channel", &ModuleCommand{CooldownScope: CooldownScopeChannel, Name: "test"}, fmt.Sprintf("channel:%v:%v", chid, "test")},
+		{"guild", &ModuleCommand{CooldownScope: CooldownScopeGuild, Name: "test"}, fmt.Sprintf("guild:%v:%v", gid, "test")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

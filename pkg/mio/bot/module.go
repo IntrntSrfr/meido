@@ -568,10 +568,10 @@ func (m *ModuleBase) RemoveModalSubmitCallback(id string) {
 type CooldownScope int
 
 const (
-	None CooldownScope = 1 << iota
-	User
-	Channel
-	Guild
+	CooldownScopeNone CooldownScope = 1 << iota
+	CooldownScopeUser
+	CooldownScopeChannel
+	CooldownScopeGuild
 )
 
 type UserType int
@@ -624,11 +624,11 @@ func (cmd *ModuleCommand) allowsMessage(msg *discord.DiscordMessage) bool {
 
 func (cmd *ModuleCommand) CooldownKey(msg *discord.DiscordMessage) string {
 	switch cmd.CooldownScope {
-	case User:
+	case CooldownScopeUser:
 		return fmt.Sprintf("user:%v:%v", msg.AuthorID(), cmd.Name)
-	case Channel:
+	case CooldownScopeChannel:
 		return fmt.Sprintf("channel:%v:%v", msg.ChannelID(), cmd.Name)
-	case Guild:
+	case CooldownScopeGuild:
 		return fmt.Sprintf("guild:%v:%v", msg.GuildID(), cmd.Name)
 	}
 	return ""
