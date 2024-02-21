@@ -59,7 +59,6 @@ type ApplicationCommandHandler interface {
 	ApplicationCommands() map[string]*ModuleApplicationCommand
 	RegisterApplicationCommands(...*ModuleApplicationCommand) error
 	FindApplicationCommand(name string) (*ModuleApplicationCommand, error)
-	SetApplicationCommandStructs([]*discordgo.ApplicationCommand)
 	ApplicationCommandStructs() []*discordgo.ApplicationCommand
 }
 
@@ -289,6 +288,12 @@ func (m *ModuleBase) runApplicationCommand(c *ModuleApplicationCommand, it *disc
 	defer m.recoverApplicationCommand(c, it)
 	c.Run(it)
 	m.Bot.Emit(BotEventApplicationCommandRan, &ApplicationCommandRan{c, it})
+	m.Logger.Info("Slash Command",
+		zap.String("name", it.Name()),
+		zap.String("id", it.ID()),
+		zap.String("channelID", it.ChannelID()),
+		zap.String("userID", it.AuthorID()),
+	)
 }
 
 func (m *ModuleBase) handleMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
@@ -446,6 +451,7 @@ func (m *ModuleBase) registerApplicationCommand(command *ModuleApplicationComman
 		return fmt.Errorf("application command '%v' already exists in %v", command.Name, m.Name())
 	}
 	m.applicationCommands[command.Name] = command
+	m.applicationCommandStructs = append(m.applicationCommandStructs, command.ApplicationCommand)
 	if m.Logger != nil {
 		m.Logger.Info("Registered application command", zap.String("name", command.Name))
 	}
@@ -459,10 +465,6 @@ func (m *ModuleBase) FindApplicationCommand(name string) (*ModuleApplicationComm
 		}
 	}
 	return nil, ErrApplicationCommandNotFound
-}
-
-func (m *ModuleBase) SetApplicationCommandStructs(s []*discordgo.ApplicationCommand) {
-	m.applicationCommandStructs = s
 }
 
 func (m *ModuleBase) ApplicationCommandStructs() []*discordgo.ApplicationCommand {
@@ -655,21 +657,18 @@ func (pas *ModulePassive) allowsMessage(msg *discord.DiscordMessage) bool {
 }
 
 type ModuleApplicationCommand struct {
+	*discordgo.ApplicationCommand
 	Mod           Module
-	Name          string
-	Description   string
 	Cooldown      time.Duration
 	CooldownScope CooldownScope
-	Permissions   int64
 	UserType      UserType
 	CheckBotPerms bool
-	AllowDMs      bool
 	Enabled       bool
 	Run           func(*discord.DiscordApplicationCommand) `json:"-"`
 }
 
-func (s *ModuleApplicationCommand) allowsInteraction(it *discord.DiscordApplicationCommand) bool {
-	return !(it.IsDM() && !s.AllowDMs)
+func (m *ModuleApplicationCommand) allowsInteraction(it *discord.DiscordApplicationCommand) bool {
+	return true
 }
 
 type ModuleModalSubmit struct {

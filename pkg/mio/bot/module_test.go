@@ -392,26 +392,6 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 			t.Error("Expected event, but timed out")
 		}
 	})
-
-	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
-		bot := NewTestBot()
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
-		cmd := NewTestApplicationCommand(mod)
-		cmd.AllowDMs = false
-		cmdCalled := make(chan bool, 1)
-		cmd.Run = func(*discord.DiscordApplicationCommand) {
-			cmdCalled <- true
-		}
-		mod.RegisterApplicationCommands(cmd)
-
-		it := NewTestApplicationCommandInteraction(bot, "")
-		mod.HandleInteraction(it)
-		select {
-		case <-cmdCalled:
-			t.Errorf("Command was not expected to be called")
-		case <-time.After(time.Millisecond * 50):
-		}
-	})
 }
 
 func TestModuleBase_HandleMessageComponent(t *testing.T) {

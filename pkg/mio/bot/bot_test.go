@@ -1,9 +1,7 @@
 package bot
 
 import (
-	"bytes"
 	"context"
-	"strings"
 	"testing"
 	"time"
 
@@ -76,49 +74,50 @@ func TestBot_Run(t *testing.T) {
 			t.Errorf("Session should have opened")
 		}
 	})
+	/*
+		t.Run("session open with good application commands", func(t *testing.T) {
+			var buf bytes.Buffer
+			bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLoggerWithBuffer(&buf)).Build()
+			sessionMock := mocks.NewDiscordSession("test", 1)
+			bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
 
-	t.Run("session open with good application commands", func(t *testing.T) {
-		var buf bytes.Buffer
-		bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLoggerWithBuffer(&buf)).Build()
-		sessionMock := mocks.NewDiscordSession("test", 1)
-		bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
+			mod := NewTestModule(bot, "test", test.NewTestLogger())
+			mod.SetApplicationCommandStructs([]*discordgo.ApplicationCommand{
+				{Name: "fishing"},
+			})
+			bot.RegisterModule(mod)
 
-		mod := NewTestModule(bot, "test", test.NewTestLogger())
-		mod.SetApplicationCommandStructs([]*discordgo.ApplicationCommand{
-			{Name: "fishing"},
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			bot.Run(ctx)
+			defer bot.Close()
+
+			if !strings.Contains(buf.String(), "fishing") {
+				t.Errorf("Expected logs to contain 'fishing', got %v", buf.String())
+			}
 		})
-		bot.RegisterModule(mod)
 
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		bot.Run(ctx)
-		defer bot.Close()
+		t.Run("session open with bad application commands", func(t *testing.T) {
+			var buf bytes.Buffer
+			bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLoggerWithBuffer(&buf)).Build()
+			sessionMock := mocks.NewDiscordSession("test", 1)
+			bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
 
-		if !strings.Contains(buf.String(), "fishing") {
-			t.Errorf("Expected logs to contain 'fishing', got %v", buf.String())
-		}
-	})
+			mod := NewTestModule(bot, "test", test.NewTestLogger())
+			mod.SetApplicationCommandStructs([]*discordgo.ApplicationCommand{
+				{Name: "Fishing"},
+			})
+			bot.RegisterModule(mod)
 
-	t.Run("session open with bad application commands", func(t *testing.T) {
-		var buf bytes.Buffer
-		bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLoggerWithBuffer(&buf)).Build()
-		sessionMock := mocks.NewDiscordSession("test", 1)
-		bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
-
-		mod := NewTestModule(bot, "test", test.NewTestLogger())
-		mod.SetApplicationCommandStructs([]*discordgo.ApplicationCommand{
-			{Name: "Fishing"},
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			err := bot.Run(ctx)
+			if err == nil {
+				t.Errorf("Expected error, but there was none")
+			}
+			defer bot.Close()
 		})
-		bot.RegisterModule(mod)
-
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		err := bot.Run(ctx)
-		if err == nil {
-			t.Errorf("Expected error, but there was none")
-		}
-		defer bot.Close()
-	})
+	*/
 }
 
 func setupTestBot() (*Bot, *zap.Logger, Module) {

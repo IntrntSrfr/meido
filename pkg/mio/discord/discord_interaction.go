@@ -15,6 +15,21 @@ type DiscordInteraction struct {
 	Shard        int
 }
 
+func (it *DiscordInteraction) ID() string {
+	return it.Interaction.ID
+}
+
+func (it *DiscordInteraction) ChannelID() string {
+	return it.Interaction.ChannelID
+}
+
+func (it *DiscordInteraction) AuthorID() string {
+	if it.Interaction.GuildID == "" {
+		return it.Interaction.User.ID
+	}
+	return it.Interaction.Member.User.ID
+}
+
 func (it *DiscordInteraction) IsDM() bool {
 	return it.Interaction.GuildID == ""
 }
@@ -58,6 +73,10 @@ type DiscordApplicationCommand struct {
 	*DiscordInteraction
 	Data    discordgo.ApplicationCommandInteractionData
 	options map[string]*discordgo.ApplicationCommandInteractionDataOption
+}
+
+func (d *DiscordApplicationCommand) Name() string {
+	return d.Data.Name
 }
 
 // Options returns a *discordgo.ApplicationCommandInteractionDataOption given

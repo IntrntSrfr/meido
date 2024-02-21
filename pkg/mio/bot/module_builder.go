@@ -3,6 +3,7 @@ package bot
 import (
 	"time"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
@@ -111,4 +112,78 @@ func (b *ModulePassiveBuilder) WithRunFunc(run func(*discord.DiscordMessage)) *M
 func (b *ModulePassiveBuilder) Build() *ModulePassive {
 	// bunch of if-statements
 	return b.cmd
+}
+
+type ModuleApplicationCommandBuilder struct {
+	command *ModuleApplicationCommand
+}
+
+func NewModuleApplicationCommandBuilder(mod Module) *ModuleApplicationCommandBuilder {
+	return &ModuleApplicationCommandBuilder{
+		command: &ModuleApplicationCommand{
+			Mod:                mod,
+			ApplicationCommand: &discordgo.ApplicationCommand{},
+			Enabled:            true,
+		},
+	}
+}
+
+func (b *ModuleApplicationCommandBuilder) Name(name string) *ModuleApplicationCommandBuilder {
+	b.command.Name = name
+	return b
+}
+
+func (b *ModuleApplicationCommandBuilder) Description(description string) *ModuleApplicationCommandBuilder {
+	b.command.Description = description
+	return b
+}
+
+func (b *ModuleApplicationCommandBuilder) Type(commandType discordgo.ApplicationCommandType) *ModuleApplicationCommandBuilder {
+	b.command.Type = commandType
+	return b
+}
+
+func (b *ModuleApplicationCommandBuilder) AddOption(option *discordgo.ApplicationCommandOption) *ModuleApplicationCommandBuilder {
+	if b.command.Options == nil {
+		b.command.Options = make([]*discordgo.ApplicationCommandOption, 0)
+	}
+	b.command.Options = append(b.command.Options, option)
+	return b
+}
+
+func (b *ModuleApplicationCommandBuilder) Cooldown(cooldown time.Duration, scope CooldownScope) *ModuleApplicationCommandBuilder {
+	b.command.Cooldown = cooldown
+	b.command.CooldownScope = scope
+	return b
+}
+
+func (b *ModuleApplicationCommandBuilder) NoDM() *ModuleApplicationCommandBuilder {
+	dmPerms := false
+	b.command.DMPermission = &dmPerms
+	return b
+}
+
+func (b *ModuleApplicationCommandBuilder) Permissions(perms int64) *ModuleApplicationCommandBuilder {
+	b.command.DefaultMemberPermissions = &perms
+	return b
+}
+
+func (b *ModuleApplicationCommandBuilder) CheckBotPerms() *ModuleApplicationCommandBuilder {
+	b.command.CheckBotPerms = true
+	return b
+}
+
+func (b *ModuleApplicationCommandBuilder) Run(f func(*discord.DiscordApplicationCommand)) *ModuleApplicationCommandBuilder {
+	b.command.Run = f
+	return b
+}
+
+func (b *ModuleApplicationCommandBuilder) Build() *ModuleApplicationCommand {
+	if b.command.Type == 0 {
+		panic("command type cannot be 0")
+	}
+	if b.command.Run == nil {
+		panic("missing run function")
+	}
+	return b.command
 }

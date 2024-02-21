@@ -37,8 +37,6 @@ func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 }
 
 func (m *Module) Hook() error {
-	m.SetApplicationCommandStructs(commands)
-
 	if err := m.RegisterApplicationCommands(
 		newColorSlash(m),
 	); err != nil {
@@ -213,36 +211,40 @@ func newColorCommand(m *Module) *bot.ModuleCommand {
 }
 
 func newColorSlash(m *Module) *bot.ModuleApplicationCommand {
-	return &bot.ModuleApplicationCommand{
-		Mod:           m,
-		Name:          "color",
-		Description:   "Show the color of a provided hex",
-		Cooldown:      1,
-		CooldownScope: bot.Channel,
-		CheckBotPerms: false,
-		AllowDMs:      true,
-		Enabled:       true,
-		Run: func(d *discord.DiscordApplicationCommand) {
-			if len(d.Data.Options) < 1 {
-				return
-			}
+	cmd := bot.NewModuleApplicationCommandBuilder(m).
+		Type(discordgo.ChatApplicationCommand).
+		Name("color").
+		Description("Show the color of a provided hex").
+		Cooldown(time.Second, bot.Channel).
+		AddOption(&discordgo.ApplicationCommandOption{
+			Name:        "hex",
+			Description: "The hex string of the desired color",
+			Required:    true,
+			Type:        discordgo.ApplicationCommandOptionString,
+		})
 
-			clrStr := d.Options("hex").StringValue()
-			if !strings.HasPrefix(clrStr, "#") {
-				clrStr = "#" + strings.TrimSpace(clrStr)
-			}
-			buf, err := generateColorPNG(clrStr)
-			if err != nil {
-				d.RespondEphemeral("Invalid hex code")
-				return
-			}
-			d.RespondFile(
-				fmt.Sprintf("Color hex: `%v`", strings.ToUpper(clrStr)),
-				"color.png",
-				buf,
-			)
-		},
+	run := func(d *discord.DiscordApplicationCommand) {
+		if len(d.Data.Options) < 1 {
+			return
+		}
+
+		clrStr := d.Options("hex").StringValue()
+		if !strings.HasPrefix(clrStr, "#") {
+			clrStr = "#" + strings.TrimSpace(clrStr)
+		}
+		buf, err := generateColorPNG(clrStr)
+		if err != nil {
+			d.RespondEphemeral("Invalid hex code")
+			return
+		}
+		d.RespondFile(
+			fmt.Sprintf("Color hex: `%v`", strings.ToUpper(clrStr)),
+			"color.png",
+			buf,
+		)
 	}
+
+	return cmd.Run(run).Build()
 }
 
 func generateColorPNG(clrStr string) (*bytes.Buffer, error) {
