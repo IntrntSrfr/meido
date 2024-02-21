@@ -39,9 +39,13 @@ func New(config *utils.Config, db database.DB) *Meido {
 }
 
 func newLogger() *zap.Logger {
-	loggerConfig := zap.NewDevelopmentConfig()
-	loggerConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	logger, _ := loggerConfig.Build()
+	cfg := zap.NewProductionConfig()
+	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	cfg.EncoderConfig.CallerKey = ""
+	cfg.EncoderConfig.NameKey = ""
+	cfg.EncoderConfig.EncodeTime = zapcore.EpochNanosTimeEncoder
+	cfg.Encoding = "console"
+	logger, _ := cfg.Build()
 	return logger
 }
 

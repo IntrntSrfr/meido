@@ -127,18 +127,6 @@ func setupTestBot() (*Bot, *zap.Logger, Module) {
 	return bot, logger, mod
 }
 
-func executeNewTestCommand(bot *Bot, mod Module, cmd *ModuleCommand, message *discord.DiscordMessage) (chan bool, context.CancelFunc) {
-	called := make(chan bool)
-
-	mod.RegisterCommands(cmd)
-	bot.RegisterModule(mod)
-	ctx, cancel := context.WithCancel(context.Background())
-	bot.Run(ctx)
-
-	bot.Discord.Messages() <- message
-	return called, cancel
-}
-
 func TestBot_MessageGetsHandled(t *testing.T) {
 	bot, _, mod := setupTestBot()
 	pas := NewTestPassive(mod)

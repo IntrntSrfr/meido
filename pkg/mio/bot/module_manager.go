@@ -20,13 +20,13 @@ func NewModuleManager(logger *zap.Logger) *ModuleManager {
 }
 
 func (m *ModuleManager) RegisterModule(mod Module) {
-	m.logger.Info("Registering module", zap.String("name", mod.Name()))
 	err := mod.Hook()
 	if err != nil {
 		m.logger.Error("Failed to register module", zap.Error(err))
 		return
 	}
 	m.Modules[mod.Name()] = mod
+	m.logger.Info("Registered module", zap.String("name", mod.Name()))
 }
 
 func (m *ModuleManager) FindModule(name string) (Module, error) {
