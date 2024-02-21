@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
@@ -208,4 +209,36 @@ func newUserInfoCommand(m *Module) *bot.ModuleCommand {
 			_, _ = msg.ReplyEmbed(embed.Build())
 		},
 	}
+}
+
+func newUserInfoUserCommand(m *Module) *bot.ModuleApplicationCommand {
+	bld := bot.NewModuleApplicationCommandBuilder(m).
+		Type(discordgo.UserApplicationCommand).
+		Name("info")
+
+	run := func(msg *discord.DiscordApplicationCommand) {
+		targetUser := msg.Data.Resolved.Users[msg.Data.TargetID]
+		targetMember := msg.Data.Resolved.Members[msg.Data.TargetID]
+		if targetUser == nil || targetMember == nil {
+			return
+		}
+
+		embed := builders.NewEmbedBuilder().
+			WithTitle(targetUser.String()).
+			WithThumbnail(targetUser.AvatarURL("256")).
+			WithColor(msg.Discord.HighestColor(msg.Interaction.GuildID, targetUser.ID)).
+			AddField("ID | Mention", fmt.Sprintf("%v | <@!%v>", targetUser.ID, targetUser.ID), false).
+			AddField("Creation date", fmt.Sprintf("<t:%v:R>", utils.IDToTimestamp(targetUser.ID).Unix()), false).
+			AddField("Join date", fmt.Sprintf("<t:%v:R>", targetMember.JoinedAt.Unix()), false).
+			AddField("Roles", fmt.Sprint(len(targetMember.Roles)), true)
+
+		nick := targetMember.Nick
+		if nick != "" {
+			embed.AddField("Nickname", nick, true)
+		}
+
+		_ = msg.RespondEmbed(embed.Build())
+	}
+
+	return bld.Run(run).Build()
 }

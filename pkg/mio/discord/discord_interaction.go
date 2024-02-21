@@ -44,6 +44,16 @@ func (it *DiscordInteraction) Respond(text string) error {
 	return it.Sess.InteractionRespond(it.Interaction, resp)
 }
 
+func (it *DiscordInteraction) RespondEmbed(embed *discordgo.MessageEmbed) error {
+	resp := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{embed},
+		},
+	}
+	return it.Sess.InteractionRespond(it.Interaction, resp)
+}
+
 func (it *DiscordInteraction) RespondEphemeral(text string) error {
 	resp := &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,

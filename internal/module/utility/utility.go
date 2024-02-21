@@ -39,6 +39,7 @@ func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 func (m *Module) Hook() error {
 	if err := m.RegisterApplicationCommands(
 		newColorSlash(m),
+		newUserInfoUserCommand(m),
 	); err != nil {
 		return err
 	}
