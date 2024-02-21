@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"fmt"
+
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
@@ -8,19 +10,61 @@ type EventEmitter struct {
 	eventCh chan *BotEventData
 }
 
-type BotEvent string
+func NewEventEmitter() *EventEmitter {
+	return &EventEmitter{
+		eventCh: make(chan *BotEventData),
+	}
+}
+
+func (em *EventEmitter) Emit(event BotEvent, data interface{}) {
+	em.eventCh <- &BotEventData{Type: event, Data: data}
+}
+
+func (em *EventEmitter) Events() chan *BotEventData {
+	return em.eventCh
+}
+
+type BotEvent int
 
 const (
-	BotEventCommandRan                 BotEvent = "command_ran"
-	BotEventCommandPanicked            BotEvent = "command_panicked"
-	BotEventPassivePanicked            BotEvent = "passive_panicked"
-	BotEventApplicationCommandRan      BotEvent = "application_command_ran"
-	BotEventApplicationCommandPanicked BotEvent = "application_command_panicked"
-	BotEventModalSubmitRan             BotEvent = "modal_submit_ran"
-	BotEventModalSubmitPanicked        BotEvent = "modal_submit_panicked"
-	BotEventMessageComponentRan        BotEvent = "message_component_ran"
-	BotEventMessageComponentPanicked   BotEvent = "message_component_panicked"
+	BotEventCommandRan BotEvent = 1 << iota
+	BotEventCommandPanicked
+	BotEventPassiveRan
+	BotEventPassivePanicked
+	BotEventApplicationCommandRan
+	BotEventApplicationCommandPanicked
+	BotEventMessageComponentRan
+	BotEventMessageComponentPanicked
+	BotEventModalSubmitRan
+	BotEventModalSubmitPanicked
 )
+
+func (b BotEvent) String() string {
+	switch b {
+	case BotEventCommandRan:
+		return "CommandRan"
+	case BotEventCommandPanicked:
+		return "CommandPanicked"
+	case BotEventPassiveRan:
+		return "PassiveRan"
+	case BotEventPassivePanicked:
+		return "PassivePanicked"
+	case BotEventApplicationCommandRan:
+		return "ApplicationCommandRan"
+	case BotEventApplicationCommandPanicked:
+		return "ApplicationCommandPanicked"
+	case BotEventMessageComponentRan:
+		return "MessageComponentRan"
+	case BotEventMessageComponentPanicked:
+		return "MessageComponentPanicked"
+	case BotEventModalSubmitRan:
+		return "ModalSubmitRan"
+	case BotEventModalSubmitPanicked:
+		return "ModalSubmitPanicked"
+	default:
+		return fmt.Sprintf("Unknown: BotEvent(%d)", b)
+	}
+}
 
 type BotEventData struct {
 	Type BotEvent
@@ -36,6 +80,11 @@ type CommandPanicked struct {
 	Command *ModuleCommand
 	Message *discord.DiscordMessage
 	Reason  any
+}
+
+type PassiveRan struct {
+	Passive *ModulePassive
+	Message *discord.DiscordMessage
 }
 
 type PassivePanicked struct {
@@ -74,18 +123,4 @@ type MessageComponentPanicked struct {
 	MessageComponent *ModuleMessageComponent
 	Interaction      *discord.DiscordMessageComponent
 	Reason           any
-}
-
-func NewEventEmitter() *EventEmitter {
-	return &EventEmitter{
-		eventCh: make(chan *BotEventData),
-	}
-}
-
-func (em *EventEmitter) Emit(event BotEvent, data interface{}) {
-	em.eventCh <- &BotEventData{Type: event, Data: data}
-}
-
-func (em *EventEmitter) Events() chan *BotEventData {
-	return em.eventCh
 }

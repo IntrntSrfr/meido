@@ -149,6 +149,7 @@ func TestBot_MessageGetsHandled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	bot.Run(ctx)
+	go drainBotEvents(ctx, bot.Events())
 
 	bot.Discord.Messages() <- &discord.DiscordMessage{
 		Sess:         bot.Discord.Sess,
@@ -278,13 +279,15 @@ func TestBot_PanicCommandGetsHandled(t *testing.T) {
 		},
 	}
 
-	select {
-	case evt := <-bot.Events():
-		if evt.Type != BotEventCommandPanicked {
-			t.Errorf("Expected panic handler to run")
+	for range 2 {
+		select {
+		case evt := <-bot.Events():
+			if evt.Type&(BotEventCommandPanicked|BotEventCommandRan) == 0 {
+				t.Errorf("Expected correct handlers to run")
+			}
+		case <-time.After(time.Millisecond * 10):
+			t.Error("Test timed out")
 		}
-	case <-time.After(time.Millisecond * 10):
-		t.Error("Test timed out")
 	}
 }
 
@@ -355,6 +358,7 @@ func TestBot_MessageGetsCallback(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	bot.Run(ctx)
+	go drainBotEvents(ctx, bot.Events())
 
 	bot.Discord.Messages() <- &discord.DiscordMessage{
 		Sess:         bot.Discord.Sess,

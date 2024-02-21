@@ -189,22 +189,14 @@ func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *discord.DiscordMessa
 func (m *ModuleBase) recoverCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
 	if r := recover(); r != nil {
 		m.Bot.Emit(BotEventCommandPanicked, &CommandPanicked{cmd, msg, r})
-		m.Logger.Error("Panic", zap.Any("reason", r), zap.Any("message", msg))
 		_, _ = msg.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
 	}
 }
 
 func (m *ModuleBase) runCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
 	defer m.recoverCommand(cmd, msg)
-
-	cmd.Run(msg)
 	m.Bot.Emit(BotEventCommandRan, &CommandRan{cmd, msg})
-	m.Logger.Info("Command",
-		zap.String("id", msg.ID()),
-		zap.String("channelID", msg.ChannelID()),
-		zap.String("userID", msg.AuthorID()),
-		zap.String("content", msg.RawContent()),
-	)
+	cmd.Run(msg)
 }
 
 func (m *ModuleBase) handlePassive(pas *ModulePassive, msg *discord.DiscordMessage) {
@@ -223,12 +215,8 @@ func (m *ModuleBase) recoverPassive(pas *ModulePassive, msg *discord.DiscordMess
 
 func (m *ModuleBase) runPassive(pas *ModulePassive, msg *discord.DiscordMessage) {
 	defer m.recoverPassive(pas, msg)
+	m.Bot.Emit(BotEventPassiveRan, &PassiveRan{pas, msg})
 	pas.Run(msg)
-	m.Logger.Info("Passive",
-		zap.String("id", msg.ID()),
-		zap.String("channelID", msg.ChannelID()),
-		zap.String("userID", msg.AuthorID()),
-	)
 }
 
 func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
@@ -280,20 +268,13 @@ func (m *ModuleBase) handleApplicationCommand(c *ModuleApplicationCommand, it *d
 func (m *ModuleBase) recoverApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
 	if r := recover(); r != nil {
 		m.Bot.Emit(BotEventApplicationCommandPanicked, &ApplicationCommandPanicked{c, it, r})
-		m.Logger.Error("Panic", zap.Any("reason", r), zap.Any("interaction", it))
 	}
 }
 
 func (m *ModuleBase) runApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
 	defer m.recoverApplicationCommand(c, it)
-	c.Run(it)
 	m.Bot.Emit(BotEventApplicationCommandRan, &ApplicationCommandRan{c, it})
-	m.Logger.Info("Slash Command",
-		zap.String("name", it.Name()),
-		zap.String("id", it.ID()),
-		zap.String("channelID", it.ChannelID()),
-		zap.String("userID", it.AuthorID()),
-	)
+	c.Run(it)
 }
 
 func (m *ModuleBase) handleMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
@@ -306,14 +287,13 @@ func (m *ModuleBase) handleMessageComponent(c *ModuleMessageComponent, it *disco
 func (m *ModuleBase) recoverMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
 	if r := recover(); r != nil {
 		m.Bot.Emit(BotEventMessageComponentPanicked, &MessageComponentPanicked{c, it, r})
-		m.Logger.Error("Panic", zap.Any("reason", r), zap.Any("interaction", it))
 	}
 }
 
 func (m *ModuleBase) runMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
 	defer m.recoverMessageComponent(c, it)
-	c.Run(it)
 	m.Bot.Emit(BotEventMessageComponentRan, &MessageComponentRan{c, it})
+	c.Run(it)
 }
 
 func (m *ModuleBase) handleModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
@@ -326,14 +306,13 @@ func (m *ModuleBase) handleModalSubmit(s *ModuleModalSubmit, it *discord.Discord
 func (m *ModuleBase) recoverModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
 	if r := recover(); r != nil {
 		m.Bot.Emit(BotEventModalSubmitPanicked, &ModalSubmitPanicked{s, it, r})
-		m.Logger.Error("Panic", zap.Any("reason", r), zap.Any("interaction", it))
 	}
 }
 
 func (m *ModuleBase) runModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
 	defer m.recoverModalSubmit(s, it)
-	s.Run(it)
 	m.Bot.Emit(BotEventMessageComponentRan, &ModalSubmitRan{s, it})
+	s.Run(it)
 }
 
 func (m *ModuleBase) Commands() map[string]*ModuleCommand {
