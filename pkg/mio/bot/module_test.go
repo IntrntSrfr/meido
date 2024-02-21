@@ -445,6 +445,7 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 func TestModuleBase_HandleModalSubmit(t *testing.T) {
 	t.Run("it runs correctly", func(t *testing.T) {
 		bot := NewTestBot()
+		go drainBotEvents(context.Background(), bot.Events())
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestModalSubmit(mod)
