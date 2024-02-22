@@ -79,3 +79,44 @@ func TestModulePassiveBuilder(t *testing.T) {
 		t.Errorf("Built passive run function should not be nil")
 	}
 }
+
+/*
+func TestModuleApplicationCommandBuilder(t *testing.T) {
+	mod := NewTestModule(nil, "test", test.NewTestLogger())
+
+	cmd := &ModuleApplicationCommand{
+		Mod: mod,
+		ApplicationCommand: &discordgo.ApplicationCommand{
+			Type:        discordgo.ChatApplicationCommand,
+			Name:        "test",
+			Description: "testing",
+			Options: []*discordgo.ApplicationCommandOption{{
+				Name: "test",
+			}},
+		},
+		Enabled: true,
+		Run:     nil,
+	}
+
+	rf := func(*discord.DiscordApplicationCommand) {}
+	bld := NewModuleApplicationCommandBuilder(mod, "test").
+		Type(discordgo.ChatApplicationCommand).
+		Description("testing").
+		AddOption(&discordgo.ApplicationCommandOption{
+			Name: "test",
+		}).
+		Cooldown(time.Second, CooldownScopeChannel).
+		NoDM().
+		Permissions(1).
+		CheckBotPerms().
+		Run(rf)
+
+	if built := bld.Build(); !reflect.DeepEqual(cmd, built) {
+		t.Errorf("Build is not as expected: %v, want %v", built, cmd)
+	}
+
+	if built := bld.Build(); built.Run == nil {
+		t.Errorf("run function should not be nil")
+	}
+}
+*/

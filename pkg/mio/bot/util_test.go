@@ -45,22 +45,14 @@ func (m *testModule) Hook() error {
 }
 
 func NewTestCommand(mod Module) *ModuleCommand {
-	return &ModuleCommand{
-		Mod:              mod,
-		Name:             "test",
-		Description:      "testing",
-		Triggers:         []string{".test"},
-		Usage:            ".test",
-		Cooldown:         0,
-		CooldownScope:    CooldownScopeChannel,
-		RequiredPerms:    0,
-		CheckBotPerms:    false,
-		RequiresUserType: UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
-		AllowDMs:         false,
-		Enabled:          true,
-		Run:              testCommandRun,
-	}
+	return NewModuleCommandBuilder(mod, "test").
+		WithDescription("testing").
+		WithTriggers(".test").
+		WithUsage(".test").
+		WithCooldown(0, CooldownScopeChannel).
+		WithAllowedTypes(discord.MessageTypeCreate).
+		WithRunFunc(testCommandRun).
+		Build()
 }
 
 func testCommandRun(msg *discord.DiscordMessage) {
@@ -68,14 +60,11 @@ func testCommandRun(msg *discord.DiscordMessage) {
 }
 
 func NewTestPassive(mod Module) *ModulePassive {
-	return &ModulePassive{
-		Mod:          mod,
-		Name:         "test",
-		Description:  "testing",
-		AllowedTypes: discord.MessageTypeCreate,
-		Enabled:      true,
-		Run:          testPassiveRun,
-	}
+	return NewModulePassiveBuilder(mod, "test").
+		WithDescription("testing").
+		WithAllowedTypes(discord.MessageTypeCreate).
+		WithRunFunc(testPassiveRun).
+		Build()
 }
 
 func testPassiveRun(msg *discord.DiscordMessage) {
@@ -83,9 +72,8 @@ func testPassiveRun(msg *discord.DiscordMessage) {
 }
 
 func NewTestApplicationCommand(mod Module) *ModuleApplicationCommand {
-	return NewModuleApplicationCommandBuilder(mod).
+	return NewModuleApplicationCommandBuilder(mod, "test").
 		Type(discordgo.ChatApplicationCommand).
-		Name("test").
 		Description("testing").
 		Run(testApplicationCommandRun).
 		Build()

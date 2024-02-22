@@ -242,8 +242,11 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 
 func TestModuleBase_HandleCommand(t *testing.T) {
 	t.Run("it runs correctly", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		bot := NewTestBot()
-		go drainBotEvents(context.Background(), bot.Events())
+		go drainBotEvents(ctx, bot.Events())
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestCommand(mod)
@@ -301,8 +304,11 @@ func TestModuleBase_HandleCommand(t *testing.T) {
 
 func TestModuleBase_HandlePassive(t *testing.T) {
 	t.Run("it runs correctly", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		bot := NewTestBot()
-		go drainBotEvents(context.Background(), bot.Events())
+		go drainBotEvents(ctx, bot.Events())
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		pasCalled := make(chan bool, 1)
 		pas := NewTestPassive(mod)
@@ -360,8 +366,11 @@ func TestModuleBase_HandlePassive(t *testing.T) {
 
 func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 	t.Run("it runs correctly", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		bot := NewTestBot()
-		go drainBotEvents(context.Background(), bot.Events())
+		go drainBotEvents(ctx, bot.Events())
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestApplicationCommand(mod)
@@ -400,8 +409,11 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 
 func TestModuleBase_HandleMessageComponent(t *testing.T) {
 	t.Run("it runs correctly", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		bot := NewTestBot()
-		go drainBotEvents(context.Background(), bot.Events())
+		go drainBotEvents(ctx, bot.Events())
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestMessageComponent(mod)
@@ -444,8 +456,11 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 
 func TestModuleBase_HandleModalSubmit(t *testing.T) {
 	t.Run("it runs correctly", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		
 		bot := NewTestBot()
-		go drainBotEvents(context.Background(), bot.Events())
+		go drainBotEvents(ctx, bot.Events())
 		mod := NewTestModule(bot, "testing", test.NewTestLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestModalSubmit(mod)

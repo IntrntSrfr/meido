@@ -1,8 +1,6 @@
 package bot
 
 import (
-	"fmt"
-
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
@@ -38,33 +36,6 @@ const (
 	BotEventModalSubmitRan
 	BotEventModalSubmitPanicked
 )
-
-func (b BotEvent) String() string {
-	switch b {
-	case BotEventCommandRan:
-		return "CommandRan"
-	case BotEventCommandPanicked:
-		return "CommandPanicked"
-	case BotEventPassiveRan:
-		return "PassiveRan"
-	case BotEventPassivePanicked:
-		return "PassivePanicked"
-	case BotEventApplicationCommandRan:
-		return "ApplicationCommandRan"
-	case BotEventApplicationCommandPanicked:
-		return "ApplicationCommandPanicked"
-	case BotEventMessageComponentRan:
-		return "MessageComponentRan"
-	case BotEventMessageComponentPanicked:
-		return "MessageComponentPanicked"
-	case BotEventModalSubmitRan:
-		return "ModalSubmitRan"
-	case BotEventModalSubmitPanicked:
-		return "ModalSubmitPanicked"
-	default:
-		return fmt.Sprintf("Unknown: BotEvent(%d)", b)
-	}
-}
 
 type BotEventData struct {
 	Type BotEvent

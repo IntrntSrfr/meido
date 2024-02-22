@@ -118,19 +118,16 @@ type ModuleApplicationCommandBuilder struct {
 	command *ModuleApplicationCommand
 }
 
-func NewModuleApplicationCommandBuilder(mod Module) *ModuleApplicationCommandBuilder {
+func NewModuleApplicationCommandBuilder(mod Module, name string) *ModuleApplicationCommandBuilder {
 	return &ModuleApplicationCommandBuilder{
 		command: &ModuleApplicationCommand{
-			Mod:                mod,
-			ApplicationCommand: &discordgo.ApplicationCommand{},
-			Enabled:            true,
+			Mod: mod,
+			ApplicationCommand: &discordgo.ApplicationCommand{
+				Name: name,
+			},
+			Enabled: true,
 		},
 	}
-}
-
-func (b *ModuleApplicationCommandBuilder) Name(name string) *ModuleApplicationCommandBuilder {
-	b.command.Name = name
-	return b
 }
 
 func (b *ModuleApplicationCommandBuilder) Description(description string) *ModuleApplicationCommandBuilder {

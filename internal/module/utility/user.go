@@ -212,9 +212,8 @@ func newUserInfoCommand(m *Module) *bot.ModuleCommand {
 }
 
 func newUserInfoUserCommand(m *Module) *bot.ModuleApplicationCommand {
-	bld := bot.NewModuleApplicationCommandBuilder(m).
-		Type(discordgo.UserApplicationCommand).
-		Name("info")
+	bld := bot.NewModuleApplicationCommandBuilder(m, "info").
+		Type(discordgo.UserApplicationCommand)
 
 	run := func(msg *discord.DiscordApplicationCommand) {
 		targetUser := msg.Data.Resolved.Users[msg.Data.TargetID]

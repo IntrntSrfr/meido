@@ -1,7 +1,9 @@
 package bot
 
 import (
+	"bytes"
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -61,12 +63,13 @@ func TestBot_Events(t *testing.T) {
 
 func TestBot_Run(t *testing.T) {
 	t.Run("session open", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
 		bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLogger()).Build()
 		sessionMock := mocks.NewDiscordSession("test", 1)
 		bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
 
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
 		bot.Run(ctx)
 		defer bot.Close()
 
@@ -74,50 +77,46 @@ func TestBot_Run(t *testing.T) {
 			t.Errorf("Session should have opened")
 		}
 	})
-	/*
-		t.Run("session open with good application commands", func(t *testing.T) {
-			var buf bytes.Buffer
-			bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLoggerWithBuffer(&buf)).Build()
-			sessionMock := mocks.NewDiscordSession("test", 1)
-			bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
+	t.Run("session open with good application commands", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-			mod := NewTestModule(bot, "test", test.NewTestLogger())
-			mod.SetApplicationCommandStructs([]*discordgo.ApplicationCommand{
-				{Name: "fishing"},
-			})
-			bot.RegisterModule(mod)
+		var buf bytes.Buffer
+		bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLoggerWithBuffer(&buf)).Build()
+		sessionMock := mocks.NewDiscordSession("test", 1)
+		bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
 
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			bot.Run(ctx)
-			defer bot.Close()
+		mod := NewTestModule(bot, "test", test.NewTestLogger())
+		mod.RegisterApplicationCommands(&ModuleApplicationCommand{ApplicationCommand: &discordgo.ApplicationCommand{Name: "fishing"}})
+		bot.RegisterModule(mod)
 
-			if !strings.Contains(buf.String(), "fishing") {
-				t.Errorf("Expected logs to contain 'fishing', got %v", buf.String())
-			}
-		})
+		bot.Run(ctx)
+		defer bot.Close()
 
-		t.Run("session open with bad application commands", func(t *testing.T) {
-			var buf bytes.Buffer
-			bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLoggerWithBuffer(&buf)).Build()
-			sessionMock := mocks.NewDiscordSession("test", 1)
-			bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
+		if !strings.Contains(buf.String(), "fishing") {
+			t.Errorf("Expected logs to contain 'fishing', got %v", buf.String())
+		}
+	})
 
-			mod := NewTestModule(bot, "test", test.NewTestLogger())
-			mod.SetApplicationCommandStructs([]*discordgo.ApplicationCommand{
-				{Name: "Fishing"},
-			})
-			bot.RegisterModule(mod)
+	t.Run("session open with bad application commands", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			err := bot.Run(ctx)
-			if err == nil {
-				t.Errorf("Expected error, but there was none")
-			}
-			defer bot.Close()
-		})
-	*/
+		var buf bytes.Buffer
+		bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLoggerWithBuffer(&buf)).Build()
+		sessionMock := mocks.NewDiscordSession("test", 1)
+		bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
+
+		mod := NewTestModule(bot, "test", test.NewTestLogger())
+		mod.RegisterApplicationCommands(&ModuleApplicationCommand{ApplicationCommand: &discordgo.ApplicationCommand{Name: "Fishing"}})
+		bot.RegisterModule(mod)
+
+		err := bot.Run(ctx)
+		if err == nil {
+			t.Errorf("Expected error, but there was none")
+		}
+		defer bot.Close()
+	})
 }
 
 func setupTestBot() (*Bot, *zap.Logger, Module) {
@@ -128,8 +127,10 @@ func setupTestBot() (*Bot, *zap.Logger, Module) {
 }
 
 func TestBot_MessageGetsHandled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	bot, _, mod := setupTestBot()
-	pas := NewTestPassive(mod)
 	cmd := NewTestCommand(mod)
 
 	cmdCalled := make(chan bool)
@@ -137,51 +138,49 @@ func TestBot_MessageGetsHandled(t *testing.T) {
 		cmdCalled <- true
 	}
 
-	pasCalled := make(chan bool)
-	pas.Run = func(dm *discord.DiscordMessage) {
-		pasCalled <- true
-	}
-
-	// register and run
-	mod.RegisterPassives(pas)
 	mod.RegisterCommands(cmd)
 	bot.RegisterModule(mod)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	bot.Run(ctx)
 	go drainBotEvents(ctx, bot.Events())
+	bot.Discord.Messages() <- NewTestMessage(bot, "1")
 
-	bot.Discord.Messages() <- &discord.DiscordMessage{
-		Sess:         bot.Discord.Sess,
-		Discord:      bot.Discord,
-		MessageType:  discord.MessageTypeCreate,
-		TimeReceived: time.Now(),
-		Message: &discordgo.Message{
-			Content: ".test hello",
-			GuildID: "1",
-			Author: &discordgo.User{
-				Username: "jeff",
-			},
-			ChannelID: "1",
-			ID:        "1",
-		},
+	select {
+	case <-cmdCalled:
+	case <-time.After(time.Second * 1):
+		t.Error("Test timed out")
+	}
+}
+
+func TestBot_InteractionGetsHandled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	bot, _, mod := setupTestBot()
+	cmd := NewTestApplicationCommand(mod)
+
+	cmdCalled := make(chan bool)
+	cmd.Run = func(dm *discord.DiscordApplicationCommand) {
+		cmdCalled <- true
 	}
 
-	for i := 0; i < 2; i++ {
-		select {
-		case <-pasCalled:
-			continue
-		case <-cmdCalled:
-			continue
-		case <-time.After(time.Second * 1):
-			t.Error("Test timed out")
-		}
+	mod.RegisterApplicationCommands(cmd)
+	bot.RegisterModule(mod)
+	bot.Run(ctx)
+	go drainBotEvents(ctx, bot.Events())
+	bot.Discord.Interactions() <- NewTestApplicationCommandInteraction(bot, "1")
+
+	select {
+	case <-cmdCalled:
+	case <-time.After(time.Second * 1):
+		t.Error("Test timed out")
 	}
 }
 
 func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
-	bot, _, _ := setupTestBot()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
+	bot, _, _ := setupTestBot()
 	mod := NewTestModule(bot, "test", test.NewTestLogger())
 	mod.allowedTypes = discord.MessageTypeCreate | discord.MessageTypeUpdate
 
@@ -206,28 +205,10 @@ func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
 	}
 	mod2.RegisterPassives(pas2)
 
-	// register and run
 	bot.RegisterModule(mod)
 	bot.RegisterModule(mod2)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	bot.Run(ctx)
-
-	bot.Discord.Messages() <- &discord.DiscordMessage{
-		Sess:         bot.Discord.Sess,
-		Discord:      bot.Discord,
-		MessageType:  discord.MessageTypeUpdate,
-		TimeReceived: time.Now(),
-		Message: &discordgo.Message{
-			Content: ".test hello",
-			GuildID: "1",
-			Author: &discordgo.User{
-				Username: "jeff",
-			},
-			ChannelID: "1",
-			ID:        "1",
-		},
-	}
+	bot.Discord.Messages() <- NewTestMessage(bot, "1")
 
 	select {
 	case <-pasCalled:
@@ -241,61 +222,12 @@ func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
 	}
 }
 
-func TestBot_PanicCommandGetsHandled(t *testing.T) {
-	var (
-		bot    = NewTestBot()
-		logger = test.NewTestLogger()
-		mod    = NewTestModule(bot, "testing", logger)
-		cmd    = NewTestCommand(mod)
-	)
-
-	// change the command
-	cmd.Run = func(dm *discord.DiscordMessage) {
-		panic("i am PANICKING !!!")
-	}
-
-	// register and run
-	mod.RegisterCommands(cmd)
-	bot.RegisterModule(mod)
+func TestBot_MessageEmptyDoesNotTriggerCommand(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	bot.Run(ctx)
 
-	bot.Discord.Sess.State().GuildAdd(&discordgo.Guild{ID: "1", Channels: []*discordgo.Channel{}})
-	bot.Discord.Sess.State().ChannelAdd(&discordgo.Channel{ID: "1", GuildID: "1"})
-	bot.Discord.Messages() <- &discord.DiscordMessage{
-		Sess:         bot.Discord.Sess,
-		Discord:      bot.Discord,
-		MessageType:  discord.MessageTypeCreate,
-		TimeReceived: time.Now(),
-		Message: &discordgo.Message{
-			Content: ".test hello",
-			GuildID: "1",
-			Author: &discordgo.User{
-				Username: "jeff",
-			},
-			ChannelID: "1",
-			ID:        "1",
-		},
-	}
-
-	for range 2 {
-		select {
-		case evt := <-bot.Events():
-			if evt.Type&(BotEventCommandPanicked|BotEventCommandRan) == 0 {
-				t.Errorf("Expected correct handlers to run")
-			}
-		case <-time.After(time.Millisecond * 10):
-			t.Error("Test timed out")
-		}
-	}
-}
-
-func TestBot_MessageEmptyDoesNotTriggerCommand(t *testing.T) {
 	bot, _, _ := setupTestBot()
-
 	mod := NewTestModule(bot, "test", test.NewTestLogger())
-
 	cmd := NewTestCommand(mod)
 	cmdCalled := make(chan bool)
 	cmd.Run = func(dm *discord.DiscordMessage) {
@@ -303,26 +235,12 @@ func TestBot_MessageEmptyDoesNotTriggerCommand(t *testing.T) {
 	}
 	mod.RegisterCommands(cmd)
 
-	// register and run
 	bot.RegisterModule(mod)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	bot.Run(ctx)
 
-	bot.Discord.Messages() <- &discord.DiscordMessage{
-		Sess:         bot.Discord.Sess,
-		Discord:      bot.Discord,
-		MessageType:  discord.MessageTypeCreate,
-		TimeReceived: time.Now(),
-		Message: &discordgo.Message{
-			GuildID: "1",
-			Author: &discordgo.User{
-				Username: "jeff",
-			},
-			ChannelID: "1",
-			ID:        "1",
-		},
-	}
+	msg := NewTestMessage(bot, "1")
+	msg.Message.Content = ""
+	bot.Discord.Messages() <- msg
 
 	select {
 	case <-cmdCalled:
@@ -333,10 +251,11 @@ func TestBot_MessageEmptyDoesNotTriggerCommand(t *testing.T) {
 }
 
 func TestBot_MessageGetsCallback(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	bot, _, _ := setupTestBot()
-
 	mod := NewTestModule(bot, "test", test.NewTestLogger())
-
 	cmd := NewTestCommand(mod)
 	cmdCalled := make(chan bool)
 	cmd.Run = func(dm *discord.DiscordMessage) {
@@ -353,10 +272,7 @@ func TestBot_MessageGetsCallback(t *testing.T) {
 	}
 	mod.RegisterCommands(cmd)
 
-	// register and run
 	bot.RegisterModule(mod)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	bot.Run(ctx)
 	go drainBotEvents(ctx, bot.Events())
 

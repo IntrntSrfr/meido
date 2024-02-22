@@ -11,12 +11,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// Module represents the ping mod
 type Module struct {
 	*bot.ModuleBase
 }
 
-// New returns a new Module.
 func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Testing")
 	return &Module{
@@ -24,7 +22,6 @@ func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	}
 }
 
-// Hook will hook the Module into the Bot.
 func (m *Module) Hook() error {
 	if err := m.RegisterCommands(newTestCommand(m)); err != nil {
 		return err
@@ -35,7 +32,6 @@ func (m *Module) Hook() error {
 	return nil
 }
 
-// newTestCommand returns a new ping command.
 func newTestCommand(m *Module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
@@ -58,9 +54,8 @@ func newTestCommand(m *Module) *bot.ModuleCommand {
 }
 
 func newTestSlash(m *Module) *bot.ModuleApplicationCommand {
-	bld := bot.NewModuleApplicationCommandBuilder(m).
+	bld := bot.NewModuleApplicationCommandBuilder(m, "pingo").
 		Type(discordgo.ChatApplicationCommand).
-		Name("pingo").
 		Description("pongo")
 
 	run := func(dac *discord.DiscordApplicationCommand) {
@@ -76,7 +71,6 @@ func newTestSlash(m *Module) *bot.ModuleApplicationCommand {
 	return bld.Run(run).Build()
 }
 
-// NewMonkeyCommand returns a new monkey command.
 func newMonkeyCommand(m *Module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,

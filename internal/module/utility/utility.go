@@ -212,9 +212,8 @@ func newColorCommand(m *Module) *bot.ModuleCommand {
 }
 
 func newColorSlash(m *Module) *bot.ModuleApplicationCommand {
-	cmd := bot.NewModuleApplicationCommandBuilder(m).
+	cmd := bot.NewModuleApplicationCommandBuilder(m, "color").
 		Type(discordgo.ChatApplicationCommand).
-		Name("color").
 		Description("Show the color of a provided hex").
 		Cooldown(time.Second, bot.CooldownScopeChannel).
 		AddOption(&discordgo.ApplicationCommandOption{
