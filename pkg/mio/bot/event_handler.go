@@ -56,9 +56,7 @@ func (mp *EventHandler) DeliverCallbacks(msg *discord.DiscordMessage) {
 		return
 	}
 
-	ch, err := mp.callbacks.Get(msg.CallbackKey())
-	if err != nil {
-		return
+	if ch, err := mp.callbacks.Get(msg.CallbackKey()); err == nil {
+		ch <- msg
 	}
-	ch <- msg
 }

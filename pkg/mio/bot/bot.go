@@ -34,7 +34,6 @@ func (b *Bot) UseDefaultHandlers() {
 
 func (b *Bot) Run(ctx context.Context) error {
 	b.Logger.Info("Starting up...")
-
 	go b.EventHandler.Listen(ctx)
 	if err := b.Discord.Run(); err != nil {
 		return err
