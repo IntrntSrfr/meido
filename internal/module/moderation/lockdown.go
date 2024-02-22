@@ -6,7 +6,7 @@ import (
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
-func newLockdownChannelCommand(m *Module) *bot.ModuleCommand {
+func newLockdownChannelCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "lockdown",
@@ -25,7 +25,7 @@ func newLockdownChannelCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) lockdownCommand(msg *discord.DiscordMessage) {
+func (m *module) lockdownCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -96,7 +96,7 @@ func (m *Module) lockdownCommand(msg *discord.DiscordMessage) {
 	}
 }
 
-func newUnlockChannelCommand(m *Module) *bot.ModuleCommand {
+func newUnlockChannelCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "unlock",
@@ -115,7 +115,7 @@ func newUnlockChannelCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) unlockCommand(msg *discord.DiscordMessage) {
+func (m *module) unlockCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}

@@ -12,24 +12,21 @@ import (
 	"go.uber.org/zap"
 )
 
-// FishMod represents the ping mod
-type FishMod struct {
+type module struct {
 	*bot.ModuleBase
 	db IAquariumDB
 	fs *fishingService
 }
 
-// New returns a new FishMod.
 func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Fishing")
-	return &FishMod{
+	return &module{
 		ModuleBase: bot.NewModule(b, "Fishing", logger),
 		db:         &AquariumDB{db},
 	}
 }
 
-// Hook will hook the Module into the Bot.
-func (m *FishMod) Hook() error {
+func (m *module) Hook() error {
 	var err error
 	if m.fs, err = newFishingService(m.db, m.Logger); err != nil {
 		return err
@@ -42,8 +39,7 @@ func (m *FishMod) Hook() error {
 	)
 }
 
-// newFishCommand returns a new fish command.
-func newFishCommand(m *FishMod) *bot.ModuleCommand {
+func newFishCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "fish",
@@ -72,8 +68,7 @@ func newFishCommand(m *FishMod) *bot.ModuleCommand {
 	}
 }
 
-// newAquariumCommand returns a new Aquarium command.
-func newAquariumCommand(m *FishMod) *bot.ModuleCommand {
+func newAquariumCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "aquarium",
@@ -91,7 +86,7 @@ func newAquariumCommand(m *FishMod) *bot.ModuleCommand {
 	}
 }
 
-func (m *FishMod) aquariumCommand(msg *discord.DiscordMessage) {
+func (m *module) aquariumCommand(msg *discord.DiscordMessage) {
 	if gc, err := m.db.GetGuild(msg.GuildID()); err != nil || msg.ChannelID() != gc.FishingChannelID {
 		return
 	}
@@ -124,8 +119,7 @@ func (m *FishMod) aquariumCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-// newSetFishingSettingsCommand returns a new fish command.
-func newSetFishingSettingsCommand(m *FishMod) *bot.ModuleCommand {
+func newSetFishingSettingsCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "fishingsettings",

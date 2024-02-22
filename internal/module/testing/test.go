@@ -11,18 +11,18 @@ import (
 	"go.uber.org/zap"
 )
 
-type Module struct {
+type module struct {
 	*bot.ModuleBase
 }
 
 func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Testing")
-	return &Module{
+	return &module{
 		ModuleBase: bot.NewModule(b, "Testing", logger),
 	}
 }
 
-func (m *Module) Hook() error {
+func (m *module) Hook() error {
 	if err := m.RegisterCommands(newTestCommand(m)); err != nil {
 		return err
 	}
@@ -32,7 +32,7 @@ func (m *Module) Hook() error {
 	return nil
 }
 
-func newTestCommand(m *Module) *bot.ModuleCommand {
+func newTestCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "test",
@@ -53,7 +53,7 @@ func newTestCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newTestSlash(m *Module) *bot.ModuleApplicationCommand {
+func newTestSlash(m *module) *bot.ModuleApplicationCommand {
 	bld := bot.NewModuleApplicationCommandBuilder(m, "pingo").
 		Type(discordgo.ChatApplicationCommand).
 		Description("pongo")
@@ -71,7 +71,7 @@ func newTestSlash(m *Module) *bot.ModuleApplicationCommand {
 	return bld.Run(run).Build()
 }
 
-func newMonkeyCommand(m *Module) *bot.ModuleCommand {
+func newMonkeyCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "monkey",
@@ -90,7 +90,7 @@ func newMonkeyCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) monkeyCommand(msg *discord.DiscordMessage) {
+func (m *module) monkeyCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply(monkeys[rand.Intn(len(monkeys))])
 }
 

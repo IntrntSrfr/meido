@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Module struct {
+type module struct {
 	*bot.ModuleBase
 	search     *service.Service
 	imageCache *service.ImageSearchCache
@@ -27,14 +27,14 @@ const (
 
 func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Search")
-	return &Module{
+	return &module{
 		ModuleBase: bot.NewModule(b, "Search", logger),
 		search:     service.NewService(b.Config.GetString("youtube_token"), b.Config.GetString("open_weather_key")),
 		imageCache: service.NewImageSearchCache(),
 	}
 }
 
-func (m *Module) Hook() error {
+func (m *module) Hook() error {
 	if err := m.RegisterMessageComponents(newImageComponentHandler(m)); err != nil {
 		return err
 	}
@@ -49,7 +49,7 @@ func (m *Module) Hook() error {
 	return nil
 }
 
-func newWeatherCommand(m *Module) *bot.ModuleCommand {
+func newWeatherCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "weather",
@@ -97,7 +97,7 @@ func newWeatherCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newYouTubeCommand(m *Module) *bot.ModuleCommand {
+func newYouTubeCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "youtube",
@@ -138,7 +138,7 @@ func newYouTubeCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newImageCommand(m *Module) *bot.ModuleCommand {
+func newImageCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "image",
@@ -244,7 +244,7 @@ func newImageCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newImageComponentHandler(m *Module) *bot.ModuleMessageComponent {
+func newImageComponentHandler(m *module) *bot.ModuleMessageComponent {
 	return &bot.ModuleMessageComponent{
 		Mod:           m,
 		Name:          imageSearchHandler,

@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func newFilterWordCommand(m *Module) *bot.ModuleCommand {
+func newFilterWordCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "filterword",
@@ -34,7 +34,7 @@ func newFilterWordCommand(m *Module) *bot.ModuleCommand {
 		Run:              m.filterwordCommand,
 	}
 }
-func (m *Module) filterwordCommand(msg *discord.DiscordMessage) {
+func (m *module) filterwordCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -61,7 +61,7 @@ func (m *Module) filterwordCommand(msg *discord.DiscordMessage) {
 	}
 }
 
-func newFilterWordListCommand(m *Module) *bot.ModuleCommand {
+func newFilterWordListCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "filterwordlist",
@@ -79,7 +79,7 @@ func newFilterWordListCommand(m *Module) *bot.ModuleCommand {
 		Run:              m.filterwordlistCommand,
 	}
 }
-func (m *Module) filterwordlistCommand(msg *discord.DiscordMessage) {
+func (m *module) filterwordlistCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -110,7 +110,7 @@ func (m *Module) filterwordlistCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply(builder.String())
 }
 
-func newClearFilterCommand(m *Module) *bot.ModuleCommand {
+func newClearFilterCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "clearfilter",
@@ -129,7 +129,7 @@ func newClearFilterCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) clearfilterCommand(msg *discord.DiscordMessage) {
+func (m *module) clearfilterCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -169,7 +169,7 @@ func (m *Module) clearfilterCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply("All filters successfully deleted")
 }
 
-func newModerationSettingsCommand(m *Module) *bot.ModuleCommand {
+func newModerationSettingsCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "moderationsettings",
@@ -193,7 +193,7 @@ var (
 	warnsEnabledSettings = map[string]bool{"enable": true, "disable": false}
 )
 
-func (m *Module) moderationsettingsCommand(msg *discord.DiscordMessage) {
+func (m *module) moderationsettingsCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -257,7 +257,7 @@ func (m *Module) moderationsettingsCommand(msg *discord.DiscordMessage) {
 	}
 }
 
-func newCheckFilterPassive(m *Module) *bot.ModulePassive {
+func newCheckFilterPassive(m *module) *bot.ModulePassive {
 	return &bot.ModulePassive{
 		Mod:          m,
 		Name:         "checkfilter",

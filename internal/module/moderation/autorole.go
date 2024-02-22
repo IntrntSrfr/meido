@@ -10,7 +10,7 @@ import (
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
-func addAutoRoleOnJoin(m *Module) func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
+func addAutoRoleOnJoin(m *module) func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
 	return func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
 		gc, err := m.db.GetGuild(g.GuildID)
 		if err != nil || gc.AutoRoleID == "" {
@@ -23,7 +23,7 @@ func addAutoRoleOnJoin(m *Module) func(s *discordgo.Session, g *discordgo.GuildM
 	}
 }
 
-func newSetAutoRoleCommand(m *Module) *bot.ModuleCommand {
+func newSetAutoRoleCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "setautorole",
@@ -64,7 +64,7 @@ func newSetAutoRoleCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newRemoveAutoRoleCommand(m *Module) *bot.ModuleCommand {
+func newRemoveAutoRoleCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "removeautorole",

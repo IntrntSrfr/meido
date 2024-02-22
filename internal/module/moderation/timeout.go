@@ -9,7 +9,7 @@ import (
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
-func newMuteCommand(m *Module) *bot.ModuleCommand {
+func newMuteCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "mute",
@@ -28,7 +28,7 @@ func newMuteCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) muteCommand(msg *discord.DiscordMessage) {
+func (m *module) muteCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -77,7 +77,7 @@ func (m *Module) muteCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply(fmt.Sprintf("%v has been timed out for %v", targetMember.User, duration))
 }
 
-func newUnmuteCommand(m *Module) *bot.ModuleCommand {
+func newUnmuteCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "unmute",
@@ -96,7 +96,7 @@ func newUnmuteCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) unmuteCommand(msg *discord.DiscordMessage) {
+func (m *module) unmuteCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}

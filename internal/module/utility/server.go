@@ -10,7 +10,7 @@ import (
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 )
 
-func newServerCommand(m *Module) *bot.ModuleCommand {
+func newServerCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "server",
@@ -79,7 +79,7 @@ func newServerCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newServerSplashCommand(m *Module) *bot.ModuleCommand {
+func newServerSplashCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "serversplash",
@@ -118,7 +118,7 @@ func newServerSplashCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newServerIconCommand(m *Module) *bot.ModuleCommand {
+func newServerIconCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "servericon",
@@ -156,7 +156,7 @@ func newServerIconCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newServerBannerCommand(m *Module) *bot.ModuleCommand {
+func newServerBannerCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "serverbanner",

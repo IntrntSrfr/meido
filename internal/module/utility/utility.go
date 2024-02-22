@@ -21,7 +21,7 @@ import (
 	"go.uber.org/zap"
 )
 
-type Module struct {
+type module struct {
 	*bot.ModuleBase
 	db        database.DB
 	startTime time.Time
@@ -29,14 +29,14 @@ type Module struct {
 
 func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Utility")
-	return &Module{
+	return &module{
 		ModuleBase: bot.NewModule(b, "Utility", logger),
 		db:         db,
 		startTime:  time.Now(),
 	}
 }
 
-func (m *Module) Hook() error {
+func (m *module) Hook() error {
 	if err := m.RegisterApplicationCommands(
 		newColorSlash(m),
 		newUserInfoUserCommand(m),
@@ -66,7 +66,7 @@ func (m *Module) Hook() error {
 	return nil
 }
 
-func NewConvertCommand(m *Module) *bot.ModuleCommand {
+func NewConvertCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "convert",
@@ -90,7 +90,7 @@ func NewConvertCommand(m *Module) *bot.ModuleCommand {
 }
 
 // newPingCommand returns a new ping command.
-func newPingCommand(m *Module) *bot.ModuleCommand {
+func newPingCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "ping",
@@ -120,7 +120,7 @@ func newPingCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newAboutCommand(m *Module) *bot.ModuleCommand {
+func newAboutCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "about",
@@ -179,7 +179,7 @@ func newAboutCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newColorCommand(m *Module) *bot.ModuleCommand {
+func newColorCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "color",
@@ -211,7 +211,7 @@ func newColorCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newColorSlash(m *Module) *bot.ModuleApplicationCommand {
+func newColorSlash(m *module) *bot.ModuleApplicationCommand {
 	cmd := bot.NewModuleApplicationCommandBuilder(m, "color").
 		Type(discordgo.ChatApplicationCommand).
 		Description("Show the color of a provided hex").
@@ -260,7 +260,7 @@ func generateColorPNG(clrStr string) (*bytes.Buffer, error) {
 	return &buf, err
 }
 
-func newIdTimestampCmd(m *Module) *bot.ModuleCommand {
+func newIdTimestampCmd(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "idtimestamp",
@@ -286,7 +286,7 @@ func newIdTimestampCmd(m *Module) *bot.ModuleCommand {
 
 }
 
-func newInviteCommand(m *Module) *bot.ModuleCommand {
+func newInviteCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "invite",
@@ -309,7 +309,7 @@ func newInviteCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newHelpCommand(m *Module) *bot.ModuleCommand {
+func newHelpCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "help",
@@ -328,7 +328,7 @@ func newHelpCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) helpCommand(msg *discord.DiscordMessage) {
+func (m *module) helpCommand(msg *discord.DiscordMessage) {
 	embed := builders.NewEmbedBuilder().
 		WithOkColor().
 		WithFooter("Use m?help [module] to see module commands.\nUse m?help [command] to see command info.\nArguments in [square brackets] are required, while arguments in <angle brackets> are optional.", "").

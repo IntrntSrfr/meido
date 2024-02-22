@@ -15,7 +15,7 @@ import (
 	"go.uber.org/zap"
 )
 
-func newWarnCommand(m *Module) *bot.ModuleCommand {
+func newWarnCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "warn",
@@ -34,7 +34,7 @@ func newWarnCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) warnCommand(msg *discord.DiscordMessage) {
+func (m *module) warnCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -125,7 +125,7 @@ func (m *Module) warnCommand(msg *discord.DiscordMessage) {
 	}
 }
 
-func newWarnLogCommand(m *Module) *bot.ModuleCommand {
+func newWarnLogCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "warnlog",
@@ -144,7 +144,7 @@ func newWarnLogCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) warnlogCommand(msg *discord.DiscordMessage) {
+func (m *module) warnlogCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -226,7 +226,7 @@ func (m *Module) warnlogCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newWarnCountCommand(m *Module) *bot.ModuleCommand {
+func newWarnCountCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "warncount",
@@ -245,7 +245,7 @@ func newWarnCountCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) warncountCommand(msg *discord.DiscordMessage) {
+func (m *module) warncountCommand(msg *discord.DiscordMessage) {
 	gc, err := m.db.GetGuild(msg.GuildID())
 	if err != nil {
 		_, _ = msg.Reply("There was an issue, please try again!")
@@ -272,7 +272,7 @@ func (m *Module) warncountCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply(fmt.Sprintf("%v is at %v/%v warns", targetUser.String(), len(warns), gc.MaxWarns))
 }
 
-func newClearWarnCommand(m *Module) *bot.ModuleCommand {
+func newClearWarnCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "pardon",
@@ -291,7 +291,7 @@ func newClearWarnCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) clearwarnCommand(msg *discord.DiscordMessage) {
+func (m *module) clearwarnCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -370,7 +370,7 @@ func (m *Module) clearwarnCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply("Updated warning")
 }
 
-func newClearAllWarnsCommand(m *Module) *bot.ModuleCommand {
+func newClearAllWarnsCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "pardonall",
@@ -388,7 +388,7 @@ func newClearAllWarnsCommand(m *Module) *bot.ModuleCommand {
 		Run:              m.clearallwarnsCommand,
 	}
 }
-func (m *Module) clearallwarnsCommand(msg *discord.DiscordMessage) {
+func (m *module) clearallwarnsCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}

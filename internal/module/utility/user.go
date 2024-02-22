@@ -11,7 +11,7 @@ import (
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 )
 
-func newAvatarCommand(m *Module) *bot.ModuleCommand {
+func newAvatarCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "avatar",
@@ -48,7 +48,7 @@ func newAvatarCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newBannerCommand(m *Module) *bot.ModuleCommand {
+func newBannerCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "banner",
@@ -99,7 +99,7 @@ func newBannerCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newMemberAvatarCommand(m *Module) *bot.ModuleCommand {
+func newMemberAvatarCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "memberavatar",
@@ -147,7 +147,7 @@ func newMemberAvatarCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newUserInfoCommand(m *Module) *bot.ModuleCommand {
+func newUserInfoCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "userinfo",
@@ -211,7 +211,7 @@ func newUserInfoCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newUserInfoUserCommand(m *Module) *bot.ModuleApplicationCommand {
+func newUserInfoUserCommand(m *module) *bot.ModuleApplicationCommand {
 	bld := bot.NewModuleApplicationCommandBuilder(m, "info").
 		Type(discordgo.UserApplicationCommand)
 

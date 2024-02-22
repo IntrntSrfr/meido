@@ -14,23 +14,20 @@ import (
 	"go.uber.org/zap"
 )
 
-// Module represents the administration mod
-type Module struct {
+type module struct {
 	*bot.ModuleBase
 	dmLogChannels []string
 }
 
-// New returns a new AdministrationMod.
 func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Administration")
-	return &Module{
+	return &module{
 		ModuleBase:    bot.NewModule(b, "Administration", logger),
 		dmLogChannels: b.Config.GetStringSlice("dm_log_channels"),
 	}
 }
 
-// Hook will hook the Module into the Bot.
-func (m *Module) Hook() error {
+func (m *module) Hook() error {
 	if err := m.RegisterPassives(newForwardDmsPassive(m)); err != nil {
 		return err
 	}
@@ -40,7 +37,7 @@ func (m *Module) Hook() error {
 	)
 }
 
-func newMessageCommand(m *Module) *bot.ModuleCommand {
+func newMessageCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "message",
@@ -82,8 +79,7 @@ func newMessageCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-// newToggleCommandCommand returns a new ping command.
-func newToggleCommandCommand(m *Module) *bot.ModuleCommand {
+func newToggleCommandCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "togglecommand",
@@ -114,7 +110,7 @@ func newToggleCommandCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newForwardDmsPassive(m *Module) *bot.ModulePassive {
+func newForwardDmsPassive(m *module) *bot.ModulePassive {
 	return &bot.ModulePassive{
 		Mod:          m,
 		Name:         "forwarddms",

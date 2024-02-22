@@ -14,22 +14,22 @@ import (
 	"go.uber.org/zap"
 )
 
-type Module struct {
+type module struct {
 	*bot.ModuleBase
 }
 
 func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Fun")
-	return &Module{
+	return &module{
 		ModuleBase: bot.NewModule(b, "Fun", logger),
 	}
 }
 
-func (m *Module) Hook() error {
+func (m *module) Hook() error {
 	return m.RegisterCommands(newLifeCommand(m))
 }
 
-func newLifeCommand(m *Module) *bot.ModuleCommand {
+func newLifeCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "life",

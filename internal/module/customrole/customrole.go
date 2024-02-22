@@ -19,20 +19,20 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type Module struct {
+type module struct {
 	*bot.ModuleBase
 	db ICustomRoleDB
 }
 
 func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 	logger = logger.Named("CustomRole")
-	return &Module{
+	return &module{
 		ModuleBase: bot.NewModule(b, "CustomRole", logger),
 		db:         &CustomRoleDB{db},
 	}
 }
 
-func (m *Module) Hook() error {
+func (m *module) Hook() error {
 	m.Bot.Discord.Sess.AddHandlerOnce(func(s *discordgo.Session, r *discordgo.Ready) {
 		go clearDeletedRoles(m)
 	})
@@ -45,7 +45,7 @@ func (m *Module) Hook() error {
 	)
 }
 
-func clearDeletedRoles(m *Module) {
+func clearDeletedRoles(m *module) {
 	refreshTicker := time.NewTicker(time.Hour)
 	for range refreshTicker.C {
 		for _, g := range m.Bot.Discord.Guilds() {
@@ -80,7 +80,7 @@ func clearDeletedRoles(m *Module) {
 	}
 }
 
-func newSetCustomRoleCommand(m *Module) *bot.ModuleCommand {
+func newSetCustomRoleCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "setcustomrole",
@@ -152,7 +152,7 @@ func newSetCustomRoleCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newRemoveCustomRoleCommand(m *Module) *bot.ModuleCommand {
+func newRemoveCustomRoleCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "removecustomrole",
@@ -194,7 +194,7 @@ func newRemoveCustomRoleCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newMyRoleCommand(m *Module) *bot.ModuleCommand {
+func newMyRoleCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "myrole",
@@ -213,7 +213,7 @@ func newMyRoleCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) myroleCommand(msg *discord.DiscordMessage) {
+func (m *module) myroleCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -338,7 +338,7 @@ func (m *Module) myroleCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newListCustomRolesCommand(m *Module) *bot.ModuleCommand {
+func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "listcustomroles",

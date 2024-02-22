@@ -15,20 +15,20 @@ import (
 	"go.uber.org/zap"
 )
 
-type Module struct {
+type module struct {
 	*bot.ModuleBase
 	db IModerationDB
 }
 
 func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 	logger = logger.Named("Moderation")
-	return &Module{
+	return &module{
 		ModuleBase: bot.NewModule(b, "Moderation", logger),
 		db:         &ModerationDB{DB: db, IFilterDB: &FilterDB{db}, IWarnDB: &WarnDB{db}},
 	}
 }
 
-func (m *Module) Hook() error {
+func (m *module) Hook() error {
 	m.Bot.Discord.AddEventHandlerOnce(checkWarnInterval(m))
 	m.Bot.Discord.AddEventHandler(addAutoRoleOnJoin(m))
 
@@ -61,7 +61,7 @@ func (m *Module) Hook() error {
 	)
 }
 
-func checkWarnInterval(m *Module) func(s *discordgo.Session, r *discordgo.Ready) {
+func checkWarnInterval(m *module) func(s *discordgo.Session, r *discordgo.Ready) {
 	return func(s *discordgo.Session, r *discordgo.Ready) {
 		refreshTicker := time.NewTicker(time.Hour)
 		go func() {
@@ -101,7 +101,7 @@ func checkWarnInterval(m *Module) func(s *discordgo.Session, r *discordgo.Ready)
 	}
 }
 
-func newBanCommand(m *Module) *bot.ModuleCommand {
+func newBanCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "ban",
@@ -120,7 +120,7 @@ func newBanCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) banCommand(msg *discord.DiscordMessage) {
+func (m *module) banCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -212,7 +212,7 @@ func (m *Module) banCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newUnbanCommand(m *Module) *bot.ModuleCommand {
+func newUnbanCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "unban",
@@ -231,7 +231,7 @@ func newUnbanCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) unbanCommand(msg *discord.DiscordMessage) {
+func (m *module) unbanCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -257,7 +257,7 @@ func (m *Module) unbanCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newHackbanCommand(m *Module) *bot.ModuleCommand {
+func newHackbanCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "hackban",
@@ -294,7 +294,7 @@ func newHackbanCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func newKickCommand(m *Module) *bot.ModuleCommand {
+func newKickCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "kick",
@@ -313,7 +313,7 @@ func newKickCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) kickCommand(msg *discord.DiscordMessage) {
+func (m *module) kickCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -376,7 +376,7 @@ func (m *Module) kickCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newPruneCommand(m *Module) *bot.ModuleCommand {
+func newPruneCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "prune",
@@ -395,7 +395,7 @@ func newPruneCommand(m *Module) *bot.ModuleCommand {
 	}
 }
 
-func (m *Module) pruneCommand(msg *discord.DiscordMessage) {
+func (m *module) pruneCommand(msg *discord.DiscordMessage) {
 	if len(msg.Args()) == 1 {
 		pruneMessages(msg, msg.Discord.BotUser().ID, 100)
 	} else if len(msg.Args()) == 2 {
