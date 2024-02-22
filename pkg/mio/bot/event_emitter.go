@@ -7,21 +7,51 @@ import (
 )
 
 type EventEmitter struct {
-	eventCh chan *BotEventData
+	handlers map[BotEvent][]any
+	//eventCh  chan *BotEventData
 }
 
 func NewEventEmitter() *EventEmitter {
 	return &EventEmitter{
-		eventCh: make(chan *BotEventData),
+		handlers: make(map[BotEvent][]any),
+		//eventCh:  make(chan *BotEventData),
 	}
 }
 
 func (em *EventEmitter) Emit(event BotEvent, data interface{}) {
-	em.eventCh <- &BotEventData{Type: event, Data: data}
+	//em.eventCh <- &BotEventData{Type: event, Data: data}
+
+	for _, h := range em.handlers[event] {
+		switch event {
+		case BotEventCommandRan:
+			go h.(func(*CommandRan))(data.(*CommandRan))
+		case BotEventCommandPanicked:
+			go h.(func(*CommandPanicked))(data.(*CommandPanicked))
+		case BotEventPassiveRan:
+			go h.(func(*PassiveRan))(data.(*PassiveRan))
+		case BotEventPassivePanicked:
+			go h.(func(*PassivePanicked))(data.(*PassivePanicked))
+		case BotEventApplicationCommandRan:
+			go h.(func(*ApplicationCommandRan))(data.(*ApplicationCommandRan))
+		case BotEventApplicationCommandPanicked:
+			go h.(func(*ApplicationCommandPanicked))(data.(*ApplicationCommandPanicked))
+		case BotEventMessageComponentRan:
+			go h.(func(*MessageComponentRan))(data.(*MessageComponentRan))
+		case BotEventMessageComponentPanicked:
+			go h.(func(*MessageComponentPanicked))(data.(*MessageComponentPanicked))
+		case BotEventModalSubmitRan:
+			go h.(func(*ModalSubmitRan))(data.(*ModalSubmitRan))
+		case BotEventModalSubmitPanicked:
+			go h.(func(*ModalSubmitPanicked))(data.(*ModalSubmitPanicked))
+		}
+	}
 }
 
-func (em *EventEmitter) Events() chan *BotEventData {
-	return em.eventCh
+func (em *EventEmitter) AddHandler(event BotEvent, handler any) {
+	if _, ok := em.handlers[event]; !ok {
+		em.handlers[event] = make([]any, 0)
+	}
+	em.handlers[event] = append(em.handlers[event], handler)
 }
 
 type BotEvent int

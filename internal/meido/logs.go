@@ -1,7 +1,6 @@
 package meido
 
 import (
-	"context"
 	"strings"
 	"time"
 
@@ -10,37 +9,18 @@ import (
 	"go.uber.org/zap"
 )
 
-func (m *Meido) listenMioEvents(ctx context.Context) {
-	for {
-		select {
-		case evt := <-m.Bot.Events():
-			switch evt.Type {
-			case bot.BotEventCommandRan:
-				m.logCommand(evt.Data.(*bot.CommandRan))
-				m.logCommandRan(evt.Data.(*bot.CommandRan))
-			case bot.BotEventCommandPanicked:
-				m.logCommandPanicked(evt.Data.(*bot.CommandPanicked))
-			case bot.BotEventPassiveRan:
-				m.logPassiveRan(evt.Data.(*bot.PassiveRan))
-			case bot.BotEventPassivePanicked:
-				m.logPassivePanicked(evt.Data.(*bot.PassivePanicked))
-			case bot.BotEventApplicationCommandRan:
-				m.logApplicationCommandRan(evt.Data.(*bot.ApplicationCommandRan))
-			case bot.BotEventApplicationCommandPanicked:
-				m.logApplicationCommandPanicked(evt.Data.(*bot.ApplicationCommandPanicked))
-			case bot.BotEventMessageComponentRan:
-				m.logMessageComponentRan(evt.Data.(*bot.MessageComponentRan))
-			case bot.BotEventMessageComponentPanicked:
-				m.logMessageComponentPanicked(evt.Data.(*bot.MessageComponentPanicked))
-			case bot.BotEventModalSubmitRan:
-				m.logModalSubmitRan(evt.Data.(*bot.ModalSubmitRan))
-			case bot.BotEventModalSubmitPanicked:
-				m.logModalSubmitPanicked(evt.Data.(*bot.ModalSubmitPanicked))
-			}
-		case <-ctx.Done():
-			return
-		}
-	}
+func (m *Meido) listenMioEvents() {
+	m.Bot.AddHandler(bot.BotEventCommandRan, m.logCommand)
+	m.Bot.AddHandler(bot.BotEventCommandRan, m.logCommandRan)
+	m.Bot.AddHandler(bot.BotEventCommandPanicked, m.logCommandPanicked)
+	m.Bot.AddHandler(bot.BotEventPassiveRan, m.logPassiveRan)
+	m.Bot.AddHandler(bot.BotEventPassivePanicked, m.logPassivePanicked)
+	m.Bot.AddHandler(bot.BotEventApplicationCommandRan, m.logApplicationCommandRan)
+	m.Bot.AddHandler(bot.BotEventApplicationCommandPanicked, m.logApplicationCommandPanicked)
+	m.Bot.AddHandler(bot.BotEventMessageComponentRan, m.logMessageComponentRan)
+	m.Bot.AddHandler(bot.BotEventMessageComponentPanicked, m.logMessageComponentPanicked)
+	m.Bot.AddHandler(bot.BotEventModalSubmitRan, m.logModalSubmitRan)
+	m.Bot.AddHandler(bot.BotEventModalSubmitPanicked, m.logModalSubmitPanicked)
 }
 
 func (m *Meido) logCommand(cmd *bot.CommandRan) {

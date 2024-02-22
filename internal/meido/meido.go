@@ -51,7 +51,7 @@ func newLogger() *zap.Logger {
 
 func (m *Meido) Run(ctx context.Context, useDefHandlers bool) error {
 	m.Bot.UseDefaultHandlers()
-	go m.listenMioEvents(ctx)
+	m.listenMioEvents()
 	m.registerModules()
 	m.registerDiscordHandlers()
 	return m.Bot.Run(ctx)

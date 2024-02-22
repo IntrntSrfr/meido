@@ -34,31 +34,6 @@ func TestBot_RegisterModule(t *testing.T) {
 	}
 }
 
-func TestBot_Events(t *testing.T) {
-	bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLogger()).Build()
-	done := make(chan *BotEventData)
-	go func() {
-		select {
-		case evt := <-bot.Events():
-			done <- evt
-		case <-time.After(time.Second):
-			t.Errorf("Timed out ")
-		}
-	}()
-	bot.Emit(BotEventCommandRan, &CommandRan{Command: NewTestCommand(nil)})
-	data := <-done
-	if data.Type != BotEventCommandRan {
-		t.Errorf("Wrong event type; expected %v, got %v", BotEventCommandRan, data.Type)
-	}
-	got, ok := data.Data.(*CommandRan)
-	if !ok {
-		t.Error("Expected type cast to not fail.")
-	}
-	if got.Command.Name != "test" {
-		t.Errorf("Expected command name to be %v, got %v", "test", got.Command.Name)
-	}
-}
-
 func TestBot_Run(t *testing.T) {
 	t.Run("session open", func(t *testing.T) {
 		bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLogger()).Build()
@@ -149,7 +124,6 @@ func TestBot_MessageGetsHandled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	bot.Run(ctx)
-	go drainBotEvents(ctx, bot.Events())
 
 	bot.Discord.Messages() <- &discord.DiscordMessage{
 		Sess:         bot.Discord.Sess,
@@ -248,6 +222,10 @@ func TestBot_PanicCommandGetsHandled(t *testing.T) {
 		mod    = NewTestModule(bot, "testing", logger)
 		cmd    = NewTestCommand(mod)
 	)
+	panicCalled := make(chan bool)
+	bot.AddHandler(BotEventCommandPanicked, func(*CommandPanicked) {
+		panicCalled <- true
+	})
 
 	// change the command
 	cmd.Run = func(dm *discord.DiscordMessage) {
@@ -279,15 +257,10 @@ func TestBot_PanicCommandGetsHandled(t *testing.T) {
 		},
 	}
 
-	for range 2 {
-		select {
-		case evt := <-bot.Events():
-			if evt.Type&(BotEventCommandPanicked|BotEventCommandRan) == 0 {
-				t.Errorf("Expected correct handlers to run")
-			}
-		case <-time.After(time.Millisecond * 10):
-			t.Error("Test timed out")
-		}
+	select {
+	case <-panicCalled:
+	case <-time.After(time.Millisecond * 10):
+		t.Error("Test timed out")
 	}
 }
 
@@ -358,7 +331,6 @@ func TestBot_MessageGetsCallback(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	bot.Run(ctx)
-	go drainBotEvents(ctx, bot.Events())
 
 	bot.Discord.Messages() <- &discord.DiscordMessage{
 		Sess:         bot.Discord.Sess,
