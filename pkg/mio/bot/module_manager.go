@@ -22,7 +22,7 @@ func NewModuleManager(logger *zap.Logger) *ModuleManager {
 func (m *ModuleManager) RegisterModule(mod Module) {
 	err := mod.Hook()
 	if err != nil {
-		m.logger.Error("Failed to register module", zap.Error(err))
+		m.logger.Error("Failed to register module", zap.String("module", mod.Name()), zap.Error(err))
 		return
 	}
 	m.Modules[mod.Name()] = mod

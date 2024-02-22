@@ -156,6 +156,8 @@ func (d *Discord) Close() {
 			d.logger.Error("Failed to close session", zap.Int("shardID", sess.ShardID()), zap.Error(err))
 		}
 	}
+	close(d.messageChan)
+	close(d.interactionChan)
 }
 
 func (d *Discord) Messages() chan *DiscordMessage {
