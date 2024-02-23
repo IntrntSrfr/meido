@@ -133,7 +133,7 @@ func NewTestMessage(bot *Bot, guildID string) *discord.DiscordMessage {
 }
 
 func NewTestApplicationCommandInteraction(bot *Bot, guildID string) *discord.DiscordInteraction {
-	it := NewTestInteraction(bot, guildID)
+	it := newTestInteraction(bot, guildID)
 	it.Interaction.Type = discordgo.InteractionApplicationCommand
 	it.Interaction.Data = discordgo.ApplicationCommandInteractionData{
 		Name:        "test",
@@ -143,7 +143,7 @@ func NewTestApplicationCommandInteraction(bot *Bot, guildID string) *discord.Dis
 }
 
 func NewTestMessageComponentInteraction(bot *Bot, guildID, customID string) *discord.DiscordInteraction {
-	it := NewTestInteraction(bot, guildID)
+	it := newTestInteraction(bot, guildID)
 	it.Interaction.Type = discordgo.InteractionMessageComponent
 	it.Interaction.Data = discordgo.MessageComponentInteractionData{
 		CustomID: customID,
@@ -152,7 +152,7 @@ func NewTestMessageComponentInteraction(bot *Bot, guildID, customID string) *dis
 }
 
 func NewTestModalSubmitInteraction(bot *Bot, guildID, customID string) *discord.DiscordInteraction {
-	it := NewTestInteraction(bot, guildID)
+	it := newTestInteraction(bot, guildID)
 	it.Interaction.Type = discordgo.InteractionModalSubmit
 	it.Interaction.Data = discordgo.ModalSubmitInteractionData{
 		CustomID: customID,
@@ -160,7 +160,7 @@ func NewTestModalSubmitInteraction(bot *Bot, guildID, customID string) *discord.
 	return it
 }
 
-func NewTestInteraction(bot *Bot, guildID string) *discord.DiscordInteraction {
+func newTestInteraction(bot *Bot, guildID string) *discord.DiscordInteraction {
 	author := &discordgo.User{Username: "jeff"}
 	it := &discord.DiscordInteraction{
 		Sess:    bot.Discord.Sess,
