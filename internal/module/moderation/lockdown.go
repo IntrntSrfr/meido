@@ -21,7 +21,7 @@ func newLockdownChannelCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.lockdownCommand,
+		Execute:          m.lockdownCommand,
 	}
 }
 
@@ -111,7 +111,7 @@ func newUnlockChannelCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.unlockCommand,
+		Execute:          m.unlockCommand,
 	}
 }
 

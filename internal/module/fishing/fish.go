@@ -53,7 +53,7 @@ func newFishCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if gc, err := m.db.GetGuild(msg.GuildID()); err != nil || msg.ChannelID() != gc.FishingChannelID {
 				return
 			}
@@ -82,7 +82,7 @@ func newAquariumCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run:              m.aquariumCommand,
+		Execute:          m.aquariumCommand,
 	}
 }
 
@@ -134,7 +134,7 @@ func newSetFishingSettingsCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}

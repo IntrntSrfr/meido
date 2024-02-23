@@ -44,7 +44,7 @@ func newLifeCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			_ = msg.Discord.StartTyping(msg.ChannelID())
 			seedStr := msg.AuthorID()
 			if len(msg.Args()) > 1 {

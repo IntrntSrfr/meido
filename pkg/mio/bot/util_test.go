@@ -46,12 +46,12 @@ func (m *testModule) Hook() error {
 
 func NewTestCommand(mod Module) *ModuleCommand {
 	return NewModuleCommandBuilder(mod, "test").
-		WithDescription("testing").
-		WithTriggers(".test").
-		WithUsage(".test").
-		WithCooldown(0, CooldownScopeChannel).
-		WithAllowedTypes(discord.MessageTypeCreate).
-		WithRunFunc(testCommandRun).
+		Description("testing").
+		Triggers(".test").
+		Usage(".test").
+		Cooldown(0, CooldownScopeChannel).
+		AllowedTypes(discord.MessageTypeCreate).
+		Execute(testCommandRun).
 		Build()
 }
 
@@ -61,9 +61,9 @@ func testCommandRun(msg *discord.DiscordMessage) {
 
 func NewTestPassive(mod Module) *ModulePassive {
 	return NewModulePassiveBuilder(mod, "test").
-		WithDescription("testing").
-		WithAllowedTypes(discord.MessageTypeCreate).
-		WithRunFunc(testPassiveRun).
+		Description("testing").
+		AllowedTypes(discord.MessageTypeCreate).
+		Execute(testPassiveRun).
 		Build()
 }
 
@@ -75,7 +75,7 @@ func NewTestApplicationCommand(mod Module) *ModuleApplicationCommand {
 	return NewModuleApplicationCommandBuilder(mod, "test").
 		Type(discordgo.ChatApplicationCommand).
 		Description("testing").
-		Run(testApplicationCommandRun).
+		Execute(testApplicationCommandRun).
 		Build()
 }
 
@@ -91,7 +91,7 @@ func NewTestMessageComponent(mod Module) *ModuleMessageComponent {
 		CooldownScope: CooldownScopeChannel,
 		CheckBotPerms: false,
 		Enabled:       true,
-		Run:           testMessageComponentRun,
+		Execute:       testMessageComponentRun,
 	}
 }
 
@@ -104,7 +104,7 @@ func NewTestModalSubmit(mod Module) *ModuleModalSubmit {
 		Mod:     mod,
 		Name:    "test",
 		Enabled: true,
-		Run:     testModalSubmitRun,
+		Execute: testModalSubmitRun,
 	}
 }
 

@@ -24,7 +24,7 @@ func newMuteCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.muteCommand,
+		Execute:          m.muteCommand,
 	}
 }
 
@@ -92,7 +92,7 @@ func newUnmuteCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.unmuteCommand,
+		Execute:          m.unmuteCommand,
 	}
 }
 

@@ -25,7 +25,7 @@ func newServerCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -94,7 +94,7 @@ func newServerSplashCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -133,7 +133,7 @@ func newServerIconCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -171,7 +171,7 @@ func newServerBannerCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}

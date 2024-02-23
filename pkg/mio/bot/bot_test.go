@@ -134,7 +134,7 @@ func TestBot_MessageGetsHandled(t *testing.T) {
 	cmd := NewTestCommand(mod)
 
 	cmdCalled := make(chan bool)
-	cmd.Run = func(dm *discord.DiscordMessage) {
+	cmd.Execute = func(dm *discord.DiscordMessage) {
 		cmdCalled <- true
 	}
 
@@ -159,7 +159,7 @@ func TestBot_InteractionGetsHandled(t *testing.T) {
 	cmd := NewTestApplicationCommand(mod)
 
 	cmdCalled := make(chan bool)
-	cmd.Run = func(dm *discord.DiscordApplicationCommand) {
+	cmd.Execute = func(dm *discord.DiscordApplicationCommand) {
 		cmdCalled <- true
 	}
 
@@ -187,11 +187,11 @@ func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
 	pas := NewTestPassive(mod)
 	cmd := NewTestCommand(mod)
 	cmdCalled := make(chan bool)
-	cmd.Run = func(dm *discord.DiscordMessage) {
+	cmd.Execute = func(dm *discord.DiscordMessage) {
 		cmdCalled <- true
 	}
 	pasCalled := make(chan bool)
-	pas.Run = func(dm *discord.DiscordMessage) {
+	pas.Execute = func(dm *discord.DiscordMessage) {
 		pasCalled <- true
 	}
 	mod.RegisterPassives(pas)
@@ -200,7 +200,7 @@ func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
 	mod2 := NewTestModule(bot, "test2", test.NewTestLogger())
 	pas2 := NewTestPassive(mod)
 	pas2Called := make(chan bool)
-	pas.Run = func(dm *discord.DiscordMessage) {
+	pas.Execute = func(dm *discord.DiscordMessage) {
 		pas2Called <- true
 	}
 	mod2.RegisterPassives(pas2)
@@ -230,7 +230,7 @@ func TestBot_MessageEmptyDoesNotTriggerCommand(t *testing.T) {
 	mod := NewTestModule(bot, "test", test.NewTestLogger())
 	cmd := NewTestCommand(mod)
 	cmdCalled := make(chan bool)
-	cmd.Run = func(dm *discord.DiscordMessage) {
+	cmd.Execute = func(dm *discord.DiscordMessage) {
 		cmdCalled <- true
 	}
 	mod.RegisterCommands(cmd)
@@ -258,7 +258,7 @@ func TestBot_MessageGetsCallback(t *testing.T) {
 	mod := NewTestModule(bot, "test", test.NewTestLogger())
 	cmd := NewTestCommand(mod)
 	cmdCalled := make(chan bool)
-	cmd.Run = func(dm *discord.DiscordMessage) {
+	cmd.Execute = func(dm *discord.DiscordMessage) {
 		cb, err := mod.Bot.Callbacks.Make(dm.CallbackKey())
 		if err != nil {
 			t.Error(err)

@@ -81,7 +81,7 @@ func NewConvertCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 4 {
 				return
 			}
@@ -105,7 +105,7 @@ func newPingCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -135,7 +135,7 @@ func newAboutCommand(m *module) *bot.ModuleCommand {
 		AllowDMs:         true,
 		AllowedTypes:     discord.MessageTypeCreate,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -194,7 +194,7 @@ func newColorCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -244,7 +244,7 @@ func newColorSlash(m *module) *bot.ModuleApplicationCommand {
 		)
 	}
 
-	return cmd.Run(run).Build()
+	return cmd.Execute(run).Build()
 }
 
 func generateColorPNG(clrStr string) (*bytes.Buffer, error) {
@@ -275,7 +275,7 @@ func newIdTimestampCmd(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			id := msg.AuthorID()
 			if len(msg.Args()) > 1 {
 				id = msg.Args()[1]
@@ -301,7 +301,7 @@ func newInviteCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			botLink := "<https://discordapp.com/oauth2/authorize?client_id=" + msg.Sess.State().User.ID + "&scope=bot>"
 			serverLink := "https://discord.gg/KgMEGK3"
 			_, _ = msg.Reply(fmt.Sprintf("Invite me to your server: %v\nSupport server: %v", botLink, serverLink))
@@ -324,7 +324,7 @@ func newHelpCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run:              m.helpCommand,
+		Execute:          m.helpCommand,
 	}
 }
 

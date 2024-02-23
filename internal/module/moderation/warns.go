@@ -30,7 +30,7 @@ func newWarnCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.warnCommand,
+		Execute:          m.warnCommand,
 	}
 }
 
@@ -140,7 +140,7 @@ func newWarnLogCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.warnlogCommand,
+		Execute:          m.warnlogCommand,
 	}
 }
 
@@ -241,7 +241,7 @@ func newWarnCountCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.warncountCommand,
+		Execute:          m.warncountCommand,
 	}
 }
 
@@ -287,7 +287,7 @@ func newClearWarnCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.clearwarnCommand,
+		Execute:          m.clearwarnCommand,
 	}
 }
 
@@ -385,7 +385,7 @@ func newClearAllWarnsCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.clearallwarnsCommand,
+		Execute:          m.clearallwarnsCommand,
 	}
 }
 func (m *module) clearallwarnsCommand(msg *discord.DiscordMessage) {

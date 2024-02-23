@@ -36,7 +36,7 @@ func newJpgLargeConvertPassive(m *module) *bot.ModulePassive {
 		Description:  "Automatically converts jpglarge files to jpg",
 		AllowedTypes: discord.MessageTypeCreate,
 		Enabled:      true,
-		Run:          m.jpgLargeConvertPassive,
+		Execute:      m.jpgLargeConvertPassive,
 	}
 }
 
@@ -93,7 +93,7 @@ func newMediaConvertCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run:              m.mediaConvertCommand,
+		Execute:          m.mediaConvertCommand,
 	}
 }
 

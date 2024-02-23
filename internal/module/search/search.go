@@ -64,7 +64,7 @@ func newWeatherCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -112,7 +112,7 @@ func newYouTubeCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -153,7 +153,7 @@ func newImageCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -254,7 +254,7 @@ func newImageComponentHandler(m *module) *bot.ModuleMessageComponent {
 		UserType:      bot.UserTypeAny,
 		CheckBotPerms: false,
 		Enabled:       true,
-		Run: func(dmc *discord.DiscordMessageComponent) {
+		Execute: func(dmc *discord.DiscordMessageComponent) {
 			msg, ok := m.imageCache.Get(dmc.Interaction.Message.ID)
 			if !ok {
 				return

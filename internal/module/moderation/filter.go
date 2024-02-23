@@ -31,7 +31,7 @@ func newFilterWordCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.filterwordCommand,
+		Execute:          m.filterwordCommand,
 	}
 }
 func (m *module) filterwordCommand(msg *discord.DiscordMessage) {
@@ -76,7 +76,7 @@ func newFilterWordListCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.filterwordlistCommand,
+		Execute:          m.filterwordlistCommand,
 	}
 }
 func (m *module) filterwordlistCommand(msg *discord.DiscordMessage) {
@@ -125,7 +125,7 @@ func newClearFilterCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.clearfilterCommand,
+		Execute:          m.clearfilterCommand,
 	}
 }
 
@@ -184,7 +184,7 @@ func newModerationSettingsCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.moderationsettingsCommand,
+		Execute:          m.moderationsettingsCommand,
 	}
 }
 
@@ -264,7 +264,7 @@ func newCheckFilterPassive(m *module) *bot.ModulePassive {
 		Description:  "checks if messages contain phrases found in the server filter",
 		Enabled:      true,
 		AllowedTypes: discord.MessageTypeCreate | discord.MessageTypeUpdate,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}

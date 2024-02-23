@@ -26,7 +26,7 @@ func newAvatarCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			targetUser := msg.Author()
 			var err error
 			if len(msg.Args()) > 1 {
@@ -63,7 +63,7 @@ func newBannerCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -114,7 +114,7 @@ func newMemberAvatarCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -162,7 +162,7 @@ func newUserInfoCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			targetUser := msg.Author()
 			targetMember := msg.Member()
 			if len(msg.Args()) > 1 {
@@ -239,5 +239,5 @@ func newUserInfoUserCommand(m *module) *bot.ModuleApplicationCommand {
 		_ = msg.RespondEmbed(embed.Build())
 	}
 
-	return bld.Run(run).Build()
+	return bld.Execute(run).Build()
 }

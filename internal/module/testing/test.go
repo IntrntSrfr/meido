@@ -47,7 +47,7 @@ func newTestCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			_, _ = msg.Reply("test")
 		},
 	}
@@ -68,7 +68,7 @@ func newTestSlash(m *module) *bot.ModuleApplicationCommand {
 		dac.Sess.Real().InteractionResponseEdit(dac.Interaction, respData)
 	}
 
-	return bld.Run(run).Build()
+	return bld.Execute(run).Build()
 }
 
 func newMonkeyCommand(m *module) *bot.ModuleCommand {
@@ -86,7 +86,7 @@ func newMonkeyCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run:              m.monkeyCommand,
+		Execute:          m.monkeyCommand,
 	}
 }
 

@@ -95,7 +95,7 @@ func newSetCustomRoleCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 3 {
 				return
 			}
@@ -167,7 +167,7 @@ func newRemoveCustomRoleCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -209,7 +209,7 @@ func newMyRoleCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.myroleCommand,
+		Execute:          m.myroleCommand,
 	}
 }
 
@@ -353,7 +353,7 @@ func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			roles, err := m.db.GetCustomRolesByGuild(msg.GuildID())
 			if err != nil {
 				_, _ = msg.Reply("There was an issue, please try again!")

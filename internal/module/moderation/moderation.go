@@ -116,7 +116,7 @@ func newBanCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.banCommand,
+		Execute:          m.banCommand,
 	}
 }
 
@@ -227,7 +227,7 @@ func newUnbanCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.unbanCommand,
+		Execute:          m.unbanCommand,
 	}
 }
 
@@ -272,7 +272,7 @@ func newHackbanCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -309,7 +309,7 @@ func newKickCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.kickCommand,
+		Execute:          m.kickCommand,
 	}
 }
 
@@ -391,7 +391,7 @@ func newPruneCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Run:              m.pruneCommand,
+		Execute:          m.pruneCommand,
 	}
 }
 

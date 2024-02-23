@@ -52,7 +52,7 @@ func newMessageCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if len(msg.Args()) < 3 {
 				return
 			}
@@ -94,7 +94,7 @@ func newToggleCommandCommand(m *module) *bot.ModuleCommand {
 		AllowedTypes:     discord.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if cmd, err := m.Bot.FindCommand(msg.RawContent()); err == nil {
 				if cmd.Name == "togglecommand" {
 					return
@@ -117,7 +117,7 @@ func newForwardDmsPassive(m *module) *bot.ModulePassive {
 		Description:  "Forwards all received DMs to channels specified by the bot owner",
 		AllowedTypes: discord.MessageTypeCreate,
 		Enabled:      true,
-		Run: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *discord.DiscordMessage) {
 			if !msg.IsDM() {
 				return
 			}

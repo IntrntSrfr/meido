@@ -196,7 +196,7 @@ func (m *ModuleBase) recoverCommand(cmd *ModuleCommand, msg *discord.DiscordMess
 func (m *ModuleBase) runCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
 	defer m.recoverCommand(cmd, msg)
 	m.Bot.Emit(BotEventCommandRan, &CommandRan{cmd, msg})
-	cmd.Run(msg)
+	cmd.Execute(msg)
 }
 
 func (m *ModuleBase) handlePassive(pas *ModulePassive, msg *discord.DiscordMessage) {
@@ -216,7 +216,7 @@ func (m *ModuleBase) recoverPassive(pas *ModulePassive, msg *discord.DiscordMess
 func (m *ModuleBase) runPassive(pas *ModulePassive, msg *discord.DiscordMessage) {
 	defer m.recoverPassive(pas, msg)
 	m.Bot.Emit(BotEventPassiveRan, &PassiveRan{pas, msg})
-	pas.Run(msg)
+	pas.Execute(msg)
 }
 
 func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
@@ -274,7 +274,7 @@ func (m *ModuleBase) recoverApplicationCommand(c *ModuleApplicationCommand, it *
 func (m *ModuleBase) runApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
 	defer m.recoverApplicationCommand(c, it)
 	m.Bot.Emit(BotEventApplicationCommandRan, &ApplicationCommandRan{c, it})
-	c.Run(it)
+	c.Execute(it)
 }
 
 func (m *ModuleBase) handleMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
@@ -293,7 +293,7 @@ func (m *ModuleBase) recoverMessageComponent(c *ModuleMessageComponent, it *disc
 func (m *ModuleBase) runMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
 	defer m.recoverMessageComponent(c, it)
 	m.Bot.Emit(BotEventMessageComponentRan, &MessageComponentRan{c, it})
-	c.Run(it)
+	c.Execute(it)
 }
 
 func (m *ModuleBase) handleModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
@@ -312,7 +312,7 @@ func (m *ModuleBase) recoverModalSubmit(s *ModuleModalSubmit, it *discord.Discor
 func (m *ModuleBase) runModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
 	defer m.recoverModalSubmit(s, it)
 	m.Bot.Emit(BotEventMessageComponentRan, &ModalSubmitRan{s, it})
-	s.Run(it)
+	s.Execute(it)
 }
 
 func (m *ModuleBase) Commands() map[string]*ModuleCommand {
@@ -565,7 +565,7 @@ type ModuleCommand struct {
 	AllowedTypes     discord.MessageType
 	AllowDMs         bool
 	Enabled          bool
-	Run              func(*discord.DiscordMessage) `json:"-"`
+	Execute          func(*discord.DiscordMessage) `json:"-"`
 }
 
 func (cmd *ModuleCommand) allowsMessage(msg *discord.DiscordMessage) bool {
@@ -611,7 +611,7 @@ type ModulePassive struct {
 	AllowedTypes discord.MessageType
 	AllowDMs     bool
 	Enabled      bool
-	Run          func(*discord.DiscordMessage) `json:"-"`
+	Execute      func(*discord.DiscordMessage) `json:"-"`
 }
 
 func (pas *ModulePassive) allowsMessage(msg *discord.DiscordMessage) bool {
@@ -633,7 +633,7 @@ type ModuleApplicationCommand struct {
 	UserType      UserType
 	CheckBotPerms bool
 	Enabled       bool
-	Run           func(*discord.DiscordApplicationCommand) `json:"-"`
+	Execute       func(*discord.DiscordApplicationCommand) `json:"-"`
 }
 
 func (m *ModuleApplicationCommand) allowsInteraction(it *discord.DiscordApplicationCommand) bool {
@@ -644,7 +644,7 @@ type ModuleModalSubmit struct {
 	Mod     Module
 	Name    string
 	Enabled bool
-	Run     func(*discord.DiscordModalSubmit) `json:"-"`
+	Execute func(*discord.DiscordModalSubmit) `json:"-"`
 }
 
 func (s *ModuleModalSubmit) allowsInteraction(it *discord.DiscordModalSubmit) bool {
@@ -660,7 +660,7 @@ type ModuleMessageComponent struct {
 	UserType      UserType
 	CheckBotPerms bool
 	Enabled       bool
-	Run           func(*discord.DiscordMessageComponent) `json:"-"`
+	Execute       func(*discord.DiscordMessageComponent) `json:"-"`
 }
 
 func (s *ModuleMessageComponent) allowsInteraction(it *discord.DiscordMessageComponent) bool {
