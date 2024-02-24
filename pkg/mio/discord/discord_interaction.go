@@ -90,24 +90,25 @@ func (d *DiscordApplicationCommand) Name() string {
 }
 
 // Options returns a *discordgo.ApplicationCommandInteractionDataOption given
-// by key. It assumes that the value for the key exists.
-func (d *DiscordApplicationCommand) Options(key string) *discordgo.ApplicationCommandInteractionDataOption {
+// by key. 
+func (d *DiscordApplicationCommand) Options(key string) (*discordgo.ApplicationCommandInteractionDataOption, bool) {
 	if d.options == nil {
-		d.options = FlattenOptions(d.Data.Options)
+		d.options = flattenOptions(d.Data.Options)
 	}
-	return d.options[key]
+	val, ok := d.options[key]
+	return val, ok
 }
 
-func FlattenOptions(options []*discordgo.ApplicationCommandInteractionDataOption) map[string]*discordgo.ApplicationCommandInteractionDataOption {
+func flattenOptions(options []*discordgo.ApplicationCommandInteractionDataOption) map[string]*discordgo.ApplicationCommandInteractionDataOption {
 	result := make(map[string]*discordgo.ApplicationCommandInteractionDataOption)
-	flattenOptions(options, result)
+	flattenOptionsImpl(options, result)
 	return result
 }
 
-func flattenOptions(options []*discordgo.ApplicationCommandInteractionDataOption, result map[string]*discordgo.ApplicationCommandInteractionDataOption) {
+func flattenOptionsImpl(options []*discordgo.ApplicationCommandInteractionDataOption, result map[string]*discordgo.ApplicationCommandInteractionDataOption) {
 	for _, option := range options {
 		if option.Options != nil {
-			flattenOptions(option.Options, result)
+			flattenOptionsImpl(option.Options, result)
 		} else {
 			result[option.Name] = option
 		}

@@ -62,7 +62,7 @@ func (b *Bot) setApplicationCommands() error {
 		return err
 	}
 	for _, c := range created {
-		b.logger.Info("created/updated command", zap.String("name", c.Name))
+		b.logger.Info("Created/updated command", zap.String("name", c.Name), zap.Uint8("type", uint8(c.Type)))
 	}
 	return nil
 }

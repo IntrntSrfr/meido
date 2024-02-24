@@ -3,6 +3,7 @@ package discord
 import (
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -107,6 +108,14 @@ func (m *DiscordMessage) ReplyAndDelete(data string, d time.Duration) (*discordg
 func (m *DiscordMessage) ReplyEmbed(embed *discordgo.MessageEmbed) (*discordgo.Message, error) {
 	repl := &discordgo.MessageSend{
 		Embed: embed,
+	}
+	return m.ReplyComplex(repl)
+}
+
+func (m *DiscordMessage) ReplyFile(text, name string, reader io.Reader) (*discordgo.Message, error) {
+	repl := &discordgo.MessageSend{
+		Content: text,
+		File:    &discordgo.File{Name: name, Reader: reader},
 	}
 	return m.ReplyComplex(repl)
 }

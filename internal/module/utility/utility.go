@@ -228,7 +228,11 @@ func newColorSlash(m *module) *bot.ModuleApplicationCommand {
 			return
 		}
 
-		clrStr := d.Options("hex").StringValue()
+		clrStrOpt, ok := d.Options("hex")
+		if !ok {
+			return
+		}
+		clrStr := clrStrOpt.StringValue()
 		if !strings.HasPrefix(clrStr, "#") {
 			clrStr = "#" + strings.TrimSpace(clrStr)
 		}

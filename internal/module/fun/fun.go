@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/binary"
-	"fmt"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/gol"
@@ -26,7 +26,13 @@ func New(b *bot.Bot, logger *zap.Logger) bot.Module {
 }
 
 func (m *module) Hook() error {
-	return m.RegisterCommands(newLifeCommand(m))
+	if err := m.RegisterApplicationCommands(newLifeSlash(m)); err != nil {
+		return err
+	}
+	if err := m.RegisterCommands(newLifeCommand(m)); err != nil {
+		return err
+	}
+	return nil
 }
 
 func newLifeCommand(m *module) *bot.ModuleCommand {
@@ -51,39 +57,55 @@ func newLifeCommand(m *module) *bot.ModuleCommand {
 				seedStr = strings.Join(msg.Args()[1:], " ")
 			}
 
-			buf, seed, err := generateGif(seedStr)
+			buf, err := generateGif(seedStr)
 			if err != nil {
 				_, _ = msg.Reply("There was an issue, please try again!")
 				return
 			}
 
-			_, _ = msg.ReplyComplex(&discordgo.MessageSend{
-				Content: fmt.Sprintf("Here you go! Seed: `%v`", seed),
-				File: &discordgo.File{
-					Name:   "game.gif",
-					Reader: buf,
-				},
-				Reference: &discordgo.MessageReference{
-					MessageID: msg.Message.ID,
-					ChannelID: msg.ChannelID(),
-					GuildID:   msg.GuildID(),
-				},
-				AllowedMentions: &discordgo.MessageAllowedMentions{},
-			})
+			_, _ = msg.ReplyFile("", "game.gif", buf)
 		},
 	}
 }
 
-func generateGif(seedStr string) (*bytes.Buffer, int64, error) {
+func newLifeSlash(m *module) *bot.ModuleApplicationCommand {
+	cmd := bot.NewModuleApplicationCommandBuilder(m, "life").
+		Type(discordgo.ChatApplicationCommand).
+		Description("Show Conway's Game of Life").
+		Cooldown(time.Second*5, bot.CooldownScopeChannel).
+		AddOption(&discordgo.ApplicationCommandOption{
+			Type:        discordgo.ApplicationCommandOptionString,
+			Name:        "seed",
+			Description: "Random generator seed",
+		})
+
+	exec := func(dac *discord.DiscordApplicationCommand) {
+		seed := dac.AuthorID()
+		if seedOpt, ok := dac.Options("seed"); ok {
+			seed = seedOpt.StringValue()
+		}
+
+		buf, err := generateGif(seed)
+		if err != nil {
+			_ = dac.Respond("Generation failed")
+			return
+		}
+
+		_ = dac.RespondFile("", "game.gif", buf)
+	}
+	return cmd.Execute(exec).Build()
+}
+
+func generateGif(seedStr string) (*bytes.Buffer, error) {
 	ye := sha1.New()
 	_, err := ye.Write([]byte(seedStr))
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 	seed := int64(binary.BigEndian.Uint64(ye.Sum(nil)[:8]))
-	game, err := gol.NewGame(seed, 100, 100, true)
+	game, _ := gol.NewGame(seed, 100, 100, true)
 	game.Run(100, 50, false, true, "game.gif", 2)
 	buf := bytes.Buffer{}
 	_ = game.Export(&buf) // no need to check error, because export will always be populated
-	return &buf, seed, nil
+	return &buf, nil
 }
