@@ -1,4 +1,4 @@
-create table aquarium
+create table if not exists aquarium
 (
     user_id    text not null primary key,
     common     integer default 0 not null,
@@ -8,7 +8,7 @@ create table aquarium
     legendary  integer default 0 not null
 );
 
-create table guild
+create table if not exists guild
 (
     guild_id               text not null primary key,
     use_warns              boolean default false not null,
@@ -18,7 +18,7 @@ create table guild
     fishing_channel_id     text    default ''    not null
 );
 
-create table command_log
+create table if not exists command_log
 (
     uid        serial primary key,
     command    text not null,
@@ -31,7 +31,7 @@ create table command_log
     sent_at    timestamp with time zone not null
 );
 
-create table filter
+create table if not exists filter
 (
     uid      serial primary key,
     guild_id text not null
@@ -39,7 +39,7 @@ create table filter
     phrase   text not null
 );
 
-create table warn
+create table if not exists warn
 (
     uid           serial primary key,
     guild_id      text not null
@@ -54,7 +54,7 @@ create table warn
     cleared_at    timestamp with time zone
 );
 
-create table user_role
+create table if not exists user_role
 (
     uid      serial primary key,
     guild_id text not null
