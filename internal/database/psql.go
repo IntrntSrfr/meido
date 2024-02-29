@@ -14,6 +14,7 @@ type PsqlDB struct {
 	connStr string
 	IGuildDB
 	ICommandLogDB
+	IProcessedEventsDB
 }
 
 func NewPSQLDatabase(connStr string) (*PsqlDB, error) {
@@ -28,6 +29,7 @@ func NewPSQLDatabase(connStr string) (*PsqlDB, error) {
 	}
 	db.IGuildDB = &GuildDB{db}
 	db.ICommandLogDB = &CommandLogDB{db}
+	db.IProcessedEventsDB = &ProcessedEventsDB{db}
 	return db, nil
 }
 
@@ -73,5 +75,21 @@ func (db *GuildDB) GetGuild(guildID string) (*structs.Guild, error) {
 func (db *GuildDB) UpdateGuild(g *structs.Guild) error {
 	_, err := db.Conn().Exec("UPDATE guild SET use_warns=$1, max_warns=$2, warn_duration=$3, automod_log_channel_id=$4, fishing_channel_id=$5, joined_at=$6 WHERE guild_id=$7",
 		g.UseWarns, g.MaxWarns, g.WarnDuration, g.AutomodLogChannelID, g.FishingChannelID, g.JoinedAt, g.GuildID)
+	return err
+}
+
+type ProcessedEventsDB struct {
+	DB
+}
+
+func (db *ProcessedEventsDB) UpsertCount(eventType string, sentAt time.Time) error {
+	query := `
+    INSERT INTO processed_events (sent_at, event_type, count)
+    VALUES (date_trunc('day', $2::timestamp), $1, 1)
+    ON CONFLICT (sent_at, event_type)
+    DO UPDATE SET count = processed_events.count + 1
+    `
+
+	_, err := db.Conn().Exec(query, eventType, sentAt)
 	return err
 }

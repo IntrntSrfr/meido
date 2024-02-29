@@ -46,11 +46,11 @@ func (b *BotBuilder) Build() *Bot {
 	if b.cooldowns == nil {
 		b.cooldowns = mutils.NewCooldownManager()
 	}
-	if b.eventHandler == nil {
-		b.eventHandler = NewEventHandler(b.discord, b.modules, b.callbacks, b.logger)
-	}
 	if b.eventEmitter == nil {
 		b.eventEmitter = NewEventEmitter()
+	}
+	if b.eventHandler == nil {
+		b.eventHandler = NewEventHandler(b.discord, b.modules, b.callbacks, b.eventEmitter, b.logger)
 	}
 
 	return &Bot{

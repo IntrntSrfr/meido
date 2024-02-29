@@ -18,6 +18,7 @@ func (m *Meido) listenMioEvents(ctx context.Context) {
 			case bot.BotEventCommandRan:
 				m.logCommand(evt.Data.(*bot.CommandRan))
 				m.logCommandRan(evt.Data.(*bot.CommandRan))
+				m.countProcessedEvent(bot.BotEventCommandRan.String())
 			case bot.BotEventCommandPanicked:
 				m.logCommandPanicked(evt.Data.(*bot.CommandPanicked))
 			case bot.BotEventPassiveRan:
@@ -26,20 +27,33 @@ func (m *Meido) listenMioEvents(ctx context.Context) {
 				m.logPassivePanicked(evt.Data.(*bot.PassivePanicked))
 			case bot.BotEventApplicationCommandRan:
 				m.logApplicationCommandRan(evt.Data.(*bot.ApplicationCommandRan))
+				m.countProcessedEvent(bot.BotEventApplicationCommandRan.String())
 			case bot.BotEventApplicationCommandPanicked:
 				m.logApplicationCommandPanicked(evt.Data.(*bot.ApplicationCommandPanicked))
 			case bot.BotEventMessageComponentRan:
 				m.logMessageComponentRan(evt.Data.(*bot.MessageComponentRan))
+				m.countProcessedEvent(bot.BotEventMessageComponentRan.String())
 			case bot.BotEventMessageComponentPanicked:
 				m.logMessageComponentPanicked(evt.Data.(*bot.MessageComponentPanicked))
 			case bot.BotEventModalSubmitRan:
 				m.logModalSubmitRan(evt.Data.(*bot.ModalSubmitRan))
+				m.countProcessedEvent(bot.BotEventModalSubmitRan.String())
 			case bot.BotEventModalSubmitPanicked:
 				m.logModalSubmitPanicked(evt.Data.(*bot.ModalSubmitPanicked))
+			case bot.BotEventMessageProcessed:
+				m.countProcessedEvent(bot.BotEventMessageProcessed.String())
+			case bot.BotEventInteractionProcessed:
+				m.countProcessedEvent(bot.BotEventInteractionProcessed.String())
 			}
 		case <-ctx.Done():
 			return
 		}
+	}
+}
+
+func (m *Meido) countProcessedEvent(eventType string) {
+	if err := m.db.UpsertCount(eventType, time.Now()); err != nil {
+		m.logger.Error("Process event upsert failed", zap.Error(err))
 	}
 }
 

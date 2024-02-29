@@ -13,13 +13,15 @@ type EventHandler struct {
 	modules   *ModuleManager
 	callbacks *utils.CallbackManager
 	logger    *zap.Logger
+	emitter   *EventEmitter
 }
 
-func NewEventHandler(d *discord.Discord, m *ModuleManager, c *utils.CallbackManager, logger *zap.Logger) *EventHandler {
+func NewEventHandler(d *discord.Discord, m *ModuleManager, c *utils.CallbackManager, emit *EventEmitter, logger *zap.Logger) *EventHandler {
 	return &EventHandler{
 		discord:   d,
 		modules:   m,
 		callbacks: c,
+		emitter:   emit,
 		logger:    logger.Named("EventHandler"),
 	}
 }
@@ -31,8 +33,10 @@ func (mp *EventHandler) Listen(ctx context.Context) {
 		case msg := <-mp.discord.Messages():
 			go mp.DeliverCallbacks(msg)
 			go mp.HandleMessage(msg)
+			go mp.emitter.Emit(BotEventMessageProcessed, &MessageProcessed{})
 		case it := <-mp.discord.Interactions():
 			go mp.HandleInteraction(it)
+			go mp.emitter.Emit(BotEventInteractionProcessed, &InteractionProcessed{})
 		case <-ctx.Done():
 			return
 		}

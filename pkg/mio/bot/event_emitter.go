@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"fmt"
+
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
@@ -35,7 +37,40 @@ const (
 	BotEventMessageComponentPanicked
 	BotEventModalSubmitRan
 	BotEventModalSubmitPanicked
+	BotEventMessageProcessed
+	BotEventInteractionProcessed
 )
+
+func (b BotEvent) String() string {
+	switch b {
+	case BotEventCommandRan:
+		return "command_ran"
+	case BotEventCommandPanicked:
+		return "command_panicked"
+	case BotEventPassiveRan:
+		return "passive_ran"
+	case BotEventPassivePanicked:
+		return "passive_panicked"
+	case BotEventApplicationCommandRan:
+		return "application_command_ran"
+	case BotEventApplicationCommandPanicked:
+		return "application_command_panicked"
+	case BotEventMessageComponentRan:
+		return "message_component_ran"
+	case BotEventMessageComponentPanicked:
+		return "message_component_panicked"
+	case BotEventModalSubmitRan:
+		return "modal_submit_ran"
+	case BotEventModalSubmitPanicked:
+		return "modal_submit_panicked"
+	case BotEventMessageProcessed:
+		return "message_processed"
+	case BotEventInteractionProcessed:
+		return "interaction_processed"
+	default:
+		return fmt.Sprintf("Unknown: BotEvent(%d)", b)
+	}
+}
 
 type BotEventData struct {
 	Type BotEvent
@@ -95,3 +130,7 @@ type MessageComponentPanicked struct {
 	Interaction      *discord.DiscordMessageComponent
 	Reason           any
 }
+
+type MessageProcessed struct{}
+
+type InteractionProcessed struct{}
