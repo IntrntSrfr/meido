@@ -1,6 +1,8 @@
 package database
 
 import (
+	"time"
+
 	"github.com/intrntsrfr/meido/internal/structs"
 	"github.com/jmoiron/sqlx"
 )
@@ -19,7 +21,7 @@ type ICommandLogDB interface {
 }
 
 type IGuildDB interface {
-	CreateGuild(guildID string) error
+	CreateGuild(guildID string, joinedAt time.Time) error
 	UpdateGuild(g *structs.Guild) error
 	GetGuild(guildID string) (*structs.Guild, error)
 }

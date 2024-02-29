@@ -80,15 +80,20 @@ func (m *Meido) registerDiscordHandlers() {
 
 func insertGuild(m *Meido) func(s *discordgo.Session, g *discordgo.GuildCreate) {
 	return func(s *discordgo.Session, g *discordgo.GuildCreate) {
-		if _, err := m.db.GetGuild(g.Guild.ID); err != nil && err == sql.ErrNoRows {
-			if err = m.db.CreateGuild(g.Guild.ID); err != nil {
+		if dbg, err := m.db.GetGuild(g.Guild.ID); err != nil && err == sql.ErrNoRows {
+			if err = m.db.CreateGuild(g.Guild.ID, g.Guild.JoinedAt); err != nil {
 				m.logger.Error("New guild write to DB failed", zap.Error(err), zap.String("guildID", g.ID))
+			}
+		} else if err == nil {
+			dbg.JoinedAt = g.Guild.JoinedAt
+			if err := m.db.UpdateGuild(dbg); err != nil {
+				m.logger.Error("Update guild joinedAt failed")
 			}
 		}
 	}
 }
 
-const totalStatusDisplays = 6
+const totalStatusDisplays = 3
 
 func statusLoop(m *Meido) func(s *discordgo.Session, r *discordgo.Ready) {
 	statusTimer := time.NewTicker(time.Second * 15)
@@ -111,15 +116,17 @@ func statusLoop(m *Meido) func(s *discordgo.Session, r *discordgo.Ready) {
 				case 2:
 					name = "Remember to stay sane"
 					statusType = discordgo.ActivityTypeGame
-				case 3:
-					name = "m?fish"
-					statusType = discordgo.ActivityTypeGame
-				case 4:
-					name = "Changed custom role commands"
-					statusType = discordgo.ActivityTypeGame
-				case 5:
-					name = "Auto roles are added!! Wow!!"
-					statusType = discordgo.ActivityTypeGame
+					/*
+						case 3:
+							name = "m?fish"
+							statusType = discordgo.ActivityTypeGame
+						case 4:
+							name = "Changed custom role commands"
+							statusType = discordgo.ActivityTypeGame
+						case 5:
+							name = "Auto roles are added!! Wow!!"
+							statusType = discordgo.ActivityTypeGame
+					*/
 				}
 
 				_ = s.UpdateStatusComplex(discordgo.UpdateStatusData{

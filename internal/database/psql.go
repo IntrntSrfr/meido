@@ -1,6 +1,8 @@
 package database
 
 import (
+	"time"
+
 	"github.com/intrntsrfr/meido/internal/structs"
 	"github.com/jmoiron/sqlx"
 
@@ -57,8 +59,8 @@ type GuildDB struct {
 	DB
 }
 
-func (db *GuildDB) CreateGuild(guildID string) error {
-	_, err := db.Conn().Exec("INSERT INTO guild VALUES($1)", guildID)
+func (db *GuildDB) CreateGuild(guildID string, joinedAt time.Time) error {
+	_, err := db.Conn().Exec("INSERT INTO guild VALUES($1, $2)", guildID, joinedAt)
 	return err
 }
 
@@ -69,7 +71,7 @@ func (db *GuildDB) GetGuild(guildID string) (*structs.Guild, error) {
 }
 
 func (db *GuildDB) UpdateGuild(g *structs.Guild) error {
-	_, err := db.Conn().Exec("UPDATE guild SET use_warns=$1, max_warns=$2, warn_duration=$3, automod_log_channel_id=$4, fishing_channel_id=$5 WHERE guild_id=$6",
-		g.UseWarns, g.MaxWarns, g.WarnDuration, g.AutomodLogChannelID, g.FishingChannelID, g.GuildID)
+	_, err := db.Conn().Exec("UPDATE guild SET use_warns=$1, max_warns=$2, warn_duration=$3, automod_log_channel_id=$4, fishing_channel_id=$5, joined_at=$6 WHERE guild_id=$7",
+		g.UseWarns, g.MaxWarns, g.WarnDuration, g.AutomodLogChannelID, g.FishingChannelID, g.JoinedAt, g.GuildID)
 	return err
 }
