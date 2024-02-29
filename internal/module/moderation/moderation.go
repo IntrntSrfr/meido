@@ -55,9 +55,9 @@ func (m *module) Hook() error {
 		newUnlockChannelCommand(m),
 		newMuteCommand(m),
 		newUnmuteCommand(m),
-		newSetAutoRoleCommand(m),
-		newRemoveAutoRoleCommand(m),
-		newPruneCommand(m),
+		//newSetAutoRoleCommand(m),
+		//newRemoveAutoRoleCommand(m),
+		//newPruneCommand(m),
 	)
 }
 

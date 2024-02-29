@@ -12,7 +12,6 @@ import (
 	"github.com/intrntsrfr/meido/internal/module/customrole"
 	"github.com/intrntsrfr/meido/internal/module/fishing"
 	"github.com/intrntsrfr/meido/internal/module/fun"
-	"github.com/intrntsrfr/meido/internal/module/mediatransform"
 	"github.com/intrntsrfr/meido/internal/module/moderation"
 	"github.com/intrntsrfr/meido/internal/module/search"
 	"github.com/intrntsrfr/meido/internal/module/testing"
@@ -70,7 +69,7 @@ func (m *Meido) registerModules() {
 	m.Bot.RegisterModule(moderation.New(m.Bot, m.db, m.logger))
 	m.Bot.RegisterModule(customrole.New(m.Bot, m.db, m.logger))
 	m.Bot.RegisterModule(search.New(m.Bot, m.logger))
-	m.Bot.RegisterModule(mediatransform.New(m.Bot, m.logger))
+	//m.Bot.RegisterModule(mediatransform.New(m.Bot, m.logger))
 }
 
 func (m *Meido) registerDiscordHandlers() {
