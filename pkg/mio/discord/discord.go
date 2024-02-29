@@ -257,6 +257,9 @@ func (d *Discord) onMessageDelete(s *discordgo.Session, m *discordgo.MessageDele
 }
 
 func (d *Discord) onInteractionCreate(s *discordgo.Session, m *discordgo.InteractionCreate) {
+	if m.Interaction == nil {
+		return
+	}
 	if m.GuildID != "" && m.Member == nil {
 		return
 	}
