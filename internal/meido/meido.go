@@ -84,7 +84,7 @@ func insertGuild(m *Meido) func(s *discordgo.Session, g *discordgo.GuildCreate) 
 				m.logger.Error("New guild write to DB failed", zap.Error(err), zap.String("guildID", g.ID))
 			}
 		} else if err == nil {
-			dbg.JoinedAt = g.Guild.JoinedAt
+			dbg.JoinedAt = &g.Guild.JoinedAt
 			if err := m.db.UpdateGuild(dbg); err != nil {
 				m.logger.Error("Update guild joinedAt failed")
 			}
