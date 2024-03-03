@@ -30,23 +30,20 @@ Features include:
   * Filter and warns
   * Lockdowns
   * Timeouts
-* Userroles
-* YouTube and Google image search
+* Custom roles
+* Search functions such as YouTube or images
 * Utilities
-  * Avatar
-  * Server info
+  * Avatars and banners
   * User info
-  * Color lookup
+  * Server info
+  * Colors
 * Automatic media conversion
 * Fishing for the boomer inside you (currently on a break)
 
 The feature list will increase as time goes.
 Some ideas for more features include:
 
-* Raid protection (will be added)
-* More media conversion such as webm to mp4
 * Gambling
-* XP and level system (maybe, as there are already tons of other bots with this feature)
 * Autoroles
 
 Ideas for other features are more than welcome!
