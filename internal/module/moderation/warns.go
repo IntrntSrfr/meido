@@ -101,7 +101,7 @@ func (m *module) warnCommand(msg *discord.DiscordMessage) {
 			_, _ = msg.Discord.Sess.ChannelMessageSend(userChannel.ID, fmt.Sprintf("You have been warned in %v.\nYou were warned for: %v\nYou now have %v/%v warnings",
 				g.Name, reason, warnCount+1, gc.MaxWarns))
 		}
-		_, _ = msg.Reply(fmt.Sprintf("%v has been warned\nThey now have %v/%v warnings", msg.Author().Mention(), warnCount+1, gc.MaxWarns))
+		_, _ = msg.Reply(fmt.Sprintf("%v has been warned\nThey now have %v/%v warnings", targetMember.Mention(), warnCount+1, gc.MaxWarns))
 		return
 	}
 
@@ -306,7 +306,7 @@ func (m *module) clearwarnCommand(msg *discord.DiscordMessage) {
 		_, _ = msg.Reply("There was an issue, please try again!")
 		return
 	} else if err == sql.ErrNoRows || len(entries) == 0 {
-		_, _ = msg.Reply("User has active no warns")
+		_, _ = msg.Reply("User has no active warns")
 		return
 	}
 
