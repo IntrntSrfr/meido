@@ -22,9 +22,9 @@ func (db *CustomRoleDB) CreateCustomRole(guildID, userID, roleID string) error {
 }
 
 func (db *CustomRoleDB) GetCustomRole(guildID, userID string) (*CustomRole, error) {
-	var role *CustomRole
+	var role CustomRole
 	err := db.Conn().Get(&role, "SELECT * FROM custom_role WHERE guild_id=$1 AND user_id=$2", guildID, userID)
-	return role, err
+	return &role, err
 }
 
 func (db *CustomRoleDB) GetCustomRolesByGuild(guildID string) ([]*CustomRole, error) {
