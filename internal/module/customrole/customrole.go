@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
+	"github.com/g4s8/hexcolor"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
@@ -276,21 +276,25 @@ func (m *module) myroleCommand(msg *discord.DiscordMessage) {
 			_, _ = msg.ReplyEmbed(embed.Build())
 
 		} else if msg.Args()[1] == "color" {
-			clr := strings.TrimPrefix(msg.Args()[2], "#")
-			color, err := strconv.ParseInt(clr, 16, 64)
-			if err != nil || color < 0 || color > 0xFFFFFF {
+			clrStr := msg.Args()[2]
+			if !strings.HasPrefix(clrStr, "#") {
+				clrStr = "#" + strings.TrimSpace(clrStr)
+			}
+			clr, err := hexcolor.Parse(clrStr)
+			if err != nil {
 				_, _ = msg.ReplyEmbed(&discordgo.MessageEmbed{Description: "Invalid color code", Color: utils.ColorCritical})
 				return
 			}
-			colorInt := int(color)
-			if _, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, &discordgo.RoleParams{Color: &colorInt}); err != nil {
+
+			clrInt := int(clr.R)<<16 + int(clr.G)<<8 + int(clr.B)
+			if _, err = msg.Discord.Sess.GuildRoleEdit(g.ID, oldRole.ID, &discordgo.RoleParams{Color: &clrInt}); err != nil {
 				_, _ = msg.Reply("There was an issue, please try again!")
 				m.Logger.Error("Editing custom role color failed", zap.Error(err))
 				return
 			}
 			embed := builders.NewEmbedBuilder().
-				WithColor(int(color)).
-				WithDescription(fmt.Sprintf("Color changed from #%v to #%v", oldRole.Color, color))
+				WithColor(clrInt).
+				WithDescription(fmt.Sprintf("Color changed from #%06X to #%06X", oldRole.Color, clrInt))
 			_, _ = msg.ReplyEmbed(embed.Build())
 		}
 		return
@@ -334,7 +338,7 @@ func (m *module) myroleCommand(msg *discord.DiscordMessage) {
 		WithTitle(fmt.Sprintf("Custom role for %v", target.User.String())).
 		WithColor(customRole.Color).
 		AddField("Name", customRole.Name, true).
-		AddField("Color", fmt.Sprintf("#"+fmt.Sprintf("%06X", customRole.Color)), true)
+		AddField("Color", fmt.Sprintf("#%06X", customRole.Color), true)
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
