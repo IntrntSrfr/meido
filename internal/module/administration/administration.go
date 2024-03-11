@@ -86,7 +86,7 @@ func newToggleCommandCommand(m *module) *bot.ModuleCommand {
 		Description:      "Enables or disables a command. Bot owner only.",
 		Triggers:         []string{"m?togglecommand", "m?tc"},
 		Usage:            "m?tc ping",
-		Cooldown:         2,
+		Cooldown:         time.Second * 2,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,

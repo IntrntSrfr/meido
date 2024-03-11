@@ -2,6 +2,7 @@ package utility
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
@@ -17,7 +18,7 @@ func newServerCommand(m *module) *bot.ModuleCommand {
 		Description:      "Displays information about the server",
 		Triggers:         []string{"m?server"},
 		Usage:            "m?server",
-		Cooldown:         5,
+		Cooldown:         time.Second * 5,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
@@ -86,7 +87,7 @@ func newServerSplashCommand(m *module) *bot.ModuleCommand {
 		Description:      "Displays server splash if one exists",
 		Triggers:         []string{"m?serversplash"},
 		Usage:            "m?serversplash",
-		Cooldown:         5,
+		Cooldown:         time.Second * 5,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
@@ -125,7 +126,7 @@ func newServerIconCommand(m *module) *bot.ModuleCommand {
 		Description:      "Displays server icon, if one exists",
 		Triggers:         []string{"m?servericon", "m?si", ">si"},
 		Usage:            "m?servericon",
-		Cooldown:         5,
+		Cooldown:         time.Second * 5,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
@@ -163,7 +164,7 @@ func newServerBannerCommand(m *module) *bot.ModuleCommand {
 		Description:      "Displays server banner if one exists",
 		Triggers:         []string{"m?serverbanner"},
 		Usage:            "m?serverbanner",
-		Cooldown:         5,
+		Cooldown:         time.Second * 5,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,

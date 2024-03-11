@@ -3,6 +3,7 @@ package utility
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
@@ -18,7 +19,7 @@ func newAvatarCommand(m *module) *bot.ModuleCommand {
 		Description:      "Displays a users profile picture. User can be specified. Author is default.",
 		Triggers:         []string{"m?avatar", "m?av", ">av"},
 		Usage:            ">av <user>",
-		Cooldown:         1,
+		Cooldown:         time.Second * 1,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
@@ -55,7 +56,7 @@ func newBannerCommand(m *module) *bot.ModuleCommand {
 		Description:      "Displays a users banner. User can be specified. Author is default.",
 		Triggers:         []string{"m?banner", ">banner"},
 		Usage:            ">banner <user>",
-		Cooldown:         1,
+		Cooldown:         time.Second * 1,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
@@ -106,7 +107,7 @@ func newMemberAvatarCommand(m *module) *bot.ModuleCommand {
 		Description:      "Displays a members profile picture. User can be specified. Author is default.",
 		Triggers:         []string{"m?memberavatar", "m?mav", ">mav"},
 		Usage:            ">av <user>",
-		Cooldown:         1,
+		Cooldown:         time.Second * 1,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
@@ -154,7 +155,7 @@ func newUserInfoCommand(m *module) *bot.ModuleCommand {
 		Description:      "Displays information about a user",
 		Triggers:         []string{"m?userinfo"},
 		Usage:            "m?userinfo <user>",
-		Cooldown:         1,
+		Cooldown:         time.Second * 1,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,

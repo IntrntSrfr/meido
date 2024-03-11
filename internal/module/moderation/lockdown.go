@@ -1,6 +1,8 @@
 package moderation
 
 import (
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
@@ -13,7 +15,7 @@ func newLockdownChannelCommand(m *module) *bot.ModuleCommand {
 		Description:      "Locks the current channel.",
 		Triggers:         []string{"m?lockdown"},
 		Usage:            "m?lockdown",
-		Cooldown:         10,
+		Cooldown:         time.Second * 10,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionManageRoles,
 		CheckBotPerms:    true,
@@ -103,7 +105,7 @@ func newUnlockChannelCommand(m *module) *bot.ModuleCommand {
 		Description:      "Unlocks a previously locked channel.",
 		Triggers:         []string{"m?unlock"},
 		Usage:            "m?unlock",
-		Cooldown:         10,
+		Cooldown:         time.Second * 10,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionManageRoles,
 		CheckBotPerms:    true,

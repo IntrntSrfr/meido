@@ -2,6 +2,7 @@ package fishing
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
@@ -46,7 +47,7 @@ func newFishCommand(m *module) *bot.ModuleCommand {
 		Description:      "Go fishin'",
 		Triggers:         []string{"m?fish"},
 		Usage:            "m?fish",
-		Cooldown:         2,
+		Cooldown:         time.Second * 2,
 		CooldownScope:    bot.CooldownScopeUser,
 		RequiredPerms:    0,
 		RequiresUserType: bot.UserTypeAny,
@@ -75,7 +76,7 @@ func newAquariumCommand(m *module) *bot.ModuleCommand {
 		Description:      "Displays your or someone else's aquarium",
 		Triggers:         []string{"m?aquarium", "m?aq"},
 		Usage:            "m?Aquarium <userID>",
-		Cooldown:         3,
+		Cooldown:         time.Second * 3,
 		CooldownScope:    bot.CooldownScopeUser,
 		RequiredPerms:    0,
 		RequiresUserType: bot.UserTypeAny,
@@ -126,7 +127,7 @@ func newSetFishingSettingsCommand(m *module) *bot.ModuleCommand {
 		Description:      "Fishing settings:\n- Set fishing channel [channelID]",
 		Triggers:         []string{"m?settings fishing"},
 		Usage:            "m?settings fishing fishingchannel [channelID]",
-		Cooldown:         2,
+		Cooldown:         time.Second * 2,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionAdministrator,
 		CheckBotPerms:    false,

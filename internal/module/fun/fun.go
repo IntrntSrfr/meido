@@ -42,7 +42,7 @@ func newLifeCommand(m *module) *bot.ModuleCommand {
 		Description:      "Shows a gif of Conway's Game of Life. If no seed is provided, it uses your user ID",
 		Triggers:         []string{"m?life"},
 		Usage:            "m?life | m?life <seed | user>",
-		Cooldown:         5,
+		Cooldown:         time.Second * 5,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,

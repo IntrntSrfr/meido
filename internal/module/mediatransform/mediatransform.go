@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
@@ -85,7 +86,7 @@ func newMediaConvertCommand(m *module) *bot.ModuleCommand {
 		Description:      "Converts some media files from one format to another",
 		Triggers:         []string{"m?mediaconvert"},
 		Usage:            "m?mediaconvert [url] [target format]",
-		Cooldown:         30,
+		Cooldown:         time.Second * 30,
 		CooldownScope:    bot.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
