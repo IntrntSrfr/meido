@@ -90,7 +90,7 @@ func (d *DiscordApplicationCommand) Name() string {
 }
 
 // Options returns a *discordgo.ApplicationCommandInteractionDataOption given
-// by key. 
+// by key.
 func (d *DiscordApplicationCommand) Options(key string) (*discordgo.ApplicationCommandInteractionDataOption, bool) {
 	if d.options == nil {
 		d.options = flattenOptions(d.Data.Options)

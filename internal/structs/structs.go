@@ -16,10 +16,10 @@ type CommandLogEntry struct {
 
 // Guild represents a server and its information.
 type Guild struct {
-	GuildID  string    `db:"guild_id"`
+	GuildID  string     `db:"guild_id"`
 	JoinedAt *time.Time `db:"joined_at"`
-	UseWarns bool      `db:"use_warns"`
-	MaxWarns int       `db:"max_warns"`
+	UseWarns bool       `db:"use_warns"`
+	MaxWarns int        `db:"max_warns"`
 
 	// described in days, 0 means infinite duration
 	WarnDuration        int    `db:"warn_duration"`
