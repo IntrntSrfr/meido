@@ -126,6 +126,7 @@ func (m *Meido) logApplicationCommandPanicked(cmd *bot.ApplicationCommandPanicke
 func (m *Meido) logMessageComponentRan(cmd *bot.MessageComponentRan) {
 	m.logger.Info("Component",
 		zap.String("component", cmd.MessageComponent.Name),
+		zap.String("customID", cmd.Interaction.Data.CustomID),
 	)
 }
 
@@ -140,6 +141,7 @@ func (m *Meido) logMessageComponentPanicked(cmd *bot.MessageComponentPanicked) {
 func (m *Meido) logModalSubmitRan(cmd *bot.ModalSubmitRan) {
 	m.logger.Info("Modal",
 		zap.String("modal", cmd.ModalSubmit.Name),
+		zap.String("customID", cmd.Interaction.Data.CustomID),
 	)
 }
 

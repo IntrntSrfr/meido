@@ -34,6 +34,14 @@ func (it *DiscordInteraction) IsDM() bool {
 	return it.Interaction.GuildID == ""
 }
 
+func (it *DiscordInteraction) RespondComplex(data *discordgo.InteractionResponseData, responseType discordgo.InteractionResponseType) error {
+	resp := &discordgo.InteractionResponse{
+		Type: responseType,
+		Data: data,
+	}
+	return it.Sess.InteractionRespond(it.Interaction, resp)
+}
+
 func (it *DiscordInteraction) Respond(text string) error {
 	resp := &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -44,9 +52,37 @@ func (it *DiscordInteraction) Respond(text string) error {
 	return it.Sess.InteractionRespond(it.Interaction, resp)
 }
 
+func (it *DiscordInteraction) RespondEmpty() error {
+	resp := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{},
+	}
+	return it.Sess.InteractionRespond(it.Interaction, resp)
+}
+
+func (it *DiscordInteraction) UpdateRespose(text string) error {
+	resp := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
+		Data: &discordgo.InteractionResponseData{
+			Content: text,
+		},
+	}
+	return it.Sess.InteractionRespond(it.Interaction, resp)
+}
+
 func (it *DiscordInteraction) RespondEmbed(embed *discordgo.MessageEmbed) error {
 	resp := &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{embed},
+		},
+	}
+	return it.Sess.InteractionRespond(it.Interaction, resp)
+}
+
+func (it *DiscordInteraction) UpdateResposeEmbed(embed *discordgo.MessageEmbed) error {
+	resp := &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
 			Embeds: []*discordgo.MessageEmbed{embed},
 		},

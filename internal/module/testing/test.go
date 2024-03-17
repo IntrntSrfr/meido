@@ -1,11 +1,9 @@
 package testing
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
-	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"go.uber.org/zap"
@@ -26,7 +24,7 @@ func (m *module) Hook() error {
 	if err := m.RegisterCommands(newTestCommand(m)); err != nil {
 		return err
 	}
-	if err := m.RegisterApplicationCommands(newTestSlash(m)); err != nil {
+	if err := m.RegisterApplicationCommands(); err != nil {
 		return err
 	}
 	return nil
@@ -51,24 +49,6 @@ func newTestCommand(m *module) *bot.ModuleCommand {
 			_, _ = msg.Reply("test")
 		},
 	}
-}
-
-func newTestSlash(m *module) *bot.ModuleApplicationCommand {
-	bld := bot.NewModuleApplicationCommandBuilder(m, "pingo").
-		Type(discordgo.ChatApplicationCommand).
-		Description("pongo")
-
-	run := func(dac *discord.DiscordApplicationCommand) {
-		startTime := time.Now()
-		dac.Respond("Pongo")
-		resp := fmt.Sprintf("Pongo!\nDelay: %s", time.Since(startTime))
-		respData := &discordgo.WebhookEdit{
-			Content: &resp,
-		}
-		dac.Sess.Real().InteractionResponseEdit(dac.Interaction, respData)
-	}
-
-	return bld.Execute(run).Build()
 }
 
 func newMonkeyCommand(m *module) *bot.ModuleCommand {

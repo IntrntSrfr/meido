@@ -40,3 +40,25 @@ func TestClamp(t *testing.T) {
 		})
 	}
 }
+
+func TestJoinStrings(t *testing.T) {
+	testCases := []struct {
+		sep  string
+		strs []string
+		want string
+	}{
+		{",", []string{"a", "b", "c"}, "a,b,c"},
+		{"", []string{"a", "b", "c"}, "abc"},
+		{"-", []string{"a", "b", "c"}, "a-b-c"},
+		{"-", []string{}, ""},
+		{"-", []string{"a"}, "a"},
+	}
+
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			if result := JoinStrings(tc.sep, tc.strs...); result != tc.want {
+				t.Errorf("JoinStrings(%s, %v) = %s; expected %s", tc.sep, tc.strs, result, tc.want)
+			}
+		})
+	}
+}

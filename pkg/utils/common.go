@@ -1,6 +1,9 @@
 package utils
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 var (
 	ColorCritical  = 0xc80000
@@ -18,4 +21,8 @@ func IsNumber(str string) bool {
 		return false
 	}
 	return true
+}
+
+func JoinStrings(sep string, strs ...string) string {
+	return strings.Join(strs, sep)
 }

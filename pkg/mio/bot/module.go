@@ -243,14 +243,22 @@ func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
 		}
 	case discordgo.InteractionMessageComponent:
 		data := it.Interaction.MessageComponentData()
-		if cmd, ok := m.messageComponentCallbacks[data.CustomID]; ok {
-			m.handleMessageComponent(cmd, &discord.DiscordMessageComponent{
-				DiscordInteraction: it,
-				Data:               data,
-			})
+		dmc := &discord.DiscordMessageComponent{
+			DiscordInteraction: it,
+			Data:               data,
 		}
-	default:
-		return
+
+		if cmd, ok := m.messageComponentCallbacks[data.CustomID]; ok {
+			m.handleMessageComponent(cmd, dmc)
+		} else if cmd, err := m.FindMessageComponent(data.CustomID); err == nil {
+			m.handleMessageComponent(cmd, dmc)
+		} else {
+			if parts := strings.Split(data.CustomID, ":"); len(parts) > 1 {
+				if cmd, err := m.FindMessageComponent(parts[0]); err == nil {
+					m.handleMessageComponent(cmd, dmc)
+				}
+			}
+		}
 	}
 }
 

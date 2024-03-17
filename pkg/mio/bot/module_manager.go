@@ -55,3 +55,12 @@ func (m *ModuleManager) FindPassive(name string) (*ModulePassive, error) {
 	}
 	return nil, ErrPassiveNotFound
 }
+
+func (m *ModuleManager) FindApplicationCommand(name string) (*ModuleApplicationCommand, error) {
+	for _, m := range m.Modules {
+		if cmd, err := m.FindApplicationCommand(name); err == nil {
+			return cmd, nil
+		}
+	}
+	return nil, ErrApplicationCommandNotFound
+}

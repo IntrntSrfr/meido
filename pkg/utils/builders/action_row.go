@@ -24,6 +24,15 @@ func (b *ActionRowBuilder) AddButton(label string, style discordgo.ButtonStyle, 
 	return b
 }
 
+func (b *ActionRowBuilder) AddSelectMenu(placeholder string, options []discordgo.SelectMenuOption, customID string) *ActionRowBuilder {
+	b.actionRow.Components = append(b.actionRow.Components, &discordgo.SelectMenu{
+		CustomID:    customID,
+		Placeholder: placeholder,
+		Options:     options,
+	})
+	return b
+}
+
 func (b *ActionRowBuilder) Build() *discordgo.ActionsRow {
 	return b.actionRow
 }
