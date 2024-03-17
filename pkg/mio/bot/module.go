@@ -78,6 +78,13 @@ type ModalSubmitHandler interface {
 	RemoveModalSubmitCallback(id string)
 }
 
+// interface for handling enabling and disabling of modules and events
+type Toggler interface {
+	Enable()
+	Disable()
+	IsEnabled() bool
+}
+
 var (
 	ErrModuleNotFound             = errors.New("module not found")
 	ErrCommandNotFound            = errors.New("command not found")
@@ -95,6 +102,7 @@ type ModuleBase struct {
 	name         string
 	allowedTypes discord.MessageType
 	allowDMs     bool
+	isEnabled    bool
 
 	commands            map[string]*ModuleCommand
 	passives            map[string]*ModulePassive
@@ -115,6 +123,7 @@ func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
 		name:                      name,
 		allowedTypes:              discord.MessageTypeCreate,
 		allowDMs:                  true,
+		isEnabled:                 true,
 		commands:                  make(map[string]*ModuleCommand),
 		passives:                  make(map[string]*ModulePassive),
 		applicationCommands:       make(map[string]*ModuleApplicationCommand),
@@ -156,7 +165,22 @@ func (m *ModuleBase) HandleMessage(msg *discord.DiscordMessage) {
 	}
 }
 
+func (m *ModuleBase) Enable() {
+	m.isEnabled = true
+}
+
+func (m *ModuleBase) Disable() {
+	m.isEnabled = false
+}
+
+func (m *ModuleBase) IsEnabled() bool {
+	return m.isEnabled
+}
+
 func (m *ModuleBase) allowsMessage(msg *discord.DiscordMessage) bool {
+	if !m.isEnabled {
+		return false
+	}
 	if msg.IsDM() && !m.allowDMs {
 		return false
 	}
@@ -263,6 +287,9 @@ func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
 }
 
 func (m *ModuleBase) allowsInteraction(it *discord.DiscordInteraction) bool {
+	if !m.isEnabled {
+		return false
+	}
 	return !(it.IsDM() && !m.allowDMs)
 }
 
