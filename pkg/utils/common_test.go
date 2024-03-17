@@ -62,3 +62,24 @@ func TestJoinStrings(t *testing.T) {
 		})
 	}
 }
+
+func TestStringInSlice(t *testing.T) {
+	testCases := []struct {
+		str   string
+		slice []string
+		want  bool
+	}{
+		{"a", []string{"a", "b", "c"}, true},
+		{"d", []string{"a", "b", "c"}, false},
+		{"", []string{"a", "b", "c"}, false},
+		{"a", []string{}, false},
+	}
+
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			if result := StringInSlice(tc.str, tc.slice); result != tc.want {
+				t.Errorf("StringInSlice(%s, %v) = %v; expected %v", tc.str, tc.slice, result, tc.want)
+			}
+		})
+	}
+}

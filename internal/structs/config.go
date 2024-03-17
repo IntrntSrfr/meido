@@ -22,6 +22,7 @@ type jsonConfig struct {
 	OwoToken         string   `json:"owo_token"`
 	YouTubeToken     string   `json:"youtube_key"`
 	OpenWeatherKey   string   `json:"open_weather_api_key"`
+	ExcludedModules  []string `json:"excluded_modules"`
 }
 
 func LoadConfig(cfg *utils.Config) error {
@@ -53,6 +54,7 @@ func loadJson(cfg *utils.Config) error {
 	cfg.Set("owo_token", jsonCfg.OwoToken)
 	cfg.Set("youtube_token", jsonCfg.YouTubeToken)
 	cfg.Set("open_weather_key", jsonCfg.OpenWeatherKey)
+	cfg.Set("excluded_modules", jsonCfg.ExcludedModules)
 	return nil
 }
 

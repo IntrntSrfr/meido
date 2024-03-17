@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -26,6 +27,7 @@ type Meido struct {
 	Bot    *bot.Bot
 	db     database.DB
 	logger *zap.Logger
+	config *utils.Config
 }
 
 func New(config *utils.Config, db database.DB) *Meido {
@@ -34,6 +36,7 @@ func New(config *utils.Config, db database.DB) *Meido {
 		Bot:    bot.NewBotBuilder(config, logger).Build(),
 		db:     db,
 		logger: logger,
+		config: config,
 	}
 }
 
@@ -61,15 +64,23 @@ func (m *Meido) Close() {
 }
 
 func (m *Meido) registerModules() {
-	m.Bot.RegisterModule(administration.New(m.Bot, m.logger))
-	m.Bot.RegisterModule(testing.New(m.Bot, m.logger))
-	m.Bot.RegisterModule(fun.New(m.Bot, m.logger))
-	m.Bot.RegisterModule(fishing.New(m.Bot, m.db, m.logger))
-	m.Bot.RegisterModule(utility.New(m.Bot, m.db, m.logger))
-	m.Bot.RegisterModule(moderation.New(m.Bot, m.db, m.logger))
-	m.Bot.RegisterModule(customrole.New(m.Bot, m.db, m.logger))
-	m.Bot.RegisterModule(search.New(m.Bot, m.logger))
-	//m.Bot.RegisterModule(mediatransform.New(m.Bot, m.logger))
+	modules := []bot.Module{
+		administration.New(m.Bot, m.logger),
+		testing.New(m.Bot, m.logger),
+		fun.New(m.Bot, m.logger),
+		fishing.New(m.Bot, m.db, m.logger),
+		utility.New(m.Bot, m.db, m.logger),
+		moderation.New(m.Bot, m.db, m.logger),
+		customrole.New(m.Bot, m.db, m.logger),
+		search.New(m.Bot, m.logger),
+	}
+
+	excludedModules := m.config.GetStringSlice("excluded_modules")
+	for _, mod := range modules {
+		if !utils.StringInSlice(strings.ToLower(mod.Name()), excludedModules) {
+			m.Bot.RegisterModule(mod)
+		}
+	}
 }
 
 func (m *Meido) registerDiscordHandlers() {
