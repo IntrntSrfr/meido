@@ -38,17 +38,26 @@ func (m *module) Hook() error {
 		go clearDeletedRoles(m)
 	})
 
-	return m.RegisterCommands(
+	if err := m.RegisterApplicationCommands(
+		newListCustomRolesSlash(m),
+	); err != nil {
+		return err
+	}
+
+	if err := m.RegisterCommands(
 		newSetCustomRoleCommand(m),
 		newRemoveCustomRoleCommand(m),
 		newMyRoleCommand(m),
 		newListCustomRolesCommand(m),
-	)
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func clearDeletedRoles(m *module) {
-	refreshTicker := time.NewTicker(time.Hour)
-	for range refreshTicker.C {
+	exec := func(m *module) {
 		m.Logger.Info("Checking for deleted roles")
 		for _, g := range m.Bot.Discord.Guilds() {
 			if g.Unavailable {
@@ -79,6 +88,11 @@ func clearDeletedRoles(m *module) {
 				}
 			}
 		}
+	}
+
+	refreshTicker := time.NewTicker(time.Hour)
+	for range refreshTicker.C {
+		exec(m)
 	}
 }
 
@@ -353,7 +367,7 @@ func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "listcustomroles",
-		Description:      "Returns a list of custom roles for the server. It also shows whether users with custom roles are in the server or not",
+		Description:      "Lists all custom roles in the guild and who they belong to",
 		Triggers:         []string{"m?listuserroles", "m?listcustomroles"},
 		Usage:            "m?listcustomroles",
 		Cooldown:         time.Second * 30,
@@ -373,35 +387,74 @@ func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 
 			g, err := msg.Discord.Guild(msg.Message.GuildID)
 			if err != nil {
-				_, _ = msg.Reply("some error occurred, please try again")
+				_, _ = msg.Reply("There was an issue, please try again!")
 				return
 			}
 
-			builder := strings.Builder{}
-			builder.WriteString(fmt.Sprintf("Custom roles in %v | Amount: %v\n\n", g.Name, len(roles)))
-			for _, ur := range roles {
-				role, err := msg.Discord.Role(g.ID, ur.RoleID)
-				if err != nil {
-					continue
-				}
-
-				mem, err := msg.Discord.Member(g.ID, ur.UserID)
-				if err != nil {
-					builder.WriteString(fmt.Sprintf("%v (%v) | Belongs to: %v - User no longer in guild.\n", role.Name, role.ID, ur.UserID))
-				} else {
-					builder.WriteString(fmt.Sprintf("%v (%v) | Belongs to: %v (%v)\n", role.Name, role.ID, mem.User.String(), mem.User.ID))
-				}
-			}
-
-			data := &discordgo.MessageSend{Content: builder.String()}
-			if builder.Len() > 1024 {
+			roleList := newCustomRoleList(msg.Discord, g, roles)
+			data := &discordgo.MessageSend{Content: roleList}
+			if len(roleList) > 1024 {
 				data.File = &discordgo.File{
 					Name:   "roles.txt",
-					Reader: bytes.NewBufferString(builder.String()),
+					Reader: bytes.NewBufferString(roleList),
 				}
 				data.Content = ""
 			}
 			_, _ = msg.ReplyComplex(data)
 		},
 	}
+}
+
+func newListCustomRolesSlash(m *module) *bot.ModuleApplicationCommand {
+	bld := bot.NewModuleApplicationCommandBuilder(m, "listcustomroles").
+		Type(discordgo.ChatApplicationCommand).
+		Description("Lists all custom roles in the guild and who they belong to.").
+		Permissions(discordgo.PermissionManageRoles).
+		NoDM()
+
+	exec := func(dac *discord.DiscordApplicationCommand) {
+		roles, err := m.db.GetCustomRolesByGuild(dac.Interaction.GuildID)
+		if err != nil {
+			_ = dac.RespondEphemeral("There was an issue, please try again!")
+			return
+		}
+
+		g, err := dac.Sess.Guild(dac.Interaction.GuildID)
+		if err != nil {
+			_ = dac.RespondEphemeral("There was an issue, please try again!")
+			return
+		}
+
+		roleList := newCustomRoleList(dac.Discord, g, roles)
+		data := &discordgo.InteractionResponseData{Content: roleList}
+		if len(roleList) > 10 {
+			data.Files = []*discordgo.File{{
+				Name:   "roles.txt",
+				Reader: bytes.NewBufferString(roleList),
+			}}
+			data.Content = ""
+		}
+		_ = dac.RespondComplex(data, discordgo.InteractionResponseChannelMessageWithSource)
+	}
+
+	return bld.Execute(exec).Build()
+}
+
+func newCustomRoleList(d *discord.Discord, g *discordgo.Guild, roles []*CustomRole) string {
+	builder := strings.Builder{}
+	builder.WriteString(fmt.Sprintf("Custom roles in %v | Amount: %v\n\n", g.Name, len(roles)))
+	for _, ur := range roles {
+		role, err := d.Role(g.ID, ur.RoleID)
+		if err != nil {
+			continue
+		}
+
+		mem, err := d.Member(g.ID, ur.UserID)
+		if err != nil {
+			builder.WriteString(fmt.Sprintf("%v (%v) | Belongs to: %v - User no longer in guild.\n", role.Name, role.ID, ur.UserID))
+		} else {
+			builder.WriteString(fmt.Sprintf("%v (%v) | Belongs to: %v (%v)\n", role.Name, role.ID, mem.User.String(), mem.User.ID))
+		}
+	}
+	return builder.String()
 }
