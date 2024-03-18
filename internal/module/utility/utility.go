@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/draw"
 	"image/png"
+	"math/rand"
 	"runtime"
 	"strings"
 	"time"
@@ -42,6 +43,7 @@ func (m *module) Hook() error {
 		newUserInfoUserCommand(m),
 		newHelpSlash(m),
 		newPingSlash(m),
+		newStatsSlash(m),
 	); err != nil {
 		return err
 	}
@@ -60,7 +62,6 @@ func (m *module) Hook() error {
 		newAvatarCommand(m),
 		newBannerCommand(m),
 		newMemberAvatarCommand(m),
-		newAboutCommand(m),
 		newServerCommand(m),
 		newServerIconCommand(m),
 		newServerBannerCommand(m),
@@ -149,63 +150,62 @@ func newPingSlash(m *module) *bot.ModuleApplicationCommand {
 	return bld.Execute(run).Build()
 }
 
-func newAboutCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
-		Mod:              m,
-		Name:             "about",
-		Description:      "Displays Meido statistics",
-		Triggers:         []string{"m?about"},
-		Usage:            "m?about",
-		Cooldown:         time.Second * 5,
-		CooldownScope:    bot.CooldownScopeChannel,
-		RequiredPerms:    0,
-		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowDMs:         true,
-		AllowedTypes:     discord.MessageTypeCreate,
-		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
-			if len(msg.Args()) < 1 {
-				return
-			}
+func newStatsSlash(m *module) *bot.ModuleApplicationCommand {
+	bld := bot.NewModuleApplicationCommandBuilder(m, "stats").
+		Type(discordgo.ChatApplicationCommand).
+		Description("Displays bot statistics")
 
-			var (
-				totalUsers  int
-				totalBots   int
-				totalHumans int
-				memory      runtime.MemStats
-			)
-			runtime.ReadMemStats(&memory)
-			guilds := msg.Discord.Guilds()
-			for _, guild := range guilds {
-				for _, mem := range guild.Members {
-					if mem.User.Bot {
-						totalBots++
-					} else {
-						totalHumans++
-					}
-				}
-				totalUsers += guild.MemberCount
-			}
+	exec := func(dac *discord.DiscordApplicationCommand) {
+		var memory runtime.MemStats
+		runtime.ReadMemStats(&memory)
+		guilds, bots, humans, total := getGuildCounts(dac)
+		uptime := time.Since(m.startTime)
+		countStr := getCommandCountString(m)
+		bugs := rand.New(rand.NewSource(m.startTime.UnixNano())).Intn(1000)
 
-			uptime := time.Since(m.startTime)
-			count, err := m.db.GetCommandCount()
-			if err != nil {
-				return
-			}
-			embed := builders.NewEmbedBuilder().
-				WithTitle("About").
-				WithOkColor().
-				AddField("Uptime", uptime.String(), true).
-				AddField("Total commands ran", fmt.Sprint(count), true).
-				AddField("Guilds", fmt.Sprint(len(guilds)), false).
-				AddField("Users", fmt.Sprintf("%v users | %v humans | %v bots", totalUsers, totalHumans, totalBots), true).
-				AddField("Memory use", fmt.Sprintf("%v/%v", humanize.Bytes(memory.Alloc), humanize.Bytes(memory.Sys)), false).
-				AddField("Garbage collected", humanize.Bytes(memory.TotalAlloc-memory.Alloc), true).
-				AddField("Owners", strings.Join(m.Bot.Config.GetStringSlice("owner_ids"), ", "), true)
-			_, _ = msg.ReplyEmbed(embed.Build())
-		},
+		embed := builders.NewEmbedBuilder().WithTitle("Meido statistics").WithOkColor().
+			AddField("⏳ Uptime", uptime.String(), true).
+			AddField("⌨️ Commands ran", countStr, true).
+			AddField("🖥️ Servers", fmt.Sprint(len(guilds)), true).
+			AddField("🧑‍🤝‍🧑 Users", fmt.Sprintf("Total: %v\nHumans: %v\nBots: %v", total, humans, bots), true).
+			AddField("💾 Memory usage", fmt.Sprintf("%v/%v", humanize.Bytes(memory.Alloc), humanize.Bytes(memory.Sys)), true).
+			AddField("🗑️ Garbage collected", humanize.Bytes(memory.TotalAlloc-memory.Alloc), true).
+			AddField("👑 Owner IDs", strings.Join(m.Bot.Config.GetStringSlice("owner_ids"), ", "), true).
+			AddField("🐞 Bugs", fmt.Sprint(bugs), true)
+		dac.RespondEmbed(embed.Build())
 	}
+
+	return bld.Execute(exec).Build()
+}
+
+func getGuildCounts(dac *discord.DiscordApplicationCommand) ([]*discordgo.Guild, int, int, int) {
+	var (
+		totalUsers  int
+		totalBots   int
+		totalHumans int
+	)
+
+	guilds := dac.Sess.State().Guilds
+	for _, guild := range guilds {
+		for _, mem := range guild.Members {
+			if mem.User.Bot {
+				totalBots++
+			} else {
+				totalHumans++
+			}
+		}
+		totalUsers += guild.MemberCount
+	}
+	return guilds, totalBots, totalHumans, totalUsers
+}
+
+func getCommandCountString(m *module) string {
+	countStr := "Not available"
+	count, err := m.db.GetCommandCount()
+	if err == nil {
+		countStr = fmt.Sprint(count)
+	}
+	return countStr
 }
 
 func newColorCommand(m *module) *bot.ModuleCommand {

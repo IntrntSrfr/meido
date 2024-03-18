@@ -48,6 +48,7 @@ func (m *module) Hook() error {
 func clearDeletedRoles(m *module) {
 	refreshTicker := time.NewTicker(time.Hour)
 	for range refreshTicker.C {
+		m.Logger.Info("Checking for deleted roles")
 		for _, g := range m.Bot.Discord.Guilds() {
 			if g.Unavailable {
 				continue

@@ -118,13 +118,13 @@ func statusLoop(m *Meido) func(s *discordgo.Session, r *discordgo.Ready) {
 				switch display {
 				case 0:
 					srvCount := m.Bot.Discord.GuildCount()
-					name = fmt.Sprintf("over %v servers", srvCount)
+					name = fmt.Sprintf("%v servers", srvCount)
 					statusType = discordgo.ActivityTypeWatching
 				case 1:
-					name = "m?help"
-					statusType = discordgo.ActivityTypeGame
+					name = "for /help | m?help"
+					statusType = discordgo.ActivityTypeWatching
 				case 2:
-					name = "Remember to stay sane"
+					name = "around with fish"
 					statusType = discordgo.ActivityTypeGame
 					/*
 						case 3:

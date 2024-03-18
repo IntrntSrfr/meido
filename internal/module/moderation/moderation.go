@@ -66,7 +66,7 @@ func checkWarnInterval(m *module) func(s *discordgo.Session, r *discordgo.Ready)
 		refreshTicker := time.NewTicker(time.Hour)
 		go func() {
 			for range refreshTicker.C {
-				m.Logger.Info("Running warn check")
+				m.Logger.Info("Checking for expired warns")
 				for _, g := range m.Bot.Discord.Guilds() {
 					if g.Unavailable {
 						continue
