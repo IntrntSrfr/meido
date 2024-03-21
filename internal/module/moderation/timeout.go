@@ -111,7 +111,7 @@ func (m *module) unmuteCommand(msg *discord.DiscordMessage) {
 	if msg.AuthorID() == targetMember.User.ID {
 		return
 	}
-	if msg.TargetRoleIsLowest(targetMember) {
+	if !msg.TargetRoleIsLowest(targetMember) {
 		_, _ = msg.Reply("no (you can only unmute users who are below you and me in the role hierarchy)")
 		return
 	}
