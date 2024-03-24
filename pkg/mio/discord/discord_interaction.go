@@ -30,6 +30,10 @@ func (it *DiscordInteraction) AuthorID() string {
 	return it.Interaction.Member.User.ID
 }
 
+func (it *DiscordInteraction) GuildID() string {
+	return it.Interaction.GuildID
+}
+
 func (it *DiscordInteraction) IsDM() bool {
 	return it.Interaction.GuildID == ""
 }
@@ -137,16 +141,25 @@ func (d *DiscordApplicationCommand) Options(key string) (*discordgo.ApplicationC
 
 func flattenOptions(options []*discordgo.ApplicationCommandInteractionDataOption) map[string]*discordgo.ApplicationCommandInteractionDataOption {
 	result := make(map[string]*discordgo.ApplicationCommandInteractionDataOption)
-	flattenOptionsImpl(options, result)
+	flattenOptionsImpl(options, result, "")
 	return result
 }
 
-func flattenOptionsImpl(options []*discordgo.ApplicationCommandInteractionDataOption, result map[string]*discordgo.ApplicationCommandInteractionDataOption) {
+func flattenOptionsImpl(options []*discordgo.ApplicationCommandInteractionDataOption, result map[string]*discordgo.ApplicationCommandInteractionDataOption, prefix string) {
 	for _, option := range options {
-		if option.Options != nil {
-			flattenOptionsImpl(option.Options, result)
+		key := prefix + option.Name
+
+		if option.Type == discordgo.ApplicationCommandOptionSubCommand || option.Type == discordgo.ApplicationCommandOptionSubCommandGroup {
+			opt := *option
+			opt.Options = nil
+			result[key] = &opt
+
+			if option.Options != nil {
+				newPrefix := key + ":"
+				flattenOptionsImpl(option.Options, result, newPrefix)
+			}
 		} else {
-			result[option.Name] = option
+			result[key] = option
 		}
 	}
 }

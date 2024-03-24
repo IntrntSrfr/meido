@@ -158,6 +158,16 @@ func (b *ModuleApplicationCommandBuilder) AddOption(option *discordgo.Applicatio
 	return b
 }
 
+func (b *ModuleApplicationCommandBuilder) AddSubcommand(subcommand *discordgo.ApplicationCommandOption) *ModuleApplicationCommandBuilder {
+	subcommand.Type = discordgo.ApplicationCommandOptionSubCommand
+	return b.AddOption(subcommand)
+}
+
+func (b *ModuleApplicationCommandBuilder) AddSubcommandGroup(group *discordgo.ApplicationCommandOption) *ModuleApplicationCommandBuilder {
+	group.Type = discordgo.ApplicationCommandOptionSubCommandGroup
+	return b.AddOption(group)
+}
+
 func (b *ModuleApplicationCommandBuilder) Cooldown(cooldown time.Duration, scope CooldownScope) *ModuleApplicationCommandBuilder {
 	b.command.Cooldown = cooldown
 	b.command.CooldownScope = scope

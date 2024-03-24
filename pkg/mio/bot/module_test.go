@@ -408,7 +408,7 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 }
 
 func TestModuleBase_HandleMessageComponent(t *testing.T) {
-	t.Run("it runs correctly", func(t *testing.T) {
+	t.Run("callback gets handled", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
@@ -423,6 +423,53 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 		mod.RegisterMessageComponents(cmd)
 		customID := "key"
 		mod.SetMessageComponentCallback(customID, "test")
+
+		it := NewTestMessageComponentInteraction(bot, "1", customID)
+		mod.HandleInteraction(it)
+		select {
+		case <-cmdCalled:
+		case <-time.After(time.Millisecond * 50):
+			t.Error("Expected event, but timed out")
+		}
+	})
+
+	t.Run("by name gets handled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		bot := NewTestBot()
+		go drainBotEvents(ctx, bot.Events())
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmdCalled := make(chan bool, 1)
+		cmd := NewTestMessageComponent(mod)
+		cmd.Execute = func(*discord.DiscordMessageComponent) {
+			cmdCalled <- true
+		}
+		mod.RegisterMessageComponents(cmd)
+
+		it := NewTestMessageComponentInteraction(bot, "1", "test")
+		mod.HandleInteraction(it)
+		select {
+		case <-cmdCalled:
+		case <-time.After(time.Millisecond * 50):
+			t.Error("Expected event, but timed out")
+		}
+	})
+
+	t.Run("with suffix gets handled", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		bot := NewTestBot()
+		go drainBotEvents(ctx, bot.Events())
+		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		cmdCalled := make(chan bool, 1)
+		cmd := NewTestMessageComponent(mod)
+		cmd.Execute = func(*discord.DiscordMessageComponent) {
+			cmdCalled <- true
+		}
+		mod.RegisterMessageComponents(cmd)
+		customID := cmd.Name + ":key"
 
 		it := NewTestMessageComponentInteraction(bot, "1", customID)
 		mod.HandleInteraction(it)
