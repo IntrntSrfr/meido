@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/g4s8/hexcolor"
@@ -39,7 +40,7 @@ func (m *module) Hook() error {
 	})
 
 	if err := m.RegisterApplicationCommands(
-		newListCustomRolesSlash(m),
+		newCustomRolesSlash(m),
 	); err != nil {
 		return err
 	}
@@ -363,6 +364,151 @@ func (m *module) myroleCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
+func newCustomRolesSlash(m *module) *bot.ModuleApplicationCommand {
+	bld := bot.NewModuleApplicationCommandBuilder(m, "customroles").
+		Type(discordgo.ChatApplicationCommand).
+		Description("Add, remove, or list custom roles").
+		Permissions(discordgo.PermissionManageRoles).
+		NoDM().
+		Cooldown(time.Second*3, bot.CooldownScopeChannel).
+		AddOption(builders.NewSubCommandBuilder("add", "Add a custom role").
+			AddOption(&discordgo.ApplicationCommandOption{
+				Type:        discordgo.ApplicationCommandOptionUser,
+				Name:        "user",
+				Description: "The user to add the custom role to",
+				Required:    true,
+			}).
+			AddOption(&discordgo.ApplicationCommandOption{
+				Type:        discordgo.ApplicationCommandOptionRole,
+				Name:        "role",
+				Description: "The role to add",
+				Required:    true,
+			}).Build()).
+		AddOption(builders.NewSubCommandBuilder("remove", "Remove a custom role").
+			AddOption(&discordgo.ApplicationCommandOption{
+				Type:        discordgo.ApplicationCommandOptionUser,
+				Name:        "user",
+				Description: "The user to remove the custom role from",
+				Required:    true,
+			}).Build()).
+		AddOption(builders.NewSubCommandBuilder("list", "List all custom roles").Build())
+
+	exec := func(dac *discord.DiscordApplicationCommand) {
+		switch dac.SubCommand() {
+		case "add":
+			addCustomRole(m, dac)
+		case "remove":
+			removeCustomRole(m, dac)
+		case "list":
+			listCustomRoles(m, dac)
+		}
+	}
+
+	return bld.Execute(exec).Build()
+}
+
+func addCustomRole(m *module, dac *discord.DiscordApplicationCommand) {
+	userOpt, userOk := dac.Options("add:user")
+	roleOpt, roleOk := dac.Options("add:role")
+	if !userOk || !roleOk {
+		_ = dac.RespondEphemeral("Missing user or role")
+		return
+	}
+
+	user := userOpt.UserValue(dac.Sess.Real())
+	role := roleOpt.RoleValue(dac.Sess.Real(), dac.GuildID())
+	if user == nil || role == nil {
+		_ = dac.RespondEphemeral("Could not find user or role")
+		return
+	}
+
+	if user.Bot {
+		_ = dac.RespondEphemeral("Bots dont get to join the fun")
+		return
+	}
+
+	if _, err := dac.Discord.Member(dac.GuildID(), user.ID); err != nil {
+		_ = dac.RespondEphemeral("That user is not in the server")
+		return
+	}
+
+	// if a custom role already exists for the user, update it to the new role
+	if ur, err := m.db.GetCustomRole(dac.GuildID(), user.ID); err == nil {
+		ur.RoleID = role.ID
+		if err := m.db.UpdateCustomRole(ur); err != nil {
+			m.Logger.Error("Update custom role failed", zap.Error(err), zap.Any("role", ur))
+			_ = dac.RespondEphemeral("Could not set role, please try again")
+			return
+		}
+	} else if err == sql.ErrNoRows {
+		if err := m.db.CreateCustomRole(dac.GuildID(), user.ID, role.ID); err != nil {
+			m.Logger.Error("Create custom role failed", zap.Error(err), zap.String("guildID", dac.GuildID()), zap.String("roleID", role.ID), zap.String("userID", user.ID))
+			_ = dac.RespondEphemeral("Could not set role, please try again")
+			return
+		}
+	} else {
+		m.Logger.Error("Get custom role failed", zap.Error(err))
+		_ = dac.RespondEphemeral("Could not set role, please try again")
+		return
+	}
+	_ = dac.Respond(fmt.Sprintf("Set custom role for **%v** to **%v**", user, role.Name))
+}
+
+func removeCustomRole(m *module, dac *discord.DiscordApplicationCommand) {
+	userOpt, userOk := dac.Options("remove:user")
+	if !userOk {
+		_ = dac.RespondEphemeral("Missing user")
+		return
+	}
+
+	user := userOpt.UserValue(dac.Sess.Real())
+	if user == nil {
+		_ = dac.RespondEphemeral("Could not find user")
+		return
+	}
+
+	if user.Bot {
+		_ = dac.RespondEphemeral("Bots dont get to join the fun")
+		return
+	}
+
+	if ur, err := m.db.GetCustomRole(dac.Interaction.GuildID, user.ID); err == nil {
+		if err := m.db.DeleteCustomRole(ur.UID); err != nil {
+			m.Logger.Error("Delete custom role failed", zap.Error(err), zap.Any("role", ur))
+			_ = dac.RespondEphemeral("Could not remove custom role, please try again")
+			return
+		}
+		_ = dac.Respond(fmt.Sprintf("Removed custom role from **%v**", user))
+		return
+	}
+}
+
+func listCustomRoles(m *module, dac *discord.DiscordApplicationCommand) {
+	roles, err := m.db.GetCustomRolesByGuild(dac.Interaction.GuildID)
+	if err != nil {
+		m.Logger.Error("Error fetching custom roles", zap.Error(err))
+		_ = dac.RespondEphemeral("There was an issue, please try again!")
+		return
+	}
+
+	g, err := dac.Sess.Guild(dac.Interaction.GuildID)
+	if err != nil {
+		_ = dac.RespondEphemeral("There was an issue, please try again!")
+		return
+	}
+
+	roleList := generateRoleList(dac.Discord, g, roles)
+	data := &discordgo.InteractionResponseData{Content: roleList}
+	if len(roleList) > 10 {
+		data.Files = []*discordgo.File{{
+			Name:   "roles.txt",
+			Reader: bytes.NewBufferString(roleList),
+		}}
+		data.Content = ""
+	}
+	_ = dac.RespondComplex(data, discordgo.InteractionResponseChannelMessageWithSource)
+}
+
 func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
@@ -391,7 +537,7 @@ func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 				return
 			}
 
-			roleList := newCustomRoleList(msg.Discord, g, roles)
+			roleList := generateRoleList(msg.Discord, g, roles)
 			data := &discordgo.MessageSend{Content: roleList}
 			if len(roleList) > 1024 {
 				data.File = &discordgo.File{
@@ -405,56 +551,23 @@ func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newListCustomRolesSlash(m *module) *bot.ModuleApplicationCommand {
-	bld := bot.NewModuleApplicationCommandBuilder(m, "listcustomroles").
-		Type(discordgo.ChatApplicationCommand).
-		Description("Lists all custom roles in the guild and who they belong to.").
-		Permissions(discordgo.PermissionManageRoles).
-		NoDM()
-
-	exec := func(dac *discord.DiscordApplicationCommand) {
-		roles, err := m.db.GetCustomRolesByGuild(dac.Interaction.GuildID)
-		if err != nil {
-			_ = dac.RespondEphemeral("There was an issue, please try again!")
-			return
-		}
-
-		g, err := dac.Sess.Guild(dac.Interaction.GuildID)
-		if err != nil {
-			_ = dac.RespondEphemeral("There was an issue, please try again!")
-			return
-		}
-
-		roleList := newCustomRoleList(dac.Discord, g, roles)
-		data := &discordgo.InteractionResponseData{Content: roleList}
-		if len(roleList) > 10 {
-			data.Files = []*discordgo.File{{
-				Name:   "roles.txt",
-				Reader: bytes.NewBufferString(roleList),
-			}}
-			data.Content = ""
-		}
-		_ = dac.RespondComplex(data, discordgo.InteractionResponseChannelMessageWithSource)
-	}
-
-	return bld.Execute(exec).Build()
-}
-
-func newCustomRoleList(d *discord.Discord, g *discordgo.Guild, roles []*CustomRole) string {
+func generateRoleList(d *discord.Discord, g *discordgo.Guild, roles []*CustomRole) string {
 	builder := strings.Builder{}
+	w := tabwriter.NewWriter(&builder, 0, 0, 4, ' ', 0)
 	builder.WriteString(fmt.Sprintf("Custom roles in %v | Amount: %v\n\n", g.Name, len(roles)))
+	fmt.Fprintln(w, "Role Name\tRole ID\tBelongs to\tUser ID")
 	for _, ur := range roles {
 		role, err := d.Role(g.ID, ur.RoleID)
 		if err != nil {
 			continue
 		}
-
 		mem, err := d.Member(g.ID, ur.UserID)
 		if err != nil {
-			builder.WriteString(fmt.Sprintf("%v (%v) | Belongs to: %v - User no longer in guild.\n", role.Name, role.ID, ur.UserID))
+			fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", role.Name, role.ID, "[Not in server]", ur.UserID)
 		} else {
-			builder.WriteString(fmt.Sprintf("%v (%v) | Belongs to: %v (%v)\n", role.Name, role.ID, mem.User.String(), mem.User.ID))
+			fmt.Fprintf(w, "%v\t%v\t%v\t%v\n", role.Name, role.ID, mem.User, mem.User.ID)
 		}
 	}
+	w.Flush()
 	return builder.String()
 }

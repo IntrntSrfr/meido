@@ -1,6 +1,7 @@
 package discord
 
 import (
+	"errors"
 	"io"
 	"time"
 
@@ -32,6 +33,20 @@ func (it *DiscordInteraction) AuthorID() string {
 
 func (it *DiscordInteraction) GuildID() string {
 	return it.Interaction.GuildID
+}
+
+func (it *DiscordInteraction) Member() (*discordgo.Member, error) {
+	if it.Interaction.Member != nil {
+		return it.Interaction.Member, nil
+	}
+	return nil, errors.New("member not found")
+}
+
+func (it *DiscordInteraction) User() (*discordgo.User, error) {
+	if it.Interaction.User != nil {
+		return it.Interaction.User, nil
+	}
+	return nil, errors.New("user not found")
 }
 
 func (it *DiscordInteraction) IsDM() bool {
