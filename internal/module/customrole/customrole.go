@@ -508,24 +508,6 @@ func listCustomRoles(m *module, dac *discord.DiscordApplicationCommand) {
 	_ = dac.RespondComplex(data, discordgo.InteractionResponseChannelMessageWithSource)
 }
 
-/*
-customroles
-- add
--- user
--- role
-- remove
--- user
-- list
-
-myrole
-- edit
--- name
--- color
--- icon?
-- show
--- optional user
-*/
-
 func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
