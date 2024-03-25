@@ -62,7 +62,7 @@ type GuildDB struct {
 }
 
 func (db *GuildDB) CreateGuild(guildID string, joinedAt time.Time) error {
-	_, err := db.Conn().Exec("INSERT INTO guild VALUES($1, $2)", guildID, joinedAt)
+	_, err := db.Conn().Exec("INSERT INTO guild(guild_id, joined_at) VALUES($1, $2)", guildID, joinedAt)
 	return err
 }
 

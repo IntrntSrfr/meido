@@ -131,24 +131,26 @@ func newSetCustomRoleCommand(m *module) *bot.ModuleCommand {
 				return
 			}
 
-			if ur, err := m.db.GetCustomRole(g.ID, targetMember.User.ID); err == nil {
-				if selectedRole.ID == ur.RoleID {
-					return
-				}
+			// if a custom role already exists for the user, update it to the new role
+			if ur, err := m.db.GetCustomRole(msg.GuildID(), targetMember.User.ID); err == nil {
 				ur.RoleID = selectedRole.ID
 				if err := m.db.UpdateCustomRole(ur); err != nil {
+					m.Logger.Error("Update custom role failed", zap.Error(err), zap.Any("role", ur))
 					_, _ = msg.Reply("Could not set role, please try again")
 					return
 				}
-				_, _ = msg.Reply(fmt.Sprintf("Updated member role for **%v** to **%v**", targetMember.User.String(), selectedRole.Name))
-				return
-			}
-
-			if err := m.db.CreateCustomRole(g.ID, targetMember.User.ID, selectedRole.ID); err != nil {
+			} else if err == sql.ErrNoRows {
+				if err := m.db.CreateCustomRole(msg.GuildID(), targetMember.User.ID, selectedRole.ID); err != nil {
+					m.Logger.Error("Create custom role failed", zap.Error(err), zap.String("guildID", msg.GuildID()), zap.String("roleID", selectedRole.ID), zap.String("userID", targetMember.User.ID))
+					_, _ = msg.Reply("Could not set role, please try again")
+					return
+				}
+			} else {
+				m.Logger.Error("Get custom role failed", zap.Error(err))
 				_, _ = msg.Reply("Could not set role, please try again")
 				return
 			}
-			_, _ = msg.Reply(fmt.Sprintf("Bound role **%v** to user **%v**", selectedRole.Name, targetMember.User.String()))
+			_, _ = msg.Reply(fmt.Sprintf("Set custom role for **%v** to **%v**", targetMember.User, selectedRole.Name))
 		},
 	}
 }
@@ -185,11 +187,14 @@ func newRemoveCustomRoleCommand(m *module) *bot.ModuleCommand {
 
 			if ur, err := m.db.GetCustomRole(msg.GuildID(), targetUser.ID); err == nil {
 				if err := m.db.DeleteCustomRole(ur.UID); err != nil {
+					m.Logger.Error("Delete custom role failed", zap.Error(err), zap.Any("role", ur))
 					_, _ = msg.Reply("Could not remove custom role, please try again")
 					return
 				}
 				_, _ = msg.Reply(fmt.Sprintf("Removed custom role from %v", targetUser.Mention()))
-				return
+			} else if err != sql.ErrNoRows {
+				m.Logger.Error("Delete custom role failed", zap.Error(err), zap.Any("role", ur))
+				_, _ = msg.Reply("Could not remove custom role, please try again")
 			}
 		},
 	}
