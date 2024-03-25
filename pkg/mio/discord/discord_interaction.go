@@ -129,6 +129,32 @@ func (d *DiscordApplicationCommand) Name() string {
 	return d.Data.Name
 }
 
+func (d *DiscordApplicationCommand) SubCommand() string {
+	if d.Data.Options == nil {
+		return ""
+	}
+
+	for _, opt := range d.Data.Options {
+		if opt.Type == discordgo.ApplicationCommandOptionSubCommand {
+			return opt.Name
+		}
+	}
+	return ""
+}
+
+func (d *DiscordApplicationCommand) SubCommandGroup() string {
+	if d.Data.Options == nil {
+		return ""
+	}
+
+	for _, opt := range d.Data.Options {
+		if opt.Type == discordgo.ApplicationCommandOptionSubCommandGroup {
+			return opt.Name
+		}
+	}
+	return ""
+}
+
 // Options returns a *discordgo.ApplicationCommandInteractionDataOption given
 // by key.
 func (d *DiscordApplicationCommand) Options(key string) (*discordgo.ApplicationCommandInteractionDataOption, bool) {
