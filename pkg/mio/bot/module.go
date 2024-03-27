@@ -645,6 +645,17 @@ type ModuleApplicationCommand struct {
 }
 
 func (m *ModuleApplicationCommand) allowsInteraction(it *discord.DiscordApplicationCommand) bool {
+	if m.DMPermission != nil && (!*m.DMPermission || it.IsDM()) {
+		return false
+	}
+
+	if !it.IsDM() && m.DefaultMemberPermissions != nil {
+		perms := *m.DefaultMemberPermissions
+		if allow, err := it.MemberHasPermissions(perms); err != nil || !allow {
+			return false
+		}
+	}
+
 	return true
 }
 

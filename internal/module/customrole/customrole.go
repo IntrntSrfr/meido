@@ -25,11 +25,11 @@ type module struct {
 	db ICustomRoleDB
 }
 
-func New(b *bot.Bot, database database.DB, logger *zap.Logger) bot.Module {
+func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
 	logger = logger.Named("CustomRole")
 	return &module{
 		ModuleBase: bot.NewModule(b, "CustomRole", logger),
-		db:         &CustomRoleDB{DB: database},
+		db:         &CustomRoleDB{db},
 	}
 }
 
