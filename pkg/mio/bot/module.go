@@ -267,7 +267,11 @@ func (m *ModuleBase) allowsInteraction(it *discord.DiscordInteraction) bool {
 }
 
 func (m *ModuleBase) handleApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
-	if !c.Enabled || !c.allowsInteraction(it) {
+	if !c.Enabled {
+		return
+	}
+	if err := c.allowsInteraction(it); err != nil {
+		m.Logger.Debug("Application command not allowed", zap.Error(err))
 		return
 	}
 	go m.runApplicationCommand(c, it)
@@ -635,7 +639,7 @@ func (pas *ModulePassive) allowsMessage(msg *discord.DiscordMessage) bool {
 
 type ModuleApplicationCommand struct {
 	*discordgo.ApplicationCommand
-	Mod           Module
+	Mod           Module `json:"-"`
 	Cooldown      time.Duration
 	CooldownScope CooldownScope
 	UserType      UserType
@@ -644,19 +648,33 @@ type ModuleApplicationCommand struct {
 	Execute       func(*discord.DiscordApplicationCommand) `json:"-"`
 }
 
-func (m *ModuleApplicationCommand) allowsInteraction(it *discord.DiscordApplicationCommand) bool {
-	if m.DMPermission != nil && (!*m.DMPermission || it.IsDM()) {
-		return false
+func (m *ModuleApplicationCommand) allowsInteraction(it *discord.DiscordApplicationCommand) error {
+	if !m.Enabled {
+		return errors.New("command is not enabled")
+	}
+
+	if m.DMPermission != nil && (!*m.DMPermission && it.IsDM()) {
+		return errors.New("command is not allowed in DMs")
 	}
 
 	if !it.IsDM() && m.DefaultMemberPermissions != nil {
-		perms := *m.DefaultMemberPermissions
-		if allow, err := it.MemberHasPermissions(perms); err != nil || !allow {
-			return false
+		reqPerms := *m.DefaultMemberPermissions
+		mem, err := it.Member()
+		if err != nil {
+			return errors.New("error getting member data")
+		}
+		if mem.Permissions&reqPerms != reqPerms {
+			return errors.New("member does not have required permissions")
+		}
+
+		if m.CheckBotPerms {
+			if it.AppPermissions()&reqPerms != reqPerms {
+				return errors.New("bot does not have required permissions")
+			}
 		}
 	}
 
-	return true
+	return nil
 }
 
 type ModuleModalSubmit struct {
