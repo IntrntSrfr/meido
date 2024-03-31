@@ -12,9 +12,9 @@ import (
 
 func NewTestBot() *Bot {
 	bot := NewBotBuilder(test.NewTestConfig()).
+		WithDefaultHandlers().
 		WithDiscord(discord.NewTestDiscord(nil, nil, nil)).
 		Build()
-	bot.UseDefaultHandlers()
 	return bot
 }
 

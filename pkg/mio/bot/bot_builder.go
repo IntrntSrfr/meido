@@ -17,6 +17,8 @@ type BotBuilder struct {
 
 	config *utils.Config
 	logger mio.Logger
+
+	useDefaultHandlers bool
 }
 
 func NewBotBuilder(config *utils.Config) *BotBuilder {
@@ -33,6 +35,11 @@ func (b *BotBuilder) WithDiscord(d *discord.Discord) *BotBuilder {
 
 func (b *BotBuilder) WithLogger(log mio.Logger) *BotBuilder {
 	b.logger = log
+	return b
+}
+
+func (b *BotBuilder) WithDefaultHandlers() *BotBuilder {
+	b.useDefaultHandlers = true
 	return b
 }
 
@@ -54,6 +61,12 @@ func (b *BotBuilder) Build() *Bot {
 	}
 	if b.eventHandler == nil {
 		b.eventHandler = NewEventHandler(b.discord, b.modules, b.callbacks, b.eventEmitter, b.logger)
+	}
+	if b.useDefaultHandlers {
+		b.discord.AddEventHandler(readyHandler(b.logger))
+		b.discord.AddEventHandler(guildJoinHandler(b.logger))
+		b.discord.AddEventHandler(guildLeaveHandler(b.logger))
+		b.discord.AddEventHandler(memberChunkHandler(b.logger))
 	}
 
 	return &Bot{

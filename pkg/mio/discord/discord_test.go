@@ -12,7 +12,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord/mocks"
-	"github.com/intrntsrfr/meido/pkg/mio/test"
 	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
@@ -43,7 +42,7 @@ func TestNewDiscord(t *testing.T) {
 	conf.Set("shards", shards)
 	mockSess := mocks.NewDiscordSession(token, shards)
 
-	logger := test.NewTestLogger()
+	logger := mio.NewDiscardLogger()
 	d := NewTestDiscord(conf, mockSess, nil)
 
 	if got := d.token; d.token != token {

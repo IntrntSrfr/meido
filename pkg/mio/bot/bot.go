@@ -9,7 +9,6 @@ import (
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	mutils "github.com/intrntsrfr/meido/pkg/mio/utils"
 	"github.com/intrntsrfr/meido/pkg/utils"
-	"go.uber.org/zap"
 )
 
 type Bot struct {
@@ -24,13 +23,6 @@ type Bot struct {
 	*EventEmitter
 
 	Logger mio.Logger
-}
-
-func (b *Bot) UseDefaultHandlers() {
-	b.Discord.AddEventHandler(readyHandler(b))
-	b.Discord.AddEventHandler(guildJoinHandler(b))
-	b.Discord.AddEventHandler(guildLeaveHandler(b))
-	b.Discord.AddEventHandler(memberChunkHandler(b))
 }
 
 func (b *Bot) Run(ctx context.Context) error {
@@ -59,11 +51,11 @@ func (b *Bot) setApplicationCommands() error {
 
 	created, err := b.Discord.Sess.ApplicationCommandBulkOverwrite(b.Discord.Sess.State().User.ID, "", allCommands)
 	if err != nil {
-		b.logger.Error("could not overwrite commands", zap.Error(err))
+		b.logger.Error("could not overwrite commands", "error", err)
 		return err
 	}
 	for _, c := range created {
-		b.logger.Info("Created/updated command", zap.String("name", c.Name), zap.Uint8("type", uint8(c.Type)))
+		b.logger.Info("Created/updated command", "name", c.Name, "type", uint8(c.Type))
 	}
 	return nil
 }
@@ -75,4 +67,51 @@ func (b *Bot) IsOwner(userID string) bool {
 		}
 	}
 	return false
+}
+
+func readyHandler(logger mio.Logger) func(s *discordgo.Session, r *discordgo.Ready) {
+	return func(s *discordgo.Session, r *discordgo.Ready) {
+		logger.Info("Event: ready",
+			"shard", s.ShardID,
+			"user", r.User.String(),
+			"server count", len(r.Guilds),
+		)
+	}
+}
+
+func guildJoinHandler(logger mio.Logger) func(s *discordgo.Session, g *discordgo.GuildCreate) {
+	return func(s *discordgo.Session, g *discordgo.GuildCreate) {
+		_ = s.RequestGuildMembers(g.ID, "", 0, "", false)
+		logger.Info("Event: guild join",
+			"name", g.Guild.Name,
+			"member count", g.MemberCount,
+			"members available", len(g.Members),
+		)
+	}
+}
+
+func guildLeaveHandler(logger mio.Logger) func(s *discordgo.Session, g *discordgo.GuildDelete) {
+	return func(s *discordgo.Session, g *discordgo.GuildDelete) {
+		if !g.Unavailable {
+			return
+		}
+		logger.Info("Event: guild leave",
+			"id", g.ID,
+		)
+	}
+}
+
+func memberChunkHandler(logger mio.Logger) func(s *discordgo.Session, g *discordgo.GuildMembersChunk) {
+	return func(s *discordgo.Session, g *discordgo.GuildMembersChunk) {
+		if g.ChunkIndex == g.ChunkCount-1 {
+			// I don't know if this will work with several shards
+			guild, err := s.Guild(g.GuildID)
+			if err != nil {
+				return
+			}
+			logger.Info("Event: guild members chunk",
+				"name", guild.Name,
+			)
+		}
+	}
 }

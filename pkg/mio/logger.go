@@ -1,6 +1,7 @@
 package mio
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -66,15 +67,24 @@ func (l *logger) log(level warnLevel, msg string, pairs ...interface{}) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 
-	var fields string
+	fields := make(map[string]interface{})
 	for i := 0; i < len(pairs); i += 2 {
 		if i+1 < len(pairs) {
-			fields += fmt.Sprintf("%v: %v ", pairs[i], pairs[i+1])
+			fields[pairs[i].(string)] = pairs[i+1]
 		}
 	}
 
-	text := fmt.Sprintf("%s\t%s\t%s\n", textFromWarnLevel(level), msg, fields)
-	_, err := l.Out.Write([]byte(text))
+	b, err := json.Marshal(fields)
+	if err != nil {
+		fmt.Println("Error marshalling fields: ", err)
+	}
+
+	text := fmt.Sprintf("%s\t%s\n", textFromWarnLevel(level), msg)
+	if len(pairs) > 0 {
+		text = fmt.Sprintf("%s\t%s\t%s\n", textFromWarnLevel(level), msg, string(b))
+	}
+
+	_, err = l.Out.Write([]byte(text))
 	if err != nil {
 		fmt.Println("Error writing to log: ", err)
 	}

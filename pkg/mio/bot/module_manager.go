@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"go.uber.org/zap"
 )
 
 type ModuleManager struct {
@@ -23,11 +22,11 @@ func NewModuleManager(logger mio.Logger) *ModuleManager {
 func (m *ModuleManager) RegisterModule(mod Module) {
 	err := mod.Hook()
 	if err != nil {
-		m.logger.Error("Failed to register module", zap.String("module", mod.Name()), zap.Error(err))
+		m.logger.Error("Failed to register module", "module", mod.Name(), "error", err)
 		return
 	}
 	m.Modules[mod.Name()] = mod
-	m.logger.Info("Registered module", zap.String("name", mod.Name()))
+	m.logger.Info("Registered module", "name", mod.Name())
 }
 
 func (m *ModuleManager) FindModule(name string) (Module, error) {

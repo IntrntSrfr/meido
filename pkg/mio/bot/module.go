@@ -10,7 +10,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	"go.uber.org/zap"
 )
 
 // Module is a collection of interactivity which can be plugged
@@ -210,7 +209,7 @@ func (m *ModuleBase) handlePassive(pas *ModulePassive, msg *discord.DiscordMessa
 func (m *ModuleBase) recoverPassive(pas *ModulePassive, msg *discord.DiscordMessage) {
 	if r := recover(); r != nil {
 		m.Bot.Emit(BotEventPassivePanicked, &PassivePanicked{pas, msg, r})
-		m.Logger.Error("Panic", zap.Any("reason", r), zap.Any("message", msg))
+		m.Logger.Error("Panic", "reason", r, "message", msg)
 	}
 }
 
@@ -344,7 +343,7 @@ func (m *ModuleBase) registerCommand(cmd *ModuleCommand) error {
 		return fmt.Errorf("command '%v' already exists in %v", cmd.Name, m.Name())
 	}
 	m.commands[cmd.Name] = cmd
-	m.Logger.Info("Registered command", zap.String("name", cmd.Name))
+	m.Logger.Info("Registered command", "name", cmd.Name)
 	return nil
 }
 
@@ -402,7 +401,7 @@ func (m *ModuleBase) registerPassive(pas *ModulePassive) error {
 		return fmt.Errorf("passive '%v' already exists in %v", pas.Name, m.Name())
 	}
 	m.passives[pas.Name] = pas
-	m.Logger.Info("Registered passive", zap.String("name", pas.Name))
+	m.Logger.Info("Registered passive", "name", pas.Name)
 	return nil
 }
 
@@ -436,7 +435,7 @@ func (m *ModuleBase) registerApplicationCommand(command *ModuleApplicationComman
 	}
 	m.applicationCommands[command.Name] = command
 	m.applicationCommandStructs = append(m.applicationCommandStructs, command.ApplicationCommand)
-	m.Logger.Info("Registered application command", zap.String("name", command.Name))
+	m.Logger.Info("Registered application command", "name", command.Name)
 	return nil
 }
 
@@ -473,7 +472,7 @@ func (m *ModuleBase) registerMessageComponent(component *ModuleMessageComponent)
 		return fmt.Errorf("message component '%v' already exists in %v", component.Name, m.Name())
 	}
 	m.messageComponents[component.Name] = component
-	m.Logger.Info("Registered message component", zap.String("name", component.Name))
+	m.Logger.Info("Registered message component", "name", component.Name)
 	return nil
 }
 
@@ -518,7 +517,7 @@ func (m *ModuleBase) registerModalSubmit(component *ModuleModalSubmit) error {
 		return fmt.Errorf("modal submit '%v' already exists in %v", component.Name, m.Name())
 	}
 	m.modalSubmits[component.Name] = component
-	m.Logger.Info("Registered message component", zap.String("name", component.Name))
+	m.Logger.Info("Registered message component", "name", component.Name)
 	return nil
 }
 

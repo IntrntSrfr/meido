@@ -11,7 +11,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"go.uber.org/zap"
 )
 
 // Discord represents the part of the bot that deals with interaction with Discord.
@@ -134,7 +133,7 @@ func (d *Discord) createSessions() {
 		s.AddHandler(d.onInteractionCreate)
 
 		d.Sessions[i] = &SessionWrapper{s}
-		d.logger.Info("Added session", zap.Int("sessionID", i))
+		d.logger.Info("Added session", "sessionID", i)
 	}
 	d.Sess = d.Sessions[0]
 }
@@ -154,7 +153,7 @@ func (d *Discord) Close() {
 	for _, sess := range d.Sessions {
 		err := sess.Close()
 		if err != nil {
-			d.logger.Error("Failed to close session", zap.Int("shardID", sess.ShardID()), zap.Error(err))
+			d.logger.Error("Failed to close session", "shardID", sess.ShardID(), "error", err)
 		}
 	}
 	close(d.messageChan)
@@ -190,9 +189,9 @@ func discordgoLogger(logger mio.Logger) func(msgL, caller int, format string, a 
 func (d *Discord) botRecover(i interface{}) {
 	if r := recover(); r != nil {
 		d.logger.Warn("Recovery needed",
-			zap.Any("error", r),
-			zap.Any("message", i),
-			zap.String("stack trace", string(debug.Stack())),
+			"error", r,
+			"message", i,
+			"stack trace", string(debug.Stack()),
 		)
 	}
 }

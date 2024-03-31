@@ -34,6 +34,7 @@ func New(config *utils.Config, db database.DB) *Meido {
 	logger := newLogger("Meido")
 
 	b := bot.NewBotBuilder(config).
+		WithDefaultHandlers().
 		WithLogger(logger).
 		Build()
 
@@ -46,7 +47,6 @@ func New(config *utils.Config, db database.DB) *Meido {
 }
 
 func (m *Meido) Run(ctx context.Context, useDefHandlers bool) error {
-	m.Bot.UseDefaultHandlers()
 	go m.listenMioEvents(ctx)
 	m.registerModules()
 	m.registerDiscordHandlers()
