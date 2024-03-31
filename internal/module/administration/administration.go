@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
-	"go.uber.org/zap"
 )
 
 type module struct {
@@ -19,7 +19,7 @@ type module struct {
 	dmLogChannels []string
 }
 
-func New(b *bot.Bot, logger *zap.Logger) bot.Module {
+func New(b *bot.Bot, logger mio.Logger) bot.Module {
 	logger = logger.Named("Administration")
 	return &module{
 		ModuleBase:    bot.NewModule(b, "Administration", logger),

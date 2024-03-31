@@ -3,20 +3,20 @@ package bot
 import (
 	"context"
 
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/mio/utils"
-	"go.uber.org/zap"
 )
 
 type EventHandler struct {
 	discord   *discord.Discord
 	modules   *ModuleManager
 	callbacks *utils.CallbackManager
-	logger    *zap.Logger
+	logger    mio.Logger
 	emitter   *EventEmitter
 }
 
-func NewEventHandler(d *discord.Discord, m *ModuleManager, c *utils.CallbackManager, emit *EventEmitter, logger *zap.Logger) *EventHandler {
+func NewEventHandler(d *discord.Discord, m *ModuleManager, c *utils.CallbackManager, emit *EventEmitter, logger mio.Logger) *EventHandler {
 	return &EventHandler{
 		discord:   d,
 		modules:   m,

@@ -3,12 +3,14 @@ package discord
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord/mocks"
 	"github.com/intrntsrfr/meido/pkg/mio/test"
 	"github.com/intrntsrfr/meido/pkg/utils"
@@ -76,7 +78,7 @@ func TestDiscord_Close(t *testing.T) {
 	sess.CloseShouldFail = true
 
 	logBuf := bytes.Buffer{}
-	d := NewTestDiscord(nil, sess, test.NewTestLoggerWithBuffer(&logBuf))
+	d := NewTestDiscord(nil, sess, mio.NewLogger(&logBuf))
 	d.Close()
 
 	expected := "Failed to close session"
@@ -104,7 +106,7 @@ func expectNoMessage(ch chan *DiscordMessage) error {
 }
 
 func TestDiscord_onMessageCreate(t *testing.T) {
-	d := NewDiscord("asdf", 1, test.NewTestLogger())
+	d := NewDiscord("asdf", 1, mio.NewLogger(io.Discard))
 
 	t.Run("empty message does not go through", func(t *testing.T) {
 		d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{})
@@ -151,7 +153,7 @@ func TestDiscord_onMessageCreate(t *testing.T) {
 }
 
 func TestDiscord_onMessageUpdate(t *testing.T) {
-	d := NewDiscord("asdf", 1, test.NewTestLogger())
+	d := NewDiscord("asdf", 1, mio.NewDefaultLogger())
 
 	t.Run("empty message does not go through", func(t *testing.T) {
 		d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{})
@@ -198,7 +200,7 @@ func TestDiscord_onMessageUpdate(t *testing.T) {
 }
 
 func TestDiscord_onMessageDelete(t *testing.T) {
-	d := NewDiscord("asdf", 1, test.NewTestLogger())
+	d := NewDiscord("asdf", 1, mio.NewLogger(io.Discard))
 
 	t.Run("empty message goes through", func(t *testing.T) {
 		d.onMessageDelete(&discordgo.Session{}, &discordgo.MessageDelete{})

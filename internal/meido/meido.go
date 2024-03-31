@@ -17,38 +17,32 @@ import (
 	"github.com/intrntsrfr/meido/internal/module/search"
 	"github.com/intrntsrfr/meido/internal/module/testing"
 	"github.com/intrntsrfr/meido/internal/module/utility"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
 
 type Meido struct {
 	Bot    *bot.Bot
 	db     database.DB
-	logger *zap.Logger
+	logger mio.Logger
 	config *utils.Config
 }
 
 func New(config *utils.Config, db database.DB) *Meido {
-	logger := newLogger().Named("Meido")
+	logger := newLogger("Meido")
+
+	b := bot.NewBotBuilder(config).
+		WithLogger(logger).
+		Build()
+
 	return &Meido{
-		Bot:    bot.NewBotBuilder(config, logger).Build(),
+		Bot:    b,
 		db:     db,
 		logger: logger,
 		config: config,
 	}
-}
-
-func newLogger() *zap.Logger {
-	cfg := zap.NewProductionConfig()
-	cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	cfg.EncoderConfig.CallerKey = ""
-	cfg.EncoderConfig.NameKey = ""
-	cfg.EncoderConfig.EncodeTime = zapcore.EpochNanosTimeEncoder
-	cfg.Encoding = "console"
-	logger, _ := cfg.Build()
-	return logger
 }
 
 func (m *Meido) Run(ctx context.Context, useDefHandlers bool) error {

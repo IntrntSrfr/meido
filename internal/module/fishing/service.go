@@ -6,13 +6,14 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
 )
 
 type fishingService struct {
 	db     IAquariumDB
 	rng    *rand.Rand
-	logger *zap.Logger
+	logger mio.Logger
 
 	creatures         []*Creature
 	rarities          []*CreatureRarity
@@ -24,7 +25,7 @@ type creatureWithCaption struct {
 	caption string
 }
 
-func newFishingService(db IAquariumDB, logger *zap.Logger) (*fishingService, error) {
+func newFishingService(db IAquariumDB, logger mio.Logger) (*fishingService, error) {
 	logger = logger.Named("Service")
 	s := &fishingService{
 		db:     db,

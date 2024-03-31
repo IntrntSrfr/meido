@@ -9,6 +9,7 @@ import (
 
 	"github.com/g4s8/hexcolor"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
@@ -24,7 +25,7 @@ type module struct {
 	db ICustomRoleDB
 }
 
-func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
+func New(b *bot.Bot, db database.DB, logger mio.Logger) bot.Module {
 	logger = logger.Named("CustomRole")
 	return &module{
 		ModuleBase: bot.NewModule(b, "CustomRole", logger),

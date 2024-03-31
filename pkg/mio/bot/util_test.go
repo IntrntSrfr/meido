@@ -5,13 +5,13 @@ import (
 	"errors"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/mio/test"
-	"go.uber.org/zap"
 )
 
 func NewTestBot() *Bot {
-	bot := NewBotBuilder(test.NewTestConfig(), test.NewTestLogger()).
+	bot := NewBotBuilder(test.NewTestConfig()).
 		WithDiscord(discord.NewTestDiscord(nil, nil, nil)).
 		Build()
 	bot.UseDefaultHandlers()
@@ -28,7 +28,7 @@ func drainBotEvents(ctx context.Context, events chan *BotEventData) {
 	}
 }
 
-func NewTestModule(bot *Bot, name string, log *zap.Logger) *testModule {
+func NewTestModule(bot *Bot, name string, log mio.Logger) *testModule {
 	return &testModule{ModuleBase: *NewModule(bot, name, log)}
 }
 

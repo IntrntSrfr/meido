@@ -10,16 +10,16 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	"go.uber.org/zap"
 )
 
 type module struct {
 	*bot.ModuleBase
 }
 
-func New(b *bot.Bot, logger *zap.Logger) bot.Module {
+func New(b *bot.Bot, logger mio.Logger) bot.Module {
 	logger = logger.Named("MediaTransform")
 	return &module{
 		ModuleBase: bot.NewModule(b, "MediaTransform", logger),

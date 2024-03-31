@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	"github.com/intrntsrfr/meido/pkg/mio/test"
 )
 
 func TestNewModule(t *testing.T) {
 	want := "testing"
-	base := NewModule(nil, "testing", test.NewTestLogger())
+	base := NewModule(nil, "testing", mio.NewDiscardLogger())
 	if got := base.Name(); got != want {
 		t.Errorf("ModuleBase.New() did not produce correct name; got = %v, want %v", got, want)
 	}
@@ -22,7 +22,7 @@ func TestNewModule(t *testing.T) {
 
 func TestModuleBase_Name(t *testing.T) {
 	want := "testing"
-	base := NewModule(nil, "testing", test.NewTestLogger())
+	base := NewModule(nil, "testing", mio.NewDiscardLogger())
 	if got := base.Name(); got != "testing" {
 		t.Errorf("ModuleBase.Name() = %v, want %v", got, want)
 	}
@@ -30,7 +30,7 @@ func TestModuleBase_Name(t *testing.T) {
 
 func TestModuleBase_Passives(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", test.NewTestLogger())
+	base := NewModule(nil, "testing", mio.NewDiscardLogger())
 	base.RegisterPassives(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
@@ -39,7 +39,7 @@ func TestModuleBase_Passives(t *testing.T) {
 
 func TestModuleBase_Commands(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", test.NewTestLogger())
+	base := NewModule(nil, "testing", mio.NewDiscardLogger())
 	base.RegisterCommands(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
@@ -64,7 +64,7 @@ func TestModuleBase_AllowDMs(t *testing.T) {
 
 func TestModuleBase_RegisterPassives(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", test.NewTestLogger())
+	base := NewModule(nil, "testing", mio.NewDiscardLogger())
 	base.RegisterPassives(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
@@ -76,7 +76,7 @@ func TestModuleBase_RegisterPassives(t *testing.T) {
 
 func TestModuleBase_RegisterCommands(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", test.NewTestLogger())
+	base := NewModule(nil, "testing", mio.NewDiscardLogger())
 	base.RegisterCommands(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
@@ -87,7 +87,7 @@ func TestModuleBase_RegisterCommands(t *testing.T) {
 }
 
 func TestModuleBase_FindCommand(t *testing.T) {
-	base := NewModule(nil, "testing", test.NewTestLogger())
+	base := NewModule(nil, "testing", mio.NewDiscardLogger())
 	cmd := &ModuleCommand{
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
@@ -148,7 +148,7 @@ func TestModuleBase_FindCommand(t *testing.T) {
 }
 
 func TestModuleBase_FindPassive(t *testing.T) {
-	base := NewModule(nil, "testing", test.NewTestLogger())
+	base := NewModule(nil, "testing", mio.NewDiscardLogger())
 	cmd := &ModulePassive{
 		Name: "test",
 	}
@@ -201,7 +201,7 @@ func TestModuleBase_FindPassive(t *testing.T) {
 }
 
 func TestModuleBase_AllowsMessage(t *testing.T) {
-	m := NewModule(nil, "testing", test.NewTestLogger())
+	m := NewModule(nil, "testing", mio.NewDiscardLogger())
 	msg := &discord.DiscordMessage{
 		Message:     &discordgo.Message{Type: discordgo.MessageTypeDefault, GuildID: ""},
 		MessageType: discord.MessageTypeCreate,
@@ -247,7 +247,7 @@ func TestModuleBase_HandleCommand(t *testing.T) {
 
 		bot := NewTestBot()
 		go drainBotEvents(ctx, bot.Events())
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestCommand(mod)
 		cmd.Execute = func(dm *discord.DiscordMessage) {
@@ -266,7 +266,7 @@ func TestModuleBase_HandleCommand(t *testing.T) {
 
 	t.Run("panic gets handled", func(t *testing.T) {
 		bot := NewTestBot()
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmd := NewTestCommand(mod)
 		cmd.Execute = func(dm *discord.DiscordMessage) {
 			panic("command panic")
@@ -284,7 +284,7 @@ func TestModuleBase_HandleCommand(t *testing.T) {
 
 	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
 		bot := NewTestBot()
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestCommand(mod)
 		cmd.Execute = func(dm *discord.DiscordMessage) {
@@ -309,7 +309,7 @@ func TestModuleBase_HandlePassive(t *testing.T) {
 
 		bot := NewTestBot()
 		go drainBotEvents(ctx, bot.Events())
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		pasCalled := make(chan bool, 1)
 		pas := NewTestPassive(mod)
 		pas.Execute = func(dm *discord.DiscordMessage) {
@@ -328,7 +328,7 @@ func TestModuleBase_HandlePassive(t *testing.T) {
 
 	t.Run("panic gets handled", func(t *testing.T) {
 		bot := NewTestBot()
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		pas := NewTestPassive(mod)
 		pas.Execute = func(dm *discord.DiscordMessage) {
 			panic("passive panic")
@@ -346,7 +346,7 @@ func TestModuleBase_HandlePassive(t *testing.T) {
 
 	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
 		bot := NewTestBot()
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		pasCalled := make(chan bool, 1)
 		pas := NewTestPassive(mod)
 		pas.Execute = func(dm *discord.DiscordMessage) {
@@ -371,7 +371,7 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 
 		bot := NewTestBot()
 		go drainBotEvents(ctx, bot.Events())
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestApplicationCommand(mod)
 		cmd.Execute = func(*discord.DiscordApplicationCommand) {
@@ -390,7 +390,7 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 
 	t.Run("panic gets handled", func(t *testing.T) {
 		bot := NewTestBot()
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmd := NewTestApplicationCommand(mod)
 		cmd.Execute = func(*discord.DiscordApplicationCommand) {
 			panic("application command panic")
@@ -414,7 +414,7 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 
 		bot := NewTestBot()
 		go drainBotEvents(ctx, bot.Events())
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestMessageComponent(mod)
 		cmd.Execute = func(*discord.DiscordMessageComponent) {
@@ -439,7 +439,7 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 
 		bot := NewTestBot()
 		go drainBotEvents(ctx, bot.Events())
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestMessageComponent(mod)
 		cmd.Execute = func(*discord.DiscordMessageComponent) {
@@ -462,7 +462,7 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 
 		bot := NewTestBot()
 		go drainBotEvents(ctx, bot.Events())
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestMessageComponent(mod)
 		cmd.Execute = func(*discord.DiscordMessageComponent) {
@@ -482,7 +482,7 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 
 	t.Run("panic gets handled", func(t *testing.T) {
 		bot := NewTestBot()
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmd := NewTestMessageComponent(mod)
 		cmd.Execute = func(*discord.DiscordMessageComponent) {
 			panic("message component panic")
@@ -508,7 +508,7 @@ func TestModuleBase_HandleModalSubmit(t *testing.T) {
 
 		bot := NewTestBot()
 		go drainBotEvents(ctx, bot.Events())
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestModalSubmit(mod)
 		cmd.Execute = func(*discord.DiscordModalSubmit) {
@@ -529,7 +529,7 @@ func TestModuleBase_HandleModalSubmit(t *testing.T) {
 
 	t.Run("panic gets handled", func(t *testing.T) {
 		bot := NewTestBot()
-		mod := NewTestModule(bot, "testing", test.NewTestLogger())
+		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmd := NewTestModalSubmit(mod)
 		cmd.Execute = func(*discord.DiscordModalSubmit) {
 			panic("modal submit panic")

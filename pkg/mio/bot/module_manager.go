@@ -3,15 +3,16 @@ package bot
 import (
 	"strings"
 
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
 )
 
 type ModuleManager struct {
 	Modules map[string]Module
-	logger  *zap.Logger
+	logger  mio.Logger
 }
 
-func NewModuleManager(logger *zap.Logger) *ModuleManager {
+func NewModuleManager(logger mio.Logger) *ModuleManager {
 	logger = logger.Named("ModuleManager")
 	return &ModuleManager{
 		Modules: make(map[string]Module),

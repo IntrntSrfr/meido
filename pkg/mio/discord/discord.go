@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
 )
 
@@ -22,7 +23,7 @@ type Discord struct {
 
 	messageChan     chan *DiscordMessage
 	interactionChan chan *DiscordInteraction
-	logger          *zap.Logger
+	logger          mio.Logger
 }
 
 type DiscordSession interface {
@@ -100,7 +101,7 @@ func (s *SessionWrapper) Real() *discordgo.Session {
 }
 
 // NewDiscord takes in a token and creates a Discord object.
-func NewDiscord(token string, shards int, logger *zap.Logger) *Discord {
+func NewDiscord(token string, shards int, logger mio.Logger) *Discord {
 	logger = logger.Named("Discord")
 	d := &Discord{
 		token:           token,
@@ -168,7 +169,7 @@ func (d *Discord) Interactions() chan *DiscordInteraction {
 	return d.interactionChan
 }
 
-func discordgoLogger(logger *zap.Logger) func(msgL, caller int, format string, a ...interface{}) {
+func discordgoLogger(logger mio.Logger) func(msgL, caller int, format string, a ...interface{}) {
 	logger = logger.Named("DiscordGo")
 	return func(msgL, caller int, format string, a ...interface{}) {
 		msg := fmt.Sprintf(format, a...)

@@ -9,10 +9,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/intrntsrfr/meido/internal/module/search/service"
 	iutils "github.com/intrntsrfr/meido/internal/utils"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
-	"go.uber.org/zap"
 )
 
 type module struct {
@@ -25,7 +25,7 @@ const (
 	imageSearchHandler string = "image_search"
 )
 
-func New(b *bot.Bot, logger *zap.Logger) bot.Module {
+func New(b *bot.Bot, logger mio.Logger) bot.Module {
 	logger = logger.Named("Search")
 	return &module{
 		ModuleBase: bot.NewModule(b, "Search", logger),

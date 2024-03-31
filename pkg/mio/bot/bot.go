@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	mutils "github.com/intrntsrfr/meido/pkg/mio/utils"
 	"github.com/intrntsrfr/meido/pkg/utils"
@@ -22,7 +23,7 @@ type Bot struct {
 	Cooldowns    *mutils.CooldownManager
 	*EventEmitter
 
-	Logger *zap.Logger
+	Logger mio.Logger
 }
 
 func (b *Bot) UseDefaultHandlers() {

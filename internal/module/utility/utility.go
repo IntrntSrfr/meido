@@ -15,11 +15,11 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/g4s8/hexcolor"
 	"github.com/intrntsrfr/meido/internal/database"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
-	"go.uber.org/zap"
 )
 
 type module struct {
@@ -28,7 +28,7 @@ type module struct {
 	startTime time.Time
 }
 
-func New(b *bot.Bot, db database.DB, logger *zap.Logger) bot.Module {
+func New(b *bot.Bot, db database.DB, logger mio.Logger) bot.Module {
 	logger = logger.Named("Utility")
 	return &module{
 		ModuleBase: bot.NewModule(b, "Utility", logger),

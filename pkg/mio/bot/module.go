@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"go.uber.org/zap"
 )
@@ -91,7 +92,7 @@ var (
 type ModuleBase struct {
 	sync.Mutex
 	Bot          *Bot
-	Logger       *zap.Logger
+	Logger       mio.Logger
 	name         string
 	allowedTypes discord.MessageType
 	allowDMs     bool
@@ -108,7 +109,7 @@ type ModuleBase struct {
 	applicationCommandStructs []*discordgo.ApplicationCommand
 }
 
-func NewModule(bot *Bot, name string, logger *zap.Logger) *ModuleBase {
+func NewModule(bot *Bot, name string, logger mio.Logger) *ModuleBase {
 	return &ModuleBase{
 		Bot:                       bot,
 		Logger:                    logger,

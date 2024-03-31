@@ -1,13 +1,15 @@
 package discord
 
 import (
+	"io"
+
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord/mocks"
 	"github.com/intrntsrfr/meido/pkg/mio/test"
 	"github.com/intrntsrfr/meido/pkg/utils"
-	"go.uber.org/zap"
 )
 
-func NewTestDiscord(conf *utils.Config, sess DiscordSession, logger *zap.Logger) *Discord {
+func NewTestDiscord(conf *utils.Config, sess DiscordSession, logger mio.Logger) *Discord {
 	if conf == nil {
 		conf = test.NewTestConfig()
 	}
@@ -15,7 +17,7 @@ func NewTestDiscord(conf *utils.Config, sess DiscordSession, logger *zap.Logger)
 		sess = mocks.NewDiscordSession(conf.GetString("token"), conf.GetInt("shards"))
 	}
 	if logger == nil {
-		logger = test.NewTestLogger()
+		logger = mio.NewLogger(io.Discard)
 	}
 	d := NewDiscord(conf.GetString("token"), conf.GetInt("shards"), logger)
 	d.Sess = sess

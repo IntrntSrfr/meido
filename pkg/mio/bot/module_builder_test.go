@@ -5,14 +5,14 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	"github.com/intrntsrfr/meido/pkg/mio/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestModuleCommandBuilder(t *testing.T) {
-	mod := NewTestModule(nil, "test", test.NewTestLogger())
+	mod := NewTestModule(nil, "test", mio.NewDiscardLogger())
 
 	t.Run("NewModuleCommandBuilder", func(t *testing.T) {
 		name := "testCommand"
@@ -97,7 +97,7 @@ func TestModuleCommandBuilder(t *testing.T) {
 }
 
 func TestModulePassiveBuilder(t *testing.T) {
-	mod := NewTestModule(nil, "test", test.NewTestLogger())
+	mod := NewTestModule(nil, "test", mio.NewDiscardLogger())
 
 	t.Run("NewModulePassiveBuilder", func(t *testing.T) {
 		name := "testPassive"
@@ -157,7 +157,7 @@ func TestModulePassiveBuilder(t *testing.T) {
 }
 
 func TestModuleApplicationCommandBuilder(t *testing.T) {
-	mod := NewTestModule(nil, "test", test.NewTestLogger())
+	mod := NewTestModule(nil, "test", mio.NewDiscardLogger())
 
 	t.Run("NewModuleApplicationCommandBuilder", func(t *testing.T) {
 		name := "testCommand"

@@ -3,16 +3,16 @@ package bot
 import (
 	"testing"
 
-	"github.com/intrntsrfr/meido/pkg/mio/test"
+	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
 func TestModuleManager(t *testing.T) {
-	mngr := NewModuleManager(test.NewTestLogger())
+	mngr := NewModuleManager(mio.NewDiscardLogger())
 
 	if _, err := mngr.FindModule("test"); err == nil {
 		t.Errorf("ModuleManager.FindModule() not returning error when not finding a module")
 	}
-	mod := NewTestModule(nil, "test", test.NewTestLogger())
+	mod := NewTestModule(nil, "test", mio.NewDiscardLogger())
 	mngr.RegisterModule(mod)
 	if _, err := mngr.FindModule("test"); err != nil {
 		t.Errorf("ModuleManager.FindModule() returning error when finding a module")
@@ -36,8 +36,8 @@ func TestModuleManager(t *testing.T) {
 }
 
 func TestModuleManager_FailedHook(t *testing.T) {
-	mngr := NewModuleManager(test.NewTestLogger())
-	mod := NewTestModule(nil, "test", test.NewTestLogger())
+	mngr := NewModuleManager(mio.NewDiscardLogger())
+	mod := NewTestModule(nil, "test", mio.NewDiscardLogger())
 	mod.hookShouldFail = true
 
 	mngr.RegisterModule(mod)

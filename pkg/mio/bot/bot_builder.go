@@ -1,10 +1,10 @@
 package bot
 
 import (
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	mutils "github.com/intrntsrfr/meido/pkg/mio/utils"
 	"github.com/intrntsrfr/meido/pkg/utils"
-	"go.uber.org/zap"
 )
 
 type BotBuilder struct {
@@ -16,20 +16,23 @@ type BotBuilder struct {
 	eventEmitter *EventEmitter
 
 	config *utils.Config
-	logger *zap.Logger
+	logger mio.Logger
 }
 
-func NewBotBuilder(config *utils.Config, logger *zap.Logger) *BotBuilder {
-	logger = logger.Named("Mio")
-
+func NewBotBuilder(config *utils.Config) *BotBuilder {
 	return &BotBuilder{
 		config: config,
-		logger: logger,
+		logger: mio.NewDefaultLogger().Named("Mio"),
 	}
 }
 
 func (b *BotBuilder) WithDiscord(d *discord.Discord) *BotBuilder {
 	b.discord = d
+	return b
+}
+
+func (b *BotBuilder) WithLogger(log mio.Logger) *BotBuilder {
+	b.logger = log
 	return b
 }
 
