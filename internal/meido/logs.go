@@ -1,7 +1,6 @@
 package meido
 
 import (
-	"context"
 	"strings"
 	"time"
 
@@ -10,45 +9,65 @@ import (
 	"go.uber.org/zap"
 )
 
-func (m *Meido) listenMioEvents(ctx context.Context) {
-	for {
-		select {
-		case evt := <-m.Bot.Events():
-			switch evt.Type {
-			case bot.BotEventCommandRan:
-				m.logCommand(evt.Data.(*bot.CommandRan))
-				m.logCommandRan(evt.Data.(*bot.CommandRan))
-				m.countProcessedEvent(bot.BotEventCommandRan.String())
-			case bot.BotEventCommandPanicked:
-				m.logCommandPanicked(evt.Data.(*bot.CommandPanicked))
-			case bot.BotEventPassiveRan:
-				m.logPassiveRan(evt.Data.(*bot.PassiveRan))
-			case bot.BotEventPassivePanicked:
-				m.logPassivePanicked(evt.Data.(*bot.PassivePanicked))
-			case bot.BotEventApplicationCommandRan:
-				m.logApplicationCommandRan(evt.Data.(*bot.ApplicationCommandRan))
-				m.countProcessedEvent(bot.BotEventApplicationCommandRan.String())
-			case bot.BotEventApplicationCommandPanicked:
-				m.logApplicationCommandPanicked(evt.Data.(*bot.ApplicationCommandPanicked))
-			case bot.BotEventMessageComponentRan:
-				m.logMessageComponentRan(evt.Data.(*bot.MessageComponentRan))
-				m.countProcessedEvent(bot.BotEventMessageComponentRan.String())
-			case bot.BotEventMessageComponentPanicked:
-				m.logMessageComponentPanicked(evt.Data.(*bot.MessageComponentPanicked))
-			case bot.BotEventModalSubmitRan:
-				m.logModalSubmitRan(evt.Data.(*bot.ModalSubmitRan))
-				m.countProcessedEvent(bot.BotEventModalSubmitRan.String())
-			case bot.BotEventModalSubmitPanicked:
-				m.logModalSubmitPanicked(evt.Data.(*bot.ModalSubmitPanicked))
-			case bot.BotEventMessageProcessed:
-				m.countProcessedEvent(bot.BotEventMessageProcessed.String())
-			case bot.BotEventInteractionProcessed:
-				m.countProcessedEvent(bot.BotEventInteractionProcessed.String())
-			}
-		case <-ctx.Done():
-			return
-		}
-	}
+func (m *Meido) addHandlers() {
+	m.Bot.AddHandler(func(evt *bot.CommandRan) {
+		m.logCommand(evt)
+		m.logCommandRan(evt)
+		m.countProcessedEvent(bot.BotEventCommandRan.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.CommandPanicked) {
+		m.logCommandPanicked(evt)
+		m.countProcessedEvent(bot.BotEventCommandPanicked.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.PassiveRan) {
+		m.logPassiveRan(evt)
+		m.countProcessedEvent(bot.BotEventPassiveRan.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.PassivePanicked) {
+		m.logPassivePanicked(evt)
+		m.countProcessedEvent(bot.BotEventPassivePanicked.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.ApplicationCommandRan) {
+		m.logApplicationCommandRan(evt)
+		m.countProcessedEvent(bot.BotEventApplicationCommandRan.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.ApplicationCommandPanicked) {
+		m.logApplicationCommandPanicked(evt)
+		m.countProcessedEvent(bot.BotEventApplicationCommandPanicked.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.MessageComponentRan) {
+		m.logMessageComponentRan(evt)
+		m.countProcessedEvent(bot.BotEventMessageComponentRan.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.MessageComponentPanicked) {
+		m.logMessageComponentPanicked(evt)
+		m.countProcessedEvent(bot.BotEventMessageComponentPanicked.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.ModalSubmitRan) {
+		m.logModalSubmitRan(evt)
+		m.countProcessedEvent(bot.BotEventModalSubmitRan.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.ModalSubmitPanicked) {
+		m.logModalSubmitPanicked(evt)
+		m.countProcessedEvent(bot.BotEventModalSubmitPanicked.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.MessageProcessed) {
+		m.countProcessedEvent(bot.BotEventMessageProcessed.String())
+	})
+
+	m.Bot.AddHandler(func(evt *bot.InteractionProcessed) {
+		m.countProcessedEvent(bot.BotEventInteractionProcessed.String())
+	})
 }
 
 func (m *Meido) countProcessedEvent(eventType string) {

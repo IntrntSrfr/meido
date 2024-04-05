@@ -18,7 +18,9 @@ func TestBot_IsOwner(t *testing.T) {
 	conf := test.NewTestConfig()
 	conf.Set("owner_ids", []string{"123"})
 
-	b := NewBotBuilder(conf).Build()
+	b := NewBotBuilder(conf).
+		WithLogger(mio.NewDiscardLogger()).
+		Build()
 	if ok := b.IsOwner("123"); !ok {
 		t.Errorf("Bot.IsOwner('123') = %v, want %v", ok, true)
 	}
@@ -29,35 +31,12 @@ func TestBot_IsOwner(t *testing.T) {
 }
 
 func TestBot_RegisterModule(t *testing.T) {
-	bot := NewBotBuilder(test.NewTestConfig()).Build()
+	bot := NewBotBuilder(test.NewTestConfig()).
+		WithLogger(mio.NewDiscardLogger()).
+		Build()
 	bot.RegisterModule(NewTestModule(bot, "test", mio.NewDiscardLogger()))
 	if len(bot.Modules) != 1 {
 		t.Errorf("Bot does not have a module after registering one")
-	}
-}
-
-func TestBot_Events(t *testing.T) {
-	bot := NewBotBuilder(test.NewTestConfig()).Build()
-	done := make(chan *BotEventData)
-	go func() {
-		select {
-		case evt := <-bot.Events():
-			done <- evt
-		case <-time.After(time.Second):
-			t.Errorf("Timed out ")
-		}
-	}()
-	bot.Emit(BotEventCommandRan, &CommandRan{Command: NewTestCommand(nil)})
-	data := <-done
-	if data.Type != BotEventCommandRan {
-		t.Errorf("Wrong event type; expected %v, got %v", BotEventCommandRan, data.Type)
-	}
-	got, ok := data.Data.(*CommandRan)
-	if !ok {
-		t.Error("Expected type cast to not fail.")
-	}
-	if got.Command.Name != "test" {
-		t.Errorf("Expected command name to be %v, got %v", "test", got.Command.Name)
 	}
 }
 
@@ -66,7 +45,9 @@ func TestBot_Run(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		bot := NewBotBuilder(test.NewTestConfig()).Build()
+		bot := NewBotBuilder(test.NewTestConfig()).
+			WithLogger(mio.NewDiscardLogger()).
+			Build()
 		sessionMock := mocks.NewDiscordSession("test", 1)
 		bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
 
@@ -145,7 +126,6 @@ func TestBot_MessageGetsHandled(t *testing.T) {
 	mod.RegisterCommands(cmd)
 	bot.RegisterModule(mod)
 	bot.Run(ctx)
-	go drainBotEvents(ctx, bot.Events())
 	bot.Discord.Messages() <- NewTestMessage(bot, "1")
 
 	select {
@@ -170,7 +150,6 @@ func TestBot_InteractionGetsHandled(t *testing.T) {
 	mod.RegisterApplicationCommands(cmd)
 	bot.RegisterModule(mod)
 	bot.Run(ctx)
-	go drainBotEvents(ctx, bot.Events())
 	bot.Discord.Interactions() <- NewTestApplicationCommandInteraction(bot, "1")
 
 	select {
@@ -181,49 +160,60 @@ func TestBot_InteractionGetsHandled(t *testing.T) {
 }
 
 func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	t.Run("Command", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
 
-	bot, _, _ := setupTestBot()
-	mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
-	mod.allowedTypes = discord.MessageTypeCreate | discord.MessageTypeUpdate
+		bot, _, _ := setupTestBot()
+		mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
+		mod.allowedTypes = discord.MessageTypeUpdate
 
-	pas := NewTestPassive(mod)
-	cmd := NewTestCommand(mod)
-	cmdCalled := make(chan bool)
-	cmd.Execute = func(dm *discord.DiscordMessage) {
-		cmdCalled <- true
-	}
-	pasCalled := make(chan bool)
-	pas.Execute = func(dm *discord.DiscordMessage) {
-		pasCalled <- true
-	}
-	mod.RegisterPassives(pas)
-	mod.RegisterCommands(cmd)
+		called := make(chan bool)
+		cmd := NewModuleCommandBuilder(mod, "test").
+			Triggers(".test").
+			AllowedTypes(discord.MessageTypeCreate).
+			Execute(func(dm *discord.DiscordMessage) {
+				called <- true
+			}).Build()
+		mod.RegisterCommands(cmd)
 
-	mod2 := NewTestModule(bot, "test2", mio.NewDiscardLogger())
-	pas2 := NewTestPassive(mod)
-	pas2Called := make(chan bool)
-	pas.Execute = func(dm *discord.DiscordMessage) {
-		pas2Called <- true
-	}
-	mod2.RegisterPassives(pas2)
+		bot.RegisterModule(mod)
+		bot.Run(ctx)
+		bot.Discord.Messages() <- NewTestMessage(bot, "1")
 
-	bot.RegisterModule(mod)
-	bot.RegisterModule(mod2)
-	bot.Run(ctx)
-	bot.Discord.Messages() <- NewTestMessage(bot, "1")
+		select {
+		case <-called:
+			t.Error("Command was not expected to be called")
+		case <-time.After(time.Millisecond * 50):
+		}
+	})
 
-	select {
-	case <-pasCalled:
-		t.Error("Passive was not expected to be called")
-	case <-cmdCalled:
-		t.Error("Command was not expected to be called")
-	case <-pas2Called:
-		t.Error("Passive2 was not expected to be called")
-	case <-time.After(time.Millisecond * 10):
-		break
-	}
+	t.Run("Passive", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+
+		bot, _, _ := setupTestBot()
+		mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
+		mod.allowedTypes = discord.MessageTypeUpdate
+
+		called := make(chan bool)
+		passive := NewModulePassiveBuilder(mod, "test").
+			AllowedTypes(discord.MessageTypeCreate).
+			Execute(func(dm *discord.DiscordMessage) {
+				called <- true
+			}).Build()
+		mod.RegisterPassives(passive)
+
+		bot.RegisterModule(mod)
+		bot.Run(ctx)
+		bot.Discord.Messages() <- NewTestMessage(bot, "1")
+
+		select {
+		case <-called:
+			t.Error("Passive was not expected to be called")
+		case <-time.After(time.Millisecond * 50):
+		}
+	})
 }
 
 func TestBot_MessageEmptyDoesNotTriggerCommand(t *testing.T) {
@@ -278,7 +268,6 @@ func TestBot_MessageGetsCallback(t *testing.T) {
 
 	bot.RegisterModule(mod)
 	bot.Run(ctx)
-	go drainBotEvents(ctx, bot.Events())
 
 	bot.Discord.Messages() <- &discord.DiscordMessage{
 		Sess:         bot.Discord.Sess,

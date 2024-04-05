@@ -20,7 +20,7 @@ type Bot struct {
 	EventHandler *EventHandler
 	Callbacks    *mutils.CallbackManager
 	Cooldowns    *mutils.CooldownManager
-	*EventEmitter
+	*mio.EventBus
 
 	Logger mio.Logger
 }

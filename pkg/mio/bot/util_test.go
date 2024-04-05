@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"context"
 	"errors"
 
 	"github.com/bwmarrin/discordgo"
@@ -14,18 +13,9 @@ func NewTestBot() *Bot {
 	bot := NewBotBuilder(test.NewTestConfig()).
 		WithDefaultHandlers().
 		WithDiscord(discord.NewTestDiscord(nil, nil, nil)).
+		WithLogger(mio.NewDiscardLogger()).
 		Build()
 	return bot
-}
-
-func drainBotEvents(ctx context.Context, events chan *BotEventData) {
-	for {
-		select {
-		case <-events:
-		case <-ctx.Done():
-			return
-		}
-	}
 }
 
 func NewTestModule(bot *Bot, name string, log mio.Logger) *testModule {

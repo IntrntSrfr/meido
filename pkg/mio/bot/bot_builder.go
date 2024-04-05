@@ -13,7 +13,7 @@ type BotBuilder struct {
 	callbacks    *mutils.CallbackManager
 	cooldowns    *mutils.CooldownManager
 	eventHandler *EventHandler
-	eventEmitter *EventEmitter
+	eventBus     *mio.EventBus
 
 	config *utils.Config
 	logger mio.Logger
@@ -56,11 +56,11 @@ func (b *BotBuilder) Build() *Bot {
 	if b.cooldowns == nil {
 		b.cooldowns = mutils.NewCooldownManager()
 	}
-	if b.eventEmitter == nil {
-		b.eventEmitter = NewEventEmitter()
+	if b.eventBus == nil {
+		b.eventBus = mio.NewEventBus()
 	}
 	if b.eventHandler == nil {
-		b.eventHandler = NewEventHandler(b.discord, b.modules, b.callbacks, b.eventEmitter, b.logger)
+		b.eventHandler = NewEventHandler(b.discord, b.modules, b.callbacks, b.eventBus, b.logger)
 	}
 	if b.useDefaultHandlers {
 		b.discord.AddEventHandler(readyHandler(b.logger))
@@ -75,7 +75,7 @@ func (b *BotBuilder) Build() *Bot {
 		Callbacks:     b.callbacks,
 		Cooldowns:     b.cooldowns,
 		EventHandler:  b.eventHandler,
-		EventEmitter:  b.eventEmitter,
+		EventBus:      b.eventBus,
 		Config:        b.config,
 		Logger:        b.logger,
 	}

@@ -1,9 +1,9 @@
 package bot
 
 import (
-	"context"
 	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -242,44 +242,36 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 
 func TestModuleBase_HandleCommand(t *testing.T) {
 	t.Run("it runs correctly", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		bot := NewTestBot()
-		go drainBotEvents(ctx, bot.Events())
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*CommandRan) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
-		cmdCalled := make(chan bool, 1)
 		cmd := NewTestCommand(mod)
-		cmd.Execute = func(dm *discord.DiscordMessage) {
-			cmdCalled <- true
-		}
 		mod.RegisterCommands(cmd)
-
 		msg := NewTestMessage(bot, "1")
 		mod.HandleMessage(msg)
-		select {
-		case <-cmdCalled:
-		case <-time.After(time.Millisecond * 50):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 
 	t.Run("panic gets handled", func(t *testing.T) {
 		bot := NewTestBot()
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*CommandPanicked) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmd := NewTestCommand(mod)
 		cmd.Execute = func(dm *discord.DiscordMessage) {
 			panic("command panic")
 		}
 		mod.RegisterCommands(cmd)
-
 		msg := NewTestMessage(bot, "1")
 		mod.HandleMessage(msg)
-		select {
-		case <-bot.eventCh:
-		case <-time.After(time.Millisecond * 50):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 
 	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
@@ -291,7 +283,6 @@ func TestModuleBase_HandleCommand(t *testing.T) {
 			cmdCalled <- true
 		}
 		mod.RegisterCommands(cmd)
-
 		msg := NewTestMessage(bot, "")
 		mod.HandleMessage(msg)
 		select {
@@ -304,44 +295,36 @@ func TestModuleBase_HandleCommand(t *testing.T) {
 
 func TestModuleBase_HandlePassive(t *testing.T) {
 	t.Run("it runs correctly", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		bot := NewTestBot()
-		go drainBotEvents(ctx, bot.Events())
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*PassiveRan) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
-		pasCalled := make(chan bool, 1)
 		pas := NewTestPassive(mod)
-		pas.Execute = func(dm *discord.DiscordMessage) {
-			pasCalled <- true
-		}
 		mod.RegisterPassives(pas)
-
 		msg := NewTestMessage(bot, "1")
 		mod.HandleMessage(msg)
-		select {
-		case <-pasCalled:
-		case <-time.After(time.Millisecond * 50):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 
 	t.Run("panic gets handled", func(t *testing.T) {
 		bot := NewTestBot()
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*PassivePanicked) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		pas := NewTestPassive(mod)
 		pas.Execute = func(dm *discord.DiscordMessage) {
 			panic("passive panic")
 		}
 		mod.RegisterPassives(pas)
-
 		msg := NewTestMessage(bot, "1")
 		mod.HandleMessage(msg)
-		select {
-		case <-bot.eventCh:
-		case <-time.After(time.Millisecond * 50):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 
 	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
@@ -353,7 +336,6 @@ func TestModuleBase_HandlePassive(t *testing.T) {
 			pasCalled <- true
 		}
 		mod.RegisterPassives(pas)
-
 		msg := NewTestMessage(bot, "")
 		mod.HandleMessage(msg)
 		select {
@@ -366,122 +348,95 @@ func TestModuleBase_HandlePassive(t *testing.T) {
 
 func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 	t.Run("it runs correctly", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		bot := NewTestBot()
-		go drainBotEvents(ctx, bot.Events())
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*ApplicationCommandRan) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
-		cmdCalled := make(chan bool, 1)
 		cmd := NewTestApplicationCommand(mod)
-		cmd.Execute = func(*discord.DiscordApplicationCommand) {
-			cmdCalled <- true
-		}
 		mod.RegisterApplicationCommands(cmd)
-
 		it := NewTestApplicationCommandInteraction(bot, "1")
 		mod.HandleInteraction(it)
-		select {
-		case <-cmdCalled:
-		case <-time.After(time.Millisecond * 50):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 
 	t.Run("panic gets handled", func(t *testing.T) {
 		bot := NewTestBot()
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*ApplicationCommandPanicked) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmd := NewTestApplicationCommand(mod)
 		cmd.Execute = func(*discord.DiscordApplicationCommand) {
 			panic("application command panic")
 		}
 		mod.RegisterApplicationCommands(cmd)
-
 		it := NewTestApplicationCommandInteraction(bot, "1")
 		mod.HandleInteraction(it)
-		select {
-		case <-bot.eventCh:
-		case <-time.After(time.Second):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 }
 
 func TestModuleBase_HandleMessageComponent(t *testing.T) {
 	t.Run("callback gets handled", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		bot := NewTestBot()
-		go drainBotEvents(ctx, bot.Events())
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*MessageComponentRan) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
-		cmdCalled := make(chan bool, 1)
 		cmd := NewTestMessageComponent(mod)
-		cmd.Execute = func(*discord.DiscordMessageComponent) {
-			cmdCalled <- true
-		}
 		mod.RegisterMessageComponents(cmd)
 		customID := "key"
 		mod.SetMessageComponentCallback(customID, "test")
-
 		it := NewTestMessageComponentInteraction(bot, "1", customID)
 		mod.HandleInteraction(it)
-		select {
-		case <-cmdCalled:
-		case <-time.After(time.Millisecond * 50):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 
 	t.Run("by name gets handled", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		bot := NewTestBot()
-		go drainBotEvents(ctx, bot.Events())
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*MessageComponentRan) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
-		cmdCalled := make(chan bool, 1)
 		cmd := NewTestMessageComponent(mod)
-		cmd.Execute = func(*discord.DiscordMessageComponent) {
-			cmdCalled <- true
-		}
 		mod.RegisterMessageComponents(cmd)
-
 		it := NewTestMessageComponentInteraction(bot, "1", "test")
 		mod.HandleInteraction(it)
-		select {
-		case <-cmdCalled:
-		case <-time.After(time.Millisecond * 50):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 
 	t.Run("with suffix gets handled", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		bot := NewTestBot()
-		go drainBotEvents(ctx, bot.Events())
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*MessageComponentRan) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
-		cmdCalled := make(chan bool, 1)
 		cmd := NewTestMessageComponent(mod)
-		cmd.Execute = func(*discord.DiscordMessageComponent) {
-			cmdCalled <- true
-		}
 		mod.RegisterMessageComponents(cmd)
 		customID := cmd.Name + ":key"
-
 		it := NewTestMessageComponentInteraction(bot, "1", customID)
 		mod.HandleInteraction(it)
-		select {
-		case <-cmdCalled:
-		case <-time.After(time.Millisecond * 50):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 
 	t.Run("panic gets handled", func(t *testing.T) {
 		bot := NewTestBot()
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*MessageComponentPanicked) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmd := NewTestMessageComponent(mod)
 		cmd.Execute = func(*discord.DiscordMessageComponent) {
@@ -490,45 +445,37 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 		mod.RegisterMessageComponents(cmd)
 		customID := "key"
 		mod.SetMessageComponentCallback(customID, "test")
-
 		it := NewTestMessageComponentInteraction(bot, "1", customID)
 		mod.HandleInteraction(it)
-		select {
-		case <-bot.eventCh:
-		case <-time.After(time.Second):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 }
 
 func TestModuleBase_HandleModalSubmit(t *testing.T) {
 	t.Run("it runs correctly", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-
 		bot := NewTestBot()
-		go drainBotEvents(ctx, bot.Events())
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*ModalSubmitRan) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
-		cmdCalled := make(chan bool, 1)
 		cmd := NewTestModalSubmit(mod)
-		cmd.Execute = func(*discord.DiscordModalSubmit) {
-			cmdCalled <- true
-		}
 		mod.RegisterModalSubmits(cmd)
 		customID := "key"
 		mod.SetModalSubmitCallback(customID, "test")
-
 		it := NewTestModalSubmitInteraction(bot, "1", customID)
 		mod.HandleInteraction(it)
-		select {
-		case <-cmdCalled:
-		case <-time.After(time.Millisecond * 50):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 
 	t.Run("panic gets handled", func(t *testing.T) {
 		bot := NewTestBot()
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		bot.AddHandler(func(*ModalSubmitPanicked) {
+			wg.Done()
+		})
 		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
 		cmd := NewTestModalSubmit(mod)
 		cmd.Execute = func(*discord.DiscordModalSubmit) {
@@ -537,14 +484,9 @@ func TestModuleBase_HandleModalSubmit(t *testing.T) {
 		mod.RegisterModalSubmits(cmd)
 		customID := "key"
 		mod.SetModalSubmitCallback(customID, "test")
-
 		it := NewTestModalSubmitInteraction(bot, "1", customID)
 		mod.HandleInteraction(it)
-		select {
-		case <-bot.eventCh:
-		case <-time.After(time.Second):
-			t.Error("Expected event, but timed out")
-		}
+		wg.Wait()
 	})
 }
 

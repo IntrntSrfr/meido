@@ -6,24 +6,6 @@ import (
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
-type EventEmitter struct {
-	eventCh chan *BotEventData
-}
-
-func NewEventEmitter() *EventEmitter {
-	return &EventEmitter{
-		eventCh: make(chan *BotEventData),
-	}
-}
-
-func (em *EventEmitter) Emit(event BotEvent, data interface{}) {
-	em.eventCh <- &BotEventData{Type: event, Data: data}
-}
-
-func (em *EventEmitter) Events() chan *BotEventData {
-	return em.eventCh
-}
-
 type BotEvent int
 
 const (

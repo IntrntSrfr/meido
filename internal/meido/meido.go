@@ -47,7 +47,7 @@ func New(config *utils.Config, db database.DB) *Meido {
 }
 
 func (m *Meido) Run(ctx context.Context, useDefHandlers bool) error {
-	go m.listenMioEvents(ctx)
+	m.addHandlers()
 	m.registerModules()
 	m.registerDiscordHandlers()
 	return m.Bot.Run(ctx)
