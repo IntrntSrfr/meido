@@ -271,7 +271,7 @@ func (m *ModuleBase) handleApplicationCommand(c *ModuleApplicationCommand, it *d
 		return
 	}
 	if err := c.allowsInteraction(it); err != nil {
-		m.Logger.Debug("Application command not allowed", zap.Error(err))
+		m.Logger.Debug("Application command not allowed", "error", err)
 		return
 	}
 	go m.runApplicationCommand(c, it)
