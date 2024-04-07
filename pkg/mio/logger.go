@@ -18,13 +18,13 @@ type Logger interface {
 	Named(name string) Logger
 }
 
-type warnLevel int
+type LogLevel int
 
 const (
-	warnLevelInfo warnLevel = iota
-	warnLevelWarn
-	warnLevelError
-	warnLevelDebug
+	LogLevelInfo LogLevel = iota
+	LogLevelWarn
+	LogLevelError
+	LogLevelDebug
 )
 
 const (
@@ -63,7 +63,7 @@ func NewDiscardLogger() Logger {
 	return NewLogger(io.Discard)
 }
 
-func (l *logger) log(level warnLevel, msg string, pairs ...interface{}) {
+func (l *logger) log(level LogLevel, msg string, pairs ...interface{}) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 
@@ -90,15 +90,15 @@ func (l *logger) log(level warnLevel, msg string, pairs ...interface{}) {
 	}
 }
 
-func textFromWarnLevel(level warnLevel) string {
+func textFromWarnLevel(level LogLevel) string {
 	switch level {
-	case warnLevelInfo:
+	case LogLevelInfo:
 		return infoText
-	case warnLevelWarn:
+	case LogLevelWarn:
 		return warnText
-	case warnLevelError:
+	case LogLevelError:
 		return errorText
-	case warnLevelDebug:
+	case LogLevelDebug:
 		return debugText
 	default:
 		return ""
@@ -106,19 +106,19 @@ func textFromWarnLevel(level warnLevel) string {
 }
 
 func (l *logger) Info(msg string, pairs ...interface{}) {
-	l.log(warnLevelInfo, msg, pairs...)
+	l.log(LogLevelInfo, msg, pairs...)
 }
 
 func (l *logger) Warn(msg string, pairs ...interface{}) {
-	l.log(warnLevelWarn, msg, pairs...)
+	l.log(LogLevelWarn, msg, pairs...)
 }
 
 func (l *logger) Error(msg string, pairs ...interface{}) {
-	l.log(warnLevelError, msg, pairs...)
+	l.log(LogLevelError, msg, pairs...)
 }
 
 func (l *logger) Debug(msg string, pairs ...interface{}) {
-	l.log(warnLevelDebug, msg, pairs...)
+	l.log(LogLevelDebug, msg, pairs...)
 }
 
 func (l *logger) Named(name string) Logger {
