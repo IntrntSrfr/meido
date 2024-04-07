@@ -129,6 +129,7 @@ func (d *DiscordApplicationCommand) Name() string {
 	return d.Data.Name
 }
 
+// SubCommand returns the name of the subcommand if the command is a subcommand
 func (d *DiscordApplicationCommand) SubCommand() string {
 	if d.Data.Options == nil {
 		return ""
@@ -142,6 +143,7 @@ func (d *DiscordApplicationCommand) SubCommand() string {
 	return ""
 }
 
+// SubCommandGroup returns the name of the subcommand group if the command is a subcommand group
 func (d *DiscordApplicationCommand) SubCommandGroup() string {
 	if d.Data.Options == nil {
 		return ""
@@ -155,9 +157,18 @@ func (d *DiscordApplicationCommand) SubCommandGroup() string {
 	return ""
 }
 
-// Options returns a *discordgo.ApplicationCommandInteractionDataOption given
-// by key.
-func (d *DiscordApplicationCommand) Options(key string) (*discordgo.ApplicationCommandInteractionDataOption, bool) {
+// Options returns a map[string]*discordgo.ApplicationCommandInteractionDataOption
+// where the key is the name of the option. This is a flattened map of all options
+func (d *DiscordApplicationCommand) Options() map[string]*discordgo.ApplicationCommandInteractionDataOption {
+	if d.options == nil {
+		d.options = flattenOptions(d.Data.Options)
+	}
+	return d.options
+}
+
+// Option returns a *discordgo.ApplicationCommandInteractionDataOption given
+// by key. This is a flattened map of all options
+func (d *DiscordApplicationCommand) Option(key string) (*discordgo.ApplicationCommandInteractionDataOption, bool) {
 	if d.options == nil {
 		d.options = flattenOptions(d.Data.Options)
 	}

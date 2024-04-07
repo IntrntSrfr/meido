@@ -81,7 +81,7 @@ func newLifeSlash(m *module) *bot.ModuleApplicationCommand {
 
 	exec := func(dac *discord.DiscordApplicationCommand) {
 		seed := dac.AuthorID()
-		if seedOpt, ok := dac.Options("seed"); ok {
+		if seedOpt, ok := dac.Option("seed"); ok {
 			seed = seedOpt.StringValue()
 		}
 

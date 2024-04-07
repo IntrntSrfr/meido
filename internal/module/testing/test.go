@@ -99,23 +99,23 @@ func newSlashCommand(m *module) *bot.ModuleApplicationCommand {
 		NoDM()
 
 	exec := func(dac *discord.DiscordApplicationCommand) {
-		if _, ok := dac.Options("user"); ok {
-			if _, ok := dac.Options("user:get"); ok {
-				userOpt, _ := dac.Options("user:get:user")
+		if _, ok := dac.Option("user"); ok {
+			if _, ok := dac.Option("user:get"); ok {
+				userOpt, _ := dac.Option("user:get:user")
 				user := userOpt.UserValue(dac.Sess.Real())
 				dac.Respond(fmt.Sprintf("get %s", user.Mention()))
-			} else if _, ok := dac.Options("user:edit"); ok {
-				userOpt, _ := dac.Options("user:edit:user")
+			} else if _, ok := dac.Option("user:edit"); ok {
+				userOpt, _ := dac.Option("user:edit:user")
 				user := userOpt.UserValue(dac.Sess.Real())
 				dac.Respond(fmt.Sprintf("edit %s", user.Mention()))
 			}
-		} else if _, ok := dac.Options("role"); ok {
-			if _, ok := dac.Options("role:get"); ok {
-				roleOpt, _ := dac.Options("role:get:role")
+		} else if _, ok := dac.Option("role"); ok {
+			if _, ok := dac.Option("role:get"); ok {
+				roleOpt, _ := dac.Option("role:get:role")
 				role := roleOpt.RoleValue(dac.Sess.Real(), dac.GuildID())
 				dac.Respond(fmt.Sprintf("get %s", role.Mention()))
-			} else if _, ok := dac.Options("role:edit"); ok {
-				roleOpt, _ := dac.Options("role:edit:role")
+			} else if _, ok := dac.Option("role:edit"); ok {
+				roleOpt, _ := dac.Option("role:edit:role")
 				role := roleOpt.RoleValue(dac.Sess.Real(), dac.GuildID())
 				dac.Respond(fmt.Sprintf("edit %s", role.Mention()))
 			}

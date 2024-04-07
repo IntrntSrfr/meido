@@ -257,7 +257,7 @@ func newColorSlash(m *module) *bot.ModuleApplicationCommand {
 			return
 		}
 
-		clrStrOpt, ok := d.Options("hex")
+		clrStrOpt, ok := d.Option("hex")
 		if !ok {
 			return
 		}
@@ -370,7 +370,7 @@ func newHelpSlash(m *module) *bot.ModuleApplicationCommand {
 		}
 
 		// otherwise, show the help for the provided command
-		cmdOpt, ok := d.Options("command")
+		cmdOpt, ok := d.Option("command")
 		if !ok {
 			d.RespondEphemeral("Command not found")
 			return
