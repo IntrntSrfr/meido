@@ -38,6 +38,10 @@ func (it *DiscordInteraction) IsDM() bool {
 	return it.Interaction.GuildID == ""
 }
 
+func (it *DiscordInteraction) AppPermissions() int64 {
+	return it.Interaction.AppPermissions
+}
+
 func (it *DiscordInteraction) RespondComplex(data *discordgo.InteractionResponseData, responseType discordgo.InteractionResponseType) error {
 	resp := &discordgo.InteractionResponse{
 		Type: responseType,
