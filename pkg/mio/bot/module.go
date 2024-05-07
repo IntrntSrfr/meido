@@ -267,11 +267,7 @@ func (m *ModuleBase) allowsInteraction(it *discord.DiscordInteraction) bool {
 }
 
 func (m *ModuleBase) handleApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
-	if !c.Enabled {
-		return
-	}
-	if err := c.allowsInteraction(it); err != nil {
-		m.Logger.Debug("Application command not allowed", "error", err)
+	if !c.Enabled || !c.allowsInteraction(it) {
 		return
 	}
 	go m.runApplicationCommand(c, it)
@@ -648,48 +644,23 @@ type ModuleApplicationCommand struct {
 	Execute       func(*discord.DiscordApplicationCommand) `json:"-"`
 }
 
-func (m *ModuleApplicationCommand) allowsInteraction(it *discord.DiscordApplicationCommand) error {
-	if !m.Enabled {
-		return errors.New("command is not enabled")
-	}
-
-	if m.DMPermission != nil && (!*m.DMPermission && it.IsDM()) {
-		return errors.New("command is not allowed in DMs")
-	}
-
-	if !it.IsDM() && m.DefaultMemberPermissions != nil {
-		reqPerms := *m.DefaultMemberPermissions
-		mem, err := it.Member()
-		if err != nil {
-			return errors.New("error getting member data")
-		}
-		if mem.Permissions&reqPerms != reqPerms {
-			return errors.New("member does not have required permissions")
-		}
-
-		if m.CheckBotPerms {
-			if it.AppPermissions()&reqPerms != reqPerms {
-				return errors.New("bot does not have required permissions")
-			}
-		}
-	}
-
-	return nil
+func (m *ModuleApplicationCommand) allowsInteraction(it *discord.DiscordApplicationCommand) bool {
+	return true
 }
 
 type ModuleModalSubmit struct {
-	Mod     Module
+	Mod     Module `json:"-"`
 	Name    string
 	Enabled bool
 	Execute func(*discord.DiscordModalSubmit) `json:"-"`
 }
 
-func (s *ModuleModalSubmit) allowsInteraction(it *discord.DiscordModalSubmit) bool {
+func (s *ModuleModalSubmit) allowsInteraction(*discord.DiscordModalSubmit) bool {
 	return true
 }
 
 type ModuleMessageComponent struct {
-	Mod           Module
+	Mod           Module `json:"-"`
 	Name          string
 	Cooldown      time.Duration
 	CooldownScope CooldownScope
@@ -700,6 +671,6 @@ type ModuleMessageComponent struct {
 	Execute       func(*discord.DiscordMessageComponent) `json:"-"`
 }
 
-func (s *ModuleMessageComponent) allowsInteraction(it *discord.DiscordMessageComponent) bool {
+func (s *ModuleMessageComponent) allowsInteraction(*discord.DiscordMessageComponent) bool {
 	return true
 }
