@@ -1,6 +1,10 @@
 package builders
 
-import "github.com/bwmarrin/discordgo"
+import (
+	"bytes"
+
+	"github.com/bwmarrin/discordgo"
+)
 
 type MessageSendBuilder struct {
 	message *discordgo.MessageSend
@@ -17,6 +21,34 @@ func (b *MessageSendBuilder) Content(content string) *MessageSendBuilder {
 
 func (b *MessageSendBuilder) Embed(embed *discordgo.MessageEmbed) *MessageSendBuilder {
 	b.message.Embed = embed
+	return b
+}
+
+func (b *MessageSendBuilder) WithTTS(tts bool) *MessageSendBuilder {
+	b.message.TTS = tts
+	return b
+}
+
+func (b *MessageSendBuilder) WithFile(file *discordgo.File) *MessageSendBuilder {
+	b.message.File = file
+	return b
+}
+
+func (b *MessageSendBuilder) WithFiles(files []*discordgo.File) *MessageSendBuilder {
+	b.message.Files = files
+	return b
+}
+
+func (b *MessageSendBuilder) AddTextFile(name, content string) *MessageSendBuilder {
+	if b.message.Files == nil {
+		b.message.Files = make([]*discordgo.File, 0)
+	}
+
+	b.message.Files = append(b.message.Files, &discordgo.File{
+		Name:   name,
+		Reader: bytes.NewBufferString(content),
+	})
+
 	return b
 }
 

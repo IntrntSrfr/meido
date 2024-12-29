@@ -38,6 +38,57 @@ func TestMessageSendBuilder_Embed(t *testing.T) {
 	}
 }
 
+func TestMessageSendBuilder_TTS(t *testing.T) {
+	builder := NewMessageSendBuilder()
+	builder.WithTTS(true)
+
+	if !builder.message.TTS {
+		t.Errorf("TTS was not set correctly")
+	}
+}
+
+func TestMessageSendBuilder_File(t *testing.T) {
+	builder := NewMessageSendBuilder()
+	testFile := &discordgo.File{Name: "test.txt"}
+	builder.WithFile(testFile)
+
+	if !reflect.DeepEqual(builder.message.File, testFile) {
+		t.Errorf("File was not set correctly")
+	}
+}
+
+func TestMessageSendBuilder_Files(t *testing.T) {
+	builder := NewMessageSendBuilder()
+	testFiles := []*discordgo.File{
+		{Name: "test1.txt"},
+		{Name: "test2.txt"},
+	}
+	builder.WithFiles(testFiles)
+
+	if !reflect.DeepEqual(builder.message.Files, testFiles) {
+		t.Errorf("Files were not set correctly")
+	}
+}
+
+func TestMessageSendBuilder_AddTextFile(t *testing.T) {
+	builder := NewMessageSendBuilder()
+	testName := "test.txt"
+	testContent := "Hello, World!"
+	builder.AddTextFile(testName, testContent)
+
+	if len(builder.message.Files) != 1 {
+		t.Errorf("Expected 1 file, got %d", len(builder.message.Files))
+	}
+
+	if builder.message.Files[0].Name != testName {
+		t.Errorf("File name was not set correctly")
+	}
+
+	if builder.message.Files[0].Reader == nil {
+		t.Errorf("File reader was not set correctly")
+	}
+}
+
 func TestMessageSendBuilder_AddActionRow(t *testing.T) {
 	builder := NewMessageSendBuilder()
 	actionRow := &discordgo.ActionsRow{}
