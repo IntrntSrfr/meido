@@ -30,11 +30,17 @@ func (mp *EventHandler) Listen(ctx context.Context) {
 	mp.logger.Info("Started listener")
 	for {
 		select {
-		case msg := <-mp.discord.Messages():
+		case msg, ok := <-mp.discord.Messages():
+			if !ok {
+				continue
+			}
 			go mp.DeliverCallbacks(msg)
 			go mp.HandleMessage(msg)
 			go mp.emitter.Emit(&MessageProcessed{})
-		case it := <-mp.discord.Interactions():
+		case it, ok := <-mp.discord.Interactions():
+			if !ok {
+				continue
+			}
 			go mp.HandleInteraction(it)
 			go mp.emitter.Emit(&InteractionProcessed{})
 		case <-ctx.Done():
