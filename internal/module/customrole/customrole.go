@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"text/tabwriter"
 	"time"
 
 	"github.com/g4s8/hexcolor"
@@ -377,8 +378,15 @@ func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 				return
 			}
 
-			builder := strings.Builder{}
+			var builder strings.Builder
 			builder.WriteString(fmt.Sprintf("Custom roles in %v | Amount: %v\n\n", g.Name, len(roles)))
+
+			w := tabwriter.NewWriter(&builder, 0, 0, 1, ' ', tabwriter.Debug)
+			fmt.Fprintln(w, "Role Name\tRole ID\tUser\tUser ID\tStatus")
+
+			usedRoles := make(map[string]bool)   // tracks roles with at least one active user
+			orphanRoles := make(map[string]bool) // tracks roles with only users not in the guild
+
 			for _, ur := range roles {
 				role, err := msg.Discord.Role(g.ID, ur.RoleID)
 				if err != nil {
@@ -387,9 +395,20 @@ func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 
 				mem, err := msg.Discord.Member(g.ID, ur.UserID)
 				if err != nil {
-					builder.WriteString(fmt.Sprintf("%v (%v) | Belongs to: %v - User no longer in guild.\n", role.Name, role.ID, ur.UserID))
+					fmt.Fprintf(w, "%v\t%v\t%v\t%v\tUser no longer in guild\n", role.Name, role.ID, "N/A", ur.UserID)
+					orphanRoles[role.ID] = true
 				} else {
-					builder.WriteString(fmt.Sprintf("%v (%v) | Belongs to: %v (%v)\n", role.Name, role.ID, mem.User.String(), mem.User.ID))
+					fmt.Fprintf(w, "%v\t%v\t%v\t%v\tIn guild\n", role.Name, role.ID, mem.User.String(), mem.User.ID)
+					usedRoles[role.ID] = true
+					orphanRoles[role.ID] = false
+				}
+			}
+			w.Flush()
+
+			builder.WriteString("\nRoles without users:\n")
+			for _, role := range g.Roles {
+				if !usedRoles[role.ID] && orphanRoles[role.ID] {
+					builder.WriteString(fmt.Sprintf("%v (%v)\n", role.Name, role.ID))
 				}
 			}
 
