@@ -1,7 +1,6 @@
 package customrole
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"strings"
@@ -412,15 +411,10 @@ func newListCustomRolesCommand(m *module) *bot.ModuleCommand {
 				}
 			}
 
-			data := &discordgo.MessageSend{Content: builder.String()}
-			if builder.Len() > 1024 {
-				data.File = &discordgo.File{
-					Name:   "roles.txt",
-					Reader: bytes.NewBufferString(builder.String()),
-				}
-				data.Content = ""
-			}
-			_, _ = msg.ReplyComplex(data)
+			reply := builders.NewMessageSendBuilder().
+				AddTextFile("roles.txt", builder.String()).
+				Build()
+			_, _ = msg.ReplyComplex(reply)
 		},
 	}
 }
