@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
 type ModuleCommandBuilder struct {
@@ -60,7 +59,7 @@ func (b *ModuleCommandBuilder) CheckBotPerms() *ModuleCommandBuilder {
 	return b
 }
 
-func (b *ModuleCommandBuilder) AllowedTypes(msgType discord.MessageType) *ModuleCommandBuilder {
+func (b *ModuleCommandBuilder) AllowedTypes(msgType MessageType) *ModuleCommandBuilder {
 	b.cmd.AllowedTypes = msgType
 	return b
 }
@@ -70,7 +69,7 @@ func (b *ModuleCommandBuilder) AllowDMs() *ModuleCommandBuilder {
 	return b
 }
 
-func (b *ModuleCommandBuilder) Execute(exec func(*discord.DiscordMessage)) *ModuleCommandBuilder {
+func (b *ModuleCommandBuilder) Execute(exec func(*DiscordMessage)) *ModuleCommandBuilder {
 	b.cmd.Execute = exec
 	return b
 }
@@ -104,12 +103,12 @@ func (b *ModulePassiveBuilder) Description(text string) *ModulePassiveBuilder {
 	return b
 }
 
-func (b *ModulePassiveBuilder) AllowedTypes(msgType discord.MessageType) *ModulePassiveBuilder {
+func (b *ModulePassiveBuilder) AllowedTypes(msgType MessageType) *ModulePassiveBuilder {
 	b.pas.AllowedTypes = msgType
 	return b
 }
 
-func (b *ModulePassiveBuilder) Execute(exec func(*discord.DiscordMessage)) *ModulePassiveBuilder {
+func (b *ModulePassiveBuilder) Execute(exec func(*DiscordMessage)) *ModulePassiveBuilder {
 	b.pas.Execute = exec
 	return b
 }
@@ -190,7 +189,7 @@ func (b *ModuleApplicationCommandBuilder) CheckBotPerms() *ModuleApplicationComm
 	return b
 }
 
-func (b *ModuleApplicationCommandBuilder) Execute(f func(*discord.DiscordApplicationCommand)) *ModuleApplicationCommandBuilder {
+func (b *ModuleApplicationCommandBuilder) Execute(f func(*DiscordApplicationCommand)) *ModuleApplicationCommandBuilder {
 	b.command.Execute = f
 	return b
 }

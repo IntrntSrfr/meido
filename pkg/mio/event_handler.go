@@ -2,21 +2,17 @@ package mio
 
 import (
 	"context"
-
-	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	"github.com/intrntsrfr/meido/pkg/mio/utils"
 )
 
 type EventHandler struct {
-	discord   *discord.Discord
+	discord   *Discord
 	modules   *ModuleManager
-	callbacks *utils.CallbackManager
-	logger    mio.Logger
-	emitter   *mio.EventBus
+	callbacks *CallbackManager
+	logger    Logger
+	emitter   *EventBus
 }
 
-func NewEventHandler(d *discord.Discord, m *ModuleManager, c *utils.CallbackManager, bus *mio.EventBus, logger mio.Logger) *EventHandler {
+func NewEventHandler(d *Discord, m *ModuleManager, c *CallbackManager, bus *EventBus, logger Logger) *EventHandler {
 	return &EventHandler{
 		discord:   d,
 		modules:   m,
@@ -49,20 +45,20 @@ func (mp *EventHandler) Listen(ctx context.Context) {
 	}
 }
 
-func (mp *EventHandler) HandleMessage(msg *discord.DiscordMessage) {
+func (mp *EventHandler) HandleMessage(msg *DiscordMessage) {
 	for _, mod := range mp.modules.Modules {
 		mod.HandleMessage(msg)
 	}
 }
 
-func (mp *EventHandler) HandleInteraction(it *discord.DiscordInteraction) {
+func (mp *EventHandler) HandleInteraction(it *DiscordInteraction) {
 	for _, mod := range mp.modules.Modules {
 		mod.HandleInteraction(it)
 	}
 }
 
-func (mp *EventHandler) DeliverCallbacks(msg *discord.DiscordMessage) {
-	if msg.Type() != discord.MessageTypeCreate {
+func (mp *EventHandler) DeliverCallbacks(msg *DiscordMessage) {
+	if msg.Type() != MessageTypeCreate {
 		return
 	}
 

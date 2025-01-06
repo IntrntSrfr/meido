@@ -5,24 +5,21 @@ import (
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	mutils "github.com/intrntsrfr/meido/pkg/mio/utils"
 	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
 type Bot struct {
 	sync.Mutex
-	Discord *discord.Discord
+	Discord *Discord
 	Config  *utils.Config
 
 	*ModuleManager
 	EventHandler *EventHandler
-	Callbacks    *mutils.CallbackManager
-	Cooldowns    *mutils.CooldownManager
-	*mio.EventBus
+	Callbacks    *CallbackManager
+	Cooldowns    *CooldownManager
+	*EventBus
 
-	Logger mio.Logger
+	Logger Logger
 }
 
 func (b *Bot) Run(ctx context.Context) error {
@@ -51,11 +48,11 @@ func (b *Bot) setApplicationCommands() error {
 
 	created, err := b.Discord.Sess.ApplicationCommandBulkOverwrite(b.Discord.Sess.State().User.ID, "", allCommands)
 	if err != nil {
-		b.logger.Error("could not overwrite commands", "error", err)
+		b.Logger.Error("could not overwrite commands", "error", err)
 		return err
 	}
 	for _, c := range created {
-		b.logger.Info("Created/updated command", "name", c.Name, "type", uint8(c.Type))
+		b.Logger.Info("Created/updated command", "name", c.Name, "type", uint8(c.Type))
 	}
 	return nil
 }
@@ -69,7 +66,7 @@ func (b *Bot) IsOwner(userID string) bool {
 	return false
 }
 
-func readyHandler(logger mio.Logger) func(s *discordgo.Session, r *discordgo.Ready) {
+func readyHandler(logger Logger) func(s *discordgo.Session, r *discordgo.Ready) {
 	return func(s *discordgo.Session, r *discordgo.Ready) {
 		logger.Info("Event: ready",
 			"shard", s.ShardID,
@@ -79,7 +76,7 @@ func readyHandler(logger mio.Logger) func(s *discordgo.Session, r *discordgo.Rea
 	}
 }
 
-func guildJoinHandler(logger mio.Logger) func(s *discordgo.Session, g *discordgo.GuildCreate) {
+func guildJoinHandler(logger Logger) func(s *discordgo.Session, g *discordgo.GuildCreate) {
 	return func(s *discordgo.Session, g *discordgo.GuildCreate) {
 		_ = s.RequestGuildMembers(g.ID, "", 0, "", false)
 		logger.Info("Event: guild join",
@@ -90,7 +87,7 @@ func guildJoinHandler(logger mio.Logger) func(s *discordgo.Session, g *discordgo
 	}
 }
 
-func guildLeaveHandler(logger mio.Logger) func(s *discordgo.Session, g *discordgo.GuildDelete) {
+func guildLeaveHandler(logger Logger) func(s *discordgo.Session, g *discordgo.GuildDelete) {
 	return func(s *discordgo.Session, g *discordgo.GuildDelete) {
 		if !g.Unavailable {
 			return
@@ -101,7 +98,7 @@ func guildLeaveHandler(logger mio.Logger) func(s *discordgo.Session, g *discordg
 	}
 }
 
-func memberChunkHandler(logger mio.Logger) func(s *discordgo.Session, g *discordgo.GuildMembersChunk) {
+func memberChunkHandler(logger Logger) func(s *discordgo.Session, g *discordgo.GuildMembersChunk) {
 	return func(s *discordgo.Session, g *discordgo.GuildMembersChunk) {
 		if g.ChunkIndex == g.ChunkCount-1 {
 			// I don't know if this will work with several shards

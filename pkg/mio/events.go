@@ -2,8 +2,6 @@ package mio
 
 import (
 	"fmt"
-
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
 type BotEvent int
@@ -61,55 +59,55 @@ type BotEventData struct {
 
 type CommandRan struct {
 	Command *ModuleCommand
-	Message *discord.DiscordMessage
+	Message *DiscordMessage
 }
 
 type CommandPanicked struct {
 	Command *ModuleCommand
-	Message *discord.DiscordMessage
+	Message *DiscordMessage
 	Reason  any
 }
 
 type PassiveRan struct {
 	Passive *ModulePassive
-	Message *discord.DiscordMessage
+	Message *DiscordMessage
 }
 
 type PassivePanicked struct {
 	Passive *ModulePassive
-	Message *discord.DiscordMessage
+	Message *DiscordMessage
 	Reason  any
 }
 
 type ApplicationCommandRan struct {
 	ApplicationCommand *ModuleApplicationCommand
-	Interaction        *discord.DiscordApplicationCommand
+	Interaction        *DiscordApplicationCommand
 }
 
 type ApplicationCommandPanicked struct {
 	ApplicationCommand *ModuleApplicationCommand
-	Interaction        *discord.DiscordApplicationCommand
+	Interaction        *DiscordApplicationCommand
 	Reason             any
 }
 
 type ModalSubmitRan struct {
 	ModalSubmit *ModuleModalSubmit
-	Interaction *discord.DiscordModalSubmit
+	Interaction *DiscordModalSubmit
 }
 type ModalSubmitPanicked struct {
 	ModalSubmit *ModuleModalSubmit
-	Interaction *discord.DiscordModalSubmit
+	Interaction *DiscordModalSubmit
 	Reason      any
 }
 
 type MessageComponentRan struct {
 	MessageComponent *ModuleMessageComponent
-	Interaction      *discord.DiscordMessageComponent
+	Interaction      *DiscordMessageComponent
 }
 
 type MessageComponentPanicked struct {
 	MessageComponent *ModuleMessageComponent
-	Interaction      *discord.DiscordMessageComponent
+	Interaction      *DiscordMessageComponent
 	Reason           any
 }
 

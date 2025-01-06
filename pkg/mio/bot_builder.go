@@ -1,22 +1,19 @@
 package mio
 
 import (
-	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	mutils "github.com/intrntsrfr/meido/pkg/mio/utils"
 	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
 type BotBuilder struct {
-	discord      *discord.Discord
+	discord      *Discord
 	modules      *ModuleManager
-	callbacks    *mutils.CallbackManager
-	cooldowns    *mutils.CooldownManager
+	callbacks    *CallbackManager
+	cooldowns    *CooldownManager
 	eventHandler *EventHandler
-	eventBus     *mio.EventBus
+	eventBus     *EventBus
 
 	config *utils.Config
-	logger mio.Logger
+	logger Logger
 
 	useDefaultHandlers bool
 }
@@ -24,16 +21,16 @@ type BotBuilder struct {
 func NewBotBuilder(config *utils.Config) *BotBuilder {
 	return &BotBuilder{
 		config: config,
-		logger: mio.NewDefaultLogger().Named("Mio"),
+		logger: NewDefaultLogger().Named("Mio"),
 	}
 }
 
-func (b *BotBuilder) WithDiscord(d *discord.Discord) *BotBuilder {
+func (b *BotBuilder) WithDiscord(d *Discord) *BotBuilder {
 	b.discord = d
 	return b
 }
 
-func (b *BotBuilder) WithLogger(log mio.Logger) *BotBuilder {
+func (b *BotBuilder) WithLogger(log Logger) *BotBuilder {
 	b.logger = log
 	return b
 }
@@ -45,19 +42,19 @@ func (b *BotBuilder) WithDefaultHandlers() *BotBuilder {
 
 func (b *BotBuilder) Build() *Bot {
 	if b.discord == nil {
-		b.discord = discord.NewDiscord(b.config.GetString("token"), b.config.GetInt("shards"), b.logger)
+		b.discord = NewDiscord(b.config.GetString("token"), b.config.GetInt("shards"), b.logger)
 	}
 	if b.modules == nil {
 		b.modules = NewModuleManager(b.logger)
 	}
 	if b.callbacks == nil {
-		b.callbacks = mutils.NewCallbackManager()
+		b.callbacks = NewCallbackManager()
 	}
 	if b.cooldowns == nil {
-		b.cooldowns = mutils.NewCooldownManager()
+		b.cooldowns = NewCooldownManager()
 	}
 	if b.eventBus == nil {
-		b.eventBus = mio.NewEventBus()
+		b.eventBus = NewEventBus()
 	}
 	if b.eventHandler == nil {
 		b.eventHandler = NewEventHandler(b.discord, b.modules, b.callbacks, b.eventBus, b.logger)

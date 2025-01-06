@@ -1,4 +1,4 @@
-package mio
+package mio_test
 
 import (
 	"bytes"
@@ -9,16 +9,15 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
-	"github.com/intrntsrfr/meido/pkg/mio/discord/mocks"
+	"github.com/intrntsrfr/meido/pkg/mio/mocks"
 	"github.com/intrntsrfr/meido/pkg/mio/test"
 )
 
 func TestBot_IsOwner(t *testing.T) {
-	conf := test.NewTestConfig()
+	conf := NewTestConfig()
 	conf.Set("owner_ids", []string{"123"})
 
-	b := NewBotBuilder(conf).
+	b := mio.NewBotBuilder(conf).
 		WithLogger(mio.NewDiscardLogger()).
 		Build()
 	if ok := b.IsOwner("123"); !ok {
@@ -31,7 +30,7 @@ func TestBot_IsOwner(t *testing.T) {
 }
 
 func TestBot_RegisterModule(t *testing.T) {
-	bot := NewBotBuilder(test.NewTestConfig()).
+	bot := mio.NewBotBuilder(NewTestConfig()).
 		WithLogger(mio.NewDiscardLogger()).
 		Build()
 	bot.RegisterModule(NewTestModule(bot, "test", mio.NewDiscardLogger()))
@@ -45,11 +44,11 @@ func TestBot_Run(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 		defer cancel()
 
-		bot := NewBotBuilder(test.NewTestConfig()).
+		bot := mio.NewBotBuilder(NewTestConfig()).
 			WithLogger(mio.NewDiscardLogger()).
 			Build()
-		sessionMock := mocks.NewDiscordSession("test", 1)
-		bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
+		sessionMock := NewDiscordSession("test", 1)
+		bot.Discord = NewTestDiscord(nil, sessionMock, nil)
 
 		bot.Run(ctx)
 		defer bot.Close()
@@ -63,14 +62,14 @@ func TestBot_Run(t *testing.T) {
 		defer cancel()
 
 		var buf bytes.Buffer
-		bot := NewBotBuilder(test.NewTestConfig()).
+		bot := mio.NewBotBuilder(NewTestConfig()).
 			WithLogger(mio.NewLogger(&buf)).
 			Build()
-		sessionMock := mocks.NewDiscordSession("test", 1)
-		bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
+		sessionMock := NewDiscordSession("test", 1)
+		bot.Discord = NewTestDiscord(nil, sessionMock, nil)
 
 		mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
-		mod.RegisterApplicationCommands(&ModuleApplicationCommand{ApplicationCommand: &discordgo.ApplicationCommand{Name: "fishing"}})
+		mod.RegisterApplicationCommands(&mio.ModuleApplicationCommand{ApplicationCommand: &discordgo.ApplicationCommand{Name: "fishing"}})
 		bot.RegisterModule(mod)
 
 		bot.Run(ctx)
@@ -86,14 +85,14 @@ func TestBot_Run(t *testing.T) {
 		defer cancel()
 
 		var buf bytes.Buffer
-		bot := NewBotBuilder(test.NewTestConfig()).
+		bot := mio.NewBotBuilder(test.NewTestConfig()).
 			WithLogger(mio.NewLogger(&buf)).
 			Build()
 		sessionMock := mocks.NewDiscordSession("test", 1)
-		bot.Discord = discord.NewTestDiscord(nil, sessionMock, nil)
+		bot.Discord = NewTestDiscord(nil, sessionMock, nil)
 
 		mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
-		mod.RegisterApplicationCommands(&ModuleApplicationCommand{ApplicationCommand: &discordgo.ApplicationCommand{Name: "Fishing"}})
+		mod.RegisterApplicationCommands(&mio.ModuleApplicationCommand{ApplicationCommand: &discordgo.ApplicationCommand{Name: "Fishing"}})
 		bot.RegisterModule(mod)
 
 		err := bot.Run(ctx)
@@ -104,7 +103,7 @@ func TestBot_Run(t *testing.T) {
 	})
 }
 
-func setupTestBot() (*Bot, mio.Logger, Module) {
+func setupTestBot() (*mio.Bot, mio.Logger, mio.Module) {
 	bot := NewTestBot()
 	logger := mio.NewDiscardLogger()
 	mod := NewTestModule(bot, "testing", logger)
@@ -119,7 +118,7 @@ func TestBot_MessageGetsHandled(t *testing.T) {
 	cmd := NewTestCommand(mod)
 
 	cmdCalled := make(chan bool)
-	cmd.Execute = func(dm *discord.DiscordMessage) {
+	cmd.Execute = func(dm *mio.DiscordMessage) {
 		cmdCalled <- true
 	}
 
@@ -143,7 +142,7 @@ func TestBot_InteractionGetsHandled(t *testing.T) {
 	cmd := NewTestApplicationCommand(mod)
 
 	cmdCalled := make(chan bool)
-	cmd.Execute = func(dm *discord.DiscordApplicationCommand) {
+	cmd.Execute = func(dm *mio.DiscordApplicationCommand) {
 		cmdCalled <- true
 	}
 
@@ -166,13 +165,13 @@ func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
 
 		bot, _, _ := setupTestBot()
 		mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
-		mod.allowedTypes = discord.MessageTypeUpdate
+		mod.allowedTypes = mio.MessageTypeUpdate
 
 		called := make(chan bool)
-		cmd := NewModuleCommandBuilder(mod, "test").
+		cmd := mio.NewModuleCommandBuilder(mod, "test").
 			Triggers(".test").
-			AllowedTypes(discord.MessageTypeCreate).
-			Execute(func(dm *discord.DiscordMessage) {
+			AllowedTypes(mio.MessageTypeCreate).
+			Execute(func(dm *mio.DiscordMessage) {
 				called <- true
 			}).Build()
 		mod.RegisterCommands(cmd)
@@ -193,13 +192,13 @@ func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
 		defer cancel()
 
 		bot, _, _ := setupTestBot()
-		mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
-		mod.allowedTypes = discord.MessageTypeUpdate
+		mod := NewTestModule(bot, "test", NewDiscardLogger())
+		mod.allowedTypes = mio.MessageTypeUpdate
 
 		called := make(chan bool)
-		passive := NewModulePassiveBuilder(mod, "test").
-			AllowedTypes(discord.MessageTypeCreate).
-			Execute(func(dm *discord.DiscordMessage) {
+		passive := mio.NewModulePassiveBuilder(mod, "test").
+			AllowedTypes(mio.MessageTypeCreate).
+			Execute(func(dm *mio.DiscordMessage) {
 				called <- true
 			}).Build()
 		mod.RegisterPassives(passive)
@@ -224,7 +223,7 @@ func TestBot_MessageEmptyDoesNotTriggerCommand(t *testing.T) {
 	mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
 	cmd := NewTestCommand(mod)
 	cmdCalled := make(chan bool)
-	cmd.Execute = func(dm *discord.DiscordMessage) {
+	cmd.Execute = func(dm *mio.DiscordMessage) {
 		cmdCalled <- true
 	}
 	mod.RegisterCommands(cmd)
@@ -252,7 +251,7 @@ func TestBot_MessageGetsCallback(t *testing.T) {
 	mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
 	cmd := NewTestCommand(mod)
 	cmdCalled := make(chan bool)
-	cmd.Execute = func(dm *discord.DiscordMessage) {
+	cmd.Execute = func(dm *mio.DiscordMessage) {
 		cb, err := mod.Bot.Callbacks.Make(dm.CallbackKey())
 		if err != nil {
 			t.Error(err)
@@ -269,10 +268,10 @@ func TestBot_MessageGetsCallback(t *testing.T) {
 	bot.RegisterModule(mod)
 	bot.Run(ctx)
 
-	bot.Discord.Messages() <- &discord.DiscordMessage{
+	bot.Discord.Messages() <- &mio.DiscordMessage{
 		Sess:         bot.Discord.Sess,
 		Discord:      bot.Discord,
-		MessageType:  discord.MessageTypeCreate,
+		MessageType:  mio.MessageTypeCreate,
 		TimeReceived: time.Now(),
 		Message: &discordgo.Message{
 			Content: ".test hello",
@@ -286,10 +285,10 @@ func TestBot_MessageGetsCallback(t *testing.T) {
 	}
 
 	time.Sleep(time.Millisecond * 25)
-	bot.Discord.Messages() <- &discord.DiscordMessage{
+	bot.Discord.Messages() <- &mio.DiscordMessage{
 		Sess:         bot.Discord.Sess,
 		Discord:      bot.Discord,
-		MessageType:  discord.MessageTypeCreate,
+		MessageType:  mio.MessageTypeCreate,
 		TimeReceived: time.Now(),
 		Message: &discordgo.Message{
 			GuildID: "1",

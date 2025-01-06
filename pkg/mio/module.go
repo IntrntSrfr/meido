@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
 // Module is a collection of interactivity which can be plugged
@@ -30,16 +29,16 @@ type Module interface {
 
 type ModuleInfo interface {
 	Name() string
-	AllowedTypes() discord.MessageType
+	AllowedTypes() MessageType
 	AllowDMs() bool
 }
 
 type MessageHandler interface {
-	HandleMessage(*discord.DiscordMessage)
+	HandleMessage(*DiscordMessage)
 }
 
 type InteractionHandler interface {
-	HandleInteraction(*discord.DiscordInteraction)
+	HandleInteraction(*DiscordInteraction)
 }
 
 type CommandHandler interface {
@@ -92,7 +91,7 @@ type ModuleBase struct {
 	Bot          *Bot
 	Logger       Logger
 	name         string
-	allowedTypes discord.MessageType
+	allowedTypes MessageType
 	allowDMs     bool
 
 	commands            map[string]*ModuleCommand
@@ -112,7 +111,7 @@ func NewModule(bot *Bot, name string, logger Logger) *ModuleBase {
 		Bot:                       bot,
 		Logger:                    logger,
 		name:                      name,
-		allowedTypes:              discord.MessageTypeCreate,
+		allowedTypes:              MessageTypeCreate,
 		allowDMs:                  true,
 		commands:                  make(map[string]*ModuleCommand),
 		passives:                  make(map[string]*ModulePassive),
@@ -129,7 +128,7 @@ func (m *ModuleBase) Name() string {
 	return m.name
 }
 
-func (m *ModuleBase) AllowedTypes() discord.MessageType {
+func (m *ModuleBase) AllowedTypes() MessageType {
 	return m.allowedTypes
 }
 
@@ -137,7 +136,7 @@ func (m *ModuleBase) AllowDMs() bool {
 	return m.allowDMs
 }
 
-func (m *ModuleBase) HandleMessage(msg *discord.DiscordMessage) {
+func (m *ModuleBase) HandleMessage(msg *DiscordMessage) {
 	if !m.allowsMessage(msg) {
 		return
 	}
@@ -155,7 +154,7 @@ func (m *ModuleBase) HandleMessage(msg *discord.DiscordMessage) {
 	}
 }
 
-func (m *ModuleBase) allowsMessage(msg *discord.DiscordMessage) bool {
+func (m *ModuleBase) allowsMessage(msg *DiscordMessage) bool {
 	if msg.IsDM() && !m.allowDMs {
 		return false
 	}
@@ -165,7 +164,7 @@ func (m *ModuleBase) allowsMessage(msg *discord.DiscordMessage) bool {
 	return true
 }
 
-func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
+func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	if !cmd.Enabled || !cmd.allowsMessage(msg) {
 		return
 	}
@@ -185,40 +184,40 @@ func (m *ModuleBase) handleCommand(cmd *ModuleCommand, msg *discord.DiscordMessa
 	go m.runCommand(cmd, msg)
 }
 
-func (m *ModuleBase) recoverCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
+func (m *ModuleBase) recoverCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	if r := recover(); r != nil {
 		m.Bot.Emit(&CommandPanicked{cmd, msg, r})
 		_, _ = msg.Reply("Something terrible happened. Please try again. If that does not work, send a DM to bot dev(s)")
 	}
 }
 
-func (m *ModuleBase) runCommand(cmd *ModuleCommand, msg *discord.DiscordMessage) {
+func (m *ModuleBase) runCommand(cmd *ModuleCommand, msg *DiscordMessage) {
 	defer m.recoverCommand(cmd, msg)
 	m.Bot.Emit(&CommandRan{cmd, msg})
 	cmd.Execute(msg)
 }
 
-func (m *ModuleBase) handlePassive(pas *ModulePassive, msg *discord.DiscordMessage) {
+func (m *ModuleBase) handlePassive(pas *ModulePassive, msg *DiscordMessage) {
 	if !pas.Enabled || !pas.allowsMessage(msg) {
 		return
 	}
 	go m.runPassive(pas, msg)
 }
 
-func (m *ModuleBase) recoverPassive(pas *ModulePassive, msg *discord.DiscordMessage) {
+func (m *ModuleBase) recoverPassive(pas *ModulePassive, msg *DiscordMessage) {
 	if r := recover(); r != nil {
 		m.Bot.Emit(&PassivePanicked{pas, msg, r})
 		m.Logger.Error("Panic", "reason", r, "message", msg)
 	}
 }
 
-func (m *ModuleBase) runPassive(pas *ModulePassive, msg *discord.DiscordMessage) {
+func (m *ModuleBase) runPassive(pas *ModulePassive, msg *DiscordMessage) {
 	defer m.recoverPassive(pas, msg)
 	m.Bot.Emit(&PassiveRan{pas, msg})
 	pas.Execute(msg)
 }
 
-func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
+func (m *ModuleBase) HandleInteraction(it *DiscordInteraction) {
 	if !m.allowsInteraction(it) {
 		return
 	}
@@ -227,7 +226,7 @@ func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
 	case discordgo.InteractionApplicationCommand:
 		data := it.Interaction.ApplicationCommandData()
 		if cmd, err := m.FindApplicationCommand(data.Name); err == nil {
-			m.handleApplicationCommand(cmd, &discord.DiscordApplicationCommand{
+			m.handleApplicationCommand(cmd, &DiscordApplicationCommand{
 				DiscordInteraction: it,
 				Data:               data,
 			})
@@ -235,14 +234,14 @@ func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
 	case discordgo.InteractionModalSubmit:
 		data := it.Interaction.ModalSubmitData()
 		if cmd, ok := m.modalSubmitCallbacks[data.CustomID]; ok {
-			m.handleModalSubmit(cmd, &discord.DiscordModalSubmit{
+			m.handleModalSubmit(cmd, &DiscordModalSubmit{
 				DiscordInteraction: it,
 				Data:               data,
 			})
 		}
 	case discordgo.InteractionMessageComponent:
 		data := it.Interaction.MessageComponentData()
-		dmc := &discord.DiscordMessageComponent{
+		dmc := &DiscordMessageComponent{
 			DiscordInteraction: it,
 			Data:               data,
 		}
@@ -261,62 +260,62 @@ func (m *ModuleBase) HandleInteraction(it *discord.DiscordInteraction) {
 	}
 }
 
-func (m *ModuleBase) allowsInteraction(it *discord.DiscordInteraction) bool {
+func (m *ModuleBase) allowsInteraction(it *DiscordInteraction) bool {
 	return !(it.IsDM() && !m.allowDMs)
 }
 
-func (m *ModuleBase) handleApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
+func (m *ModuleBase) handleApplicationCommand(c *ModuleApplicationCommand, it *DiscordApplicationCommand) {
 	if !c.Enabled || !c.allowsInteraction(it) {
 		return
 	}
 	go m.runApplicationCommand(c, it)
 }
 
-func (m *ModuleBase) recoverApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
+func (m *ModuleBase) recoverApplicationCommand(c *ModuleApplicationCommand, it *DiscordApplicationCommand) {
 	if r := recover(); r != nil {
 		m.Bot.Emit(&ApplicationCommandPanicked{c, it, r})
 	}
 }
 
-func (m *ModuleBase) runApplicationCommand(c *ModuleApplicationCommand, it *discord.DiscordApplicationCommand) {
+func (m *ModuleBase) runApplicationCommand(c *ModuleApplicationCommand, it *DiscordApplicationCommand) {
 	defer m.recoverApplicationCommand(c, it)
 	m.Bot.Emit(&ApplicationCommandRan{c, it})
 	c.Execute(it)
 }
 
-func (m *ModuleBase) handleMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
+func (m *ModuleBase) handleMessageComponent(c *ModuleMessageComponent, it *DiscordMessageComponent) {
 	if !c.Enabled || !c.allowsInteraction(it) {
 		return
 	}
 	go m.runMessageComponent(c, it)
 }
 
-func (m *ModuleBase) recoverMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
+func (m *ModuleBase) recoverMessageComponent(c *ModuleMessageComponent, it *DiscordMessageComponent) {
 	if r := recover(); r != nil {
 		m.Bot.Emit(&MessageComponentPanicked{c, it, r})
 	}
 }
 
-func (m *ModuleBase) runMessageComponent(c *ModuleMessageComponent, it *discord.DiscordMessageComponent) {
+func (m *ModuleBase) runMessageComponent(c *ModuleMessageComponent, it *DiscordMessageComponent) {
 	defer m.recoverMessageComponent(c, it)
 	m.Bot.Emit(&MessageComponentRan{c, it})
 	c.Execute(it)
 }
 
-func (m *ModuleBase) handleModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
+func (m *ModuleBase) handleModalSubmit(s *ModuleModalSubmit, it *DiscordModalSubmit) {
 	if !s.Enabled || !s.allowsInteraction(it) {
 		return
 	}
 	go m.runModalSubmit(s, it)
 }
 
-func (m *ModuleBase) recoverModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
+func (m *ModuleBase) recoverModalSubmit(s *ModuleModalSubmit, it *DiscordModalSubmit) {
 	if r := recover(); r != nil {
 		m.Bot.Emit(&ModalSubmitPanicked{s, it, r})
 	}
 }
 
-func (m *ModuleBase) runModalSubmit(s *ModuleModalSubmit, it *discord.DiscordModalSubmit) {
+func (m *ModuleBase) runModalSubmit(s *ModuleModalSubmit, it *DiscordModalSubmit) {
 	defer m.recoverModalSubmit(s, it)
 	m.Bot.Emit(&ModalSubmitRan{s, it})
 	s.Execute(it)
@@ -569,13 +568,13 @@ type ModuleCommand struct {
 	RequiredPerms    int64
 	RequiresUserType UserType
 	CheckBotPerms    bool
-	AllowedTypes     discord.MessageType
+	AllowedTypes     MessageType
 	AllowDMs         bool
 	Enabled          bool
-	Execute          func(*discord.DiscordMessage) `json:"-"`
+	Execute          func(*DiscordMessage) `json:"-"`
 }
 
-func (cmd *ModuleCommand) allowsMessage(msg *discord.DiscordMessage) bool {
+func (cmd *ModuleCommand) allowsMessage(msg *DiscordMessage) bool {
 	if msg.IsDM() && !cmd.AllowDMs {
 		return false
 	}
@@ -598,7 +597,7 @@ func (cmd *ModuleCommand) allowsMessage(msg *discord.DiscordMessage) bool {
 	return true
 }
 
-func (cmd *ModuleCommand) CooldownKey(msg *discord.DiscordMessage) string {
+func (cmd *ModuleCommand) CooldownKey(msg *DiscordMessage) string {
 	switch cmd.CooldownScope {
 	case CooldownScopeUser:
 		return fmt.Sprintf("user:%v:%v", msg.AuthorID(), cmd.Name)
@@ -615,13 +614,13 @@ type ModulePassive struct {
 	Mod          Module
 	Name         string
 	Description  string
-	AllowedTypes discord.MessageType
+	AllowedTypes MessageType
 	AllowDMs     bool
 	Enabled      bool
-	Execute      func(*discord.DiscordMessage) `json:"-"`
+	Execute      func(*DiscordMessage) `json:"-"`
 }
 
-func (pas *ModulePassive) allowsMessage(msg *discord.DiscordMessage) bool {
+func (pas *ModulePassive) allowsMessage(msg *DiscordMessage) bool {
 	if msg.IsDM() && !pas.AllowDMs {
 		return false
 	}
@@ -640,10 +639,10 @@ type ModuleApplicationCommand struct {
 	UserType      UserType
 	CheckBotPerms bool
 	Enabled       bool
-	Execute       func(*discord.DiscordApplicationCommand) `json:"-"`
+	Execute       func(*DiscordApplicationCommand) `json:"-"`
 }
 
-func (m *ModuleApplicationCommand) allowsInteraction(it *discord.DiscordApplicationCommand) bool {
+func (m *ModuleApplicationCommand) allowsInteraction(it *DiscordApplicationCommand) bool {
 	return true
 }
 
@@ -651,10 +650,10 @@ type ModuleModalSubmit struct {
 	Mod     Module
 	Name    string
 	Enabled bool
-	Execute func(*discord.DiscordModalSubmit) `json:"-"`
+	Execute func(*DiscordModalSubmit) `json:"-"`
 }
 
-func (s *ModuleModalSubmit) allowsInteraction(it *discord.DiscordModalSubmit) bool {
+func (s *ModuleModalSubmit) allowsInteraction(it *DiscordModalSubmit) bool {
 	return true
 }
 
@@ -667,9 +666,9 @@ type ModuleMessageComponent struct {
 	UserType      UserType
 	CheckBotPerms bool
 	Enabled       bool
-	Execute       func(*discord.DiscordMessageComponent) `json:"-"`
+	Execute       func(*DiscordMessageComponent) `json:"-"`
 }
 
-func (s *ModuleMessageComponent) allowsInteraction(it *discord.DiscordMessageComponent) bool {
+func (s *ModuleMessageComponent) allowsInteraction(it *DiscordMessageComponent) bool {
 	return true
 }

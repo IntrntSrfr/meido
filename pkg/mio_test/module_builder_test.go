@@ -1,4 +1,4 @@
-package mio
+package mio_test
 
 import (
 	"testing"

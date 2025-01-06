@@ -1,4 +1,4 @@
-package mio
+package mio_test
 
 import (
 	"fmt"
@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
 func TestNewModule(t *testing.T) {
 	want := "testing"
-	base := NewModule(nil, "testing", NewDiscardLogger())
+	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
 	if got := base.Name(); got != want {
 		t.Errorf("ModuleBase.New() did not produce correct name; got = %v, want %v", got, want)
 	}
@@ -21,7 +22,7 @@ func TestNewModule(t *testing.T) {
 
 func TestModuleBase_Name(t *testing.T) {
 	want := "testing"
-	base := NewModule(nil, "testing", NewDiscardLogger())
+	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
 	if got := base.Name(); got != "testing" {
 		t.Errorf("ModuleBase.Name() = %v, want %v", got, want)
 	}
@@ -29,8 +30,8 @@ func TestModuleBase_Name(t *testing.T) {
 
 func TestModuleBase_Passives(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", NewDiscardLogger())
-	base.RegisterPassives(&ModulePassive{Name: "testing"})
+	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
+	base.RegisterPassives(&mio.ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
 	}
@@ -38,8 +39,8 @@ func TestModuleBase_Passives(t *testing.T) {
 
 func TestModuleBase_Commands(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", NewDiscardLogger())
-	base.RegisterCommands(&ModuleCommand{Name: "testing"})
+	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
+	base.RegisterCommands(&mio.ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
 	}
@@ -47,7 +48,7 @@ func TestModuleBase_Commands(t *testing.T) {
 
 func TestModuleBase_AllowedTypes(t *testing.T) {
 	want := discord.MessageTypeCreate | discord.MessageTypeUpdate
-	base := &ModuleBase{allowedTypes: discord.MessageTypeCreate}
+	base := &mio.ModuleBase{allowedTypes: discord.MessageTypeCreate}
 	if got := base.AllowedTypes(); got&discord.MessageTypeCreate != discord.MessageTypeCreate {
 		t.Errorf("ModuleBase.AllowedTypes() = %v, want %v", got, want)
 	}
@@ -55,7 +56,7 @@ func TestModuleBase_AllowedTypes(t *testing.T) {
 
 func TestModuleBase_AllowDMs(t *testing.T) {
 	want := true
-	base := &ModuleBase{allowDMs: true}
+	base := &mio.ModuleBase{allowDMs: true}
 	if got := base.AllowDMs(); got != want {
 		t.Errorf("ModuleBase.AllowDMs() = %v, want %v", got, want)
 	}
@@ -63,31 +64,31 @@ func TestModuleBase_AllowDMs(t *testing.T) {
 
 func TestModuleBase_RegisterPassives(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", NewDiscardLogger())
-	base.RegisterPassives(&ModulePassive{Name: "testing"})
+	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
+	base.RegisterPassives(&mio.ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
 	}
-	if err := base.RegisterPassives(&ModulePassive{Name: "testing2"}, &ModulePassive{Name: "testing2"}); err == nil {
+	if err := base.RegisterPassives(&mio.ModulePassive{Name: "testing2"}, &mio.ModulePassive{Name: "testing2"}); err == nil {
 		t.Errorf("ModuleBase.RegisterPassives() did not error on duplicate passive registration")
 	}
 }
 
 func TestModuleBase_RegisterCommands(t *testing.T) {
 	want := 1
-	base := NewModule(nil, "testing", NewDiscardLogger())
-	base.RegisterCommands(&ModuleCommand{Name: "testing"})
+	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
+	base.RegisterCommands(&mio.ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
 	}
-	if err := base.RegisterCommands(&ModuleCommand{Name: "testing2"}, &ModuleCommand{Name: "testing2"}); err == nil {
+	if err := base.RegisterCommands(&mio.ModuleCommand{Name: "testing2"}, &mio.ModuleCommand{Name: "testing2"}); err == nil {
 		t.Errorf("ModuleBase.RegisterCommands() did not error on duplicate passive registration")
 	}
 }
 
 func TestModuleBase_FindCommand(t *testing.T) {
-	base := NewModule(nil, "testing", NewDiscardLogger())
-	cmd := &ModuleCommand{
+	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
+	cmd := &mio.ModuleCommand{
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
 	}
@@ -147,8 +148,8 @@ func TestModuleBase_FindCommand(t *testing.T) {
 }
 
 func TestModuleBase_FindPassive(t *testing.T) {
-	base := NewModule(nil, "testing", NewDiscardLogger())
-	cmd := &ModulePassive{
+	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
+	cmd := &mio.ModulePassive{
 		Name: "test",
 	}
 	base.RegisterPassives(cmd)
@@ -158,9 +159,9 @@ func TestModuleBase_FindPassive(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		m       *ModuleBase
+		m       *mio.ModuleBase
 		args    args
-		want    *ModulePassive
+		want    *mio.ModulePassive
 		wantErr bool
 	}{
 		{
@@ -200,7 +201,7 @@ func TestModuleBase_FindPassive(t *testing.T) {
 }
 
 func TestModuleBase_AllowsMessage(t *testing.T) {
-	m := NewModule(nil, "testing", NewDiscardLogger())
+	m := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
 	msg := &discord.DiscordMessage{
 		Message:     &discordgo.Message{Type: discordgo.MessageTypeDefault, GuildID: ""},
 		MessageType: discord.MessageTypeCreate,
@@ -506,10 +507,10 @@ func TestModuleCommand_CooldownKey(t *testing.T) {
 		cmd  *ModuleCommand
 		want string
 	}{
-		{"empty", &ModuleCommand{CooldownScope: -1, Name: "test"}, ""},
-		{"user", &ModuleCommand{CooldownScope: CooldownScopeUser, Name: "test"}, fmt.Sprintf("user:%v:%v", uid, "test")},
-		{"channel", &ModuleCommand{CooldownScope: CooldownScopeChannel, Name: "test"}, fmt.Sprintf("channel:%v:%v", chid, "test")},
-		{"guild", &ModuleCommand{CooldownScope: CooldownScopeGuild, Name: "test"}, fmt.Sprintf("guild:%v:%v", gid, "test")},
+		{"empty", &mio.ModuleCommand{CooldownScope: -1, Name: "test"}, ""},
+		{"user", &mio.ModuleCommand{CooldownScope: CooldownScopeUser, Name: "test"}, fmt.Sprintf("user:%v:%v", uid, "test")},
+		{"channel", &mio.ModuleCommand{CooldownScope: CooldownScopeChannel, Name: "test"}, fmt.Sprintf("channel:%v:%v", chid, "test")},
+		{"guild", &mio.ModuleCommand{CooldownScope: CooldownScopeGuild, Name: "test"}, fmt.Sprintf("guild:%v:%v", gid, "test")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

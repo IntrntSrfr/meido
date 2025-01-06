@@ -2,16 +2,14 @@ package mio
 
 import (
 	"strings"
-
-	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
 type ModuleManager struct {
 	Modules map[string]Module
-	logger  mio.Logger
+	logger  Logger
 }
 
-func NewModuleManager(logger mio.Logger) *ModuleManager {
+func NewModuleManager(logger Logger) *ModuleManager {
 	logger = logger.Named("ModuleManager")
 	return &ModuleManager{
 		Modules: make(map[string]Module),
