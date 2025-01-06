@@ -1,4 +1,4 @@
-package bot
+package mio
 
 import (
 	"errors"
@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
@@ -91,7 +90,7 @@ var (
 type ModuleBase struct {
 	sync.Mutex
 	Bot          *Bot
-	Logger       mio.Logger
+	Logger       Logger
 	name         string
 	allowedTypes discord.MessageType
 	allowDMs     bool
@@ -108,7 +107,7 @@ type ModuleBase struct {
 	applicationCommandStructs []*discordgo.ApplicationCommand
 }
 
-func NewModule(bot *Bot, name string, logger mio.Logger) *ModuleBase {
+func NewModule(bot *Bot, name string, logger Logger) *ModuleBase {
 	return &ModuleBase{
 		Bot:                       bot,
 		Logger:                    logger,

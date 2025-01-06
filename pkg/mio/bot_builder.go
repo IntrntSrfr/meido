@@ -1,4 +1,4 @@
-package bot
+package mio
 
 import (
 	"github.com/intrntsrfr/meido/pkg/mio"

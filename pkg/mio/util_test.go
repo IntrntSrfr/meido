@@ -1,10 +1,9 @@
-package bot
+package mio
 
 import (
 	"errors"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/mio/test"
 )
@@ -13,12 +12,12 @@ func NewTestBot() *Bot {
 	bot := NewBotBuilder(test.NewTestConfig()).
 		WithDefaultHandlers().
 		WithDiscord(discord.NewTestDiscord(nil, nil, nil)).
-		WithLogger(mio.NewDiscardLogger()).
+		WithLogger(NewDiscardLogger()).
 		Build()
 	return bot
 }
 
-func NewTestModule(bot *Bot, name string, log mio.Logger) *testModule {
+func NewTestModule(bot *Bot, name string, log Logger) *testModule {
 	return &testModule{ModuleBase: *NewModule(bot, name, log)}
 }
 
