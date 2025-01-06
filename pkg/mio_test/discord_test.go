@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/mio/mocks"
 	"github.com/intrntsrfr/meido/pkg/mio/test"
 	"github.com/intrntsrfr/meido/pkg/utils"
@@ -17,7 +18,7 @@ import (
 
 func TestSessionWrapper_ShardID(t *testing.T) {
 	shardID := 2
-	s := &SessionWrapper{&discordgo.Session{ShardID: shardID}}
+	s := &mio.SessionWrapper{&discordgo.Session{ShardID: shardID}}
 
 	if got := s.ShardID(); got != shardID {
 		t.Errorf("SessionWrapper.ShardID() = %v, want %v", got, shardID)
@@ -26,7 +27,7 @@ func TestSessionWrapper_ShardID(t *testing.T) {
 
 func TestSessionWrapper_State(t *testing.T) {
 	state := discordgo.NewState()
-	s := &SessionWrapper{&discordgo.Session{State: state}}
+	s := &mio.SessionWrapper{&discordgo.Session{State: state}}
 	s.State()
 
 	if got := s.State(); !reflect.DeepEqual(got, state) {
@@ -42,7 +43,7 @@ func TestNewDiscord(t *testing.T) {
 	conf.Set("shards", shards)
 	mockSess := mocks.NewDiscordSession(token, shards)
 
-	logger := NewDiscardLogger()
+	logger := mio.NewDiscardLogger()
 	d := test.NewTestDiscord(conf, mockSess, nil)
 
 	if got := d.token; d.token != token {
@@ -77,7 +78,7 @@ func TestDiscord_Close(t *testing.T) {
 	sess.CloseShouldFail = true
 
 	logBuf := bytes.Buffer{}
-	d := NewTestDiscord(nil, sess, NewLogger(&logBuf))
+	d := NewTestDiscord(nil, sess, mio.NewLogger(&logBuf))
 	d.Close()
 
 	expected := "Failed to close session"
@@ -86,7 +87,7 @@ func TestDiscord_Close(t *testing.T) {
 	}
 }
 
-func expectMessage(ch chan *DiscordMessage) error {
+func expectMessage(ch chan *mio.DiscordMessage) error {
 	select {
 	case <-ch:
 	case <-time.After(time.Millisecond * 25):
@@ -95,7 +96,7 @@ func expectMessage(ch chan *DiscordMessage) error {
 	return nil
 }
 
-func expectNoMessage(ch chan *DiscordMessage) error {
+func expectNoMessage(ch chan *mio.DiscordMessage) error {
 	select {
 	case <-ch:
 		return fmt.Errorf("message was received; expected none")
@@ -105,7 +106,7 @@ func expectNoMessage(ch chan *DiscordMessage) error {
 }
 
 func TestDiscord_onMessageCreate(t *testing.T) {
-	d := NewDiscord("asdf", 1, NewLogger(io.Discard))
+	d := mio.NewDiscord("asdf", 1, mio.NewLogger(io.Discard))
 
 	t.Run("empty message does not go through", func(t *testing.T) {
 		d.onMessageCreate(&discordgo.Session{}, &discordgo.MessageCreate{})
@@ -152,7 +153,7 @@ func TestDiscord_onMessageCreate(t *testing.T) {
 }
 
 func TestDiscord_onMessageUpdate(t *testing.T) {
-	d := NewDiscord("asdf", 1, NewDefaultLogger())
+	d := mio.NewDiscord("asdf", 1, mio.NewDefaultLogger())
 
 	t.Run("empty message does not go through", func(t *testing.T) {
 		d.onMessageUpdate(&discordgo.Session{}, &discordgo.MessageUpdate{})
@@ -199,7 +200,7 @@ func TestDiscord_onMessageUpdate(t *testing.T) {
 }
 
 func TestDiscord_onMessageDelete(t *testing.T) {
-	d := NewDiscord("asdf", 1, NewLogger(io.Discard))
+	d := mio.NewDiscord("asdf", 1, mio.NewLogger(io.Discard))
 
 	t.Run("empty message goes through", func(t *testing.T) {
 		d.onMessageDelete(&discordgo.Session{}, &discordgo.MessageDelete{})
@@ -212,7 +213,7 @@ func TestDiscord_onMessageDelete(t *testing.T) {
 func TestDiscord_BotUser(t *testing.T) {
 	tests := []struct {
 		name string
-		d    *Discord
+		d    *mio.Discord
 		want *discordgo.User
 	}{
 		// TODO: Add test cases.
@@ -233,7 +234,7 @@ func TestDiscord_UserChannelPermissions(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		d       *Discord
+		d       *mio.Discord
 		args    args
 		want    int64
 		wantErr bool
@@ -261,7 +262,7 @@ func TestDiscord_BotHasPermissions(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		d       *Discord
+		d       *mio.Discord
 		args    args
 		want    bool
 		wantErr bool
@@ -290,7 +291,7 @@ func TestDiscord_HasPermissions(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		d       *Discord
+		d       *mio.Discord
 		args    args
 		want    bool
 		wantErr bool
@@ -318,7 +319,7 @@ func TestDiscord_HighestRole(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		d    *Discord
+		d    *mio.Discord
 		args args
 		want *discordgo.Role
 	}{
@@ -340,7 +341,7 @@ func TestDiscord_HighestRolePosition(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		d    *Discord
+		d    *mio.Discord
 		args args
 		want int
 	}{
@@ -362,7 +363,7 @@ func TestDiscord_HighestColor(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		d    *Discord
+		d    *mio.Discord
 		args args
 		want int
 	}{
@@ -380,7 +381,7 @@ func TestDiscord_HighestColor(t *testing.T) {
 func TestRoleByPos_Len(t *testing.T) {
 	tests := []struct {
 		name string
-		a    RoleByPos
+		a    mio.RoleByPos
 		want int
 	}{
 		// TODO: Add test cases.
@@ -401,7 +402,7 @@ func TestRoleByPos_Swap(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		a    RoleByPos
+		a    mio.RoleByPos
 		args args
 	}{
 		// TODO: Add test cases.
@@ -420,7 +421,7 @@ func TestRoleByPos_Less(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		a    RoleByPos
+		a    mio.RoleByPos
 		args args
 		want bool
 	}{
@@ -441,7 +442,7 @@ func NewTestDiscord_AddEventHandler(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		d    *Discord
+		d    *mio.Discord
 		args args
 	}{
 		// TODO: Add test cases.
@@ -459,7 +460,7 @@ func NewTestDiscord_AddEventHandlerOnce(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		d    *Discord
+		d    *mio.Discord
 		args args
 	}{
 		// TODO: Add test cases.
@@ -474,7 +475,7 @@ func NewTestDiscord_AddEventHandlerOnce(t *testing.T) {
 func NewTestDiscord_Guilds(t *testing.T) {
 	tests := []struct {
 		name string
-		d    *Discord
+		d    *mio.Discord
 		want []*discordgo.Guild
 	}{
 		// TODO: Add test cases.
@@ -491,7 +492,7 @@ func NewTestDiscord_Guilds(t *testing.T) {
 func NewTestDiscord_GuildCount(t *testing.T) {
 	tests := []struct {
 		name string
-		d    *Discord
+		d    *mio.Discord
 		want int
 	}{
 		// TODO: Add test cases.
@@ -511,7 +512,7 @@ func NewTestDiscord_Guild(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		d       *Discord
+		d       *mio.Discord
 		args    args
 		want    *discordgo.Guild
 		wantErr bool
@@ -538,7 +539,7 @@ func NewTestDiscord_Channel(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		d       *Discord
+		d       *mio.Discord
 		args    args
 		want    *discordgo.Channel
 		wantErr bool
@@ -566,7 +567,7 @@ func NewTestDiscord_Member(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		d       *Discord
+		d       *mio.Discord
 		args    args
 		want    *discordgo.Member
 		wantErr bool
@@ -594,7 +595,7 @@ func NewTestDiscord_Role(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		d       *Discord
+		d       *mio.Discord
 		args    args
 		want    *discordgo.Role
 		wantErr bool
@@ -623,7 +624,7 @@ func NewTestDiscord_GuildRoleByNameOrID(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		d       *Discord
+		d       *mio.Discord
 		args    args
 		want    *discordgo.Role
 		wantErr bool
@@ -650,7 +651,7 @@ func NewTestDiscord_StartTyping(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		d       *Discord
+		d       *mio.Discord
 		args    args
 		wantErr bool
 	}{
@@ -672,7 +673,7 @@ func NewTestDiscord_SendMessage(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		d       *Discord
+		d       *mio.Discord
 		args    args
 		want    *discordgo.Message
 		wantErr bool
@@ -700,7 +701,7 @@ func NewTestDiscord_UpdateStatus(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		d    *Discord
+		d    *mio.Discord
 		args args
 	}{
 		// TODO: Add test cases.

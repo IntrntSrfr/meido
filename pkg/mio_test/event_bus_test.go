@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,13 +17,13 @@ type testEvent struct {
 func testEventHandler(event *testEvent) {}
 
 func TestNewEventBus(t *testing.T) {
-	bus := NewEventBus()
+	bus := mio.NewEventBus()
 	assert.NotNil(t, bus)
-	assert.IsType(t, &EventBus{}, bus)
+	assert.IsType(t, &mio.EventBus{}, bus)
 }
 
 func TestAddHandler(t *testing.T) {
-	bus := NewEventBus()
+	bus := mio.NewEventBus()
 	removeFunc := bus.AddHandler(testEventHandler)
 	assert.NotNil(t, removeFunc)
 
@@ -44,7 +45,7 @@ func TestAddHandler(t *testing.T) {
 }
 
 func TestAddOnceHandler(t *testing.T) {
-	bus := NewEventBus()
+	bus := mio.NewEventBus()
 	removeFunc := bus.AddOnceHandler(testEventHandler)
 	assert.NotNil(t, removeFunc)
 
@@ -68,7 +69,7 @@ func TestAddOnceHandler(t *testing.T) {
 
 func TestEmit(t *testing.T) {
 	t.Run("Single handler", func(t *testing.T) {
-		bus := NewEventBus()
+		bus := mio.NewEventBus()
 		called := sync.WaitGroup{}
 		called.Add(1)
 		val := 0
@@ -84,7 +85,7 @@ func TestEmit(t *testing.T) {
 	})
 
 	t.Run("Multiple handlers", func(t *testing.T) {
-		bus := NewEventBus()
+		bus := mio.NewEventBus()
 		called := sync.WaitGroup{}
 		called.Add(2)
 		val := 0
@@ -105,7 +106,7 @@ func TestEmit(t *testing.T) {
 	})
 
 	t.Run("Once handler", func(t *testing.T) {
-		bus := NewEventBus()
+		bus := mio.NewEventBus()
 		called := sync.WaitGroup{}
 		called.Add(1)
 		val := 0
@@ -124,7 +125,7 @@ func TestEmit(t *testing.T) {
 
 func TestRemoveHandler(t *testing.T) {
 	t.Run("Remove handler", func(t *testing.T) {
-		bus := NewEventBus()
+		bus := mio.NewEventBus()
 		called := sync.WaitGroup{}
 		called.Add(1)
 		val := 0
@@ -152,7 +153,7 @@ func TestRemoveHandler(t *testing.T) {
 	})
 
 	t.Run("Remove once handler", func(t *testing.T) {
-		bus := NewEventBus()
+		bus := mio.NewEventBus()
 		called := sync.WaitGroup{}
 		called.Add(1)
 		val := 0

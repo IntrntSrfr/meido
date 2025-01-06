@@ -3,26 +3,29 @@ package mio_test
 import (
 	"testing"
 	"time"
+
+	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
 func TestCooldownManager_Set(t *testing.T) {
-	handler := NewCooldownManager()
+	handler := mio.NewCooldownManager()
 	key := "testKey"
 	dur := 5 * time.Second
 
 	handler.Set(key, dur)
-	if _, ok := handler.m[key]; !ok {
-		t.Errorf("Expected the key to be set with a cooldown")
+	if _, ok := handler.Check(key); !ok {
+		t.Errorf("Expected the key to be set")
 	}
 
-	handler.Set("zeroDurKey", 0)
-	if _, ok := handler.m["zeroDurKey"]; ok {
+	key = "zeroDurKey"
+	handler.Set(key, 0)
+	if _, ok := handler.Check(key); ok {
 		t.Errorf("Expected the key with zero duration not to be set")
 	}
 }
 
 func TestCooldownManager_Check(t *testing.T) {
-	handler := NewCooldownManager()
+	handler := mio.NewCooldownManager()
 	key := "testKey"
 	dur := time.Millisecond * 25
 
@@ -39,12 +42,12 @@ func TestCooldownManager_Check(t *testing.T) {
 }
 
 func TestCooldownManager_Remove(t *testing.T) {
-	handler := NewCooldownManager()
+	handler := mio.NewCooldownManager()
 	key := "testKey"
 
 	handler.Set(key, 5*time.Second)
 	handler.Remove(key)
-	if _, ok := handler.m[key]; ok {
+	if _, ok := handler.Check(key); ok {
 		t.Errorf("Expected the key to be removed from cooldown")
 	}
 }

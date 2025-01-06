@@ -9,8 +9,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/mocks"
-	"github.com/intrntsrfr/meido/pkg/mio/test"
 )
 
 func TestBot_IsOwner(t *testing.T) {
@@ -85,10 +83,10 @@ func TestBot_Run(t *testing.T) {
 		defer cancel()
 
 		var buf bytes.Buffer
-		bot := mio.NewBotBuilder(test.NewTestConfig()).
+		bot := mio.NewBotBuilder(NewTestConfig()).
 			WithLogger(mio.NewLogger(&buf)).
 			Build()
-		sessionMock := mocks.NewDiscordSession("test", 1)
+		sessionMock := NewDiscordSession("test", 1)
 		bot.Discord = NewTestDiscord(nil, sessionMock, nil)
 
 		mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
@@ -192,7 +190,7 @@ func TestBot_MessageWrongTypeGetsIgnored(t *testing.T) {
 		defer cancel()
 
 		bot, _, _ := setupTestBot()
-		mod := NewTestModule(bot, "test", NewDiscardLogger())
+		mod := NewTestModule(bot, "test", mio.NewDiscardLogger())
 		mod.allowedTypes = mio.MessageTypeUpdate
 
 		called := make(chan bool)

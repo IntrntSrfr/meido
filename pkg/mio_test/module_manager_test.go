@@ -7,7 +7,7 @@ import (
 )
 
 func TestModuleManager(t *testing.T) {
-	mngr := NewModuleManager(mio.NewDiscardLogger())
+	mngr := mio.NewModuleManager(mio.NewDiscardLogger())
 
 	if _, err := mngr.FindModule("test"); err == nil {
 		t.Errorf("ModuleManager.FindModule() not returning error when not finding a module")
@@ -21,7 +21,7 @@ func TestModuleManager(t *testing.T) {
 	if _, err := mngr.FindCommand("test"); err == nil {
 		t.Errorf("ModuleManager.FindCommand() not returning error when not finding a command")
 	}
-	mod.RegisterCommands(&ModuleCommand{Name: "test"})
+	mod.RegisterCommands(&mio.ModuleCommand{Name: "test"})
 	if _, err := mngr.FindCommand("test"); err != nil {
 		t.Errorf("ModuleManager.FindCommand() returning error when finding a command")
 	}
@@ -29,14 +29,14 @@ func TestModuleManager(t *testing.T) {
 	if _, err := mngr.FindPassive("test"); err == nil {
 		t.Errorf("ModuleManager.FindPassive() not returning error when not finding a passive")
 	}
-	mod.RegisterPassives(&ModulePassive{Name: "test"})
+	mod.RegisterPassives(&mio.ModulePassive{Name: "test"})
 	if _, err := mngr.FindPassive("test"); err != nil {
 		t.Errorf("ModuleManager.FindPassive() returning error when finding a passive")
 	}
 }
 
 func TestModuleManager_FailedHook(t *testing.T) {
-	mngr := NewModuleManager(mio.NewDiscardLogger())
+	mngr := mio.NewModuleManager(mio.NewDiscardLogger())
 	mod := NewTestModule(nil, "test", mio.NewDiscardLogger())
 	mod.hookShouldFail = true
 
