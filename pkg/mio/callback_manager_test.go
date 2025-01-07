@@ -1,13 +1,11 @@
-package mio_test
+package mio
 
 import (
 	"testing"
-
-	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
 func TestCooldownService_Make(t *testing.T) {
-	handler := mio.NewCallbackManager()
+	handler := NewCallbackManager()
 	key := "testKey"
 	ch, err := handler.Make(key)
 	if err != nil {
@@ -18,13 +16,13 @@ func TestCooldownService_Make(t *testing.T) {
 	}
 
 	_, err = handler.Make(key)
-	if err != mio.ErrCallbackAlreadyExists {
+	if err != ErrCallbackAlreadyExists {
 		t.Errorf("Expected ErrCallbackAlreadyExists error, got: %s", err)
 	}
 }
 
 func TestCooldownService_Get(t *testing.T) {
-	handler := mio.NewCallbackManager()
+	handler := NewCallbackManager()
 	key := "testKey"
 	handler.Make(key)
 
@@ -37,13 +35,13 @@ func TestCooldownService_Get(t *testing.T) {
 	}
 
 	_, err = handler.Get("nonExistentKey")
-	if err != mio.ErrCallbackNotFound {
+	if err != ErrCallbackNotFound {
 		t.Errorf("Expected ErrCallbackNotFound error, got: %s", err)
 	}
 }
 
 func TestCooldownService_Delete(t *testing.T) {
-	handler := mio.NewCallbackManager()
+	handler := NewCallbackManager()
 	key := "testKey"
 
 	handler.Make(key)

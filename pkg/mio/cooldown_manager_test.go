@@ -1,14 +1,12 @@
-package mio_test
+package mio
 
 import (
 	"testing"
 	"time"
-
-	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
 func TestCooldownManager_Set(t *testing.T) {
-	handler := mio.NewCooldownManager()
+	handler := NewCooldownManager()
 	key := "testKey"
 	dur := 5 * time.Second
 
@@ -25,7 +23,7 @@ func TestCooldownManager_Set(t *testing.T) {
 }
 
 func TestCooldownManager_Check(t *testing.T) {
-	handler := mio.NewCooldownManager()
+	handler := NewCooldownManager()
 	key := "testKey"
 	dur := time.Millisecond * 25
 
@@ -42,7 +40,7 @@ func TestCooldownManager_Check(t *testing.T) {
 }
 
 func TestCooldownManager_Remove(t *testing.T) {
-	handler := mio.NewCooldownManager()
+	handler := NewCooldownManager()
 	key := "testKey"
 
 	handler.Set(key, 5*time.Second)

@@ -1,4 +1,4 @@
-package mio_test
+package mio
 
 import (
 	"errors"
@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/test"
 	"github.com/intrntsrfr/meido/pkg/utils"
 )
 
@@ -23,7 +21,7 @@ func NewTestConfig() *utils.Config {
 	return conf
 }
 
-func NewTestDiscord(conf *utils.Config, sess mio.DiscordSession, logger mio.Logger) *mio.Discord {
+func NewTestDiscord(conf *utils.Config, sess DiscordSession, logger Logger) *Discord {
 	if conf == nil {
 		conf = NewTestConfig()
 	}
@@ -31,29 +29,29 @@ func NewTestDiscord(conf *utils.Config, sess mio.DiscordSession, logger mio.Logg
 		sess = NewDiscordSession(conf.GetString("token"), conf.GetInt("shards"))
 	}
 	if logger == nil {
-		logger = mio.NewLogger(io.Discard)
+		logger = NewLogger(io.Discard)
 	}
-	d := mio.NewDiscord(conf.GetString("token"), conf.GetInt("shards"), logger)
+	d := NewDiscord(conf.GetString("token"), conf.GetInt("shards"), logger)
 	d.Sess = sess
-	d.Sessions = []mio.DiscordSession{d.Sess}
+	d.Sessions = []DiscordSession{d.Sess}
 	return d
 }
 
-func NewTestBot() *mio.Bot {
-	bot := mio.NewBotBuilder(test.NewTestConfig()).
+func NewTestBot() *Bot {
+	bot := NewBotBuilder(NewTestConfig()).
 		WithDefaultHandlers().
 		WithDiscord(NewTestDiscord(nil, nil, nil)).
-		WithLogger(mio.NewDiscardLogger()).
+		WithLogger(NewDiscardLogger()).
 		Build()
 	return bot
 }
 
-func NewTestModule(bot *mio.Bot, name string, log mio.Logger) *testModule {
-	return &testModule{ModuleBase: *mio.NewModule(bot, name, log)}
+func NewTestModule(bot *Bot, name string, log Logger) *testModule {
+	return &testModule{ModuleBase: *NewModule(bot, name, log)}
 }
 
 type testModule struct {
-	mio.ModuleBase
+	ModuleBase
 	hookShouldFail bool
 }
 
@@ -64,63 +62,63 @@ func (m *testModule) Hook() error {
 	return nil
 }
 
-func NewTestCommand(mod mio.Module) *mio.ModuleCommand {
-	return mio.NewModuleCommandBuilder(mod, "test").
+func NewTestCommand(mod Module) *ModuleCommand {
+	return NewModuleCommandBuilder(mod, "test").
 		Description("testing").
 		Triggers(".test").
 		Usage(".test").
-		Cooldown(0, mio.CooldownScopeChannel).
-		AllowedTypes(mio.MessageTypeCreate).
+		Cooldown(0, CooldownScopeChannel).
+		AllowedTypes(MessageTypeCreate).
 		Execute(testCommandRun).
 		Build()
 }
 
-func testCommandRun(msg *mio.DiscordMessage) {
+func testCommandRun(msg *DiscordMessage) {
 
 }
 
-func NewTestPassive(mod mio.Module) *mio.ModulePassive {
-	return mio.NewModulePassiveBuilder(mod, "test").
+func NewTestPassive(mod Module) *ModulePassive {
+	return NewModulePassiveBuilder(mod, "test").
 		Description("testing").
-		AllowedTypes(mio.MessageTypeCreate).
+		AllowedTypes(MessageTypeCreate).
 		Execute(testPassiveRun).
 		Build()
 }
 
-func testPassiveRun(msg *mio.DiscordMessage) {
+func testPassiveRun(msg *DiscordMessage) {
 
 }
 
-func NewTestApplicationCommand(mod mio.Module) *mio.ModuleApplicationCommand {
-	return mio.NewModuleApplicationCommandBuilder(mod, "test").
+func NewTestApplicationCommand(mod Module) *ModuleApplicationCommand {
+	return NewModuleApplicationCommandBuilder(mod, "test").
 		Type(discordgo.ChatApplicationCommand).
 		Description("testing").
 		Execute(testApplicationCommandRun).
 		Build()
 }
 
-func testApplicationCommandRun(msg *mio.DiscordApplicationCommand) {
+func testApplicationCommandRun(msg *DiscordApplicationCommand) {
 
 }
 
-func NewTestMessageComponent(mod mio.Module) *mio.ModuleMessageComponent {
-	return &mio.ModuleMessageComponent{
+func NewTestMessageComponent(mod Module) *ModuleMessageComponent {
+	return &ModuleMessageComponent{
 		Mod:           mod,
 		Name:          "test",
 		Cooldown:      0,
-		CooldownScope: mio.CooldownScopeChannel,
+		CooldownScope: CooldownScopeChannel,
 		CheckBotPerms: false,
 		Enabled:       true,
 		Execute:       testMessageComponentRun,
 	}
 }
 
-func testMessageComponentRun(msg *mio.DiscordMessageComponent) {
+func testMessageComponentRun(msg *DiscordMessageComponent) {
 
 }
 
-func NewTestModalSubmit(mod mio.Module) *mio.ModuleModalSubmit {
-	return &mio.ModuleModalSubmit{
+func NewTestModalSubmit(mod Module) *ModuleModalSubmit {
+	return &ModuleModalSubmit{
 		Mod:     mod,
 		Name:    "test",
 		Enabled: true,
@@ -128,16 +126,16 @@ func NewTestModalSubmit(mod mio.Module) *mio.ModuleModalSubmit {
 	}
 }
 
-func testModalSubmitRun(msg *mio.DiscordModalSubmit) {
+func testModalSubmitRun(msg *DiscordModalSubmit) {
 
 }
 
-func NewTestMessage(bot *mio.Bot, guildID string) *mio.DiscordMessage {
+func NewTestMessage(bot *Bot, guildID string) *DiscordMessage {
 	author := &discordgo.User{Username: "jeff"}
-	msg := &mio.DiscordMessage{
+	msg := &DiscordMessage{
 		Sess:        bot.Discord.Sess,
 		Discord:     bot.Discord,
-		MessageType: mio.MessageTypeCreate,
+		MessageType: MessageTypeCreate,
 		Message: &discordgo.Message{
 			Content:   ".test hello",
 			GuildID:   guildID,
@@ -152,7 +150,7 @@ func NewTestMessage(bot *mio.Bot, guildID string) *mio.DiscordMessage {
 	return msg
 }
 
-func NewTestApplicationCommandInteraction(bot *mio.Bot, guildID string) *mio.DiscordInteraction {
+func NewTestApplicationCommandInteraction(bot *Bot, guildID string) *DiscordInteraction {
 	it := newTestInteraction(bot, guildID)
 	it.Interaction.Type = discordgo.InteractionApplicationCommand
 	it.Interaction.Data = discordgo.ApplicationCommandInteractionData{
@@ -162,7 +160,7 @@ func NewTestApplicationCommandInteraction(bot *mio.Bot, guildID string) *mio.Dis
 	return it
 }
 
-func NewTestMessageComponentInteraction(bot *mio.Bot, guildID, customID string) *mio.DiscordInteraction {
+func NewTestMessageComponentInteraction(bot *Bot, guildID, customID string) *DiscordInteraction {
 	it := newTestInteraction(bot, guildID)
 	it.Interaction.Type = discordgo.InteractionMessageComponent
 	it.Interaction.Data = discordgo.MessageComponentInteractionData{
@@ -171,7 +169,7 @@ func NewTestMessageComponentInteraction(bot *mio.Bot, guildID, customID string) 
 	return it
 }
 
-func NewTestModalSubmitInteraction(bot *mio.Bot, guildID, customID string) *mio.DiscordInteraction {
+func NewTestModalSubmitInteraction(bot *Bot, guildID, customID string) *DiscordInteraction {
 	it := newTestInteraction(bot, guildID)
 	it.Interaction.Type = discordgo.InteractionModalSubmit
 	it.Interaction.Data = discordgo.ModalSubmitInteractionData{
@@ -180,9 +178,9 @@ func NewTestModalSubmitInteraction(bot *mio.Bot, guildID, customID string) *mio.
 	return it
 }
 
-func newTestInteraction(bot *mio.Bot, guildID string) *mio.DiscordInteraction {
+func newTestInteraction(bot *Bot, guildID string) *DiscordInteraction {
 	author := &discordgo.User{Username: "jeff"}
-	it := &mio.DiscordInteraction{
+	it := &DiscordInteraction{
 		Sess:    bot.Discord.Sess,
 		Discord: bot.Discord,
 		Interaction: &discordgo.Interaction{

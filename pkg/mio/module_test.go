@@ -1,4 +1,4 @@
-package mio_test
+package mio
 
 import (
 	"fmt"
@@ -8,13 +8,11 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
 func TestNewModule(t *testing.T) {
 	want := "testing"
-	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
+	base := NewModule(nil, "testing", NewDiscardLogger())
 	if got := base.Name(); got != want {
 		t.Errorf("ModuleBase.New() did not produce correct name; got = %v, want %v", got, want)
 	}
@@ -22,7 +20,7 @@ func TestNewModule(t *testing.T) {
 
 func TestModuleBase_Name(t *testing.T) {
 	want := "testing"
-	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
+	base := NewModule(nil, "testing", NewDiscardLogger())
 	if got := base.Name(); got != "testing" {
 		t.Errorf("ModuleBase.Name() = %v, want %v", got, want)
 	}
@@ -30,8 +28,8 @@ func TestModuleBase_Name(t *testing.T) {
 
 func TestModuleBase_Passives(t *testing.T) {
 	want := 1
-	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
-	base.RegisterPassives(&mio.ModulePassive{Name: "testing"})
+	base := NewModule(nil, "testing", NewDiscardLogger())
+	base.RegisterPassives(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
 	}
@@ -39,24 +37,24 @@ func TestModuleBase_Passives(t *testing.T) {
 
 func TestModuleBase_Commands(t *testing.T) {
 	want := 1
-	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
-	base.RegisterCommands(&mio.ModuleCommand{Name: "testing"})
+	base := NewModule(nil, "testing", NewDiscardLogger())
+	base.RegisterCommands(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
 	}
 }
 
 func TestModuleBase_AllowedTypes(t *testing.T) {
-	want := discord.MessageTypeCreate | discord.MessageTypeUpdate
-	base := &mio.ModuleBase{allowedTypes: discord.MessageTypeCreate}
-	if got := base.AllowedTypes(); got&discord.MessageTypeCreate != discord.MessageTypeCreate {
+	want := MessageTypeCreate | MessageTypeUpdate
+	base := &ModuleBase{allowedTypes: MessageTypeCreate}
+	if got := base.AllowedTypes(); got&MessageTypeCreate != MessageTypeCreate {
 		t.Errorf("ModuleBase.AllowedTypes() = %v, want %v", got, want)
 	}
 }
 
 func TestModuleBase_AllowDMs(t *testing.T) {
 	want := true
-	base := &mio.ModuleBase{allowDMs: true}
+	base := &ModuleBase{allowDMs: true}
 	if got := base.AllowDMs(); got != want {
 		t.Errorf("ModuleBase.AllowDMs() = %v, want %v", got, want)
 	}
@@ -64,31 +62,31 @@ func TestModuleBase_AllowDMs(t *testing.T) {
 
 func TestModuleBase_RegisterPassives(t *testing.T) {
 	want := 1
-	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
-	base.RegisterPassives(&mio.ModulePassive{Name: "testing"})
+	base := NewModule(nil, "testing", NewDiscardLogger())
+	base.RegisterPassives(&ModulePassive{Name: "testing"})
 	if got := len(base.Passives()); got != 1 {
 		t.Errorf("ModuleBase.Passives() = %v, want %v", got, want)
 	}
-	if err := base.RegisterPassives(&mio.ModulePassive{Name: "testing2"}, &mio.ModulePassive{Name: "testing2"}); err == nil {
+	if err := base.RegisterPassives(&ModulePassive{Name: "testing2"}, &ModulePassive{Name: "testing2"}); err == nil {
 		t.Errorf("ModuleBase.RegisterPassives() did not error on duplicate passive registration")
 	}
 }
 
 func TestModuleBase_RegisterCommands(t *testing.T) {
 	want := 1
-	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
-	base.RegisterCommands(&mio.ModuleCommand{Name: "testing"})
+	base := NewModule(nil, "testing", NewDiscardLogger())
+	base.RegisterCommands(&ModuleCommand{Name: "testing"})
 	if got := len(base.Commands()); got != 1 {
 		t.Errorf("ModuleBase.Commands() = %v, want %v", got, want)
 	}
-	if err := base.RegisterCommands(&mio.ModuleCommand{Name: "testing2"}, &mio.ModuleCommand{Name: "testing2"}); err == nil {
+	if err := base.RegisterCommands(&ModuleCommand{Name: "testing2"}, &ModuleCommand{Name: "testing2"}); err == nil {
 		t.Errorf("ModuleBase.RegisterCommands() did not error on duplicate passive registration")
 	}
 }
 
 func TestModuleBase_FindCommand(t *testing.T) {
-	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
-	cmd := &mio.ModuleCommand{
+	base := NewModule(nil, "testing", NewDiscardLogger())
+	cmd := &ModuleCommand{
 		Name:     "test",
 		Triggers: []string{"m?test", "m?settings test"},
 	}
@@ -99,9 +97,9 @@ func TestModuleBase_FindCommand(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		m       *mio.ModuleBase
+		m       *ModuleBase
 		args    args
-		want    *mio.ModuleCommand
+		want    *ModuleCommand
 		wantErr bool
 	}{
 		{
@@ -148,8 +146,8 @@ func TestModuleBase_FindCommand(t *testing.T) {
 }
 
 func TestModuleBase_FindPassive(t *testing.T) {
-	base := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
-	cmd := &mio.ModulePassive{
+	base := NewModule(nil, "testing", NewDiscardLogger())
+	cmd := &ModulePassive{
 		Name: "test",
 	}
 	base.RegisterPassives(cmd)
@@ -159,9 +157,9 @@ func TestModuleBase_FindPassive(t *testing.T) {
 	}
 	tests := []struct {
 		name    string
-		m       *mio.ModuleBase
+		m       *ModuleBase
 		args    args
-		want    *mio.ModulePassive
+		want    *ModulePassive
 		wantErr bool
 	}{
 		{
@@ -201,10 +199,10 @@ func TestModuleBase_FindPassive(t *testing.T) {
 }
 
 func TestModuleBase_AllowsMessage(t *testing.T) {
-	m := mio.NewModule(nil, "testing", mio.NewDiscardLogger())
-	msg := &discord.DiscordMessage{
+	m := NewModule(nil, "testing", NewDiscardLogger())
+	msg := &DiscordMessage{
 		Message:     &discordgo.Message{Type: discordgo.MessageTypeDefault, GuildID: ""},
-		MessageType: discord.MessageTypeCreate,
+		MessageType: MessageTypeCreate,
 	}
 
 	t.Run("dm ok if allows dms", func(t *testing.T) {
@@ -224,7 +222,7 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 
 	m.allowDMs = true
 	t.Run("ok if good type", func(t *testing.T) {
-		msg.MessageType = discord.MessageTypeCreate | discord.MessageTypeUpdate
+		msg.MessageType = MessageTypeCreate | MessageTypeUpdate
 		expected := true
 		if got := m.allowsMessage(msg); got != true {
 			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
@@ -232,7 +230,7 @@ func TestModuleBase_AllowsMessage(t *testing.T) {
 	})
 
 	t.Run("not ok if not good type", func(t *testing.T) {
-		msg.MessageType = discord.MessageTypeUpdate
+		msg.MessageType = MessageTypeUpdate
 		expected := true
 		if got := m.allowsMessage(msg); got != false {
 			t.Errorf("Module.AllowsMessage(msg) = %v, want %v", got, expected)
@@ -245,10 +243,10 @@ func TestModuleBase_HandleCommand(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.CommandRan) {
+		bot.AddHandler(func(*CommandRan) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmd := NewTestCommand(mod)
 		mod.RegisterCommands(cmd)
 		msg := NewTestMessage(bot, "1")
@@ -260,12 +258,12 @@ func TestModuleBase_HandleCommand(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.CommandPanicked) {
+		bot.AddHandler(func(*CommandPanicked) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmd := NewTestCommand(mod)
-		cmd.Execute = func(dm *discord.DiscordMessage) {
+		cmd.Execute = func(dm *DiscordMessage) {
 			panic("command panic")
 		}
 		mod.RegisterCommands(cmd)
@@ -276,10 +274,10 @@ func TestModuleBase_HandleCommand(t *testing.T) {
 
 	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
 		bot := NewTestBot()
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmdCalled := make(chan bool, 1)
 		cmd := NewTestCommand(mod)
-		cmd.Execute = func(dm *discord.DiscordMessage) {
+		cmd.Execute = func(dm *DiscordMessage) {
 			cmdCalled <- true
 		}
 		mod.RegisterCommands(cmd)
@@ -298,10 +296,10 @@ func TestModuleBase_HandlePassive(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.PassiveRan) {
+		bot.AddHandler(func(*PassiveRan) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		pas := NewTestPassive(mod)
 		mod.RegisterPassives(pas)
 		msg := NewTestMessage(bot, "1")
@@ -313,12 +311,12 @@ func TestModuleBase_HandlePassive(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.PassivePanicked) {
+		bot.AddHandler(func(*PassivePanicked) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		pas := NewTestPassive(mod)
-		pas.Execute = func(dm *discord.DiscordMessage) {
+		pas.Execute = func(dm *DiscordMessage) {
 			panic("passive panic")
 		}
 		mod.RegisterPassives(pas)
@@ -329,10 +327,10 @@ func TestModuleBase_HandlePassive(t *testing.T) {
 
 	t.Run("DM does not run when DMs not allowed", func(t *testing.T) {
 		bot := NewTestBot()
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		pasCalled := make(chan bool, 1)
 		pas := NewTestPassive(mod)
-		pas.Execute = func(dm *discord.DiscordMessage) {
+		pas.Execute = func(dm *DiscordMessage) {
 			pasCalled <- true
 		}
 		mod.RegisterPassives(pas)
@@ -351,10 +349,10 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.ApplicationCommandRan) {
+		bot.AddHandler(func(*ApplicationCommandRan) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmd := NewTestApplicationCommand(mod)
 		mod.RegisterApplicationCommands(cmd)
 		it := NewTestApplicationCommandInteraction(bot, "1")
@@ -366,12 +364,12 @@ func TestModuleBase_HandleApplicationCommand(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.ApplicationCommandPanicked) {
+		bot.AddHandler(func(*ApplicationCommandPanicked) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmd := NewTestApplicationCommand(mod)
-		cmd.Execute = func(*discord.DiscordApplicationCommand) {
+		cmd.Execute = func(*DiscordApplicationCommand) {
 			panic("application command panic")
 		}
 		mod.RegisterApplicationCommands(cmd)
@@ -386,10 +384,10 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.MessageComponentRan) {
+		bot.AddHandler(func(*MessageComponentRan) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmd := NewTestMessageComponent(mod)
 		mod.RegisterMessageComponents(cmd)
 		customID := "key"
@@ -403,10 +401,10 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.MessageComponentRan) {
+		bot.AddHandler(func(*MessageComponentRan) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmd := NewTestMessageComponent(mod)
 		mod.RegisterMessageComponents(cmd)
 		it := NewTestMessageComponentInteraction(bot, "1", "test")
@@ -418,10 +416,10 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.MessageComponentRan) {
+		bot.AddHandler(func(*MessageComponentRan) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmd := NewTestMessageComponent(mod)
 		mod.RegisterMessageComponents(cmd)
 		customID := cmd.Name + ":key"
@@ -434,12 +432,12 @@ func TestModuleBase_HandleMessageComponent(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.MessageComponentPanicked) {
+		bot.AddHandler(func(*MessageComponentPanicked) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmd := NewTestMessageComponent(mod)
-		cmd.Execute = func(*discord.DiscordMessageComponent) {
+		cmd.Execute = func(*DiscordMessageComponent) {
 			panic("message component panic")
 		}
 		mod.RegisterMessageComponents(cmd)
@@ -456,10 +454,10 @@ func TestModuleBase_HandleModalSubmit(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.ModalSubmitRan) {
+		bot.AddHandler(func(*ModalSubmitRan) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmd := NewTestModalSubmit(mod)
 		mod.RegisterModalSubmits(cmd)
 		customID := "key"
@@ -473,12 +471,12 @@ func TestModuleBase_HandleModalSubmit(t *testing.T) {
 		bot := NewTestBot()
 		wg := sync.WaitGroup{}
 		wg.Add(1)
-		bot.AddHandler(func(*mio.ModalSubmitPanicked) {
+		bot.AddHandler(func(*ModalSubmitPanicked) {
 			wg.Done()
 		})
-		mod := NewTestModule(bot, "testing", mio.NewDiscardLogger())
+		mod := NewTestModule(bot, "testing", NewDiscardLogger())
 		cmd := NewTestModalSubmit(mod)
-		cmd.Execute = func(*discord.DiscordModalSubmit) {
+		cmd.Execute = func(*DiscordModalSubmit) {
 			panic("modal submit panic")
 		}
 		mod.RegisterModalSubmits(cmd)
@@ -493,24 +491,24 @@ func TestModuleBase_HandleModalSubmit(t *testing.T) {
 func TestModuleCommand_CooldownKey(t *testing.T) {
 	gid, chid, uid := "1234", "2345", "3456"
 
-	msg := &discord.DiscordMessage{
+	msg := &DiscordMessage{
 		Message: &discordgo.Message{
 			GuildID:   gid,
 			ChannelID: chid,
 			Author:    &discordgo.User{ID: uid},
 		},
-		MessageType: discord.MessageTypeCreate,
+		MessageType: MessageTypeCreate,
 	}
 
 	tests := []struct {
 		name string
-		cmd  *mio.ModuleCommand
+		cmd  *ModuleCommand
 		want string
 	}{
-		{"empty", &mio.ModuleCommand{CooldownScope: -1, Name: "test"}, ""},
-		{"user", &mio.ModuleCommand{CooldownScope: mio.CooldownScopeUser, Name: "test"}, fmt.Sprintf("user:%v:%v", uid, "test")},
-		{"channel", &mio.ModuleCommand{CooldownScope: mio.CooldownScopeChannel, Name: "test"}, fmt.Sprintf("channel:%v:%v", chid, "test")},
-		{"guild", &mio.ModuleCommand{CooldownScope: mio.CooldownScopeGuild, Name: "test"}, fmt.Sprintf("guild:%v:%v", gid, "test")},
+		{"empty", &ModuleCommand{CooldownScope: -1, Name: "test"}, ""},
+		{"user", &ModuleCommand{CooldownScope: CooldownScopeUser, Name: "test"}, fmt.Sprintf("user:%v:%v", uid, "test")},
+		{"channel", &ModuleCommand{CooldownScope: CooldownScopeChannel, Name: "test"}, fmt.Sprintf("channel:%v:%v", chid, "test")},
+		{"guild", &ModuleCommand{CooldownScope: CooldownScopeGuild, Name: "test"}, fmt.Sprintf("guild:%v:%v", gid, "test")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
