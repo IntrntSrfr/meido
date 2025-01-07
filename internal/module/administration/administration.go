@@ -8,7 +8,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/utils"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 )
 
@@ -26,55 +25,86 @@ func New(b *mio.Bot, logger mio.Logger) mio.Module {
 }
 
 func (m *module) Hook() error {
-	if err := m.RegisterPassives(newForwardDmsPassive(m)); err != nil {
+	if err := m.RegisterPassives(
+		newForwardDmsPassive(m),
+	); err != nil {
 		return err
 	}
-	return m.RegisterCommands(
+
+	if err := m.RegisterCommands(
 		newToggleCommandCommand(m),
-		newMessageCommand(m),
-	)
+	); err != nil {
+		return err
+	}
+
+	if err := m.RegisterApplicationCommands(
+		newSendMessageSlash(m),
+	); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func newMessageCommand(m *module) *mio.ModuleCommand {
-	return &mio.ModuleCommand{
-		Mod:              m,
-		Name:             "message",
-		Description:      "Sends a message to a channel",
-		Triggers:         []string{"m?msg"},
-		Usage:            "m?msg [channelID] [message]",
-		Cooldown:         0,
-		CooldownScope:    mio.CooldownScopeChannel,
-		RequiredPerms:    0,
-		RequiresUserType: mio.UserTypeBotOwner,
-		CheckBotPerms:    false,
-		AllowedTypes:     mio.MessageTypeCreate,
-		AllowDMs:         true,
-		Enabled:          true,
-		Execute: func(msg *mio.DiscordMessage) {
-			if len(msg.Args()) < 3 {
-				return
-			}
-			chID := msg.Args()[1]
-			text := strings.Join(msg.Args()[1:], " ")
+func newSendMessageSlash(m *module) *mio.ModuleApplicationCommand {
+	cmd := mio.NewModuleApplicationCommandBuilder(m, "sendmessage").
+		Type(discordgo.ChatApplicationCommand).
+		RequiresBotOwner().
+		Description("Sends a message to a channel").
+		AddOption(&discordgo.ApplicationCommandOption{
+			Type:        discordgo.ApplicationCommandOptionString,
+			Name:        "channel",
+			Description: "Channel to send the message to",
+			Required:    true,
+		}).
+		AddOption(&discordgo.ApplicationCommandOption{
+			Type:        discordgo.ApplicationCommandOptionString,
+			Name:        "message",
+			Description: "Message to send",
+			Required:    true,
+		})
 
-			if !utils.IsNumber(chID) {
-				return
-			}
+	exec := func(d *mio.DiscordApplicationCommand) {
+		channelOpt, ok := d.Options("channel")
+		if !ok {
+			return
+		}
+		channel := channelOpt.StringValue()
 
+		messageOpt, ok := d.Options("message")
+		if !ok {
+			return
+		}
+		message := messageOpt.StringValue()
+
+		// if we suspect its JSON, try to decode it
+		complex := strings.HasPrefix(message, "{")
+		if complex {
 			var data discordgo.MessageSend
-			err := json.Unmarshal([]byte(text), &data)
+			err := json.Unmarshal([]byte(message), &data)
 			if err != nil {
-				_, _ = msg.Reply("There was an issue")
+				_ = d.RespondEphemeral("There was an issue")
 				return
 			}
 
-			if _, err := msg.Sess.ChannelMessageSendComplex(chID, &data); err != nil {
-				_, _ = msg.Reply("Could not deliver message")
+			sentMsg, err := d.Sess.ChannelMessageSendComplex(channel, &data)
+			if err != nil {
+				_ = d.RespondEphemeral("Could not deliver message")
 				return
 			}
-			_, _ = msg.Reply("Message delivered")
-		},
+			_ = d.RespondEphemeral(fmt.Sprintf("Message delivered. Link: https://discord.com/channels/%v/messages/%v", sentMsg.ChannelID, sentMsg.ID))
+			return
+		}
+
+		sentMsg, err := d.Sess.ChannelMessageSend(channel, message)
+		if err != nil {
+			_ = d.RespondEphemeral("Could not deliver message")
+			return
+		}
+		_ = d.RespondEphemeral(fmt.Sprintf("Message delivered. Link: https://discord.com/channels/%v/messages/%v", sentMsg.ChannelID, sentMsg.ID))
 	}
+
+	return cmd.Execute(exec).Build()
 }
 
 func newToggleCommandCommand(m *module) *mio.ModuleCommand {

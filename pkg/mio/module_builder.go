@@ -6,6 +6,9 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
+type ModuleBuilder struct {
+}
+
 type ModuleCommandBuilder struct {
 	cmd *ModuleCommand
 }
@@ -176,6 +179,11 @@ func (b *ModuleApplicationCommandBuilder) Cooldown(cooldown time.Duration, scope
 func (b *ModuleApplicationCommandBuilder) NoDM() *ModuleApplicationCommandBuilder {
 	dmPerms := false
 	b.command.DMPermission = &dmPerms
+	return b
+}
+
+func (b *ModuleApplicationCommandBuilder) RequiresBotOwner() *ModuleApplicationCommandBuilder {
+	b.command.UserType = UserTypeBotOwner
 	return b
 }
 
