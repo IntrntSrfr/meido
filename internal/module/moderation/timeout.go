@@ -5,30 +5,29 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
+	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
-func newMuteCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newMuteCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "mute",
 		Description:      "Mutes a member, making them unable to chat or speak. Duration will be 1 day unless something else is specified.",
 		Triggers:         []string{"m?mute"},
 		Usage:            "m?mute <user> [duration] | m?mute 163454407999094786 1h30m",
 		Cooldown:         time.Second * 1,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionModerateMembers,
 		CheckBotPerms:    true,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.muteCommand,
 	}
 }
 
-func (m *module) muteCommand(msg *discord.DiscordMessage) {
+func (m *module) muteCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -77,26 +76,26 @@ func (m *module) muteCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply(fmt.Sprintf("%v has been timed out for %v", targetMember.User, duration))
 }
 
-func newUnmuteCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newUnmuteCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "unmute",
 		Description:      "Unmutes a member",
 		Triggers:         []string{"m?unmute"},
 		Usage:            "m?unmute <user>",
 		Cooldown:         time.Second * 1,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionModerateMembers,
 		CheckBotPerms:    true,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.unmuteCommand,
 	}
 }
 
-func (m *module) unmuteCommand(msg *discord.DiscordMessage) {
+func (m *module) unmuteCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}

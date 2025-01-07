@@ -7,19 +7,17 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 )
 
 type module struct {
-	*bot.ModuleBase
+	*mio.ModuleBase
 }
 
-func New(b *bot.Bot, logger mio.Logger) bot.Module {
+func New(b *mio.Bot, logger mio.Logger) mio.Module {
 	logger = logger.Named("Testing")
 	return &module{
-		ModuleBase: bot.NewModule(b, "Testing", logger),
+		ModuleBase: mio.NewModule(b, "Testing", logger),
 	}
 }
 
@@ -33,29 +31,29 @@ func (m *module) Hook() error {
 	return nil
 }
 
-func newTestCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newTestCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "test",
 		Description:      "This is an incredible test command",
 		Triggers:         []string{"m?test"},
 		Usage:            "m?test",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			_, _ = msg.Reply("test")
 		},
 	}
 }
 
-func newSlashCommand(m *module) *bot.ModuleApplicationCommand {
-	bld := bot.NewModuleApplicationCommandBuilder(m, "permissions").
+func newSlashCommand(m *module) *mio.ModuleApplicationCommand {
+	bld := mio.NewModuleApplicationCommandBuilder(m, "permissions").
 		Type(discordgo.ChatApplicationCommand).
 		Description("Get or edit permissions for a user or a role").
 		AddSubcommandGroup(
@@ -98,7 +96,7 @@ func newSlashCommand(m *module) *bot.ModuleApplicationCommand {
 		).
 		NoDM()
 
-	exec := func(dac *discord.DiscordApplicationCommand) {
+	exec := func(dac *mio.DiscordApplicationCommand) {
 		if _, ok := dac.Options("user"); ok {
 			if _, ok := dac.Options("user:get"); ok {
 				userOpt, _ := dac.Options("user:get:user")
@@ -127,26 +125,26 @@ func newSlashCommand(m *module) *bot.ModuleApplicationCommand {
 	return bld.Execute(exec).Build()
 }
 
-func newMonkeyCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newMonkeyCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "monkey",
 		Description:      "Monkey",
 		Triggers:         []string{"m?monkey", "m?monke", "m?monki", "m?monky"},
 		Usage:            "m?monkey",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeUser,
+		CooldownScope:    mio.CooldownScopeUser,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
 		Execute:          m.monkeyCommand,
 	}
 }
 
-func (m *module) monkeyCommand(msg *discord.DiscordMessage) {
+func (m *module) monkeyCommand(msg *mio.DiscordMessage) {
 	_, _ = msg.Reply(monkeys[rand.Intn(len(monkeys))])
 }
 

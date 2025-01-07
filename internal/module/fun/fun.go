@@ -10,18 +10,16 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/gol"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
 type module struct {
-	*bot.ModuleBase
+	*mio.ModuleBase
 }
 
-func New(b *bot.Bot, logger mio.Logger) bot.Module {
+func New(b *mio.Bot, logger mio.Logger) mio.Module {
 	logger = logger.Named("Fun")
 	return &module{
-		ModuleBase: bot.NewModule(b, "Fun", logger),
+		ModuleBase: mio.NewModule(b, "Fun", logger),
 	}
 }
 
@@ -35,22 +33,22 @@ func (m *module) Hook() error {
 	return nil
 }
 
-func newLifeCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newLifeCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "life",
 		Description:      "Shows a gif of Conway's Game of Life. If no seed is provided, it uses your user ID",
 		Triggers:         []string{"m?life"},
 		Usage:            "m?life | m?life <seed | user>",
 		Cooldown:         time.Second * 5,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			_ = msg.Discord.StartTyping(msg.ChannelID())
 			seedStr := msg.AuthorID()
 			if len(msg.Args()) > 1 {
@@ -68,18 +66,18 @@ func newLifeCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newLifeSlash(m *module) *bot.ModuleApplicationCommand {
-	cmd := bot.NewModuleApplicationCommandBuilder(m, "life").
+func newLifeSlash(m *module) *mio.ModuleApplicationCommand {
+	cmd := mio.NewModuleApplicationCommandBuilder(m, "life").
 		Type(discordgo.ChatApplicationCommand).
 		Description("Show Conway's Game of Life").
-		Cooldown(time.Second*5, bot.CooldownScopeChannel).
+		Cooldown(time.Second*5, mio.CooldownScopeChannel).
 		AddOption(&discordgo.ApplicationCommandOption{
 			Type:        discordgo.ApplicationCommandOptionString,
 			Name:        "seed",
 			Description: "Random generator seed",
 		})
 
-	exec := func(dac *discord.DiscordApplicationCommand) {
+	exec := func(dac *mio.DiscordApplicationCommand) {
 		seed := dac.AuthorID()
 		if seedOpt, ok := dac.Options("seed"); ok {
 			seed = seedOpt.StringValue()

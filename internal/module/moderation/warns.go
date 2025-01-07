@@ -9,32 +9,31 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/dustin/go-humanize"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 	"go.uber.org/zap"
 )
 
-func newWarnCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newWarnCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "warn",
 		Description:      "Warns a user. Requires warnings enabled.",
 		Triggers:         []string{"m?warn", ".warn"},
 		Usage:            "m?warn [user] <reason>",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionBanMembers,
 		CheckBotPerms:    true,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.warnCommand,
 	}
 }
 
-func (m *module) warnCommand(msg *discord.DiscordMessage) {
+func (m *module) warnCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -125,26 +124,26 @@ func (m *module) warnCommand(msg *discord.DiscordMessage) {
 	}
 }
 
-func newWarnLogCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newWarnLogCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "warnlog",
 		Description:      "Displays a users warns",
 		Triggers:         []string{"m?warnlog"},
 		Usage:            "m?warnlog [user] <page>",
 		Cooldown:         time.Second * 5,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionManageMessages,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.warnlogCommand,
 	}
 }
 
-func (m *module) warnlogCommand(msg *discord.DiscordMessage) {
+func (m *module) warnlogCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -226,26 +225,26 @@ func (m *module) warnlogCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newWarnCountCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newWarnCountCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "warncount",
 		Description:      "Displays how many warns a user has. User can be specified. Message author will be used if no user is provided.",
 		Triggers:         []string{"m?warncount"},
 		Usage:            "m?warncount <user>",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.warncountCommand,
 	}
 }
 
-func (m *module) warncountCommand(msg *discord.DiscordMessage) {
+func (m *module) warncountCommand(msg *mio.DiscordMessage) {
 	gc, err := m.db.GetGuild(msg.GuildID())
 	if err != nil {
 		_, _ = msg.Reply("There was an issue, please try again!")
@@ -272,26 +271,26 @@ func (m *module) warncountCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply(fmt.Sprintf("%v is at %v/%v warns", targetUser.String(), len(warns), gc.MaxWarns))
 }
 
-func newClearWarnCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newClearWarnCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "pardon",
 		Description:      "Pardons a user. Opens a menu to clear a warn belonging to them.",
 		Triggers:         []string{"m?pardon", "m?clearwarn"},
 		Usage:            "m?pardon <user>",
 		Cooldown:         time.Second * 3,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionBanMembers,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.clearwarnCommand,
 	}
 }
 
-func (m *module) clearwarnCommand(msg *discord.DiscordMessage) {
+func (m *module) clearwarnCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -329,7 +328,7 @@ func (m *module) clearwarnCommand(msg *discord.DiscordMessage) {
 	}
 
 	var n int
-	var reply *discord.DiscordMessage
+	var reply *mio.DiscordMessage
 	// this needs a timeout
 	for {
 		select {
@@ -370,25 +369,25 @@ func (m *module) clearwarnCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply("Updated warning")
 }
 
-func newClearAllWarnsCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newClearAllWarnsCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "pardonall",
 		Description:      "Pardons all active warns for a member",
 		Triggers:         []string{"m?pardonall", "m?clearallwarns"},
 		Usage:            "m?pardonall <user>",
 		Cooldown:         time.Second * 5,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionBanMembers,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.clearallwarnsCommand,
 	}
 }
-func (m *module) clearallwarnsCommand(msg *discord.DiscordMessage) {
+func (m *module) clearallwarnsCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}

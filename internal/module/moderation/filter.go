@@ -9,32 +9,31 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 	"go.uber.org/zap"
 )
 
-func newFilterWordCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newFilterWordCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "filterword",
 		Description:      "Adds or removes a word or phrase to the server filter.",
 		Triggers:         []string{"m?fw", "m?filterword"},
 		Usage:            "m?fw jeff",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionManageMessages,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.filterwordCommand,
 	}
 }
-func (m *module) filterwordCommand(msg *discord.DiscordMessage) {
+func (m *module) filterwordCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -61,25 +60,25 @@ func (m *module) filterwordCommand(msg *discord.DiscordMessage) {
 	}
 }
 
-func newFilterWordListCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newFilterWordListCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "filterwordlist",
 		Description:      "Lists of all filtered phrases for this server",
 		Triggers:         []string{"m?fwl", "m?filterwordlist"},
 		Usage:            "m?fwl",
 		Cooldown:         time.Second * 10,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionManageMessages,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.filterwordlistCommand,
 	}
 }
-func (m *module) filterwordlistCommand(msg *discord.DiscordMessage) {
+func (m *module) filterwordlistCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -110,26 +109,26 @@ func (m *module) filterwordlistCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply(builder.String())
 }
 
-func newClearFilterCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newClearFilterCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "clearfilter",
 		Description:      "Removes all phrases from the server filter",
 		Triggers:         []string{"m?clearfilter"},
 		Usage:            "m?clearfilter",
 		Cooldown:         time.Second * 10,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionAdministrator,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.clearfilterCommand,
 	}
 }
 
-func (m *module) clearfilterCommand(msg *discord.DiscordMessage) {
+func (m *module) clearfilterCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -145,7 +144,7 @@ func (m *module) clearfilterCommand(msg *discord.DiscordMessage) {
 	}
 	defer m.Bot.Callbacks.Delete(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
 
-	var reply *discord.DiscordMessage
+	var reply *mio.DiscordMessage
 	t := time.NewTimer(time.Second * 15)
 	for {
 		select {
@@ -169,19 +168,19 @@ func (m *module) clearfilterCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.Reply("All filters successfully deleted")
 }
 
-func newModerationSettingsCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newModerationSettingsCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "moderationsettings",
 		Description:      "Moderation settings:\n- Toggle warn system [enable / disable]\n- Set max warns [0 - 10]\n- Set warn duration [0 (forever) - 365]",
 		Triggers:         []string{"m?settings moderation"},
 		Usage:            "m?settings moderation warns [enable / disable]\nm?settings moderation maxwarns [0 - 10]\nm?settings moderation warnduration [0 - 365]",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionAdministrator,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.moderationsettingsCommand,
@@ -193,7 +192,7 @@ var (
 	warnsEnabledSettings = map[string]bool{"enable": true, "disable": false}
 )
 
-func (m *module) moderationsettingsCommand(msg *discord.DiscordMessage) {
+func (m *module) moderationsettingsCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -257,14 +256,14 @@ func (m *module) moderationsettingsCommand(msg *discord.DiscordMessage) {
 	}
 }
 
-func newCheckFilterPassive(m *module) *bot.ModulePassive {
-	return &bot.ModulePassive{
+func newCheckFilterPassive(m *module) *mio.ModulePassive {
+	return &mio.ModulePassive{
 		Mod:          m,
 		Name:         "checkfilter",
 		Description:  "checks if messages contain phrases found in the server filter",
 		Enabled:      true,
-		AllowedTypes: discord.MessageTypeCreate | discord.MessageTypeUpdate,
-		Execute: func(msg *discord.DiscordMessage) {
+		AllowedTypes: mio.MessageTypeCreate | mio.MessageTypeUpdate,
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}

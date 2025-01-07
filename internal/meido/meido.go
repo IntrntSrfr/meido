@@ -18,13 +18,12 @@ import (
 	"github.com/intrntsrfr/meido/internal/module/testing"
 	"github.com/intrntsrfr/meido/internal/module/utility"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"go.uber.org/zap"
 )
 
 type Meido struct {
-	Bot    *bot.Bot
+	Bot    *mio.Bot
 	db     database.DB
 	logger mio.Logger
 	config *utils.Config
@@ -33,7 +32,7 @@ type Meido struct {
 func New(config *utils.Config, db database.DB) *Meido {
 	logger := newLogger("Meido")
 
-	b := bot.NewBotBuilder(config).
+	b := mio.NewBotBuilder(config).
 		WithDefaultHandlers().
 		WithLogger(logger).
 		Build()
@@ -58,7 +57,7 @@ func (m *Meido) Close() {
 }
 
 func (m *Meido) registerModules() {
-	modules := []bot.Module{
+	modules := []mio.Module{
 		administration.New(m.Bot, m.logger),
 		testing.New(m.Bot, m.logger),
 		fun.New(m.Bot, m.logger),

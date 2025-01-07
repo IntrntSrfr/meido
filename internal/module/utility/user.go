@@ -6,28 +6,27 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 )
 
-func newAvatarCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newAvatarCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "avatar",
 		Description:      "Displays a users profile picture. User can be specified. Author is default.",
 		Triggers:         []string{"m?avatar", "m?av", ">av"},
 		Usage:            ">av <user>",
 		Cooldown:         time.Second * 1,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			targetUser := msg.Author()
 			var err error
 			if len(msg.Args()) > 1 {
@@ -49,22 +48,22 @@ func newAvatarCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newBannerCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newBannerCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "banner",
 		Description:      "Displays a users banner. User can be specified. Author is default.",
 		Triggers:         []string{"m?banner", ">banner"},
 		Usage:            ">banner <user>",
 		Cooldown:         time.Second * 1,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -100,22 +99,22 @@ func newBannerCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newMemberAvatarCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newMemberAvatarCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "memberavatar",
 		Description:      "Displays a members profile picture. User can be specified. Author is default.",
 		Triggers:         []string{"m?memberavatar", "m?mav", ">mav"},
 		Usage:            ">av <user>",
 		Cooldown:         time.Second * 1,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -148,22 +147,22 @@ func newMemberAvatarCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newUserInfoCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newUserInfoCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "userinfo",
 		Description:      "Displays information about a user",
 		Triggers:         []string{"m?userinfo"},
 		Usage:            "m?userinfo <user>",
 		Cooldown:         time.Second * 1,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			targetUser := msg.Author()
 			targetMember := msg.Member()
 			if len(msg.Args()) > 1 {
@@ -212,11 +211,11 @@ func newUserInfoCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newUserInfoUserCommand(m *module) *bot.ModuleApplicationCommand {
-	bld := bot.NewModuleApplicationCommandBuilder(m, "info").
+func newUserInfoUserCommand(m *module) *mio.ModuleApplicationCommand {
+	bld := mio.NewModuleApplicationCommandBuilder(m, "info").
 		Type(discordgo.UserApplicationCommand)
 
-	run := func(msg *discord.DiscordApplicationCommand) {
+	run := func(msg *mio.DiscordApplicationCommand) {
 		targetUser := msg.Data.Resolved.Users[msg.Data.TargetID]
 		targetMember := msg.Data.Resolved.Members[msg.Data.TargetID]
 		if targetUser == nil || targetMember == nil {

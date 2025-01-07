@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
+	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
 func addAutoRoleOnJoin(m *module) func(s *discordgo.Session, g *discordgo.GuildMemberAdd) {
@@ -23,22 +22,22 @@ func addAutoRoleOnJoin(m *module) func(s *discordgo.Session, g *discordgo.GuildM
 	}
 }
 
-func newSetAutoRoleCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newSetAutoRoleCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "setautorole",
 		Description:      "Sets an autorole for the server to a provided role",
 		Triggers:         []string{"m?setautorole"},
 		Usage:            "m?setautorole [role name / role ID]",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionAdministrator,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -64,22 +63,22 @@ func newSetAutoRoleCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newRemoveAutoRoleCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newRemoveAutoRoleCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "removeautorole",
 		Description:      "Removes the autorole for the server",
 		Triggers:         []string{"m?removeautorole"},
 		Usage:            "m?removeautorole",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionAdministrator,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			rpl, err := msg.Reply("Are you sure you want to REMOVE the autorole? Please answer `yes` if you are.")
 			if err != nil {
 				_, _ = msg.Reply("There was an issue, please try again!")
@@ -93,7 +92,7 @@ func newRemoveAutoRoleCommand(m *module) *bot.ModuleCommand {
 			}
 			defer m.Bot.Callbacks.Delete(fmt.Sprintf("%v:%v", msg.ChannelID(), msg.AuthorID()))
 
-			var reply *discord.DiscordMessage
+			var reply *mio.DiscordMessage
 			t := time.NewTimer(time.Second * 15)
 			for {
 				select {

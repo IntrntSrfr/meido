@@ -5,68 +5,68 @@ import (
 	"time"
 
 	"github.com/intrntsrfr/meido/internal/structs"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"go.uber.org/zap"
 )
 
 func (m *Meido) addHandlers() {
-	m.Bot.AddHandler(func(evt *bot.CommandRan) {
+	m.Bot.AddHandler(func(evt *mio.CommandRan) {
 		m.logCommand(evt)
 		m.logCommandRan(evt)
-		m.countProcessedEvent(bot.BotEventCommandRan.String())
+		m.countProcessedEvent(mio.BotEventCommandRan.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.CommandPanicked) {
+	m.Bot.AddHandler(func(evt *mio.CommandPanicked) {
 		m.logCommandPanicked(evt)
-		m.countProcessedEvent(bot.BotEventCommandPanicked.String())
+		m.countProcessedEvent(mio.BotEventCommandPanicked.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.PassiveRan) {
+	m.Bot.AddHandler(func(evt *mio.PassiveRan) {
 		m.logPassiveRan(evt)
-		m.countProcessedEvent(bot.BotEventPassiveRan.String())
+		m.countProcessedEvent(mio.BotEventPassiveRan.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.PassivePanicked) {
+	m.Bot.AddHandler(func(evt *mio.PassivePanicked) {
 		m.logPassivePanicked(evt)
-		m.countProcessedEvent(bot.BotEventPassivePanicked.String())
+		m.countProcessedEvent(mio.BotEventPassivePanicked.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.ApplicationCommandRan) {
+	m.Bot.AddHandler(func(evt *mio.ApplicationCommandRan) {
 		m.logApplicationCommandRan(evt)
-		m.countProcessedEvent(bot.BotEventApplicationCommandRan.String())
+		m.countProcessedEvent(mio.BotEventApplicationCommandRan.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.ApplicationCommandPanicked) {
+	m.Bot.AddHandler(func(evt *mio.ApplicationCommandPanicked) {
 		m.logApplicationCommandPanicked(evt)
-		m.countProcessedEvent(bot.BotEventApplicationCommandPanicked.String())
+		m.countProcessedEvent(mio.BotEventApplicationCommandPanicked.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.MessageComponentRan) {
+	m.Bot.AddHandler(func(evt *mio.MessageComponentRan) {
 		m.logMessageComponentRan(evt)
-		m.countProcessedEvent(bot.BotEventMessageComponentRan.String())
+		m.countProcessedEvent(mio.BotEventMessageComponentRan.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.MessageComponentPanicked) {
+	m.Bot.AddHandler(func(evt *mio.MessageComponentPanicked) {
 		m.logMessageComponentPanicked(evt)
-		m.countProcessedEvent(bot.BotEventMessageComponentPanicked.String())
+		m.countProcessedEvent(mio.BotEventMessageComponentPanicked.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.ModalSubmitRan) {
+	m.Bot.AddHandler(func(evt *mio.ModalSubmitRan) {
 		m.logModalSubmitRan(evt)
-		m.countProcessedEvent(bot.BotEventModalSubmitRan.String())
+		m.countProcessedEvent(mio.BotEventModalSubmitRan.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.ModalSubmitPanicked) {
+	m.Bot.AddHandler(func(evt *mio.ModalSubmitPanicked) {
 		m.logModalSubmitPanicked(evt)
-		m.countProcessedEvent(bot.BotEventModalSubmitPanicked.String())
+		m.countProcessedEvent(mio.BotEventModalSubmitPanicked.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.MessageProcessed) {
-		m.countProcessedEvent(bot.BotEventMessageProcessed.String())
+	m.Bot.AddHandler(func(evt *mio.MessageProcessed) {
+		m.countProcessedEvent(mio.BotEventMessageProcessed.String())
 	})
 
-	m.Bot.AddHandler(func(evt *bot.InteractionProcessed) {
-		m.countProcessedEvent(bot.BotEventInteractionProcessed.String())
+	m.Bot.AddHandler(func(evt *mio.InteractionProcessed) {
+		m.countProcessedEvent(mio.BotEventInteractionProcessed.String())
 	})
 }
 
@@ -76,7 +76,7 @@ func (m *Meido) countProcessedEvent(eventType string) {
 	}
 }
 
-func (m *Meido) logCommand(cmd *bot.CommandRan) {
+func (m *Meido) logCommand(cmd *mio.CommandRan) {
 	entry := &structs.CommandLogEntry{
 		Command:   cmd.Command.Name,
 		Args:      strings.Join(cmd.Message.Args(), " "),
@@ -91,7 +91,7 @@ func (m *Meido) logCommand(cmd *bot.CommandRan) {
 	}
 }
 
-func (m *Meido) logCommandRan(cmd *bot.CommandRan) {
+func (m *Meido) logCommandRan(cmd *mio.CommandRan) {
 	m.logger.Info("Command",
 		zap.String("name", cmd.Command.Name),
 		zap.String("id", cmd.Message.ID()),
@@ -100,7 +100,7 @@ func (m *Meido) logCommandRan(cmd *bot.CommandRan) {
 		zap.String("content", cmd.Message.RawContent()),
 	)
 }
-func (m *Meido) logCommandPanicked(cmd *bot.CommandPanicked) {
+func (m *Meido) logCommandPanicked(cmd *mio.CommandPanicked) {
 	m.logger.Error("Command panic",
 		zap.Any("command", cmd.Command),
 		zap.Any("message", cmd.Message),
@@ -108,7 +108,7 @@ func (m *Meido) logCommandPanicked(cmd *bot.CommandPanicked) {
 	)
 }
 
-func (m *Meido) logPassiveRan(pas *bot.PassiveRan) {
+func (m *Meido) logPassiveRan(pas *mio.PassiveRan) {
 	m.logger.Debug("Passive",
 		zap.String("name", pas.Passive.Name),
 		zap.String("id", pas.Message.ID()),
@@ -117,7 +117,7 @@ func (m *Meido) logPassiveRan(pas *bot.PassiveRan) {
 	)
 }
 
-func (m *Meido) logPassivePanicked(pas *bot.PassivePanicked) {
+func (m *Meido) logPassivePanicked(pas *mio.PassivePanicked) {
 	m.logger.Error("Passive panic",
 		zap.Any("passive", pas.Passive),
 		zap.Any("message", pas.Message),
@@ -125,7 +125,7 @@ func (m *Meido) logPassivePanicked(pas *bot.PassivePanicked) {
 	)
 }
 
-func (m *Meido) logApplicationCommandRan(cmd *bot.ApplicationCommandRan) {
+func (m *Meido) logApplicationCommandRan(cmd *mio.ApplicationCommandRan) {
 	m.logger.Info("Slash",
 		zap.String("name", cmd.Interaction.Name()),
 		zap.String("id", cmd.Interaction.ID()),
@@ -134,7 +134,7 @@ func (m *Meido) logApplicationCommandRan(cmd *bot.ApplicationCommandRan) {
 	)
 }
 
-func (m *Meido) logApplicationCommandPanicked(cmd *bot.ApplicationCommandPanicked) {
+func (m *Meido) logApplicationCommandPanicked(cmd *mio.ApplicationCommandPanicked) {
 	m.logger.Error("Slash panic",
 		zap.Any("slash", cmd.ApplicationCommand),
 		zap.Any("interaction", cmd.Interaction),
@@ -142,14 +142,14 @@ func (m *Meido) logApplicationCommandPanicked(cmd *bot.ApplicationCommandPanicke
 	)
 }
 
-func (m *Meido) logMessageComponentRan(cmd *bot.MessageComponentRan) {
+func (m *Meido) logMessageComponentRan(cmd *mio.MessageComponentRan) {
 	m.logger.Info("Component",
 		zap.String("component", cmd.MessageComponent.Name),
 		zap.String("customID", cmd.Interaction.Data.CustomID),
 	)
 }
 
-func (m *Meido) logMessageComponentPanicked(cmd *bot.MessageComponentPanicked) {
+func (m *Meido) logMessageComponentPanicked(cmd *mio.MessageComponentPanicked) {
 	m.logger.Error("Component panic",
 		zap.Any("component", cmd.MessageComponent),
 		zap.Any("interaction", cmd.Interaction),
@@ -157,14 +157,14 @@ func (m *Meido) logMessageComponentPanicked(cmd *bot.MessageComponentPanicked) {
 	)
 }
 
-func (m *Meido) logModalSubmitRan(cmd *bot.ModalSubmitRan) {
+func (m *Meido) logModalSubmitRan(cmd *mio.ModalSubmitRan) {
 	m.logger.Info("Modal",
 		zap.String("modal", cmd.ModalSubmit.Name),
 		zap.String("customID", cmd.Interaction.Data.CustomID),
 	)
 }
 
-func (m *Meido) logModalSubmitPanicked(cmd *bot.ModalSubmitPanicked) {
+func (m *Meido) logModalSubmitPanicked(cmd *mio.ModalSubmitPanicked) {
 	m.logger.Error("Modal panic",
 		zap.Any("modal", cmd.ModalSubmit),
 		zap.Any("interaction", cmd.Interaction),

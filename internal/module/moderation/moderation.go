@@ -9,22 +9,20 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 	"go.uber.org/zap"
 )
 
 type module struct {
-	*bot.ModuleBase
+	*mio.ModuleBase
 	db IModerationDB
 }
 
-func New(b *bot.Bot, db database.DB, logger mio.Logger) bot.Module {
+func New(b *mio.Bot, db database.DB, logger mio.Logger) mio.Module {
 	logger = logger.Named("Moderation")
 	return &module{
-		ModuleBase: bot.NewModule(b, "Moderation", logger),
+		ModuleBase: mio.NewModule(b, "Moderation", logger),
 		db:         &ModerationDB{DB: db, IFilterDB: &FilterDB{db}, IWarnDB: &WarnDB{db}},
 	}
 }
@@ -93,7 +91,7 @@ func checkWarnInterval(m *module) func(s *discordgo.Session, r *discordgo.Ready)
 								m.Logger.Error("Updating warn failed", zap.Error(err), zap.Int("warn UID", warn.UID))
 							}
 							//m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3",
-							//	m.bot.Discord.Sess.State().User.ID, time.Now(), warn.UID)
+							//	m.mio.Discord.Sess.State().User.ID, time.Now(), warn.UID)
 						}
 					}
 				}
@@ -102,26 +100,26 @@ func checkWarnInterval(m *module) func(s *discordgo.Session, r *discordgo.Ready)
 	}
 }
 
-func newBanCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newBanCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "ban",
 		Description:      "Bans a user. Days of messages to be deleted and reason is optional",
 		Triggers:         []string{"m?ban", "m?b", ".b", ".ban"},
 		Usage:            ".b [user] <days> <reason>",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionBanMembers,
 		CheckBotPerms:    true,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.banCommand,
 	}
 }
 
-func (m *module) banCommand(msg *discord.DiscordMessage) {
+func (m *module) banCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -213,26 +211,26 @@ func (m *module) banCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newUnbanCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newUnbanCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "unban",
 		Description:      "Unbans a user",
 		Triggers:         []string{"m?unban", "m?ub", ".ub", ".unban"},
 		Usage:            ".unban [userID]",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionBanMembers,
 		CheckBotPerms:    true,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.unbanCommand,
 	}
 }
 
-func (m *module) unbanCommand(msg *discord.DiscordMessage) {
+func (m *module) unbanCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -258,22 +256,22 @@ func (m *module) unbanCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newHackbanCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newHackbanCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "hackban",
 		Description:      "Hackbans one or several users. Prunes 7 days. Only accepts user IDs.",
 		Triggers:         []string{"m?hackban", "m?hb"},
 		Usage:            "m?hb [userID] <additional userIDs...>",
 		Cooldown:         time.Second * 3,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionBanMembers,
 		CheckBotPerms:    true,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -295,26 +293,26 @@ func newHackbanCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newKickCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newKickCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "kick",
 		Description:      "Kicks a user. Reason is optional",
 		Triggers:         []string{"m?kick", "m?k", ".kick", ".k"},
 		Usage:            "m?k [user] <reason>",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionKickMembers,
 		CheckBotPerms:    true,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.kickCommand,
 	}
 }
 
-func (m *module) kickCommand(msg *discord.DiscordMessage) {
+func (m *module) kickCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 2 {
 		return
 	}
@@ -377,26 +375,26 @@ func (m *module) kickCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newPruneCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newPruneCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "prune",
 		Description:      "Prunes all of Meido's messages in the last 100 messages. Amount of messages can be specified, but max 100. If a user is specified, it removes all messages from that user in the last 100 messages.",
 		Triggers:         []string{"m?prune"},
 		Usage:            "m?prune <user> <amount>",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionManageMessages,
 		CheckBotPerms:    true,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.pruneCommand,
 	}
 }
 
-func (m *module) pruneCommand(msg *discord.DiscordMessage) {
+func (m *module) pruneCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) == 1 {
 		pruneMessages(msg, msg.Discord.BotUser().ID, 100)
 	} else if len(msg.Args()) == 2 {
@@ -427,7 +425,7 @@ func (m *module) pruneCommand(msg *discord.DiscordMessage) {
 // messages where the author ID corresponds to the ID given. If the ID given is
 // empty, it prunes all messages. It prunes the amount of messages that the
 // Session.State allows, or how many are available, or the amount given.
-func pruneMessages(msg *discord.DiscordMessage, memberID string, amount int) {
+func pruneMessages(msg *mio.DiscordMessage, memberID string, amount int) {
 	ch, err := msg.Discord.Channel(msg.ChannelID())
 	if err != nil {
 		return

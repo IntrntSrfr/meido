@@ -4,30 +4,29 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
+	"github.com/intrntsrfr/meido/pkg/mio"
 )
 
-func newLockdownChannelCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newLockdownChannelCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "lockdown",
 		Description:      "Locks the current channel.",
 		Triggers:         []string{"m?lockdown"},
 		Usage:            "m?lockdown",
 		Cooldown:         time.Second * 10,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionManageRoles,
 		CheckBotPerms:    true,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.lockdownCommand,
 	}
 }
 
-func (m *module) lockdownCommand(msg *discord.DiscordMessage) {
+func (m *module) lockdownCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}
@@ -98,26 +97,26 @@ func (m *module) lockdownCommand(msg *discord.DiscordMessage) {
 	}
 }
 
-func newUnlockChannelCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newUnlockChannelCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "unlock",
 		Description:      "Unlocks a previously locked channel.",
 		Triggers:         []string{"m?unlock"},
 		Usage:            "m?unlock",
 		Cooldown:         time.Second * 10,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionManageRoles,
 		CheckBotPerms:    true,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
 		Execute:          m.unlockCommand,
 	}
 }
 
-func (m *module) unlockCommand(msg *discord.DiscordMessage) {
+func (m *module) unlockCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 1 {
 		return
 	}

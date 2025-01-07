@@ -11,18 +11,16 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
 )
 
 type module struct {
-	*bot.ModuleBase
+	*mio.ModuleBase
 }
 
-func New(b *bot.Bot, logger mio.Logger) bot.Module {
+func New(b *mio.Bot, logger mio.Logger) mio.Module {
 	logger = logger.Named("MediaTransform")
 	return &module{
-		ModuleBase: bot.NewModule(b, "MediaTransform", logger),
+		ModuleBase: mio.NewModule(b, "MediaTransform", logger),
 	}
 }
 
@@ -30,18 +28,18 @@ func (m *module) Hook() error {
 	return m.RegisterPassives(newJpgLargeConvertPassive(m))
 }
 
-func newJpgLargeConvertPassive(m *module) *bot.ModulePassive {
-	return &bot.ModulePassive{
+func newJpgLargeConvertPassive(m *module) *mio.ModulePassive {
+	return &mio.ModulePassive{
 		Mod:          m,
 		Name:         "jpglargeconvert",
 		Description:  "Automatically converts jpglarge files to jpg",
-		AllowedTypes: discord.MessageTypeCreate,
+		AllowedTypes: mio.MessageTypeCreate,
 		Enabled:      true,
 		Execute:      m.jpgLargeConvertPassive,
 	}
 }
 
-func (m *module) jpgLargeConvertPassive(msg *discord.DiscordMessage) {
+func (m *module) jpgLargeConvertPassive(msg *mio.DiscordMessage) {
 	if len(msg.Message.Attachments) < 1 {
 		return
 	}
@@ -79,26 +77,26 @@ func (m *module) jpgLargeConvertPassive(msg *discord.DiscordMessage) {
 	})
 }
 
-func newMediaConvertCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newMediaConvertCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "mediaconvert",
 		Description:      "Converts some media files from one format to another",
 		Triggers:         []string{"m?mediaconvert"},
 		Usage:            "m?mediaconvert [url] [target format]",
 		Cooldown:         time.Second * 30,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
 		Execute:          m.mediaConvertCommand,
 	}
 }
 
-func (m *module) mediaConvertCommand(msg *discord.DiscordMessage) {
+func (m *module) mediaConvertCommand(msg *mio.DiscordMessage) {
 	if len(msg.Args()) < 3 {
 		return
 	}

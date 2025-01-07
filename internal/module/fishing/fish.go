@@ -7,23 +7,21 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/intrntsrfr/meido/internal/database"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 	"go.uber.org/zap"
 )
 
 type module struct {
-	*bot.ModuleBase
+	*mio.ModuleBase
 	db IAquariumDB
 	fs *fishingService
 }
 
-func New(b *bot.Bot, db database.DB, logger mio.Logger) bot.Module {
+func New(b *mio.Bot, db database.DB, logger mio.Logger) mio.Module {
 	logger = logger.Named("Fishing")
 	return &module{
-		ModuleBase: bot.NewModule(b, "Fishing", logger),
+		ModuleBase: mio.NewModule(b, "Fishing", logger),
 		db:         &AquariumDB{db},
 	}
 }
@@ -41,21 +39,21 @@ func (m *module) Hook() error {
 	)
 }
 
-func newFishCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newFishCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "fish",
 		Description:      "Go fishin'",
 		Triggers:         []string{"m?fish"},
 		Usage:            "m?fish",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeUser,
+		CooldownScope:    mio.CooldownScopeUser,
 		RequiredPerms:    0,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if gc, err := m.db.GetGuild(msg.GuildID()); err != nil || msg.ChannelID() != gc.FishingChannelID {
 				return
 			}
@@ -70,25 +68,25 @@ func newFishCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newAquariumCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newAquariumCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "aquarium",
 		Description:      "Displays your or someone else's aquarium",
 		Triggers:         []string{"m?aquarium", "m?aq"},
 		Usage:            "m?Aquarium <userID>",
 		Cooldown:         time.Second * 3,
-		CooldownScope:    bot.CooldownScopeUser,
+		CooldownScope:    mio.CooldownScopeUser,
 		RequiredPerms:    0,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
 		Execute:          m.aquariumCommand,
 	}
 }
 
-func (m *module) aquariumCommand(msg *discord.DiscordMessage) {
+func (m *module) aquariumCommand(msg *mio.DiscordMessage) {
 	if gc, err := m.db.GetGuild(msg.GuildID()); err != nil || msg.ChannelID() != gc.FishingChannelID {
 		return
 	}
@@ -121,22 +119,22 @@ func (m *module) aquariumCommand(msg *discord.DiscordMessage) {
 	_, _ = msg.ReplyEmbed(embed.Build())
 }
 
-func newSetFishingSettingsCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newSetFishingSettingsCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "fishingsettings",
 		Description:      "Fishing settings:\n- Set fishing channel [channelID]",
 		Triggers:         []string{"m?settings fishing"},
 		Usage:            "m?settings fishing fishingchannel [channelID]",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    discordgo.PermissionAdministrator,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}

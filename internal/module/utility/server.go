@@ -5,28 +5,27 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
+	"github.com/intrntsrfr/meido/pkg/mio"
 	"github.com/intrntsrfr/meido/pkg/utils"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 )
 
-func newServerCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newServerCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "server",
 		Description:      "Displays information about the server",
 		Triggers:         []string{"m?server"},
 		Usage:            "m?server",
 		Cooldown:         time.Second * 5,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -80,22 +79,22 @@ func newServerCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newServerSplashCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newServerSplashCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "serversplash",
 		Description:      "Displays server splash if one exists",
 		Triggers:         []string{"m?serversplash"},
 		Usage:            "m?serversplash",
 		Cooldown:         time.Second * 5,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -119,22 +118,22 @@ func newServerSplashCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newServerIconCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newServerIconCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "servericon",
 		Description:      "Displays server icon, if one exists",
 		Triggers:         []string{"m?servericon", "m?si", ">si"},
 		Usage:            "m?servericon",
 		Cooldown:         time.Second * 5,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}
@@ -157,22 +156,22 @@ func newServerIconCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newServerBannerCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newServerBannerCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "serverbanner",
 		Description:      "Displays server banner if one exists",
 		Triggers:         []string{"m?serverbanner"},
 		Usage:            "m?serverbanner",
 		Cooldown:         time.Second * 5,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         false,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 1 {
 				return
 			}

@@ -10,13 +10,11 @@ import (
 	"github.com/intrntsrfr/meido/internal/module/search/service"
 	iutils "github.com/intrntsrfr/meido/internal/utils"
 	"github.com/intrntsrfr/meido/pkg/mio"
-	"github.com/intrntsrfr/meido/pkg/mio/bot"
-	"github.com/intrntsrfr/meido/pkg/mio/discord"
 	"github.com/intrntsrfr/meido/pkg/utils/builders"
 )
 
 type module struct {
-	*bot.ModuleBase
+	*mio.ModuleBase
 	search     *service.Service
 	imageCache *service.ImageSearchCache
 }
@@ -25,10 +23,10 @@ const (
 	imageSearchHandler string = "image_search"
 )
 
-func New(b *bot.Bot, logger mio.Logger) bot.Module {
+func New(b *mio.Bot, logger mio.Logger) mio.Module {
 	logger = logger.Named("Search")
 	return &module{
-		ModuleBase: bot.NewModule(b, "Search", logger),
+		ModuleBase: mio.NewModule(b, "Search", logger),
 		search:     service.NewService(b.Config.GetString("youtube_token"), b.Config.GetString("open_weather_key")),
 		imageCache: service.NewImageSearchCache(),
 	}
@@ -49,22 +47,22 @@ func (m *module) Hook() error {
 	return nil
 }
 
-func newWeatherCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newWeatherCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "weather",
 		Description:      "Finds the weather at a provided location",
 		Triggers:         []string{"m?weather"},
 		Usage:            "m?weather [city]",
 		Cooldown:         0,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -97,22 +95,22 @@ func newWeatherCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newYouTubeCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newYouTubeCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "youtube",
 		Description:      "Search for a YouTube video",
 		Triggers:         []string{"m?youtube", "m?yt"},
 		Usage:            "m?yt [query]",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -138,22 +136,22 @@ func newYouTubeCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newImageCommand(m *module) *bot.ModuleCommand {
-	return &bot.ModuleCommand{
+func newImageCommand(m *module) *mio.ModuleCommand {
+	return &mio.ModuleCommand{
 		Mod:              m,
 		Name:             "image",
 		Description:      "Search for an image",
 		Triggers:         []string{"m?image", "m?img", "m?im"},
 		Usage:            "m?img [query]",
 		Cooldown:         time.Second * 2,
-		CooldownScope:    bot.CooldownScopeChannel,
+		CooldownScope:    mio.CooldownScopeChannel,
 		RequiredPerms:    0,
 		CheckBotPerms:    false,
-		RequiresUserType: bot.UserTypeAny,
-		AllowedTypes:     discord.MessageTypeCreate,
+		RequiresUserType: mio.UserTypeAny,
+		AllowedTypes:     mio.MessageTypeCreate,
 		AllowDMs:         true,
 		Enabled:          true,
-		Execute: func(msg *discord.DiscordMessage) {
+		Execute: func(msg *mio.DiscordMessage) {
 			if len(msg.Args()) < 2 {
 				return
 			}
@@ -244,17 +242,17 @@ func newImageCommand(m *module) *bot.ModuleCommand {
 	}
 }
 
-func newImageComponentHandler(m *module) *bot.ModuleMessageComponent {
-	return &bot.ModuleMessageComponent{
+func newImageComponentHandler(m *module) *mio.ModuleMessageComponent {
+	return &mio.ModuleMessageComponent{
 		Mod:           m,
 		Name:          imageSearchHandler,
 		Cooldown:      0,
-		CooldownScope: bot.CooldownScopeChannel,
+		CooldownScope: mio.CooldownScopeChannel,
 		Permissions:   0,
-		UserType:      bot.UserTypeAny,
+		UserType:      mio.UserTypeAny,
 		CheckBotPerms: false,
 		Enabled:       true,
-		Execute: func(dmc *discord.DiscordMessageComponent) {
+		Execute: func(dmc *mio.DiscordMessageComponent) {
 			msg, ok := m.imageCache.Get(dmc.Interaction.Message.ID)
 			if !ok {
 				return
