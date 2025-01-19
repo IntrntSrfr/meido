@@ -16,7 +16,7 @@ func newAvatarCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "avatar",
-		Description:      "Displays a users profile picture. User can be specified. Author is default.",
+		Description:      "Displays a users profile picture. User can be specified.",
 		Triggers:         []string{"m?avatar", "m?av", ">av"},
 		Usage:            ">av <user>",
 		Cooldown:         time.Second * 1,
@@ -53,7 +53,7 @@ func newBannerCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "banner",
-		Description:      "Displays a users banner. User can be specified. Author is default.",
+		Description:      "Displays a users banner. User can be specified.",
 		Triggers:         []string{"m?banner", ">banner"},
 		Usage:            ">banner <user>",
 		Cooldown:         time.Second * 1,
@@ -104,7 +104,7 @@ func newMemberAvatarCommand(m *module) *bot.ModuleCommand {
 	return &bot.ModuleCommand{
 		Mod:              m,
 		Name:             "memberavatar",
-		Description:      "Displays a members profile picture. User can be specified. Author is default.",
+		Description:      "Displays a members profile picture. User can be specified.",
 		Triggers:         []string{"m?memberavatar", "m?mav", ">mav"},
 		Usage:            ">av <user>",
 		Cooldown:         time.Second * 1,
@@ -142,6 +142,54 @@ func newMemberAvatarCommand(m *module) *bot.ModuleCommand {
 			embed := builders.NewEmbedBuilder().
 				WithTitle(targetMember.User.String()).
 				WithImageUrl(targetMember.AvatarURL("1024")).
+				WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID))
+			_, _ = msg.ReplyEmbed(embed.Build())
+		},
+	}
+}
+
+func newMemberBannerCommand(m *module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
+		Mod:              m,
+		Name:             "memberbanner",
+		Description:      "Displays a member banner. Member can be specified.",
+		Triggers:         []string{"m?mbanner", ">mbanner"},
+		Usage:            ">mbanner <user>",
+		Cooldown:         time.Second * 1,
+		CooldownScope:    bot.CooldownScopeChannel,
+		RequiredPerms:    0,
+		CheckBotPerms:    false,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
+		AllowDMs:         true,
+		Enabled:          true,
+		Execute: func(msg *discord.DiscordMessage) {
+			if len(msg.Args()) < 1 {
+				return
+			}
+
+			targetMember := msg.Member()
+			var err error
+
+			if len(msg.Args()) > 1 {
+				targetMember, err = msg.GetMemberAtArg(1)
+				if err != nil {
+					return
+				}
+			}
+
+			if targetMember == nil {
+				return
+			}
+
+			if targetMember.Banner == "" {
+				_, _ = msg.Reply(fmt.Sprintf("**%v** doesn't have a server banner!", targetMember.User.String()))
+				return
+			}
+
+			embed := builders.NewEmbedBuilder().
+				WithTitle(targetMember.User.String()).
+				WithImageUrl(targetMember.BannerUrl("1024")).
 				WithColor(msg.Discord.HighestColor(msg.Message.GuildID, targetMember.User.ID))
 			_, _ = msg.ReplyEmbed(embed.Build())
 		},
