@@ -1,7 +1,6 @@
 package moderation
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"strconv"
@@ -95,19 +94,14 @@ func (m *module) filterwordlistCommand(msg *discord.DiscordMessage) {
 	}
 
 	builder := strings.Builder{}
-	builder.WriteString("Filtered phrases:\n\n")
-	for i, fe := range filterEntries {
-		if (i+1)%10 == 0 {
-			builder.WriteRune('\n')
-		}
-		builder.WriteString(fmt.Sprintf("`%s`, ", fe.Phrase))
+	builder.WriteString("Filtered phrases:\n")
+	for _, fe := range filterEntries {
+		builder.WriteString(fmt.Sprintf("%v\n", fe.Phrase))
 	}
 
-	if len(builder.String()) > 1000 {
-		_, _ = msg.Sess.ChannelFileSend(msg.Message.ChannelID, "filter.txt", bytes.NewBufferString(builder.String()))
-		return
-	}
-	_, _ = msg.Reply(builder.String())
+	reply := builders.NewMessageSendBuilder().
+		AddTextFile("filter.txt", builder.String())
+	_, _ = msg.ReplyComplex(reply.Build())
 }
 
 func newClearFilterCommand(m *module) *bot.ModuleCommand {
