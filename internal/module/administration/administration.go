@@ -116,6 +116,7 @@ func newForwardDmsPassive(m *module) *bot.ModulePassive {
 		Name:         "forwarddms",
 		Description:  "Forwards all received DMs to channels specified by the bot owner",
 		AllowedTypes: discord.MessageTypeCreate,
+		AllowDMs:     true,
 		Enabled:      true,
 		Execute: func(msg *discord.DiscordMessage) {
 			if !msg.IsDM() {
