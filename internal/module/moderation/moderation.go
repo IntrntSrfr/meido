@@ -82,7 +82,7 @@ func checkWarnInterval(m *module) func(s *discordgo.Session, r *discordgo.Ready)
 						continue
 					}
 
-					dur := time.Duration(gc.WarnDuration)
+					dur := time.Duration(gc.WarnDuration) * 24 * time.Hour
 					for _, warn := range warns {
 						if time.Since(warn.GivenAt) > dur {
 							t := time.Now()
@@ -92,8 +92,6 @@ func checkWarnInterval(m *module) func(s *discordgo.Session, r *discordgo.Ready)
 							if err := m.db.UpdateMemberWarn(warn); err != nil {
 								m.Logger.Error("Updating warn failed", zap.Error(err), zap.Int("warn UID", warn.UID))
 							}
-							//m.db.Exec("UPDATE warn SET is_valid=false, cleared_by_id=$1, cleared_at=$2 WHERE uid=$3",
-							//	m.bot.Discord.Sess.State().User.ID, time.Now(), warn.UID)
 						}
 					}
 				}
