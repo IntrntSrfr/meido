@@ -1,5 +1,7 @@
 github.com/bwmarrin/discordgo v0.27.2-0.20240104191117-afc57886f91a h1:I1j/9FoqDN+W0ZXiSU91lJXwKCvnKBLgJKlBLYAbim4=
 github.com/bwmarrin/discordgo v0.27.2-0.20240104191117-afc57886f91a/go.mod h1:NJZpH+1AfhIcyQsPeuBKsUtYrRnjkyu0kIVMCHkZtRY=
+github.com/bwmarrin/discordgo v0.28.2-0.20250330110404-5571950c905f h1:jPdXBV1lm5AwjigBtXRCB/oyogAR17FYhMUdGxQT5eY=
+github.com/bwmarrin/discordgo v0.28.2-0.20250330110404-5571950c905f/go.mod h1:NJZpH+1AfhIcyQsPeuBKsUtYrRnjkyu0kIVMCHkZtRY=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dustin/go-humanize v1.0.1 h1:GzkhY7T5VNhEkwH0PVJgjz+fX1rhBrR7pRT3mDkpeCY=

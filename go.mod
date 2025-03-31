@@ -3,7 +3,7 @@ module github.com/intrntsrfr/meido
 go 1.22
 
 require (
-	github.com/bwmarrin/discordgo v0.27.2-0.20240104191117-afc57886f91a
+	github.com/bwmarrin/discordgo v0.28.2-0.20250330110404-5571950c905f
 	github.com/dustin/go-humanize v1.0.1
 	github.com/g4s8/hexcolor v1.2.0
 	github.com/google/uuid v1.5.0

@@ -210,9 +210,10 @@ func newImageCommand(m *module) *bot.ModuleCommand {
 			defer func() {
 				m.imageCache.Delete(reply.ID)
 				reply.Components = nil
+				emptyComponents := []discordgo.MessageComponent{}
 				if len(reply.Embeds) > 0 {
 					_, _ = msg.Sess.ChannelMessageEditComplex(&discordgo.MessageEdit{
-						Components: []discordgo.MessageComponent{},
+						Components: &emptyComponents,
 						ID:         reply.ID,
 						Channel:    reply.ChannelID,
 						Embed:      reply.Embeds[0],
