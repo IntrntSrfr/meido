@@ -62,6 +62,7 @@ func (m *module) Hook() error {
 		newAvatarCommand(m),
 		newBannerCommand(m),
 		newMemberAvatarCommand(m),
+		newMemberBannerCommand(m),
 		newServerCommand(m),
 		newServerIconCommand(m),
 		newServerBannerCommand(m),
