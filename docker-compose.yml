@@ -5,7 +5,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ./config.json:/app/config.json
+      - ./cmd/meido/config.json:/app/config.json
 
   db:
     image: postgres:17-alpine

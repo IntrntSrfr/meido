@@ -15,13 +15,13 @@ COPY --from=builder /app/meido .
 
 COPY internal/database/migrations /app/database/migrations
 
-RUN apk add --no-cache curl jq
+RUN apk add --no-cache curl jq bash
 
 RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.18.0/migrate.linux-amd64.tar.gz \
     | tar -xz -C /usr/local/bin
 RUN chmod +x /usr/local/bin/migrate
 
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY entrypoint.sh  /app/entrypoint.sh
+RUN chmod +x  /app/entrypoint.sh
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
