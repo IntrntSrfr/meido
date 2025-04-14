@@ -87,7 +87,7 @@ func newBannerCommand(m *module) *bot.ModuleCommand {
 			}
 
 			if targetUser.Banner == "" {
-				_, _ = msg.Reply(fmt.Sprintf("**%v** doesn't have a server avatar!", targetUser.String()))
+				_, _ = msg.Reply(fmt.Sprintf("**%v** doesn't have a banner!", targetUser.String()))
 				return
 			}
 
