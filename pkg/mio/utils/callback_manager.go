@@ -50,6 +50,8 @@ func (c *CallbackManager) Get(key string) (chan *discord.DiscordMessage, error) 
 func (c *CallbackManager) Delete(key string) {
 	c.Lock()
 	defer c.Unlock()
-	close(c.ch[key])
-	delete(c.ch, key)
+	if ch, ok := c.ch[key]; ok {
+		close(ch)
+		delete(c.ch, key)
+	}
 }

@@ -28,17 +28,21 @@ func NewEventHandler(d *discord.Discord, m *ModuleManager, c *utils.CallbackMana
 
 func (mp *EventHandler) Listen(ctx context.Context) {
 	mp.logger.Info("Started listener")
-	for {
+	msgCh := mp.discord.Messages()
+	itCh := mp.discord.Interactions()
+	for msgCh != nil || itCh != nil {
 		select {
-		case msg, ok := <-mp.discord.Messages():
+		case msg, ok := <-msgCh:
 			if !ok {
+				msgCh = nil
 				continue
 			}
 			go mp.DeliverCallbacks(msg)
 			go mp.HandleMessage(msg)
 			go mp.emitter.Emit(&MessageProcessed{})
-		case it, ok := <-mp.discord.Interactions():
+		case it, ok := <-itCh:
 			if !ok {
+				itCh = nil
 				continue
 			}
 			go mp.HandleInteraction(it)

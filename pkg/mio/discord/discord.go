@@ -102,6 +102,9 @@ func (s *SessionWrapper) Real() *discordgo.Session {
 // NewDiscord takes in a token and creates a Discord object.
 func NewDiscord(token string, shards int, logger mio.Logger) *Discord {
 	logger = logger.Named("Discord")
+	if shards <= 0 {
+		shards = 1
+	}
 	d := &Discord{
 		token:           token,
 		shards:          shards,
@@ -110,15 +113,21 @@ func NewDiscord(token string, shards int, logger mio.Logger) *Discord {
 		logger:          logger,
 	}
 	discordgo.Logger = discordgoLogger(logger)
-	d.createSessions()
+	if err := d.createSessions(); err != nil {
+		logger.Error("Failed to initialise Discord sessions", "error", err)
+		panic(err)
+	}
 	return d
 }
 
 // createSessions populates the Discord object with Sessions and returns a DiscordMessage channel.
-func (d *Discord) createSessions() {
+func (d *Discord) createSessions() error {
 	d.Sessions = make([]DiscordSession, d.shards)
 	for i := 0; i < d.shards; i++ {
-		s, _ := discordgo.New("Bot " + d.token)
+		s, err := discordgo.New("Bot " + d.token)
+		if err != nil {
+			return err
+		}
 
 		s.State.MaxMessageCount = 100
 		s.State.TrackVoice = false
@@ -135,7 +144,11 @@ func (d *Discord) createSessions() {
 		d.Sessions[i] = &SessionWrapper{s}
 		d.logger.Info("Added session", "sessionID", i)
 	}
+	if len(d.Sessions) == 0 {
+		return fmt.Errorf("no discord sessions initialised")
+	}
 	d.Sess = d.Sessions[0]
+	return nil
 }
 
 // Run opens the Discord sessions.

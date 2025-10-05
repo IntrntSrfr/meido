@@ -60,6 +60,13 @@ func TestNewDiscord(t *testing.T) {
 	}
 }
 
+func TestNewDiscord_DefaultsShardToOne(t *testing.T) {
+	d := NewDiscord("asdf", 0, mio.NewLogger(io.Discard))
+	if d.shards != 1 {
+		t.Errorf("expected shard count to default to 1, got %d", d.shards)
+	}
+}
+
 func TestDiscord_Run(t *testing.T) {
 	d := NewTestDiscord(nil, nil, nil)
 	if got := d.Run(); got != nil {

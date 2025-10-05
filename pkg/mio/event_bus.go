@@ -44,7 +44,11 @@ func (eb *EventBus) AddHandler(handler any) func() {
 		panic("handler must be a function that takes exactly one argument and returns nothing")
 	}
 
-	eventType := handlerType.In(0).Elem().Name()
+	argType := handlerType.In(0)
+	if argType.Kind() != reflect.Ptr {
+		panic("handler argument must be a pointer type")
+	}
+	eventType := argType.Elem().Name()
 	if _, ok := eb.handlers[eventType]; !ok {
 		eb.handlers[eventType] = make([]*eventHandler, 0)
 	}
@@ -70,7 +74,11 @@ func (eb *EventBus) AddOnceHandler(handler any) func() {
 		panic("handler must be a function that takes exactly one argument and returns nothing")
 	}
 
-	eventType := handlerType.In(0).Elem().Name()
+	argType := handlerType.In(0)
+	if argType.Kind() != reflect.Ptr {
+		panic("handler argument must be a pointer type")
+	}
+	eventType := argType.Elem().Name()
 	if _, ok := eb.handlers[eventType]; !ok {
 		eb.handlers[eventType] = make([]*eventHandler, 0)
 	}
@@ -87,13 +95,27 @@ func (eb *EventBus) AddOnceHandler(handler any) func() {
 }
 
 func (eb *EventBus) Emit(event any) {
-	eventType := reflect.TypeOf(event).Elem().Name()
-	if handlers, ok := eb.handlers[eventType]; ok {
-		for _, handler := range handlers {
-			if handler.once {
-				eb.removeHandler(eventType, handler)
-			}
-			go handler.callback.Call([]reflect.Value{reflect.ValueOf(event)})
+	if event == nil {
+		return
+	}
+	eventType := reflect.TypeOf(event)
+	if eventType.Kind() != reflect.Ptr {
+		panic("event must be a pointer type")
+	}
+	value := reflect.ValueOf(event)
+	if value.IsNil() {
+		return
+	}
+	eventName := eventType.Elem().Name()
+
+	eb.lock.Lock()
+	handlers := append([]*eventHandler(nil), eb.handlers[eventName]...)
+	eb.lock.Unlock()
+
+	for _, handler := range handlers {
+		if handler.once {
+			eb.removeHandler(eventName, handler)
 		}
+		go handler.callback.Call([]reflect.Value{reflect.ValueOf(event)})
 	}
 }

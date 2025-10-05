@@ -41,6 +41,10 @@ func TestAddHandler(t *testing.T) {
 	assert.Panics(t, func() {
 		bus.AddHandler(func(e *testEvent) string { return "" })
 	}, "Adding a handler that returns a value should panic")
+
+	assert.Panics(t, func() {
+		bus.AddHandler(func(e testEvent) {})
+	}, "Adding a handler whose argument is not a pointer should panic")
 }
 
 func TestAddOnceHandler(t *testing.T) {
@@ -64,6 +68,10 @@ func TestAddOnceHandler(t *testing.T) {
 	assert.Panics(t, func() {
 		bus.AddOnceHandler(func(e *testEvent) string { return "" })
 	}, "Adding a handler that returns a value should panic")
+
+	assert.Panics(t, func() {
+		bus.AddOnceHandler(func(e testEvent) {})
+	}, "Adding a once handler whose argument is not a pointer should panic")
 }
 
 func TestEmit(t *testing.T) {
@@ -119,6 +127,21 @@ func TestEmit(t *testing.T) {
 		bus.Emit(&testEvent{Value: 2})
 		called.Wait()
 		assert.Equal(t, val, 1)
+	})
+
+	t.Run("Nil event is ignored", func(t *testing.T) {
+		bus := NewEventBus()
+		assert.NotPanics(t, func() {
+			var evt *testEvent
+			bus.Emit(evt)
+		})
+	})
+
+	t.Run("Non pointer event panics", func(t *testing.T) {
+		bus := NewEventBus()
+		assert.Panics(t, func() {
+			bus.Emit(testEvent{})
+		})
 	})
 }
 

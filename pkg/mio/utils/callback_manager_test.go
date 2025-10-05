@@ -49,4 +49,12 @@ func TestCooldownService_Delete(t *testing.T) {
 	if _, ok := handler.ch[key]; ok {
 		t.Errorf("Channel should have been deleted")
 	}
+
+	// deleting a non-existent key should be a no-op
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Delete should not panic when key is missing, got %v", r)
+		}
+	}()
+	handler.Delete("doesNotExist")
 }
