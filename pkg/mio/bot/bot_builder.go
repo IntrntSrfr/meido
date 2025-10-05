@@ -14,6 +14,7 @@ type BotBuilder struct {
 	cooldowns    *mutils.CooldownManager
 	eventHandler *EventHandler
 	eventBus     *mio.EventBus
+	aliasStore   CommandAliasStore
 
 	config *utils.Config
 	logger mio.Logger
@@ -40,6 +41,11 @@ func (b *BotBuilder) WithLogger(log mio.Logger) *BotBuilder {
 
 func (b *BotBuilder) WithDefaultHandlers() *BotBuilder {
 	b.useDefaultHandlers = true
+	return b
+}
+
+func (b *BotBuilder) WithCommandAliasStore(store CommandAliasStore) *BotBuilder {
+	b.aliasStore = store
 	return b
 }
 
@@ -70,13 +76,14 @@ func (b *BotBuilder) Build() *Bot {
 	}
 
 	return &Bot{
-		Discord:       b.discord,
-		ModuleManager: b.modules,
-		Callbacks:     b.callbacks,
-		Cooldowns:     b.cooldowns,
-		EventHandler:  b.eventHandler,
-		EventBus:      b.eventBus,
-		Config:        b.config,
-		Logger:        b.logger,
+		Discord:        b.discord,
+		ModuleManager:  b.modules,
+		Callbacks:      b.callbacks,
+		Cooldowns:      b.cooldowns,
+		EventHandler:   b.eventHandler,
+		EventBus:       b.eventBus,
+		Config:         b.config,
+		Logger:         b.logger,
+		commandAliases: newCommandAliasManager(b.aliasStore),
 	}
 }

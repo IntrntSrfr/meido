@@ -151,7 +151,7 @@ func (m *ModuleBase) HandleMessage(msg *discord.DiscordMessage) {
 		return
 	}
 
-	if cmd, err := m.findCommandByTriggers(msg.RawContent()); err == nil {
+	if cmd, err := m.findCommandForMessage(msg); err == nil {
 		m.handleCommand(cmd, msg)
 	}
 }
@@ -377,6 +377,24 @@ func (m *ModuleBase) findCommandByTriggers(name string) (*ModuleCommand, error) 
 			if strings.EqualFold(strings.Join(splitName[:len(splitTrig)], " "), trig) {
 				return cmd, nil
 			}
+		}
+	}
+	return nil, ErrCommandNotFound
+}
+
+func (m *ModuleBase) findCommandForMessage(msg *discord.DiscordMessage) (*ModuleCommand, error) {
+	if msg == nil {
+		return nil, ErrCommandNotFound
+	}
+	if cmd, err := m.findCommandByTriggers(msg.RawContent()); err == nil {
+		return cmd, nil
+	}
+	if msg.GuildID() == "" || m.Bot == nil {
+		return nil, ErrCommandNotFound
+	}
+	if aliasName, ok := m.Bot.resolveCommandAlias(msg.GuildID(), strings.Fields(msg.RawContent())); ok {
+		if cmd, err := m.findCommandByName(aliasName); err == nil {
+			return cmd, nil
 		}
 	}
 	return nil, ErrCommandNotFound

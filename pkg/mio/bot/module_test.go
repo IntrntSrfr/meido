@@ -147,6 +147,50 @@ func TestModuleBase_FindCommand(t *testing.T) {
 	}
 }
 
+func TestModuleBase_FindCommandForMessage_UsesAliases(t *testing.T) {
+	logger := mio.NewDiscardLogger()
+	base := NewModule(nil, "testing", logger)
+	cmd := &ModuleCommand{Name: "ping", Triggers: []string{"m?ping"}}
+	if err := base.RegisterCommands(cmd); err != nil {
+		t.Fatalf("RegisterCommands() error = %v", err)
+	}
+
+	store := newFakeAliasStore(map[string][]CommandAlias{
+		"guild": {{GuildID: "guild", Alias: "!ping", Command: "ping"}},
+	})
+	base.Bot = &Bot{commandAliases: newCommandAliasManager(store)}
+
+	msg := &discord.DiscordMessage{Message: &discordgo.Message{Content: "!ping", GuildID: "guild"}}
+
+	got, err := base.findCommandForMessage(msg)
+	if err != nil {
+		t.Fatalf("findCommandForMessage() error = %v", err)
+	}
+	if got != cmd {
+		t.Fatalf("findCommandForMessage() = %v, want %v", got, cmd)
+	}
+}
+
+func TestModuleBase_FindCommandForMessage_NoAliasMatch(t *testing.T) {
+	logger := mio.NewDiscardLogger()
+	base := NewModule(nil, "testing", logger)
+	cmd := &ModuleCommand{Name: "ping", Triggers: []string{"m?ping"}}
+	if err := base.RegisterCommands(cmd); err != nil {
+		t.Fatalf("RegisterCommands() error = %v", err)
+	}
+
+	store := newFakeAliasStore(map[string][]CommandAlias{
+		"guild": {{GuildID: "guild", Alias: "!pong", Command: "ping"}},
+	})
+	base.Bot = &Bot{commandAliases: newCommandAliasManager(store)}
+
+	msg := &discord.DiscordMessage{Message: &discordgo.Message{Content: "!ping", GuildID: "guild"}}
+
+	if _, err := base.findCommandForMessage(msg); err == nil {
+		t.Fatalf("expected error when alias does not match")
+	}
+}
+
 func TestModuleBase_FindPassive(t *testing.T) {
 	base := NewModule(nil, "testing", mio.NewDiscardLogger())
 	cmd := &ModulePassive{

@@ -23,6 +23,8 @@ type Bot struct {
 	*mio.EventBus
 
 	Logger mio.Logger
+
+	commandAliases *commandAliasManager
 }
 
 func (b *Bot) Run(ctx context.Context) error {
@@ -58,6 +60,21 @@ func (b *Bot) setApplicationCommands() error {
 		b.logger.Info("Created/updated command", "name", c.Name, "type", uint8(c.Type))
 	}
 	return nil
+}
+
+func (b *Bot) resolveCommandAlias(guildID string, tokens []string) (string, bool) {
+	if b == nil || b.commandAliases == nil {
+		return "", false
+	}
+	return b.commandAliases.Resolve(guildID, tokens)
+}
+
+// RefreshCommandAliases invalidates the cached aliases for a guild; they will be reloaded on demand.
+func (b *Bot) RefreshCommandAliases(guildID string) {
+	if b == nil || b.commandAliases == nil {
+		return
+	}
+	b.commandAliases.Invalidate(guildID)
 }
 
 func (b *Bot) IsOwner(userID string) bool {
