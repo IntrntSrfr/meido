@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"math/rand"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -72,6 +73,9 @@ func (m *module) Hook() error {
 		newInviteCommand(m),
 		newUserInfoCommand(m),
 		newHelpCommand(m),
+		newAliasAddCommand(m),
+		newAliasRemoveCommand(m),
+		newAliasListCommand(m),
 	); err != nil {
 		return err
 	}
@@ -685,6 +689,138 @@ func newHelpCommand(m *module) *bot.ModuleCommand {
 		AllowDMs:         true,
 		Enabled:          true,
 		Execute:          m.helpCommand,
+	}
+}
+
+func newAliasAddCommand(m *module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
+		Mod:              m,
+		Name:             "aliasadd",
+		Description:      "Adds or updates a server command alias",
+		Triggers:         []string{"m?alias add"},
+		Usage:            "m?alias add [alias] [command]",
+		Cooldown:         time.Second * 2,
+		CooldownScope:    bot.CooldownScopeChannel,
+		RequiredPerms:    discordgo.PermissionAdministrator,
+		CheckBotPerms:    false,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
+		AllowDMs:         false,
+		Enabled:          true,
+		Execute: func(msg *discord.DiscordMessage) {
+			if msg.GuildID() == "" {
+				return
+			}
+			raw := msg.RawArgs()
+			if len(raw) < 4 {
+				_, _ = msg.Reply("Usage: m?alias add [alias] [command]")
+				return
+			}
+			aliasTokens := raw[2 : len(raw)-1]
+			alias := strings.TrimSpace(strings.Join(aliasTokens, " "))
+			if alias == "" {
+				_, _ = msg.Reply("Please provide an alias to register")
+				return
+			}
+			commandInput := raw[len(raw)-1]
+			cmd, err := m.Bot.FindCommand(commandInput)
+			if err != nil {
+				_, _ = msg.Reply("Could not find that command")
+				return
+			}
+			if err := m.db.UpsertCommandAlias(msg.GuildID(), alias, cmd.Name); err != nil {
+				m.Logger.Error("Alias upsert failed", "guild", msg.GuildID(), "error", err)
+				_, _ = msg.Reply("There was an issue saving the alias")
+				return
+			}
+			m.Bot.RefreshCommandAliases(msg.GuildID())
+			_, _ = msg.Reply(fmt.Sprintf("Alias `%s` now points to `%s`", alias, cmd.Name))
+		},
+	}
+}
+
+func newAliasRemoveCommand(m *module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
+		Mod:              m,
+		Name:             "aliasremove",
+		Description:      "Removes a server command alias",
+		Triggers:         []string{"m?alias remove"},
+		Usage:            "m?alias remove [alias]",
+		Cooldown:         time.Second * 2,
+		CooldownScope:    bot.CooldownScopeChannel,
+		RequiredPerms:    discordgo.PermissionAdministrator,
+		CheckBotPerms:    false,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
+		AllowDMs:         false,
+		Enabled:          true,
+		Execute: func(msg *discord.DiscordMessage) {
+			if msg.GuildID() == "" {
+				return
+			}
+			raw := msg.RawArgs()
+			if len(raw) < 3 {
+				_, _ = msg.Reply("Usage: m?alias remove [alias]")
+				return
+			}
+			alias := strings.TrimSpace(strings.Join(raw[2:], " "))
+			if alias == "" {
+				_, _ = msg.Reply("Please provide an alias to remove")
+				return
+			}
+			if err := m.db.DeleteCommandAlias(msg.GuildID(), alias); err != nil {
+				m.Logger.Error("Alias delete failed", "guild", msg.GuildID(), "error", err)
+				_, _ = msg.Reply("There was an issue removing the alias")
+				return
+			}
+			m.Bot.RefreshCommandAliases(msg.GuildID())
+			_, _ = msg.Reply(fmt.Sprintf("Removed alias `%s`", alias))
+		},
+	}
+}
+
+func newAliasListCommand(m *module) *bot.ModuleCommand {
+	return &bot.ModuleCommand{
+		Mod:              m,
+		Name:             "aliaslist",
+		Description:      "Lists all server command aliases",
+		Triggers:         []string{"m?alias list"},
+		Usage:            "m?alias list",
+		Cooldown:         time.Second * 2,
+		CooldownScope:    bot.CooldownScopeChannel,
+		RequiredPerms:    discordgo.PermissionAdministrator,
+		CheckBotPerms:    false,
+		RequiresUserType: bot.UserTypeAny,
+		AllowedTypes:     discord.MessageTypeCreate,
+		AllowDMs:         false,
+		Enabled:          true,
+		Execute: func(msg *discord.DiscordMessage) {
+			if msg.GuildID() == "" {
+				return
+			}
+			aliases, err := m.db.GetCommandAliases(msg.GuildID())
+			if err != nil {
+				m.Logger.Error("Alias list failed", "guild", msg.GuildID(), "error", err)
+				_, _ = msg.Reply("There was an issue fetching aliases")
+				return
+			}
+			if len(aliases) == 0 {
+				_, _ = msg.Reply("No aliases configured for this server")
+				return
+			}
+			sort.Slice(aliases, func(i, j int) bool {
+				return strings.ToLower(aliases[i].Alias) < strings.ToLower(aliases[j].Alias)
+			})
+			builder := strings.Builder{}
+			for _, alias := range aliases {
+				builder.WriteString(fmt.Sprintf("`%s` → `%s`\n", alias.Alias, alias.Command))
+			}
+			embed := builders.NewEmbedBuilder().
+				WithTitle("Command aliases").
+				WithDescription(builder.String()).
+				WithOkColor()
+			_, _ = msg.ReplyEmbed(embed.Build())
+		},
 	}
 }
 

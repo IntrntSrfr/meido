@@ -34,6 +34,7 @@ func New(config *utils.Config, db database.DB) *Meido {
 	logger := newLogger("Meido")
 
 	b := bot.NewBotBuilder(config).
+		WithCommandAliasStore(newDBAliasStore(db)).
 		WithDefaultHandlers().
 		WithLogger(logger).
 		Build()

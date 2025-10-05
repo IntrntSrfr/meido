@@ -14,6 +14,7 @@ type DB interface {
 	ICommandLogDB
 	IGuildDB
 	IProcessedEventsDB
+	ICommandAliasDB
 }
 
 type ICommandLogDB interface {
@@ -29,4 +30,10 @@ type IGuildDB interface {
 
 type IProcessedEventsDB interface {
 	UpsertCount(eventType string, sentAt time.Time) error
+}
+
+type ICommandAliasDB interface {
+	GetCommandAliases(guildID string) ([]*structs.CommandAlias, error)
+	UpsertCommandAlias(guildID, alias, command string) error
+	DeleteCommandAlias(guildID, alias string) error
 }

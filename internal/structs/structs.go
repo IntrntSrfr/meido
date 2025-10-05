@@ -27,3 +27,9 @@ type Guild struct {
 	FishingChannelID    string `db:"fishing_channel_id"`
 	AutoRoleID          string `db:"auto_role_id"`
 }
+
+type CommandAlias struct {
+	GuildID string `db:"guild_id"`
+	Alias   string `db:"alias"`
+	Command string `db:"command"`
+}

@@ -15,6 +15,7 @@ type PsqlDB struct {
 	IGuildDB
 	ICommandLogDB
 	IProcessedEventsDB
+	ICommandAliasDB
 }
 
 func NewPSQLDatabase(connStr string) (*PsqlDB, error) {
@@ -30,6 +31,7 @@ func NewPSQLDatabase(connStr string) (*PsqlDB, error) {
 	db.IGuildDB = &GuildDB{db}
 	db.ICommandLogDB = &CommandLogDB{db}
 	db.IProcessedEventsDB = &ProcessedEventsDB{db}
+	db.ICommandAliasDB = &CommandAliasDB{db}
 	return db, nil
 }
 
@@ -91,5 +93,30 @@ func (db *ProcessedEventsDB) UpsertCount(eventType string, sentAt time.Time) err
     `
 
 	_, err := db.Conn().Exec(query, eventType, sentAt)
+	return err
+}
+
+type CommandAliasDB struct {
+	DB
+}
+
+func (db *CommandAliasDB) GetCommandAliases(guildID string) ([]*structs.CommandAlias, error) {
+	var aliases []*structs.CommandAlias
+	err := db.Conn().Select(&aliases, "SELECT guild_id, alias, command FROM command_alias WHERE guild_id=$1", guildID)
+	return aliases, err
+}
+
+func (db *CommandAliasDB) UpsertCommandAlias(guildID, alias, command string) error {
+	_, err := db.Conn().Exec(`
+		INSERT INTO command_alias (guild_id, alias, command)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (guild_id, alias)
+		DO UPDATE SET command = EXCLUDED.command
+	`, guildID, alias, command)
+	return err
+}
+
+func (db *CommandAliasDB) DeleteCommandAlias(guildID, alias string) error {
+	_, err := db.Conn().Exec("DELETE FROM command_alias WHERE guild_id=$1 AND alias=$2", guildID, alias)
 	return err
 }
