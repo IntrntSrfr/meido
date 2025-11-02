@@ -70,12 +70,22 @@ The moderation, utility, and other modules in `internal/module` leverage this AP
 - **Database-backed services**: Modules that need persistence inject repositories through constructors. `internal/module/fishing` wraps an `IAquariumDB` to manage player collections, while `internal/module/moderation` composes warn/filter repositories to enforce guild policies. `internal/database` offers shared primitives (`IGuildDB`, `ICommandLogDB`, `IProcessedEventsDB`) that modules can extend with their own interfaces.
 - **Event analytics**: `internal/meido/logs.go` listens on the Mio event bus to persist command and interaction counts via the processed-events table, demonstrating how to consume `pkg/mio` events outside of modules.
 - **Configuration**: `internal/structs.LoadConfig` loads `cmd/meido/config.json` (see `cmd/meido/config.json` for shape) and overlays environment variables, populating tokens, shard counts, owner IDs, API keys, and module exclusions.
+- **Command alias flow**: Guild-specific aliases live in the `command_alias` table via `internal/database/psql.go`. `internal/meido/alias_store.go` adapts those rows into Mio's `CommandAliasStore`, and `ModuleBase` resolves aliases before matching triggers. Utility module handlers (`internal/module/utility/alias_commands.go`) let administrators add, remove, and list aliases and proactively invalidate the cache with `Bot.RefreshCommandAliases`.
+- **Guild bootstrapping & status rotation**: `internal/meido/meido.go` wires Discord handlers that insert new guild rows and refresh join timestamps (`insertGuild`) while `statusLoop` rotates presence strings every 15 seconds, showcasing where to hook shard-level behaviour outside of modules.
 
 ## Data and Infrastructure
 
 - **Database**: The bot expects a PostgreSQL database configured via `connection_string`. `internal/database/migrations/` contains schema definitions for guilds, command logs, processed events, warns, filters, fishing data, and custom roles.
 - **Docker & scripts**: Docker artefacts enable containerised deployment. `docker-compose.yml` combines the bot and database for local runs. `entrypoint.sh` handles bootstrapping inside containers.
 - **Assets**: Static art under `assets/` is used in marketing materials and README visuals.
+
+## Command Lifecycle Walkthrough
+
+1. A Discord gateway event enters `pkg/mio/discord` and is pushed onto the shared message/interaction channels (`discord.go`).
+2. `EventHandler.Listen` fans the event out to every registered module while emitting telemetry on the event bus (`pkg/mio/bot/event_handler.go`).
+3. `ModuleBase` checks DM allowances, message types, cooldown scopes, and required permissions before invoking the command/passive/application handler (`pkg/mio/bot/module.go`).
+4. Module logic executes (e.g., moderation commands query/update repositories, utility commands build embeds) and may emit follow-up events or schedule callbacks.
+5. Post-execution hooks (panic recovery, cooldown expiry, callbacks) run, and subscribers such as `internal/meido/logs.go` persist analytics or trigger downstream automation.
 
 ## Working With the Project
 
@@ -99,4 +109,3 @@ The moderation, utility, and other modules in `internal/module` leverage this AP
 - Explore `internal/module/utility/` for a comprehensive showcase of commands, slash commands, and component handling.
 - Review `internal/database` and `internal/module/moderation` together to see how persistence and modules interact.
 - Consult `README.md` for feature highlights and links to the live bot and support resources.
-
