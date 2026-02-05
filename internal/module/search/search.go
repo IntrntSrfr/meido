@@ -173,7 +173,7 @@ func newImageCommand(m *module) *bot.ModuleCommand {
 			stopID := uuid.New().String()
 
 			embed := builders.NewEmbedBuilder().
-				WithTitle("Google Images search results").
+				WithTitle("Image search results").
 				WithOkColor().
 				WithImageUrl(links[0]).
 				WithFooter(fmt.Sprintf("Image [ %v / %v ]", 1, len(links)), "").

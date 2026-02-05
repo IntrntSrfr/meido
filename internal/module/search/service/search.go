@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/bwmarrin/discordgo"
 	"io"
 	"net/http"
 	"net/url"
 	"regexp"
-	"strconv"
-	"strings"
 	"sync"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 type Service struct {
@@ -73,30 +72,77 @@ func (s *Service) GetWeatherData(query string) (*WeatherResponse, error) {
 	return resp, nil
 }
 
-var imageReg = regexp.MustCompile(`"(http)s?://([^"])*\.(gif|png|jpg)",`)
+var ddgVQDReg = regexp.MustCompile(`vqd='([^']+)'`)
+var ddgVQDAltReg = regexp.MustCompile(`vqd=([a-zA-Z0-9-]+)`)
 
 func (s *Service) SearchGoogleImages(query string) ([]string, error) {
-	var links []string
-	req, err := http.NewRequest("GET", "https://www.google.com/search?tbm=isch&gs_l=img&safe=yes&q="+url.QueryEscape(query), nil)
+	return s.SearchDuckDuckGoImages(query)
+}
+
+type ddgImageResponse struct {
+	Results []struct {
+		Image string `json:"image"`
+	} `json:"results"`
+}
+
+func (s *Service) SearchDuckDuckGoImages(query string) ([]string, error) {
+	homeURL := "https://duckduckgo.com/?q=" + url.QueryEscape(query) + "&iax=images&ia=images"
+	req, err := http.NewRequest("GET", homeURL, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.193 Safari/537.36")
+	req.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+	req.Header.Add("Accept-Language", "en-US,en;q=0.9")
 	body, err := s.request(req)
 	if err != nil {
 		return nil, err
 	}
 
-	matches := imageReg.FindAll(body, -1)
-	for _, m := range matches {
-		ma, err := strconv.Unquote(strings.TrimSuffix(string(m), ","))
-		if err != nil {
+	vqd := ""
+	if m := ddgVQDReg.FindSubmatch(body); len(m) == 2 {
+		vqd = string(m[1])
+	} else if m := ddgVQDAltReg.FindSubmatch(body); len(m) == 2 {
+		vqd = string(m[1])
+	}
+	if vqd == "" {
+		return nil, errors.New("failed to find ddg vqd token")
+	}
+
+	apiURL := "https://duckduckgo.com/i.js?l=us-en&o=json&q=" + url.QueryEscape(query) + "&vqd=" + url.QueryEscape(vqd)
+	req2, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req2.Header.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
+	req2.Header.Add("Accept-Language", "en-US,en;q=0.9")
+	req2.Header.Add("Referer", "https://duckduckgo.com/")
+	req2.Header.Add("Origin", "https://duckduckgo.com")
+	req2.Header.Add("Accept", "application/json,text/javascript,*/*;q=0.1")
+	req2.Header.Add("Sec-Fetch-Site", "same-origin")
+	req2.Header.Add("Sec-Fetch-Mode", "cors")
+	req2.Header.Add("Sec-Fetch-Dest", "empty")
+	req2.Header.Add("X-Requested-With", "XMLHttpRequest")
+	b, err := s.request(req2)
+	if err != nil {
+		return nil, err
+	}
+
+	var resp ddgImageResponse
+	if err := json.Unmarshal(b, &resp); err != nil {
+		return nil, err
+	}
+
+	links := make([]string, 0, len(resp.Results))
+	seen := make(map[string]struct{}, len(resp.Results))
+	for _, r := range resp.Results {
+		if r.Image == "" {
 			continue
 		}
-		if strings.Contains(strings.ToLower(ma), "https://www.google.com/logos/doodles") || strings.Contains(strings.ToLower(ma), "https://www.gstatic.com") {
+		if _, ok := seen[r.Image]; ok {
 			continue
 		}
-		links = append(links, ma)
+		seen[r.Image] = struct{}{}
+		links = append(links, r.Image)
 	}
 	return links, nil
 }
