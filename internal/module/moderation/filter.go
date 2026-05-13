@@ -149,7 +149,7 @@ func (m *module) clearfilterCommand(msg *discord.DiscordMessage) {
 			_ = msg.Sess.ChannelMessageDelete(msg.ChannelID(), msg.Message.ID)
 			return
 		}
-		if strings.ToLower(reply.RawContent()) == "YES" {
+		if strings.EqualFold(reply.RawContent(), "YES") {
 			_ = msg.Sess.ChannelMessageDelete(reply.ChannelID(), reply.Message.ID)
 			_ = msg.Sess.ChannelMessageDelete(msg.ChannelID(), msg.Message.ID)
 			break
